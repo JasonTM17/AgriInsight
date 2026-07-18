@@ -1,7 +1,7 @@
 ---
 title: "Cost Analysis and Controlled Report Export"
 description: "Materialize separate operating-cost and procurement Gold contracts, then expose controlled CSV/XLSX/PDF reporting without double-counting."
-status: pending
+status: in-progress
 priority: P1
 effort: "3d"
 branch: "main"
@@ -27,9 +27,12 @@ This milestone adds a Cost Analysis contract and a controlled report surface to 
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Cost Data Contracts](./phase-01-cost-data-contracts.md) | Pending |
+| 1 | [Cost Data Contracts](./phase-01-cost-data-contracts.md) | Completed |
 | 2 | [Controlled Report Export](./phase-02-controlled-report-export.md) | Pending |
 | 3 | [Dashboard Verification and Documentation](./phase-03-dashboard-verification-and-documentation.md) | Pending |
+
+**Progress:** 1/3 phases completed. Phase 2 remains pending because report-export
+work requires more C-drive headroom than the current 2.18 GB safety margin.
 
 ## Dependencies
 

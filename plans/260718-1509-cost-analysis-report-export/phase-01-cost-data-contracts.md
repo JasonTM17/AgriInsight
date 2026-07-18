@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Cost Data Contracts"
-status: pending
+status: completed
 priority: P1
 effort: "1d"
 dependencies: []
@@ -33,6 +33,7 @@ Add Gold contracts that make cost semantics and grain explicit. Keep the existin
 ## Related Code Files
 
 - Create: `src/agriinsight/metrics_cost_analysis.py`
+- Create: `src/agriinsight/metrics_cost_contracts.py`
 - Create: `src/agriinsight/metrics_cost_procurement.py`
 - Modify: `src/agriinsight/metrics.py`
 - Modify: `tests/test_pipeline.py`
@@ -49,11 +50,22 @@ Add Gold contracts that make cost semantics and grain explicit. Keep the existin
 
 ## Success Criteria
 
-- [ ] New Gold CSVs are present after a default and small pipeline run.
-- [ ] `sum(cost_activity_detail.total_cost_vnd)` equals the activity fact total; material + labor equals total per row and per rollup.
-- [ ] Procurement spend equals only `IN` `total_amount_vnd`; inventory value is absent from operating-cost totals.
-- [ ] Season/farm/month joins do not fan out; zero-revenue and zero-usage cases remain finite.
-- [ ] Existing pipeline tests and foreign-key checks remain green.
+- [x] New Gold CSVs are present after a default and small pipeline run.
+- [x] `sum(cost_activity_detail.operating_total_cost_vnd)` equals the activity fact total; material + labor equals total per row and per rollup.
+- [x] Procurement spend equals only `IN` `total_amount_vnd`; inventory value is absent from operating-cost totals.
+- [x] Season/farm/month joins do not fan out; zero-revenue and zero-usage cases remain finite.
+- [x] Existing pipeline tests and foreign-key checks remain green.
+
+## Verification Evidence
+
+- Default run: `artifacts/_tmp/phase1-default-e2e-b/manifest.json`; quality passed,
+  6 farms, 48 seasons, 672 activities, 2,316 inventory transactions, all nine
+  Gold contracts present, 6.5 MB total output.
+- Independent audit: `reports/debugger-2026-07-18-cost-contracts.md`; every
+  operating rollup reconciled to `105,718,075,000 VND`, procurement reconciled
+  to inbound spend `6,661,680,700 VND`, zero-denominator cases finite.
+- Final regression gate: full `pytest` after scout/review fixes, `7 passed`.
+- Reviewer fix-cycle verdict: PASS, 9.4/10, no remaining Phase 1 finding.
 
 ## Tests / Validation
 
@@ -63,7 +75,7 @@ Run `pytest tests/test_pipeline.py -q`, then `python -m compileall -q src tests`
 
 - **High:** fan-out or semantic merge inflates costs. Mitigate with independent pre-aggregation and explicit reconciliation tests.
 - **Medium:** adding many frames increases artifact size. Keep only decision-useful columns and measure artifact growth on D.
-- **Rollback:** revert the phase commit; old Gold frames and dashboard consumers remain available.
+- **Rollback:** revert the phase commit and rerun the pipeline; successful Gold writes prune CSV contracts no longer returned, so manifest and row counts remain aligned.
 
 ## Security Considerations
 
