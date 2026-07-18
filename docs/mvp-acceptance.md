@@ -23,6 +23,11 @@
 - [x] Insight và khuyến nghị có bằng chứng định lượng.
 - [x] Dashboard render/navigation được kiểm thử tự động.
 
+## Export service
+
+- [x] Phase 2 backend controlled report export service: bundle CSV/PDF chạy với `reports` extra; XLSX chỉ mở khi có explicit runtime vars; dashboard wiring vẫn ở Phase 3.
+- [x] XLSX QA thực tế có đủ 6 sheet, 6 preview, `MODEL STATUS: PASS`, và không có formula-error match.
+
 ## Vận hành
 
 - [x] Có test suite end-to-end và CI workflow.
@@ -41,4 +46,3 @@
 - [ ] AI Assistant Text-to-SQL với guardrails và audit trail.
 
 Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm vi cuối cùng của AgriInsight.
-

@@ -2,9 +2,9 @@
 
 ## Quyết định hiện tại
 
-MVP là một modular monolith bằng Python, dùng SQLite làm analytical warehouse nhúng và Streamlit làm lớp trình diễn. Mục tiêu của phase này là ổn định ingestion contract, data-quality rules và định nghĩa KPI trước khi chuyển adapter warehouse sang PostgreSQL/ClickHouse và orchestration sang Airflow/dbt.
+MVP là một modular monolith bằng Python, dùng SQLite làm analytical warehouse nhúng và Streamlit làm lớp trình diễn. Mục tiêu của phase này là ổn định ingestion contract, data-quality rules, KPI, và export contract trước khi chuyển adapter warehouse sang PostgreSQL/ClickHouse và orchestration sang Airflow/dbt.
 
-SQLite không được xem là kiến trúc production cuối cùng. Nó giúp toàn bộ luồng chạy độc lập trên laptop và CI, đồng thời buộc schema vật lý, khóa ngoại và grain của fact tables phải rõ ràng ngay từ đầu.
+SQLite không phải kiến trúc production cuối cùng. Nó giúp toàn bộ luồng chạy độc lập trên laptop và CI, đồng thời buộc schema vật lý, khóa ngoại, và grain của fact tables phải rõ ngay từ đầu.
 
 ## Luồng dữ liệu
 
@@ -22,6 +22,8 @@ flowchart LR
     SI --> DQ
     SI --> W["Atomic star-schema load"]
     W --> G["Gold KPI & alerts"]
+    G --> R["Controlled cost-report service"]
+    R --> E["CSV / PDF / optional XLSX"]
     G --> I["Evidence-backed insights"]
     G --> UI["Streamlit dashboards"]
     DQ --> UI
@@ -72,12 +74,24 @@ metrics.py
 └── metrics_cost_procurement.py
 ```
 
-Core pipeline điều phối các domain, còn logic sinh dữ liệu, cleaning và KPI chuyên biệt nằm trong module riêng. Việc này cho phép thay nguồn giả lập bằng connector thật mà không đổi Gold contract hoặc dashboard.
+Core pipeline điều phối các domain, còn logic sinh dữ liệu, cleaning và KPI chuyên biệt nằm trong module riêng. Việc này cho phép thay nguồn giả lập bằng connector thật mà không đổi Gold contract, dashboard, hoặc export service.
 
 Cost Analysis pre-aggregate `fact_crop_activity` và `fact_harvest` độc lập tại
 grain tháng/trang trại/mùa vụ trước khi join. Procurement chỉ đọc giao dịch kho
 `IN` trong module riêng. Giá trị tồn kho tiếp tục do `metrics_inventory.py` tính;
 không measure nào trong ba nhóm được nhập chung thành một “total cost”.
+
+## Controlled cost-report export
+
+- Service xuất báo cáo đọc Gold đã validate; formatting nằm ngoài Streamlit.
+- Request chỉ nhận allowlist `scope`, `farm`, `crop`, `activity`, `supplier`, `month_from`, `month_to`, `top_n`.
+- Reject unknown key/value, path-like value, month sai format/không tồn tại, month đảo chiều, result rỗng, hoặc detail rows quá 25,000.
+- Output tách operating cost, procurement spend và inventory value; không có combined total.
+- CSV dùng UTF-8 BOM; filename và hash deterministic, safe, và mỗi dòng mang `export_version`, `run_id`, `as_of_date`, `source_pipeline`, `filter_hash`.
+- PDF là A4 landscape tiếng Việt, dùng Noto Sans/OFL đóng gói, có filters, run ID, top-N, footer, page numbers, và checks.
+- XLSX chỉ mở khi có hai biến môi trường explicit cho Node executable và node_modules path; workbook dùng `@oai/artifact-tool`, có đúng 6 sheet, formula checks, native chart, scan lỗi/formula và `MODEL STATUS: PASS`.
+- Bundle CSV/PDF cần cài Python `reports` extra; lỗi capability XLSX không làm mất hai output này.
+- Temp export chỉ dùng dưới `artifacts/_tmp/report-exports`, phải xóa khi success lẫn failure, và không tính vào manifest checksum.
 
 ## Nguyên tắc vận hành
 
@@ -88,7 +102,7 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 - Silver phải đạt quality gate trước khi warehouse load bắt đầu.
 - Warehouse được dựng vào file tạm, chạy `foreign_key_check`, commit rồi mới atomic replace.
 - Seed và ngày chốt dữ liệu là một phần của run identity.
-- Gold datasets là data contract của UI; dashboard chỉ lọc và trực quan hóa.
+- Gold datasets là data contract của UI và export service; dashboard chỉ lọc và trực quan hóa.
 
 ## Đường mở rộng
 

@@ -50,11 +50,26 @@ Các cột chi phí hoạt động dùng tiền tố `operating_`; giao dịch m
 `procurement_`. `fact_crop_activity.total_cost_vnd` là chi phí hoạt động P&L.
 `fact_inventory_transaction.total_amount_vnd` của giao dịch `IN` là procurement
 spend. `inventory_value_vnd` là giá trị tồn kho tại thời điểm chốt. Ba measure này
-không được cộng với nhau. Chưa có allocation ledger nối giao dịch `OUT` với
+không được cộng với nhau. Chưa có allocation ledger nối giao dịch outbound với
 `activity_id`, vì vậy hệ thống chưa tuyên bố COGS theo hoạt động hoặc mùa vụ.
 
 Mỗi Gold frame được kiểm tra exact key set, thứ tự cột, logical pandas type và
 giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm pipeline fail closed.
+
+## Export contract
+
+| Hạng mục | Quy tắc |
+|---|---|
+| Request allowlist | Chỉ nhận `scope`, `farm`, `crop`, `activity`, `supplier`, `month_from`, `month_to`, `top_n` |
+| Rejection rules | Reject unknown key/value, path-like input, domain-invalid value, month sai format, month không tồn tại, month đảo chiều, result rỗng, hoặc detail rows vượt 25,000 |
+| Row limits | Mỗi detail table và tổng hai detail table đều tối đa 25,000 rows; preflight chạy trước sort và render |
+| CSV | UTF-8 BOM, safe deterministic filename/hash, formula-like text được escape, mỗi dòng mang `export_version`, `run_id`, `as_of_date`, `source_pipeline`, `filter_hash` |
+| PDF | A4 landscape tiếng Việt, Noto Sans/OFL đóng gói, footer + page numbers + filters + run ID + top-N + checks |
+| XLSX | Chỉ khả dụng khi có hai biến môi trường explicit cho Node executable và node_modules path; đúng 6 sheet: Summary, Monthly, Cost Detail, Procurement Detail, Checks, Metadata |
+| XLSX QA | Formula/native chart, inspect/error scan/render cho cả 6 sheet, `MODEL STATUS: PASS`, formula escaping |
+| Bundle cap | In-memory bundle không vượt 10 MB |
+| Temp | Chỉ dùng `artifacts/_tmp/report-exports`, phải được dọn khi success hoặc failure, và không tham gia pipeline manifest checksums |
+| Fallback | XLSX unavailable không được chặn CSV/PDF; service trả typed error riêng cho contract lỗi và capability/runtime lỗi |
 
 ## Versioning
 
