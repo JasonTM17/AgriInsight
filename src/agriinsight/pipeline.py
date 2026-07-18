@@ -25,9 +25,16 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     temp_path.replace(path)
 
 
-def _write_tables(tables: dict[str, pd.DataFrame], directory: Path) -> None:
+def _write_tables(
+    tables: dict[str, pd.DataFrame], directory: Path, *, prune_stale: bool = False
+) -> None:
+    expected_names = {f"{table_name}.csv" for table_name in tables}
     for table_name, frame in tables.items():
         frame.to_csv(directory / f"{table_name}.csv", index=False, encoding="utf-8")
+    if prune_stale:
+        for path in directory.glob("*.csv"):
+            if path.name not in expected_names:
+                path.unlink()
 
 
 def _sha256(path: Path) -> str:
@@ -82,7 +89,7 @@ def run_pipeline(output_root: Path, config: GenerationConfig) -> dict[str, Any]:
     _write_json(paths.warehouse / "load_report.json", warehouse_report)
 
     gold = build_gold_datasets(paths.warehouse / "agriinsight.db")
-    _write_tables(gold, paths.gold)
+    _write_tables(gold, paths.gold, prune_stale=True)
     insight_report = build_insights(gold, config.as_of_date)
     _write_json(paths.gold / "insights.json", insight_report)
 

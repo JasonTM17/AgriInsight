@@ -35,6 +35,8 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert manifest["quality_status"] == "passed"
     assert (root / "warehouse" / "agriinsight.db").exists()
     assert (root / "gold" / "executive_summary.csv").exists()
+    assert (root / "gold" / "cost_summary.csv").exists()
+    assert (root / "gold" / "procurement_detail.csv").exists()
     assert (root / "gold" / "inventory_status.csv").exists()
     assert (root / "gold" / "field_health_status.csv").exists()
     assert manifest["row_counts"]["quarantine"]["activities"] >= 2
@@ -117,6 +119,8 @@ def test_pipeline_is_reproducible_for_same_seed(
         Path("silver/activities.csv"),
         Path("gold/executive_summary.csv"),
         Path("gold/farm_performance.csv"),
+        Path("gold/cost_summary.csv"),
+        Path("gold/procurement_detail.csv"),
         Path("quality/data_quality_report.json"),
     ):
         assert (first_root / relative_path).read_bytes() == (second_root / relative_path).read_bytes()
@@ -127,9 +131,13 @@ def test_pipeline_can_be_rerun_in_place(
 ) -> None:
     root = tmp_path / "artifacts"
     first = run_pipeline(root, small_config)
+    stale_gold = root / "gold" / "stale_contract.csv"
+    stale_gold.write_text("stale\ncontract\n", encoding="utf-8")
     second = run_pipeline(root, small_config)
 
     assert first["run_id"] == second["run_id"]
     assert first["row_counts"] == second["row_counts"]
+    assert not stale_gold.exists()
+    assert "gold/stale_contract.csv" not in second["checksums"]
     assert not list(root.rglob("*.tmp"))
     assert not list(root.rglob("*.tmp.db"))
