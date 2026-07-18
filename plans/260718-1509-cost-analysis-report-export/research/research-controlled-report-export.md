@@ -156,6 +156,8 @@ Behavior:
 
 ### Library choice
 
+> Controller decision: the XlsxWriter option below is **rejected for this milestone**. The spreadsheet skill is authoritative and requires `@oai/artifact-tool`; XlsxWriter/openpyxl must not be used. The recommendation is retained only as a researched alternative and not as an implementation instruction.
+
 CSV:
 
 - Use `pandas.DataFrame.to_csv`.
@@ -164,7 +166,7 @@ CSV:
 
 XLSX:
 
-- Use `xlsxwriter` as the write engine.
+- Rejected alternative: use `xlsxwriter` as the write engine (disallowed by the spreadsheet skill for this task).
 - Prefer `constant_memory=True` for bounded memory use.
 - Avoid features that constant-memory mode does not support, such as tables and merge ranges over already-written cells.
 

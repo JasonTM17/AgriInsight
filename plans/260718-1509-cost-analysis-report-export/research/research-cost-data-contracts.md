@@ -158,8 +158,6 @@ Why this ranking:
 - avoids a risky schema redesign
 - leaves room for proper COGS later
 
-## Unresolved Questions
+## Resolved Questions
 
-- Do you want cost drill-down at `season`, `farm-month`, or `field-activity` as the primary UI pivot?
-- Should procurement spend remain a separate inventory report only, or also appear in a finance-style summary as a non-P&L balance metric?
-- Is future COGS attribution expected to be FIFO/FEFO, average cost, or a simpler allocation rule?
+Controller decisions for this plan: the primary UI pivot is farm → season → field → activity; procurement spend is a separate non-P&L lens in the same report surface; and future COGS attribution policy is deferred until a real allocation ledger exists.

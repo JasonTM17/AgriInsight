@@ -51,3 +51,52 @@ This milestone adds a Cost Analysis contract and a controlled report surface to 
 1. `feat(cost): add cost Gold contracts` — Phase 1 code/tests/docs.
 2. `feat(reporting): add controlled report exports` — Phase 2 code/assets/tests.
 3. `feat(dashboard): add Cost Analysis and verification tooling` — Phase 3 UI/docs/disk guard.
+
+## Red Team Review
+
+### Session — 2026-07-18
+
+**Findings:** 8 (8 accepted, 0 rejected) · **Severity:** 4 High, 4 Medium. Delegated reviewers timed out; controller adjudication is evidence-backed in [`reports/redteam-local-adjudication.md`](./reports/redteam-local-adjudication.md).
+
+| # | Finding | Severity | Disposition | Applied to |
+|---|---|---|---|---|
+| 1 | XLSX dependency absent from CI | High | Accept | Phase 2/3 |
+| 2 | Spreadsheet formula injection | High | Accept | Phase 2 |
+| 3 | Per-table cap bypass | High | Accept | Phase 2 |
+| 4 | Report files poison manifest checksums | High | Accept | Phase 2/3 |
+| 5 | Missing Gold files fail at import | Medium | Accept | Phase 3 |
+| 6 | Font/license verification gap | Medium | Accept | Phase 2/3 |
+| 7 | No authorization boundary | Medium | Accept/document | Phase 3 |
+| 8 | Public caller compatibility | Medium | Accept | Phase 1 |
+
+### Whole-Plan Consistency Sweep
+
+- Files reread: `plan.md`, all three `phase-*.md`, and local adjudication report.
+- Decision deltas checked: 8.
+- Reconciled stale references: XLSX availability, row/byte caps, manifest placement, font/dependency prerequisites, and dashboard missing-file behavior.
+- Unresolved contradictions: 0.
+
+## Validation Log
+
+### Session 1 — 2026-07-18
+
+**Trigger:** CK hard-mode post-red-team verification. **Questions asked:** 0 (interactive AskUserQuestion is unavailable in this desktop mode; fixed user intent and explicit HOLD decision were used).
+
+#### Verification Results
+
+- **Tier:** Standard (Fact Checker + Contract Verifier)
+- **Claims checked:** 24
+- **Verified:** 22 | **Failed:** 0 | **Unverified:** 2 (new files intentionally marked Create in phases)
+- Evidence: `src/agriinsight/metrics.py:17`, `src/agriinsight/pipeline.py:84-86`, `src/agriinsight/sqlite_schema.sql:88-164`, `dashboard/app.py:511-566`, `tests/test_pipeline.py:1-135`, `tests/test_dashboard.py:1-55`, `pyproject.toml:10-36`, `.github/workflows/ci.yml:16-23`.
+
+#### Confirmed Decisions
+
+- Keep operating cost, procurement spend, and inventory valuation separate; no COGS bridge this milestone.
+- Use three separate downloads; CSV/PDF are baseline, XLSX is capability-gated on the explicit artifact-tool runtime.
+- Keep report files out of the pipeline checksum root; use D-backed temp paths and the C/D guard.
+
+### Whole-Plan Consistency Sweep
+
+- Files reread: `plan.md`, all `phase-*.md`, both research reports, and local red-team report.
+- Decision deltas checked: 11; stale XlsxWriter recommendation explicitly marked rejected.
+- Unresolved contradictions: 0.

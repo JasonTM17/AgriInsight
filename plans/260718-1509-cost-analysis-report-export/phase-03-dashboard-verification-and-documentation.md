@@ -22,17 +22,17 @@ Add a modular Cost Analysis page, keep `dashboard/app.py` as the composition she
 ## Requirements
 
 - Functional: page filters farm/crop/season/activity/month and shows operating cost, budget variance, cost/ha, cost/kg, activity drivers, and a separate procurement panel.
-- Functional: exports are generated only after a submitted form; buttons are separate and reflect the normalized request; XLSX capability state is explicit.
+- Functional: exports are generated only after a submitted form; buttons are separate and reflect the normalized request; XLSX capability state is explicit. CSV/PDF remain usable when the private XLSX adapter is absent.
 - Non-functional: existing five pages and eight Executive metrics remain unchanged; no KPI is recomputed in UI; page is testable with Streamlit AppTest and visually checked in browser.
 - Operational: `scripts/check-workspace-disk.ps1` checks C/D free space, warns below 10/25 GB, exits non-zero below 8/20 GB, and never deletes files.
 
 ## Implementation Steps
 
 1. Create `dashboard/cost_analysis_page.py` (and a small download-control helper only if needed); move no unrelated page logic.
-2. Extend app data loading/required-artifact checks and navigation with Cost Analysis; pass loaded Gold frames to the new page.
+2. Extend app data loading/required-artifact checks and navigation with Cost Analysis; enumerate every new Gold file and show one actionable regeneration error when any is missing; pass loaded Gold frames to the new page.
 3. Add AppTest coverage for navigation, empty/filtered states, row-cap error, and download button labels; run browser visual QA at desktop and narrow width.
 4. Add the disk guard script, run it before/after pipeline/export, record C/D free-space readings, and keep generated outputs under D.
-5. Update README, data contracts, KPI catalog, architecture, MVP acceptance/backlog, and a reporting/deployment note with adapter/font prerequisites and rollback.
+5. Update README, data contracts, KPI catalog, architecture, MVP acceptance/backlog, and a reporting/deployment note with `reportlab`/font prerequisites, explicit XLSX adapter provisioning, output-not-in-manifest behavior, and rollback.
 
 ## Success Criteria
 
