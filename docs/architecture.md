@@ -1,0 +1,94 @@
+# Kiến trúc Data Analytics MVP
+
+## Quyết định hiện tại
+
+MVP là một modular monolith bằng Python, dùng SQLite làm analytical warehouse nhúng và Streamlit làm lớp trình diễn. Mục tiêu của phase này là ổn định ingestion contract, data-quality rules và định nghĩa KPI trước khi chuyển adapter warehouse sang PostgreSQL/ClickHouse và orchestration sang Airflow/dbt.
+
+SQLite không được xem là kiến trúc production cuối cùng. Nó giúp toàn bộ luồng chạy độc lập trên laptop và CI, đồng thời buộc schema vật lý, khóa ngoại và grain của fact tables phải rõ ràng ngay từ đầu.
+
+## Luồng dữ liệu
+
+```mermaid
+flowchart LR
+    S1["Farm operations"] --> B["Bronze CSV"]
+    S2["Inventory"] --> B
+    S3["IoT sensors"] --> B
+    S4["Weather API"] --> B
+    S5["Field observations"] --> B
+    B --> V["Validation & normalization"]
+    V --> Q["Quarantine"]
+    V --> SI["Silver contracts"]
+    B --> DQ["Data quality report"]
+    SI --> DQ
+    SI --> W["Atomic star-schema load"]
+    W --> G["Gold KPI & alerts"]
+    G --> I["Evidence-backed insights"]
+    G --> UI["Streamlit dashboards"]
+    DQ --> UI
+```
+
+## Star schema
+
+Dimensions:
+
+- `dim_date`
+- `dim_farm`
+- `dim_field`
+- `dim_crop`
+- `dim_season`
+- `dim_activity_type`
+- `dim_warehouse`
+- `dim_material`
+- `dim_supplier`
+- `dim_sensor`
+- `dim_pest_type`
+
+Facts:
+
+- `fact_crop_activity`: vật tư, giờ lao động và chi phí chăm sóc.
+- `fact_harvest`: sản lượng, hao hụt, chất lượng và doanh thu.
+- `fact_inventory_transaction`: giao dịch nhập/xuất theo SKU-location và đơn vị cơ sở.
+- `fact_sensor_reading`: nhiệt độ, độ ẩm, pH, mưa và pin theo timestamp.
+- `fact_weather_daily`: thời tiết theo trang trại/ngày.
+- `fact_crop_health_observation`: sâu bệnh, diện tích ảnh hưởng và tỷ lệ cây chết.
+
+Các aggregate doanh thu, chi phí và inventory movement được tính riêng trước khi join để tránh fan-out làm nhân đôi số liệu.
+
+## Module boundaries
+
+```text
+synthetic.py
+├── synthetic_inventory.py
+└── synthetic_crop_health.py
+
+transform.py
+├── transform_inventory.py
+└── transform_crop_health.py
+
+metrics.py
+├── metrics_inventory.py
+└── metrics_crop_health.py
+```
+
+Core pipeline điều phối các domain, còn logic sinh dữ liệu, cleaning và KPI chuyên biệt nằm trong module riêng. Việc này cho phép thay nguồn giả lập bằng connector thật mà không đổi Gold contract hoặc dashboard.
+
+## Nguyên tắc vận hành
+
+- Bronze không bị sửa tại chỗ.
+- Chỉ chuẩn hóa khi phép sửa là xác định; trường hợp không chắc chắn được quarantine.
+- Mọi business key được canonicalize trước khi kiểm tra quan hệ.
+- Đơn vị vật tư được đổi về đơn vị cơ sở của SKU; số lượng và đơn giá được đổi đồng thời.
+- Silver phải đạt quality gate trước khi warehouse load bắt đầu.
+- Warehouse được dựng vào file tạm, chạy `foreign_key_check`, commit rồi mới atomic replace.
+- Seed và ngày chốt dữ liệu là một phần của run identity.
+- Gold datasets là data contract của UI; dashboard chỉ lọc và trực quan hóa.
+
+## Đường mở rộng
+
+1. Bổ sung backend nghiệp vụ Java/Spring Boot, authentication và row-level authorization.
+2. Chuyển warehouse adapter sang PostgreSQL/ClickHouse cùng migration có version.
+3. Thêm incremental load, dbt tests, Airflow observability và source freshness SLA.
+4. Phát sự kiện IoT/inventory qua Kafka và xử lý cảnh báo realtime.
+5. Version feature sets cho dự báo sản lượng, nhu cầu kho và sâu bệnh.
+6. Thêm AI Assistant Text-to-SQL chỉ đọc, allowlist schema, timeout và audit log.
+
