@@ -9,7 +9,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 COPY dashboard ./dashboard
 
-RUN python -m pip install --no-cache-dir ".[dashboard]"
+RUN python -m pip install --no-cache-dir ".[dashboard,reports]"
 
 RUN useradd --create-home --uid 10001 agriinsight \
     && mkdir -p /app/artifacts \
@@ -19,4 +19,3 @@ USER agriinsight
 
 ENTRYPOINT ["python", "-m", "agriinsight"]
 CMD ["run", "--output", "/app/artifacts"]
-

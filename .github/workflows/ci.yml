@@ -17,7 +17,25 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: python -m pip install ".[dev,dashboard]"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - run: python -m pip install ".[dev,dashboard,reports]"
       - run: pytest
+      - run: node --check src/agriinsight/report-assets/build-cost-report.mjs
+      - name: Smoke-test installed wheel report assets
+        run: |
+          python -m pip wheel . --no-deps --wheel-dir "$RUNNER_TEMP/wheel"
+          python -m pip install --no-deps --target "$RUNNER_TEMP/wheel-install" "$RUNNER_TEMP"/wheel/agriinsight-*.whl
+          cd "$RUNNER_TEMP"
+          PYTHONPATH="$RUNNER_TEMP/wheel-install" python - <<'PY'
+          from agriinsight.cost_report_assets import bundled_font_dir, bundled_xlsx_builder
+
+          font_dir = bundled_font_dir()
+          assert (font_dir / "NotoSans-Regular.ttf").is_file()
+          assert (font_dir / "NotoSans-Bold.ttf").is_file()
+          assert (font_dir / "OFL.txt").is_file()
+          assert bundled_xlsx_builder().is_file()
+          PY
       - run: python -m agriinsight run --output artifacts --farms 2 --fields-per-farm 2 --activities-per-season 6
       - run: python -m compileall -q src dashboard tests
