@@ -133,11 +133,16 @@ def test_pipeline_can_be_rerun_in_place(
     first = run_pipeline(root, small_config)
     stale_gold = root / "gold" / "stale_contract.csv"
     stale_gold.write_text("stale\ncontract\n", encoding="utf-8")
+    report_temp = root / "_tmp" / "report-exports" / "in-progress.json"
+    report_temp.parent.mkdir(parents=True)
+    report_temp.write_text('{"status":"temporary"}', encoding="utf-8")
     second = run_pipeline(root, small_config)
 
     assert first["run_id"] == second["run_id"]
     assert first["row_counts"] == second["row_counts"]
     assert not stale_gold.exists()
     assert "gold/stale_contract.csv" not in second["checksums"]
+    assert report_temp.exists()
+    assert not any(path.startswith("_tmp/") for path in second["checksums"])
     assert not list(root.rglob("*.tmp"))
     assert not list(root.rglob("*.tmp.db"))

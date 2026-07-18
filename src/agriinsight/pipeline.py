@@ -48,13 +48,15 @@ def _sha256(path: Path) -> str:
 def _artifact_checksums(root: Path) -> dict[str, str]:
     checksums: dict[str, str] = {}
     for path in sorted(root.rglob("*")):
+        relative_path = path.relative_to(root)
         if (
             not path.is_file()
             or path.name == "manifest.json"
             or path.suffix in {".tmp", ".log"}
+            or "_tmp" in relative_path.parts
         ):
             continue
-        checksums[path.relative_to(root).as_posix()] = _sha256(path)
+        checksums[relative_path.as_posix()] = _sha256(path)
     return checksums
 
 
