@@ -33,6 +33,24 @@ ABC dùng tỷ trọng giá trị tồn kho toàn doanh nghiệp:
 
 Expiry alert hiện dùng ngày hết hạn gần nhất của inbound batch còn trong lịch sử. Batch-level FIFO/FEFO depletion sẽ được bổ sung khi backend inventory có allocation ledger.
 
+## Cost Analysis
+
+| KPI | Định nghĩa |
+|---|---|
+| Operating material cost | Tổng `fact_crop_activity.material_cost_vnd` |
+| Operating labor cost | Tổng `fact_crop_activity.labor_cost_vnd` |
+| Operating total cost | Tổng `fact_crop_activity.total_cost_vnd`; phải bằng material + labor |
+| Operating profit | `fact_harvest.revenue_vnd − operating total cost` |
+| Operating profit margin | `operating profit / revenue × 100`; bằng `0` khi doanh thu bằng `0` |
+| Operating cost/ha | Operating total cost / tổng diện tích mùa vụ vận hành |
+| Operating cost/kg | Operating total cost / sản lượng thu hoạch; bằng `0` khi chưa có sản lượng |
+| Budget variance | Operating total cost − `dim_season.budget_cost_vnd`; số dương là vượt ngân sách |
+| Procurement spend | Chỉ tổng `fact_inventory_transaction.total_amount_vnd` khi `transaction_type = 'IN'` |
+
+Procurement spend không phải operating expense và inventory value không phải chi
+phí. Dashboard/report phải hiển thị chúng thành các lens độc lập cho đến khi có
+consumption allocation ledger đủ để tính COGS.
+
 ## Crop Health
 
 Risk score `0..100` cộng điểm từ:
@@ -51,4 +69,3 @@ Phân loại:
 - `high`: từ 50.
 
 Khuyến nghị ưu tiên sensor offline, sau đó đến sâu bệnh, độ ẩm và pH. Đây là rule-based prescriptive analytics; chưa phải chẩn đoán nông học hoặc mô hình ML.
-

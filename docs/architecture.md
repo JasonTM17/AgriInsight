@@ -67,10 +67,17 @@ transform.py
 
 metrics.py
 ├── metrics_inventory.py
-└── metrics_crop_health.py
+├── metrics_crop_health.py
+├── metrics_cost_analysis.py
+└── metrics_cost_procurement.py
 ```
 
 Core pipeline điều phối các domain, còn logic sinh dữ liệu, cleaning và KPI chuyên biệt nằm trong module riêng. Việc này cho phép thay nguồn giả lập bằng connector thật mà không đổi Gold contract hoặc dashboard.
+
+Cost Analysis pre-aggregate `fact_crop_activity` và `fact_harvest` độc lập tại
+grain tháng/trang trại/mùa vụ trước khi join. Procurement chỉ đọc giao dịch kho
+`IN` trong module riêng. Giá trị tồn kho tiếp tục do `metrics_inventory.py` tính;
+không measure nào trong ba nhóm được nhập chung thành một “total cost”.
 
 ## Nguyên tắc vận hành
 
@@ -91,4 +98,3 @@ Core pipeline điều phối các domain, còn logic sinh dữ liệu, cleaning 
 4. Phát sự kiện IoT/inventory qua Kafka và xử lý cảnh báo realtime.
 5. Version feature sets cho dự báo sản lượng, nhu cầu kho và sâu bệnh.
 6. Thêm AI Assistant Text-to-SQL chỉ đọc, allowlist schema, timeout và audit log.
-

@@ -5,6 +5,7 @@
 | Domain | Bronze | Silver | Gold |
 |---|---|---|---|
 | Farm operations | farms, fields, crops, seasons, activities, harvests | khóa chuẩn, kg, chi phí không âm | executive, monthly financials, farm performance, crop profitability |
+| Cost analysis | activities, harvests, inventory transactions | chi phí hoạt động và giao dịch mua đã chuẩn hóa | cost summary/month/farm/season/activity/detail, procurement summary/detail, reconciliation |
 | Inventory | warehouses, materials, suppliers, inventory transactions | đơn vị cơ sở, quan hệ supplier/SKU/location hợp lệ | inventory status, ABC, movements, alerts, 30-day need |
 | Crop health | sensors, readings, weather, pest types, observations | range hợp lệ, timestamp và field relation hợp lệ | field risk status, environment daily, pest weekly, alerts |
 | Data quality | dữ liệu lỗi có chủ ý | records đã qua gate | report before/after và remediation counts |
@@ -31,7 +32,30 @@
 - Sensor ranges: nhiệt độ `-10..60°C`, độ ẩm `0..100%`, pH `0..14`, mưa `0..1000 mm`, pin `0..100%`.
 - Health percentages nằm trong `0..100%`; severity thuộc `none/low/medium/high`.
 
+## Gold Cost Analysis
+
+| Dataset | Grain | Measure chính |
+|---|---|---|
+| `cost_summary` | một dòng toàn doanh nghiệp | chi phí hoạt động, doanh thu, lợi nhuận, ngân sách |
+| `cost_monthly` | một tháng | chi phí hoạt động và doanh thu theo tháng |
+| `cost_farm` | một trang trại | chi phí, doanh thu, sản lượng và ngân sách theo trang trại |
+| `cost_season` | một mùa vụ | chi phí, doanh thu, sản lượng, cost/ha, cost/kg và chênh lệch ngân sách |
+| `cost_activity` | trang trại + mùa vụ + khu vực + cây trồng + loại hoạt động | tổng chi phí theo nhóm hoạt động |
+| `cost_activity_detail` | một `activity_id` | chi tiết vật tư, lao động và chi phí hoạt động |
+| `procurement_summary` | farm (xác định qua kho) + nhà cung cấp + kho + vật tư | số lượng và giá trị mua vào |
+| `procurement_detail` | một giao dịch `IN` | chi tiết giao dịch mua vào |
+| `cost_reconciliation` | một mùa vụ | đối soát tổng chi phí với vật tư + lao động và ngân sách |
+
+Các cột chi phí hoạt động dùng tiền tố `operating_`; giao dịch mua dùng tiền tố
+`procurement_`. `fact_crop_activity.total_cost_vnd` là chi phí hoạt động P&L.
+`fact_inventory_transaction.total_amount_vnd` của giao dịch `IN` là procurement
+spend. `inventory_value_vnd` là giá trị tồn kho tại thời điểm chốt. Ba measure này
+không được cộng với nhau. Chưa có allocation ledger nối giao dịch `OUT` với
+`activity_id`, vì vậy hệ thống chưa tuyên bố COGS theo hoạt động hoặc mùa vụ.
+
+Mỗi Gold frame được kiểm tra exact key set, thứ tự cột, logical pandas type và
+giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm pipeline fail closed.
+
 ## Versioning
 
 Contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đổi breaking phải tạo version mới, migration warehouse tương ứng và regression test cho Gold consumers.
-
