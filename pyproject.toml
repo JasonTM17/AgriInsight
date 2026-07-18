@@ -18,7 +18,11 @@ dashboard = [
   "plotly>=6,<7",
   "streamlit>=1.58,<2",
 ]
+reports = [
+  "reportlab>=4.4,<5",
+]
 dev = [
+  "pypdf>=6,<7",
   "pytest>=8,<10",
 ]
 
@@ -29,7 +33,13 @@ agriinsight = "agriinsight.__main__:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-agriinsight = ["*.sql"]
+agriinsight = [
+  "*.sql",
+  "report-assets/*.mjs",
+  "report-assets/fonts/*.md",
+  "report-assets/fonts/*.ttf",
+  "report-assets/fonts/*.txt",
+]
 
 [tool.pytest.ini_options]
 addopts = "-q"
