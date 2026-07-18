@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from agriinsight.metrics_crop_health import build_crop_health_gold
+from agriinsight.metrics_cost_analysis import build_cost_analysis_gold
 from agriinsight.metrics_inventory import build_inventory_gold
 
 
@@ -259,6 +260,7 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
         )
         inventory_gold = build_inventory_gold(connection, as_of_date)
         crop_health_gold = build_crop_health_gold(connection, as_of_date)
+        cost_analysis_gold = build_cost_analysis_gold(connection)
 
         inventory_risk_count = int(
             inventory_gold["inventory_alerts"]["severity"].isin(("critical", "warning")).sum()
@@ -284,4 +286,5 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
         "risk_alerts": risk_details,
         **inventory_gold,
         **crop_health_gold,
+        **cost_analysis_gold,
     }
