@@ -1,0 +1,38 @@
+name: agriinsight
+
+services:
+  pipeline:
+    build:
+      context: .
+    command:
+      - run
+      - --output
+      - /app/artifacts
+      - --seed
+      - ${AGRIINSIGHT_SEED:-20260718}
+      - --as-of-date
+      - ${AGRIINSIGHT_AS_OF_DATE:-2026-07-18}
+    volumes:
+      - ./artifacts:/app/artifacts
+
+  dashboard:
+    build:
+      context: .
+    entrypoint:
+      - streamlit
+    command:
+      - run
+      - dashboard/app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+    environment:
+      AGRIINSIGHT_ARTIFACTS: /app/artifacts
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Environment and generated artifacts
+.env
+artifacts/*
+!artifacts/.gitkeep
+
+# Local agent runtimes and generated session state
+.codex/
+.claude/*
+!.claude/.ck.json
+!.claude/.ckignore
+!.claude/rules/
+!.claude/rules/**
+.claude/.env.example
