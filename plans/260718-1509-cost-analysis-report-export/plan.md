@@ -28,11 +28,14 @@ This milestone adds a Cost Analysis contract and a controlled report surface to 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Cost Data Contracts](./phase-01-cost-data-contracts.md) | Completed |
-| 2 | [Controlled Report Export](./phase-02-controlled-report-export.md) | Pending |
-| 3 | [Dashboard Verification and Documentation](./phase-03-dashboard-verification-and-documentation.md) | Pending |
+| 2 | [Controlled Report Export](./phase-02-controlled-report-export.md) | Completed |
+| 3 | [Dashboard Verification and Documentation](./phase-03-dashboard-verification-and-documentation.md) | Pending (current) |
 
-**Progress:** 1/3 phases completed. Phase 2 remains pending because report-export
-work requires more C-drive headroom than the current 2.18 GB safety margin.
+**Progress:** 2/3 phases completed. Phase 2 is closed with verified CSV/PDF/XLSX
+runtime evidence; Phase 3 is next/current with dashboard wiring and visual/disk
+verification still pending. Report temp, render, and workbook QA output remain
+constrained to `artifacts/_tmp` on D; dependency installation and Docker builds
+stay disabled while C-drive headroom is low.
 
 ## Dependencies
 
@@ -103,3 +106,9 @@ work requires more C-drive headroom than the current 2.18 GB safety margin.
 - Files reread: `plan.md`, all `phase-*.md`, both research reports, and local red-team report.
 - Decision deltas checked: 11; stale XlsxWriter recommendation explicitly marked rejected.
 - Unresolved contradictions: 0.
+
+### Phase Closure Evidence
+
+- Phase 2 status closed from reviewer pass and complete runtime evidence.
+- Evidence links: [`reviewer`](./reports/reviewer-2026-07-18-controlled-report-export.md), [`tester`](./reports/tester-2026-07-18-controlled-report-export.md), [`docs-manager`](./reports/docs-manager-2026-07-18-controlled-report-export.md).
+- Phase 3 remains pending/current and owns dashboard verification, docs sync, and disk guard work.

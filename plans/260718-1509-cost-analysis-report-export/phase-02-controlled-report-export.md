@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Controlled Report Export"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [1]
@@ -32,21 +32,21 @@ Create a reusable report service that validates filters and emits separate CSV, 
 
 1. Add immutable request/metadata/bundle dataclasses and allowlist/domain validation; keep activity and procurement lenses separate.
 2. Implement CSV and ReportLab PDF renderers with Noto Sans regular/bold plus OFL license, page footer, filters, run id, and top-N tables.
-3. Implement the XLSX adapter and `scripts/build-cost-report.mjs`; create a temp JSON payload, invoke Node with an explicit artifact-tool module path, export, inspect formulas, scan errors, render every sheet, and delete temp files. Escape text beginning with `=`, `+`, `-`, or `@` before workbook writes.
+3. Implement the XLSX adapter and packaged `src/agriinsight/report-assets/build-cost-report.mjs`; create a temp JSON payload, invoke Node with an explicit artifact-tool module path, export, inspect formulas, scan errors, render every sheet, and delete temp files. Escape text beginning with `=`, `+`, `-`, or `@` before workbook writes.
 4. Enforce per-table and complete-bundle row/byte caps and safe filenames; expose typed `ExportUnavailable`/`ReportValidationError` paths rather than swallowing failures. Keep final downloads in memory; never add report files under the pipeline root that `_artifact_checksums()` scans.
 5. Add unit tests for validation, determinism, CSV round-trip, PDF text/page count, cleanup, formula-injection escaping, and adapter-unavailable behavior. Run the artifact-tool workbook QA script on D when bundled dependencies exist.
 
 ## Success Criteria
 
-- [ ] Invalid filters, path-like values, and >25,000 rows fail closed with actionable messages.
-- [ ] Repeated same-run requests produce identical CSV/PDF bytes and the same safe filename/hash.
-- [ ] PDF renders all pages with Vietnamese diacritics, no clipping/overflow, and page numbers.
-- [ ] CSV/PDF are always available with the Python `reports` extra; XLSX is shown as available only when the explicit artifact-tool module/runtime is provisioned. When provisioned, it has required sheets, formula-backed checks with `MODEL STATUS: PASS`, no formula errors, native charts, and clean rendered previews.
-- [ ] No temp file remains after success or failure; output stays under configured caps.
+- [x] Invalid filters, path-like values, and >25,000 rows fail closed with actionable messages.
+- [x] Repeated same-run requests produce identical CSV/PDF bytes and the same safe filename/hash.
+- [x] PDF renders all pages with Vietnamese diacritics, no clipping/overflow, and page numbers.
+- [x] CSV/PDF are always available with the Python `reports` extra; XLSX is shown as available only when the explicit artifact-tool module/runtime is provisioned. When provisioned, it has required sheets, formula-backed checks with `MODEL STATUS: PASS`, no formula errors, native charts, and clean rendered previews.
+- [x] No temp file remains after success or failure; output stays under configured caps.
 
 ## Tests / Validation
 
-Run `pytest tests/test_cost_report_exports.py -q`. Use the PDF skill's `pdftoppm` render/visual inspection and the spreadsheet skill's inspect/render/error scan for the XLSX. Run `python -m compileall -q src scripts` and verify the Node builder with the bundled runtime without installing packages.
+Run `pytest tests/test_cost_report_exports.py -q`. Use the PDF skill's `pdftoppm` render/visual inspection and the spreadsheet skill's inspect/render/error scan for the XLSX. Run `python -m compileall -q src dashboard tests` and verify the packaged Node builder with the bundled runtime without installing packages.
 
 ## Risk Assessment
 
