@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AgriInsight — Kiểm soát tồn kho</title>
+  <link rel="stylesheet" href="./overview-field-ledger-foundation.css">
+  <link rel="stylesheet" href="./inventory-control-components.css">
+  <link rel="stylesheet" href="./inventory-control-responsive.css">
+  <script src="./inventory-control-fixtures.js" defer></script>
+  <script src="./inventory-control-view.js" defer></script>
+  <script src="./inventory-control-prototype.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+  <svg class="symbol-sheet" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+    <symbol id="i-field" viewBox="0 0 24 24"><path d="M4 19c5-7 11-10 16-12M7 20c3-5 7-8 13-10M12 20c2-3 4-5 8-7M4 8c3 1 5 3 6 6M5 4c4 1 7 4 8 8"/></symbol>
+    <symbol id="i-work" viewBox="0 0 24 24"><path d="M8 5V3h8v2M5 6h14v14H5zM8 11l2 2 5-5M8 17h8"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19 4C10 4 5 8 5 15c0 3 2 5 5 5 7 0 9-8 9-16ZM7 18c2-4 5-7 9-9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 3.5 19h17zM12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-ledger" viewBox="0 0 24 24"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+    <symbol id="i-quality" viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3 8 8 9 5-1 8-4 8-9V7zM8 12l2.5 2.5L16 9"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="rail" id="primary-rail" aria-label="Điều hướng chính">
+      <a class="brand" href="#main-content" aria-label="AgriInsight, kiểm soát tồn kho"><span class="brand-mark"><span></span><span></span><span></span></span><span><strong>AgriInsight</strong><small>Field ledger</small></span></a>
+      <button class="rail-close" type="button" data-nav-close aria-label="Đóng điều hướng">×</button>
+      <nav class="rail-nav">
+        <a href="./overview-field-ledger-prototype.html"><svg><use href="#i-grid"/></svg><span>Tổng quan</span></a>
+        <a href="./farm-performance-prototype.html"><svg><use href="#i-field"/></svg><span>Trang trại</span></a>
+        <a href="./work-activity-prototype.html"><svg><use href="#i-work"/></svg><span>Công việc</span></a>
+        <a class="is-active" href="#main-content" aria-current="page"><svg><use href="#i-box"/></svg><span>Tồn kho</span><b>10</b></a>
+        <span class="nav-placeholder" aria-disabled="true"><svg><use href="#i-leaf"/></svg><span>Sức khỏe cây trồng</span><small>Chưa mở</small></span>
+      </nav>
+      <div class="scope-card"><span>Kho được phân công</span><strong>WH-001 · Nông trại Cao Nguyên</strong><small>15 SKU-location · quyền xem fixture</small><button type="button" data-open-filter aria-haspopup="dialog" aria-controls="inventory-filter-dialog">Đổi bộ lọc cảnh báo</button></div>
+      <div class="rail-user"><span class="user-tile">MH</span><span><strong>Mai Hoàng</strong><small>Quản lý kho</small></span></div>
+    </aside>
+    <button class="nav-scrim" type="button" data-nav-close tabindex="-1" aria-hidden="true" aria-label="Đóng điều hướng"></button>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button nav-toggle" type="button" data-nav-toggle aria-controls="primary-rail" aria-expanded="false" aria-label="Mở điều hướng"><svg><use href="#i-menu"/></svg></button>
+        <div class="breadcrumbs"><span>Vận hành</span><b>/</b><strong>Tồn kho</strong></div>
+        <div class="topbar-actions"><span class="freshness"><i></i>Dữ liệu đến <time datetime="2026-07-18">18/07/2026</time></span><button class="filter-button" type="button" data-open-filter aria-haspopup="dialog" aria-controls="inventory-filter-dialog"><svg><use href="#i-filter"/></svg>Bộ lọc <span data-filter-count>0</span></button></div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="inventory-heading" aria-labelledby="page-title">
+          <div><p>Warehouse control ledger</p><h1 id="page-title">Kiểm soát tồn kho</h1><span>WH-001 · 10 cảnh báo · dữ liệu aggregate và lineage chỉ đọc</span></div>
+          <div class="cutoff-note"><small>Ảnh chụp dữ liệu</small><strong>Run hoàn tất ngày 18/07/2026</strong><span>Không có mutation API trước backend Phase 5.</span></div>
+        </section>
+
+        <section class="quality-banner" aria-label="Ranh giới dữ liệu tồn kho"><span class="quality-mark"><svg><use href="#i-quality"/></svg></span><div><strong>3 cảnh báo nghiêm trọng trong 10 cảnh báo thuộc WH-001</strong><span>Giá trị tồn kho và mua hàng không được cộng vào chi phí vận hành.</span></div><a href="#priority-title">Mở hàng đợi <svg><use href="#i-arrow"/></svg></a></section>
+
+        <section class="inventory-kpis" aria-label="Tổng hợp tồn kho"><article><span>Giá trị kho WH-001</span><strong data-scope-value>1,24 <small>tỷ ₫</small></strong><small>15 SKU-location</small></article><article><span>Cảnh báo nghiêm trọng</span><strong data-scope-critical>3</strong><small>trong phạm vi được gán</small></article><article><span>Hết hàng</span><strong data-scope-stockout>2</strong><small>số dư âm hoặc bằng 0</small></article><article><span>Hết hạn trong 30 ngày</span><strong data-scope-expiring>4</strong><small>cần kiểm tra FEFO</small></article></section>
+
+        <div class="inventory-workspace">
+          <section class="queue-panel" aria-labelledby="priority-title">
+            <header><div><p>Hàng đợi theo hành động</p><h2 id="priority-title">Ưu tiên xử lý tại WH-001</h2><span data-result-count>10 cảnh báo trong bộ lọc</span></div><div class="severity-tabs" role="tablist" aria-label="Lọc theo mức độ"><button type="button" role="tab" id="severity-all" aria-selected="true" aria-controls="inventory-queue" data-severity="all">Tất cả</button><button type="button" role="tab" id="severity-critical" aria-selected="false" aria-controls="inventory-queue" tabindex="-1" data-severity="critical">Nghiêm trọng</button><button type="button" role="tab" id="severity-warning" aria-selected="false" aria-controls="inventory-queue" tabindex="-1" data-severity="warning">Cảnh báo</button><button type="button" role="tab" id="severity-watch" aria-selected="false" aria-controls="inventory-queue" tabindex="-1" data-severity="watch">Theo dõi</button></div></header>
+            <div class="queue-list" id="inventory-queue" role="tabpanel" aria-labelledby="severity-all"></div>
+            <div class="queue-empty" data-queue-empty hidden><svg><use href="#i-ledger"/></svg><strong>Không có cảnh báo phù hợp</strong><span>Giữ nguyên phạm vi WH-001 và bỏ bớt điều kiện loại hoặc mức độ.</span><button type="button" data-clear-filter>Xóa bộ lọc</button></div>
+            <button class="mobile-evidence-button" type="button" data-open-evidence aria-haspopup="dialog" aria-controls="inventory-evidence-dialog"><svg><use href="#i-ledger"/></svg>Xem hồ sơ vật tư đang chọn</button>
+            <p class="global-selection-status" role="status" aria-live="polite" data-global-status></p>
+            <details class="queue-table"><summary>Xem bảng cảnh báo trong bộ lọc</summary><div class="table-scroll" role="region" aria-label="Bảng cảnh báo tồn kho, cuộn ngang để xem đầy đủ" tabindex="0"><table><thead><tr><th scope="col">Mức độ</th><th scope="col">Vật tư</th><th scope="col">Loại</th><th scope="col">Số dư</th><th scope="col">Ngày cung ứng</th><th scope="col">Hạn gần nhất</th><th scope="col">ABC</th></tr></thead><tbody data-queue-table-body></tbody></table></div></details>
+          </section>
+
+          <aside class="inventory-evidence" aria-labelledby="evidence-title">
+            <header><div><p>Balance evidence</p><span data-material-code translate="no">MAT-NPK</span><h2 id="evidence-title" data-material-title>Phân NPK 16-16-8</h2></div><span class="severity-badge critical" data-severity-badge>Nghiêm trọng</span></header>
+            <div class="evidence-empty" data-evidence-empty hidden><strong>Không có vật tư trong bộ lọc</strong><span>Điều chỉnh bộ lọc để mở lại bằng chứng số dư.</span></div>
+            <div data-evidence-content>
+              <section class="balance-section" aria-label="Số dư so với ngưỡng"><div><span data-stock-context>Dưới điểm đặt hàng · 13% mục tiêu</span><strong data-stock-quantity>1.600,00 kg</strong></div><div class="stock-gauge" role="img" aria-label="Số dư 1.600 kg; điểm đặt hàng 4.000 kg; mục tiêu 12.000 kg" data-stock-gauge><span class="stock-fill"></span><i class="reorder-marker"></i></div><div class="gauge-labels"><span>0</span><span data-reorder-label>Đặt hàng 4.000,00 kg</span><span data-target-label>Mục tiêu 12.000,00 kg</span></div></section>
+              <dl class="inventory-facts"><div><dt>Ngày cung ứng</dt><dd data-days-supply>4,66 ngày</dd></div><div><dt>Nhu cầu 30 ngày</dt><dd data-predicted-need>10.308,98 kg</dd></div><div><dt>Đề xuất bổ sung</dt><dd data-order-quantity>10.400,00 kg</dd></div><div><dt>Giá trị hiện tại</dt><dd data-inventory-value>29,58 triệu ₫</dd></div></dl>
+              <section class="action-note"><span data-alert-type>Thiếu hàng</span><strong data-alert-message>Tồn kho dưới điểm đặt hàng</strong><p data-alert-action>Đề nghị nhập 10,400.0 kg.</p></section>
+              <section class="lineage-card"><header><div><span>Lineage gần nhất</span><strong data-batch-code>BATCH-0000005</strong></div><span data-expiry-label>Hạn 25/09/2026</span></header><dl><div><dt>Nhà cung cấp</dt><dd data-supplier-name>Giống cây Việt</dd></div><div><dt>Phiếu nhập nguồn</dt><dd data-receipt-id translate="no">INV-TX-0000005</dd></div><div><dt>Movement cuối</dt><dd data-last-movement>Xuất · 18/07/2026 · 2.147,67 kg</dd></div></dl><p><strong>Thiếu số dư cấp lô.</strong> Batch trên là bằng chứng nhập khớp hạn gần nhất, không phải tồn FEFO còn lại.</p></section>
+              <button class="primary-action" type="button" data-open-evidence aria-haspopup="dialog" aria-controls="inventory-evidence-dialog">Mở hồ sơ bằng chứng <svg><use href="#i-arrow"/></svg></button>
+            </div>
+          </aside>
+        </div>
+
+        <section class="abc-panel" aria-labelledby="abc-title"><header><div><p>Phân bổ giá trị trong phạm vi</p><h2 id="abc-title">ABC tại WH-001</h2><span>15 SKU-location · 1,24 tỷ ₫ · hạng ABC kế thừa từ Gold doanh nghiệp</span></div><span class="abc-note">Giá trị WH-001 · giảm dần</span></header><div class="abc-bars" data-abc-bars aria-label="Năm vật tư có tỷ trọng giá trị tồn kho cao nhất tại WH-001"></div><details class="abc-table"><summary>Xem đủ 15 SKU-location</summary><div class="table-scroll" role="region" aria-label="Bảng giá trị WH-001 theo phân loại ABC, cuộn ngang để xem đầy đủ" tabindex="0"><table><thead><tr><th scope="col">Vật tư</th><th scope="col">Nhóm</th><th scope="col">ABC doanh nghiệp</th><th scope="col">Giá trị tại WH-001</th><th scope="col">Tỷ trọng WH-001</th><th scope="col">Lũy kế WH-001</th></tr></thead><tbody data-abc-table-body></tbody></table></div></details></section>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="inventory-dialog evidence-dialog" id="inventory-evidence-dialog" aria-labelledby="evidence-dialog-title"><div class="dialog-shell"><header><div><small data-dialog-material-code translate="no">MAT-NPK</small><h2 id="evidence-dialog-title" data-dialog-material-title>Phân NPK 16-16-8</h2></div><button type="button" data-close-dialog aria-label="Đóng hồ sơ bằng chứng">×</button></header><div class="evidence-boundary"><strong>Gold aggregate + Silver lineage · chỉ đọc</strong><span>Không suy diễn số dư còn lại theo batch; mutation chờ backend Phase 5.</span></div><dl class="dialog-evidence"><div><dt>Số dư</dt><dd data-dialog-stock>1.600,00 kg</dd></div><div><dt>Ngưỡng đặt hàng</dt><dd data-dialog-reorder>4.000,00 kg</dd></div><div><dt>Batch khớp hạn gần nhất</dt><dd data-dialog-batch>BATCH-0000005 · 25/09/2026</dd></div><div><dt>Nhà cung cấp nguồn</dt><dd data-dialog-supplier>Giống cây Việt</dd></div><div><dt>Movement cuối</dt><dd data-dialog-movement>Xuất · 18/07/2026 · 2.147,67 kg</dd></div><div><dt>Khuyến nghị</dt><dd data-dialog-action>Đề nghị nhập 10,400.0 kg.</dd></div></dl><p>Prototype không tạo phiếu nhập/xuất/đảo. Số dư cấp lô, idempotency, optimistic version và audit actor thuộc API Phase 5.</p><button class="secondary-action" type="button" data-close-dialog>Đóng hồ sơ</button></div></dialog>
+  <dialog class="inventory-dialog filter-dialog" id="inventory-filter-dialog" aria-labelledby="filter-title"><form method="dialog"><header><div><small>Bộ lọc cảnh báo</small><h2 id="filter-title">Thu hẹp hàng đợi WH-001</h2></div><button value="cancel" aria-label="Đóng bộ lọc">×</button></header><label>Kho được phân công<input value="WH-001 · Kho vật tư Nông trại Cao Nguyên" readonly aria-describedby="warehouse-scope-help"></label><p id="warehouse-scope-help">Fixture không cho đổi sang kho ngoài phạm vi được gán.</p><label>Mức độ<select name="severity" autocomplete="off"><option value="all">Tất cả mức độ</option><option value="critical">Nghiêm trọng</option><option value="warning">Cảnh báo</option><option value="watch">Theo dõi</option></select></label><label>Loại cảnh báo<select name="type" autocomplete="off"><option value="all">Tất cả loại</option><option value="stockout">Hết hàng</option><option value="low_stock">Thiếu hàng</option><option value="expiring_soon">Sắp hết hạn</option><option value="overstock">Tồn dư</option></select></label><div class="dialog-actions"><button class="secondary-action" value="cancel">Hủy</button><button class="primary-action" value="apply">Áp dụng bộ lọc</button></div></form></dialog>
+</body>
+</html>
