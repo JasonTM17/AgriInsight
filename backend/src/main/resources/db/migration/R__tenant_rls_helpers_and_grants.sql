@@ -152,13 +152,16 @@ BEGIN
 END
 $function$;
 
-CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity(
+CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity_versioned(
     p_identity_id UUID,
     p_profile_id UUID,
     p_issuer TEXT,
     p_subject TEXT
 )
-RETURNS BOOLEAN
+RETURNS TABLE (
+    identity_id UUID,
+    identity_version BIGINT
+)
 LANGUAGE plpgsql
 VOLATILE
 SECURITY DEFINER
@@ -166,6 +169,8 @@ SET search_path = pg_catalog
 AS $function$
 DECLARE
     resolved_tenant UUID;
+    resolved_identity_id UUID;
+    resolved_identity_version BIGINT;
 BEGIN
     resolved_tenant := agriinsight_security.app_current_tenant_id();
     IF resolved_tenant IS NULL THEN
@@ -173,7 +178,33 @@ BEGIN
             USING ERRCODE = '42501';
     END IF;
 
-    INSERT INTO public.external_identities (
+    PERFORM 1
+      FROM public.user_profiles AS profile
+     WHERE profile.tenant_id = resolved_tenant
+       AND profile.id = p_profile_id
+       AND profile.active = TRUE
+     FOR SHARE;
+    IF NOT FOUND THEN
+        RETURN;
+    END IF;
+
+    UPDATE public.external_identities AS identity_row
+       SET active = TRUE,
+           version = identity_row.version + 1,
+           updated_at = CURRENT_TIMESTAMP
+     WHERE identity_row.tenant_id = resolved_tenant
+       AND identity_row.user_profile_id = p_profile_id
+       AND identity_row.issuer = p_issuer
+       AND identity_row.subject = p_subject
+       AND identity_row.active = FALSE
+    RETURNING identity_row.id, identity_row.version
+         INTO resolved_identity_id, resolved_identity_version;
+    IF FOUND THEN
+        RETURN QUERY SELECT resolved_identity_id, resolved_identity_version;
+        RETURN;
+    END IF;
+
+    INSERT INTO public.external_identities AS identity_row (
         id,
         tenant_id,
         user_profile_id,
@@ -183,23 +214,44 @@ BEGIN
     SELECT
         p_identity_id,
         resolved_tenant,
-        profile.id,
+        p_profile_id,
         p_issuer,
         p_subject
-    FROM public.user_profiles AS profile
-    WHERE profile.tenant_id = resolved_tenant
-      AND profile.id = p_profile_id
-      AND profile.active = TRUE;
+    RETURNING identity_row.id, identity_row.version
+         INTO resolved_identity_id, resolved_identity_version;
 
-    RETURN FOUND;
+    RETURN QUERY SELECT resolved_identity_id, resolved_identity_version;
 END
 $function$;
 
-CREATE OR REPLACE FUNCTION agriinsight_security.unlink_external_identity(
+CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity(
+    p_identity_id UUID,
+    p_profile_id UUID,
+    p_issuer TEXT,
+    p_subject TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE SQL
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+    SELECT EXISTS (
+        SELECT 1
+          FROM agriinsight_security.link_external_identity_versioned(
+              p_identity_id,
+              p_profile_id,
+              p_issuer,
+              p_subject
+          )
+    )
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.unlink_external_identity_versioned(
     p_profile_id UUID,
     p_identity_id UUID
 )
-RETURNS BOOLEAN
+RETURNS BIGINT
 LANGUAGE plpgsql
 VOLATILE
 SECURITY DEFINER
@@ -207,6 +259,7 @@ SET search_path = pg_catalog
 AS $function$
 DECLARE
     resolved_tenant UUID;
+    resolved_identity_version BIGINT;
 BEGIN
     resolved_tenant := agriinsight_security.app_current_tenant_id();
     IF resolved_tenant IS NULL THEN
@@ -227,10 +280,27 @@ BEGIN
      WHERE tenant_id = resolved_tenant
        AND user_profile_id = p_profile_id
        AND id = p_identity_id
-       AND active = TRUE;
+       AND active = TRUE
+    RETURNING version INTO resolved_identity_version;
 
-    RETURN FOUND;
+    RETURN resolved_identity_version;
 END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.unlink_external_identity(
+    p_profile_id UUID,
+    p_identity_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE SQL
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+    SELECT agriinsight_security.unlink_external_identity_versioned(
+        p_profile_id,
+        p_identity_id
+    ) IS NOT NULL
 $function$;
 
 REVOKE ALL ON SCHEMA agriinsight_security FROM PUBLIC;
@@ -239,14 +309,20 @@ GRANT USAGE, CREATE ON SCHEMA agriinsight_security TO agriinsight_identity_defin
 
 REVOKE ALL ON FUNCTION agriinsight_security.app_current_tenant_id() FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity_versioned(UUID, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_tenant_id()
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN)
     TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT)
+    TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.unlink_external_identity_versioned(UUID, UUID)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID)
     TO agriinsight_runtime;

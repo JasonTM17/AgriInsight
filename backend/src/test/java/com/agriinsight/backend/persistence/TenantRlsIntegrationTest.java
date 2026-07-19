@@ -228,6 +228,68 @@ class TenantRlsIntegrationTest {
     }
 
     @Test
+    void inactiveIdentityRelinksToItsOriginalProfileAndAdvancesVersion() throws Exception {
+        try (var runtime = runtimeConnection(POSTGRESQL, "agriinsight")) {
+            runtime.setAutoCommit(false);
+            setTenant(runtime, TENANT_A);
+            execute(runtime, """
+                    INSERT INTO user_profiles (id, tenant_id, display_name)
+                    VALUES (
+                        '20000000-0000-0000-0000-000000000005',
+                        '10000000-0000-0000-0000-000000000001',
+                        'Relink User A'
+                    )
+                    """);
+            assertThat(count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.link_external_identity_versioned(
+                        '21000000-0000-0000-0000-000000000005',
+                        '20000000-0000-0000-0000-000000000005',
+                        'https://identity.example.test/issuer',
+                        'subject-a-relink'
+                    )
+                    WHERE identity_id = '21000000-0000-0000-0000-000000000005'
+                      AND identity_version = 0
+                    """)).isEqualTo(1);
+            assertThat(count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.unlink_external_identity_versioned(
+                        '20000000-0000-0000-0000-000000000005',
+                        '21000000-0000-0000-0000-000000000005'
+                    ) AS identity_version
+                    WHERE identity_version = 1
+                    """)).isEqualTo(1);
+            assertThat(count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.link_external_identity_versioned(
+                        '21000000-0000-0000-0000-000000000099',
+                        '20000000-0000-0000-0000-000000000005',
+                        'https://identity.example.test/issuer',
+                        'subject-a-relink'
+                    )
+                    WHERE identity_id = '21000000-0000-0000-0000-000000000005'
+                      AND identity_version = 2
+                    """)).isEqualTo(1);
+            assertThatThrownBy(() -> count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.link_external_identity_versioned(
+                        '21000000-0000-0000-0000-000000000098',
+                        '20000000-0000-0000-0000-000000000005',
+                        'https://identity.example.test/issuer',
+                        'subject-b'
+                    )
+                    """))
+                    .isInstanceOfSatisfying(PSQLException.class, exception -> {
+                        var serverError = exception.getServerErrorMessage();
+                        assertThat(serverError).isNotNull();
+                        assertThat(serverError.getConstraint())
+                                .isEqualTo("ux_external_identities_issuer_subject");
+                    });
+            runtime.rollback();
+        }
+    }
+
+    @Test
     void finalAdministratorIdentityCannotBeUnlinked() throws Exception {
         try (var runtime = runtimeConnection(POSTGRESQL, "agriinsight")) {
             runtime.setAutoCommit(false);
@@ -337,6 +399,33 @@ class TenantRlsIntegrationTest {
                           AND privilege.privilege_type = 'EXECUTE'
                       )
                     """)).isEqualTo(1);
+            assertThat(count(operator, """
+                    SELECT count(*)
+                    FROM pg_proc procedure
+                    JOIN pg_namespace namespace ON namespace.oid = procedure.pronamespace
+                    JOIN pg_roles owner_role ON owner_role.oid = procedure.proowner
+                    WHERE namespace.nspname = 'agriinsight_security'
+                      AND procedure.proname IN (
+                        'link_external_identity_versioned',
+                        'unlink_external_identity_versioned'
+                      )
+                      AND procedure.prosecdef
+                      AND procedure.proconfig = ARRAY['search_path=pg_catalog']::TEXT[]
+                      AND owner_role.rolname = 'agriinsight_migrator'
+                      AND has_function_privilege(
+                            'agriinsight_runtime',
+                            procedure.oid,
+                            'EXECUTE')
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM aclexplode(COALESCE(
+                            procedure.proacl,
+                            acldefault('f', procedure.proowner)
+                        )) AS privilege
+                        WHERE privilege.grantee = 0
+                          AND privilege.privilege_type = 'EXECUTE'
+                      )
+                    """)).isEqualTo(2);
         }
     }
 
