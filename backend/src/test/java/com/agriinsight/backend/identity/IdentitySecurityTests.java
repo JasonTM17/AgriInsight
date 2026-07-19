@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
@@ -12,11 +13,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.agriinsight.backend.identity.application.IdentityBootstrap;
-import com.agriinsight.backend.identity.application.IdentityBootstrapPort;
+import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
+import com.agriinsight.backend.identity.application.IdentityRejectedException;
+import com.agriinsight.backend.identity.application.IdentityRejectionReason;
+import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
+import com.agriinsight.backend.identity.domain.Permission;
+import com.agriinsight.backend.identity.domain.Role;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,8 +49,8 @@ class IdentitySecurityTests {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
-    @MockitoBean
-    private IdentityBootstrapPort bootstrapPort;
+    @Autowired
+    private TenantPrincipalLoader principalLoader;
 
     @Test
     void missingAndMalformedTokensReturnRedactedProblemDetails(CapturedOutput output) throws Exception {
@@ -70,7 +76,7 @@ class IdentitySecurityTests {
     }
 
     @Test
-    void validMappedIdentityCanReadOnlyTheMinimumCurrentUserContract() throws Exception {
+    void validMappedIdentityReturnsOnlyTheEnrichedCurrentUserContract() throws Exception {
         stubActiveIdentity("valid-access-token");
 
         mockMvc.perform(get("/api/v1/me")
@@ -78,9 +84,12 @@ class IdentitySecurityTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.profileId").value(PROFILE_ID.toString()))
                 .andExpect(jsonPath("$.tenantId").value(TENANT_ID.toString()))
+                .andExpect(jsonPath("$.tenantCode").value("TENANT-A"))
                 .andExpect(jsonPath("$.displayName").value("Lan Nguyen"))
                 .andExpect(jsonPath("$.email").value("lan@example.test"))
                 .andExpect(jsonPath("$.assurance").value("mfa"))
+                .andExpect(jsonPath("$.roles[0]").value("DATA_ANALYST"))
+                .andExpect(jsonPath("$.permissions[0]").value("FARM_READ"))
                 .andExpect(content().string(not(containsString("Provider-Subject"))))
                 .andExpect(content().string(not(containsString("valid-access-token"))))
                 .andExpect(content().string(not(containsString("TENANT_ADMIN"))));
@@ -89,9 +98,8 @@ class IdentitySecurityTests {
     @Test
     void unknownOrDisabledIdentityFailsClosed() throws Exception {
         when(jwtDecoder.decode("unknown-token")).thenReturn(jwt("unknown-token"));
-        when(bootstrapPort.findByIssuerAndSubject(
-                "https://identity.example.test/issuer",
-                " Provider-Subject-001 ")).thenReturn(Optional.empty());
+        when(principalLoader.load(any()))
+                .thenThrow(new IdentityRejectedException(IdentityRejectionReason.UNKNOWN_IDENTITY));
 
         mockMvc.perform(get("/api/v1/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer unknown-token"))
@@ -103,19 +111,14 @@ class IdentitySecurityTests {
     @Test
     void disabledProfileAndTenantFailClosed() throws Exception {
         when(jwtDecoder.decode("disabled-profile-token")).thenReturn(jwt("disabled-profile-token"));
-        when(bootstrapPort.findByIssuerAndSubject(
-                "https://identity.example.test/issuer",
-                " Provider-Subject-001 ")).thenReturn(Optional.of(
-                        new IdentityBootstrap(PROFILE_ID, TENANT_ID, false, true)));
+        when(principalLoader.load(any()))
+                .thenThrow(new IdentityRejectedException(IdentityRejectionReason.PROFILE_DISABLED))
+                .thenThrow(new IdentityRejectedException(IdentityRejectionReason.TENANT_DISABLED));
         mockMvc.perform(get("/api/v1/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer disabled-profile-token"))
                 .andExpect(status().isUnauthorized());
 
         when(jwtDecoder.decode("disabled-tenant-token")).thenReturn(jwt("disabled-tenant-token"));
-        when(bootstrapPort.findByIssuerAndSubject(
-                "https://identity.example.test/issuer",
-                " Provider-Subject-001 ")).thenReturn(Optional.of(
-                        new IdentityBootstrap(PROFILE_ID, TENANT_ID, true, false)));
         mockMvc.perform(get("/api/v1/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer disabled-tenant-token"))
                 .andExpect(status().isUnauthorized());
@@ -158,10 +161,15 @@ class IdentitySecurityTests {
 
     private void stubActiveIdentity(String tokenValue) {
         when(jwtDecoder.decode(tokenValue)).thenReturn(jwt(tokenValue));
-        when(bootstrapPort.findByIssuerAndSubject(
-                "https://identity.example.test/issuer",
-                " Provider-Subject-001 ")).thenReturn(Optional.of(
-                        new IdentityBootstrap(PROFILE_ID, TENANT_ID, true, true)));
+        when(principalLoader.load(any())).thenReturn(new AgriInsightPrincipal(
+                PROFILE_ID,
+                TENANT_ID,
+                "TENANT-A",
+                Optional.of("Lan Nguyen"),
+                Optional.of("lan@example.test"),
+                Optional.of("mfa"),
+                Set.of(Role.DATA_ANALYST),
+                Set.of(Permission.FARM_READ)));
     }
 
     private Jwt jwt(String tokenValue) {

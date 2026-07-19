@@ -1,5 +1,6 @@
 package com.agriinsight.backend.identity;
 
+import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -8,6 +9,7 @@ import java.lang.annotation.Target;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -33,5 +35,6 @@ import org.springframework.test.context.ActiveProfiles;
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@MockitoBean(types = TenantPrincipalLoader.class)
 @interface IdentitySecurityContext {
 }

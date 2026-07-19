@@ -9,9 +9,11 @@ import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.IdentityRejectedException;
 import com.agriinsight.backend.identity.application.IdentityRejectionReason;
 import com.agriinsight.backend.identity.application.PrincipalMapper;
+import com.agriinsight.backend.identity.domain.Permission;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -25,7 +27,14 @@ class JwtPrincipalAuthenticationConverterTest {
         PrincipalMapper mapper = mock(PrincipalMapper.class);
         Jwt jwt = jwt();
         AgriInsightPrincipal principal = new AgriInsightPrincipal(
-                UUID.randomUUID(), UUID.randomUUID(), Optional.empty(), Optional.empty(), Optional.empty());
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "TENANT-A",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Set.of(),
+                Set.of(Permission.FARM_READ));
         when(mapper.map(jwt)).thenReturn(principal);
 
         AbstractAuthenticationToken authentication = new JwtPrincipalAuthenticationConverter(mapper).convert(jwt);
@@ -34,7 +43,7 @@ class JwtPrincipalAuthenticationConverterTest {
         assertThat(authentication.isAuthenticated()).isTrue();
         assertThat(authentication.getPrincipal()).isSameAs(principal);
         assertThat(authentication.getCredentials()).isNull();
-        assertThat(authentication.getAuthorities()).isEmpty();
+        assertThat(authentication.getAuthorities()).extracting("authority").containsExactly("FARM_READ");
         assertThat(authentication.toString()).doesNotContain(jwt.getTokenValue());
     }
 

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -19,7 +20,14 @@ class PrincipalMapperTest {
     void mapsOnlyConfiguredSafeClaimsIntoTheInternalPrincipal() {
         ExternalIdentityService identityService = mock(ExternalIdentityService.class);
         AgriInsightPrincipal expected = new AgriInsightPrincipal(
-                UUID.randomUUID(), UUID.randomUUID(), Optional.of("Lan"), Optional.of("lan@example.test"), Optional.of("mfa"));
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "TENANT-A",
+                Optional.of("Lan"),
+                Optional.of("lan@example.test"),
+                Optional.of("mfa"),
+                Set.of(),
+                Set.of());
         when(identityService.resolve(org.mockito.ArgumentMatchers.any())).thenReturn(expected);
         PrincipalMapper mapper = new PrincipalMapper(identityService, "preferred_name", "mail", "acr");
         Instant now = Instant.now();
