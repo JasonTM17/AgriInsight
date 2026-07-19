@@ -3,7 +3,7 @@
 Status: queued follow-on milestone; design direction approved for detailed planning, no frontend implementation in this backend phase.
 Source: supplied AgriInsight specification plus CK UI/UX Pro Max design-system, agriculture color, typography, chart, and UX searches run on 2026-07-19.
 Canonical artifacts: [`design-system/MASTER.md`](./design-system/MASTER.md) and its page overrides.
-First reviewed fixture: [`design-system/prototypes/overview-field-ledger-prototype.html`](./design-system/prototypes/overview-field-ledger-prototype.html); review evidence is stored beside it.
+Reviewed fixtures: [`design-system/prototypes/overview-field-ledger-prototype.html`](./design-system/prototypes/overview-field-ledger-prototype.html) and the mobile-first [`design-system/prototypes/work-activity-prototype.html`](./design-system/prototypes/work-activity-prototype.html); review evidence is stored beside each fixture.
 
 ## Why this is separate
 

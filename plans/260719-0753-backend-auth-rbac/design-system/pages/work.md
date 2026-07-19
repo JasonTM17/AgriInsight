@@ -47,3 +47,4 @@ Status: design contract only. Operational activities, assignments, corrections, 
 ## Acceptance
 
 - Worker/manager, empty/offline/revoked/denied/conflict/validation/save-failure, correction, and queued-sync fixtures exist before implementation.
+- Reviewed design fixture: [`../prototypes/work-activity-prototype.html`](../prototypes/work-activity-prototype.html), with evidence in [`../prototypes/work-prototype-review.md`](../prototypes/work-prototype-review.md). Use `?state=offline`, `?state=conflict`, or `?state=revoked` to inspect protected state behavior.

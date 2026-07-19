@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AgriInsight — Công việc đồng ruộng</title>
+  <link rel="stylesheet" href="./overview-field-ledger-foundation.css">
+  <link rel="stylesheet" href="./work-activity-components.css">
+  <link rel="stylesheet" href="./work-activity-responsive.css">
+  <script src="./work-activity-prototype.js" defer></script>
+</head>
+<body data-fixture-state="normal">
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+  <svg class="symbol-sheet" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+    <symbol id="i-field" viewBox="0 0 24 24"><path d="M4 19c5-7 11-10 16-12M7 20c3-5 7-8 13-10M12 20c2-3 4-5 8-7M4 8c3 1 5 3 6 6M5 4c4 1 7 4 8 8"/></symbol>
+    <symbol id="i-work" viewBox="0 0 24 24"><path d="M8 5V3h8v2M5 6h14v14H5zM8 11l2 2 5-5M8 17h8"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19 4C10 4 5 8 5 15c0 3 2 5 5 5 7 0 9-8 9-16ZM7 18c2-4 5-7 9-9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-location" viewBox="0 0 24 24"><path d="M12 21s6-5 6-11a6 6 0 1 0-12 0c0 6 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h4l2-3h4l2 3h4v11H4z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="rail" id="primary-rail" aria-label="Điều hướng chính">
+      <a class="brand" href="#main-content" aria-label="AgriInsight, công việc đồng ruộng"><span class="brand-mark"><span></span><span></span><span></span></span><span><strong>AgriInsight</strong><small>Field ledger</small></span></a>
+      <button class="rail-close" type="button" data-nav-close aria-label="Đóng điều hướng">×</button>
+      <nav class="rail-nav">
+        <a href="#main-content"><svg><use href="#i-grid"/></svg><span>Tổng quan</span></a>
+        <a href="#task-queue"><svg><use href="#i-field"/></svg><span>Trang trại</span></a>
+        <a class="is-active" href="#main-content" aria-current="page"><svg><use href="#i-work"/></svg><span>Công việc</span><b>3</b></a>
+        <a href="#main-content"><svg><use href="#i-box"/></svg><span>Tồn kho</span></a>
+        <a href="#source-evidence"><svg><use href="#i-leaf"/></svg><span>Sức khỏe cây trồng</span></a>
+      </nav>
+      <div class="scope-card"><span>Ca làm việc</span><strong>Nông trại Cao Nguyên</strong><small>19/07/2026 · 06:00–14:00</small><button type="button" data-open-scope aria-haspopup="dialog" aria-controls="scope-dialog">Đổi phạm vi</button></div>
+      <div class="rail-user"><span class="user-tile">HN</span><span><strong>Hoàng Nam</strong><small>Nhân viên hiện trường</small></span></div>
+    </aside>
+    <button class="nav-scrim" type="button" data-nav-close tabindex="-1" aria-hidden="true" aria-label="Đóng điều hướng"></button>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button nav-toggle" type="button" data-nav-toggle aria-controls="primary-rail" aria-expanded="false" aria-label="Mở điều hướng"><svg><use href="#i-menu"/></svg></button>
+        <div class="breadcrumbs"><span>Vận hành</span><b>/</b><strong>Công việc</strong></div>
+        <div class="topbar-actions"><span class="sync-state" data-sync-state><i></i><span>Đồng bộ lúc <time datetime="2026-07-19T07:42:00+07:00">07:42</time></span></span><button class="shift-button" type="button" data-open-scope aria-haspopup="dialog" aria-controls="scope-dialog">Ca sáng <span>3 việc</span></button></div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="work-heading" aria-labelledby="page-title">
+          <div><p>Nhật ký hiện trường</p><h1 id="page-title">Công việc hôm nay</h1><span>Thứ Bảy, 19/07 · 3 việc được giao · 1 ưu tiên cao</span></div>
+          <div class="fixture-note"><small>Kịch bản thiết kế</small><strong>Chưa kết nối API hoạt động</strong><span>Dữ liệu ruộng dựa trên Gold cutoff 18/07/2026.</span></div>
+        </section>
+
+        <section class="state-banner state-offline" data-state-banner="offline" role="status" hidden><span>Đang ngoại tuyến</span><div><strong>Bản ghi sẽ nằm trong hàng chờ trên thiết bị</strong><small>Không hiển thị “đã đồng bộ” cho đến khi máy chủ xác nhận.</small></div></section>
+        <section class="state-banner state-conflict" data-state-banner="conflict" role="alert" hidden><span>Có phiên bản mới</span><div><strong>Quản lý đã cập nhật hạn xử lý thành 09:30</strong><small>Bản nhập của bạn được giữ lại để đối chiếu trước khi gửi.</small></div></section>
+        <section class="state-banner state-revoked" data-state-banner="revoked" role="alert" hidden><span>Đã thu hồi</span><div><strong>Công việc không còn thuộc phạm vi được giao</strong><small>Bản nháp được giữ trên thiết bị; liên hệ quản lý để xử lý an toàn.</small></div></section>
+
+        <div class="work-layout">
+          <section class="task-queue" id="task-queue" aria-labelledby="queue-title">
+            <header><div><p>Ca sáng</p><h2 id="queue-title">Hàng đợi được giao</h2></div><span>1/3 hoàn tất</span></header>
+            <div class="queue-progress" aria-label="Đã hoàn tất 1 trong 3 công việc"><i></i></div>
+            <div class="queue-section"><h3>Ưu tiên xử lý</h3>
+              <button class="task-row is-selected" type="button" data-task="sensor" aria-pressed="true" aria-controls="task-detail"><span class="task-order critical">P1</span><span><strong>Kiểm tra cảm biến S-01</strong><small>Khu vực 1.1 · Cà phê</small><em><svg><use href="#i-clock"/></svg>Trước 10:00 · trễ dữ liệu 5 ngày</em></span><b>Đang làm</b></button>
+              <button class="task-row" type="button" data-task="pest" aria-pressed="false" aria-controls="task-detail"><span class="task-order warning">P2</span><span><strong>Khảo sát dấu hiệu dịch hại</strong><small>Khu vực 3.4 · Cà phê</small><em><svg><use href="#i-clock"/></svg>Trước 12:00 · ảnh hưởng 19,07%</em></span><b>Chưa bắt đầu</b></button>
+              <button class="task-row" type="button" data-task="soil" aria-pressed="false" aria-controls="task-detail"><span class="task-order watch">P2</span><span><strong>Đối chiếu độ ẩm tại ruộng</strong><small>Khu vực 1.2 · Sầu riêng</small><em><svg><use href="#i-clock"/></svg>Trước 13:30 · bằng chứng cần xác minh</em></span><b>Chưa bắt đầu</b></button>
+            </div>
+            <div class="completed-task"><span>Đã hoàn tất</span><strong>Kiểm tra thiết bị bảo hộ · 06:32</strong><small>Ghi nhận bởi Hoàng Nam · chờ audit API</small></div>
+          </section>
+
+          <section class="task-detail" id="task-detail" aria-labelledby="task-title">
+            <button class="mobile-back" type="button" data-queue-back>← Hàng đợi được giao</button>
+            <header class="detail-header"><div><span class="detail-eyebrow" data-task-code translate="no">FIELD-0001 · SENSOR-CHECK</span><h2 id="task-title" data-task-title>Kiểm tra cảm biến S-01</h2><p><svg><use href="#i-location"/></svg><span data-task-location>Khu vực 1.1 · Nông trại Cao Nguyên</span></p></div><span class="status-chip">Đang thực hiện</span></header>
+
+            <dl class="task-context"><div><dt>Hạn xử lý</dt><dd data-task-due>10:00 hôm nay</dd></div><div><dt>Cây trồng</dt><dd data-task-crop>Cà phê</dd></div><div><dt>Bằng chứng gần nhất</dt><dd data-task-reading>13/07 · 18:00</dd></div><div><dt>Nguồn</dt><dd data-task-source translate="no">field_health_status</dd></div></dl>
+
+            <div class="evidence-callout" id="source-evidence"><span>Vì sao cần làm?</span><strong data-task-reason>Dữ liệu cảm biến đã trễ 5 ngày; độ ẩm đất gần nhất 41,11%.</strong><p data-task-action>Kiểm tra cảm biến và kết nối IoT trong 4 giờ.</p></div>
+
+            <div class="activity-tabs" role="tablist" aria-label="Các bước ghi nhận hoạt động">
+              <button type="button" role="tab" id="tab-context" aria-selected="false" aria-controls="panel-context" tabindex="-1" data-step="context"><span>1</span>Bối cảnh</button>
+              <button type="button" role="tab" id="tab-evidence" aria-selected="true" aria-controls="panel-evidence" data-step="evidence"><span>2</span>Bằng chứng</button>
+              <button type="button" role="tab" id="tab-review" aria-selected="false" aria-controls="panel-review" tabindex="-1" data-step="review"><span>3</span>Xem lại</button>
+            </div>
+
+            <section class="step-panel" id="panel-context" role="tabpanel" aria-labelledby="tab-context" tabindex="0" hidden>
+              <h3>Phạm vi được giao</h3><p>Chỉ ghi nhận tại đúng khu vực, cây trồng và thiết bị nêu trên. Việc sửa bản ghi cũ phải tạo sự kiện hiệu chỉnh kèm lý do.</p>
+              <ol class="context-checks"><li>Xác nhận mã khu vực tại thực địa.</li><li>Kiểm tra nguồn điện, tín hiệu và tình trạng thiết bị.</li><li>Đo đối chứng; không suy diễn giá trị bị thiếu.</li></ol>
+            </section>
+
+            <form class="step-panel evidence-form" id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence" novalidate>
+              <fieldset data-entry-fields><legend>Ghi nhận tại thực địa</legend>
+                <label>Kết quả kiểm tra<select name="result" required><option value="">Chọn kết quả</option><option value="verified">Đã xác minh, thiết bị hoạt động</option><option value="attention">Cần kỹ thuật xử lý</option><option value="blocked">Không thể tiếp cận khu vực</option></select></label>
+                <div class="measure-row"><label><span data-measure-label>Độ ẩm đo đối chứng</span><span class="input-unit"><input name="measure" type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="Ví dụ: 42,50" required><b data-measure-unit>%</b></span><small data-measure-help>Nhập giá trị đo tại ruộng, không sao chép số gần nhất.</small></label><label>Thời điểm đo hôm nay<input name="observedAt" type="text" inputmode="numeric" value="08:10" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Nhập giờ theo định dạng 24 giờ HH:mm" placeholder="HH:mm" autocomplete="off" required><small>Định dạng 24 giờ HH:mm · ngày 19/07/2026 · UTC+7</small></label></div>
+                <label>Ghi chú hiện trường<textarea name="note" rows="3" maxlength="500" placeholder="Mô tả tình trạng, thao tác đã làm và việc cần bàn giao"></textarea><small>Tối đa 500 ký tự. Không ghi thông tin cá nhân không cần thiết.</small></label>
+                <label class="upload-control"><input name="evidence" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="upload-help"><span><svg><use href="#i-camera"/></svg><b>Thêm ảnh bằng chứng</b><small id="upload-help">JPG, PNG hoặc WebP · tối đa 10 MB · không tải lên trong prototype</small></span></label>
+              </fieldset>
+              <div class="form-actions"><button class="secondary-action" type="button" data-step-target="context">Quay lại</button><button class="primary-action" type="button" data-review-entry>Xem lại bản ghi <svg><use href="#i-arrow"/></svg></button></div>
+            </form>
+
+            <section class="step-panel review-panel" id="panel-review" role="tabpanel" aria-labelledby="tab-review" tabindex="0" hidden>
+              <h3>Đối chiếu trước khi gửi</h3><dl><div><dt>Công việc</dt><dd data-review-task>Kiểm tra cảm biến S-01</dd></div><div><dt>Kết quả</dt><dd data-review-result>Chưa chọn</dd></div><div><dt>Giá trị</dt><dd data-review-measure>Chưa nhập</dd></div><div><dt>Thời điểm</dt><dd data-review-time>Chưa nhập</dd></div></dl>
+              <div class="append-only-note"><strong>Nhật ký không bị ghi đè</strong><span>Nếu cần sửa sau khi máy chủ xác nhận, hệ thống tạo một bản hiệu chỉnh có lý do và liên kết bản gốc.</span></div>
+              <div class="conflict-comparison" data-conflict-comparison hidden><span><small>Phiên bản đang xem</small><strong>Hạn 10:00 · trạng thái Đang làm</strong></span><span><small>Phiên bản máy chủ</small><strong>Hạn 09:30 · trạng thái Đang làm</strong></span></div>
+              <div class="form-actions"><button class="secondary-action" type="button" data-step-target="evidence">Sửa bằng chứng</button><button class="primary-action" type="button" data-submit-entry>Gửi bản ghi</button></div>
+            </section>
+            <p class="prototype-status" role="status" aria-live="polite" data-prototype-status></p>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="scope-dialog" id="scope-dialog" aria-labelledby="scope-title"><form method="dialog"><header><div><small>Phạm vi được giao</small><h2 id="scope-title">Ca làm việc</h2></div><button value="cancel" aria-label="Đóng phạm vi">×</button></header><label>Ngày làm việc<input name="workDate" type="date" value="2026-07-19"></label><label>Trang trại<select name="farm" autocomplete="off"><option>Nông trại Cao Nguyên</option><option>Nông trại Miền Đông</option></select></label><p>Prototype chỉ minh họa phạm vi. Quyền thực tế do backend kiểm tra ở từng yêu cầu.</p><button class="primary-action" value="apply">Áp dụng phạm vi</button></form></dialog>
+  <dialog class="scope-dialog discard-dialog" id="discard-dialog" aria-labelledby="discard-title"><form method="dialog"><header><div><small>Bảo vệ bản nhập</small><h2 id="discard-title">Bạn đang có dữ liệu chưa lưu</h2></div><button value="cancel" aria-label="Đóng cảnh báo">×</button></header><p>Chuyển công việc lúc này có thể gán nhầm bằng chứng. Bạn có thể ở lại, hoặc chủ động bỏ bản nháp trước khi mở công việc khác.</p><div class="discard-actions"><button class="secondary-action" value="cancel">Ở lại công việc này</button><button class="danger-action" value="discard">Bỏ bản nháp và mở</button></div></form></dialog>
+</body>
+</html>

@@ -1,0 +1,35 @@
+@media (max-width: 1120px) {
+  .app-shell { grid-template-columns: 224px minmax(0, 1fr); }
+  .work-layout { grid-template-columns: 320px minmax(0, 1fr); }
+  .task-context { grid-template-columns: 1fr 1fr; }.task-context div:nth-child(3) { border-left: 0; border-top: 1px solid var(--border); }.task-context div:nth-child(4) { border-top: 1px solid var(--border); }
+}
+
+@media (max-width: 900px) {
+  .app-shell { display: block; }
+  .rail { position: fixed; z-index: calc(var(--z-overlay) + 1); left: 0; width: 272px; padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-105%); transition: transform 220ms cubic-bezier(.2,.8,.2,1); box-shadow: 18px 0 40px -24px rgba(20,38,26,.6); }
+  .rail.is-open { transform: translateX(0); }.rail-close { position: absolute; top: 17px; right: 12px; width: 44px; height: 44px; border: 0; background: transparent; color: #fff; font-size: 26px; cursor: pointer; }.rail.is-open .rail-close { display: block; }
+  .nav-scrim { position: fixed; z-index: var(--z-overlay); inset: 0; padding: 0; border: 0; background: rgba(20,38,26,.48); } body.nav-open .nav-scrim { display: block; }.brand { padding-right: 46px; }.nav-toggle { display: grid; }
+  .breadcrumbs { margin-right: auto; margin-left: 12px; }.sync-state { display: none; }
+  .work-layout { grid-template-columns: 1fr; }.task-queue { position: static; }.task-detail { min-height: 620px; }
+}
+
+@media (max-width: 640px) {
+  .topbar { min-height: 60px; padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }.breadcrumbs span, .breadcrumbs b { display: none; }.shift-button { padding-inline: 10px; }.shift-button > span { display: none; }
+  main { padding: 22px max(14px, env(safe-area-inset-right)) calc(92px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  .work-heading { align-items: start; flex-direction: column; gap: 16px; }.work-heading h1 { font-size: 30px; }.fixture-note { max-width: none; }
+  .state-banner { grid-template-columns: 1fr; gap: 8px; }.state-banner > span { justify-self: start; }
+  .task-queue { border-radius: 10px; }.task-queue > header { padding-inline: 16px; }.queue-progress { margin-inline: 16px; }.queue-section h3 { padding-inline: 16px; }.task-row { min-height: 112px; padding-inline: 14px; }.completed-task { padding-inline: 16px; }
+  .task-detail { display: none; }.mobile-detail-open .task-queue { display: none; }.mobile-detail-open .task-detail { display: block; }.mobile-back { width: 100%; min-height: 48px; padding: 0 16px; display: flex; align-items: center; border: 0; border-bottom: 1px solid var(--border); background: #fbfdfb; color: var(--brand-strong); font-weight: 750; cursor: pointer; }
+  .detail-header { padding: 20px 16px 16px; flex-direction: column; }.status-chip { order: -1; }.detail-header h2 { font-size: 25px; }.task-context { padding-inline: 16px; grid-template-columns: 1fr 1fr; }.task-context div { padding: 12px 8px 12px 0; }.task-context div + div { padding-left: 8px; }
+  .evidence-callout { margin: 16px; }.activity-tabs { padding-inline: 8px; }.activity-tabs button { min-height: 58px; flex-direction: column; gap: 3px; font-size: 10px; }
+  .step-panel { padding: 20px 16px 18px; }.measure-row { grid-template-columns: 1fr; }.form-actions { position: sticky; z-index: 10; bottom: calc(8px + env(safe-area-inset-bottom)); padding: 10px; margin: 20px -8px -8px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.97); }.form-actions button { flex: 1; }.review-panel dl div { grid-template-columns: 1fr; gap: 3px; }.conflict-comparison { grid-template-columns: 1fr; }.prototype-status { margin-inline: 16px; }
+  .discard-actions { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+@media print {
+  .rail, .topbar, .scope-dialog, button, .fixture-note { display: none !important; }.app-shell { display: block; }.work-layout { grid-template-columns: 1fr; }.task-queue { position: static; }
+}
