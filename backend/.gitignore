@@ -1,0 +1,12 @@
+target/
+.runtime/
+
+# Local IDE state
+.idea/
+.vscode/
+*.iml
+
+# Runtime logs and local overrides
+*.log
+application-local.yml
+application-local.yaml

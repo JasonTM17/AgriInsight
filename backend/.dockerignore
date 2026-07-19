@@ -1,0 +1,11 @@
+target/
+.runtime/
+.idea/
+.vscode/
+*.iml
+*.log
+.env
+.env.*
+**/application-local.yml
+**/application-local.yaml
+src/test/
