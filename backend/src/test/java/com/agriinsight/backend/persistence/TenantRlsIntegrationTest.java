@@ -11,7 +11,10 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.runtimeConnection;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.agriinsight.backend.authorization.infrastructure.TenantTransactionAspect;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.identity.application.ExternalIdentityClaims;
@@ -20,16 +23,22 @@ import com.agriinsight.backend.identity.infrastructure.PostgresIdentityBootstrap
 import com.agriinsight.backend.identity.infrastructure.PostgresTenantPrincipalRepository;
 import com.agriinsight.backend.persistence.support.SqlTestResources;
 import com.agriinsight.backend.shared.persistence.TenantContextBinder;
+import com.agriinsight.backend.shared.persistence.TenantContextState;
+import com.agriinsight.backend.shared.security.TenantPrincipal;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -154,6 +163,48 @@ class TenantRlsIntegrationTest {
     }
 
     @Test
+    void tenantScopedBusinessBoundaryBindsAndClearsOnePooledConnection() throws Throwable {
+        HikariConfig configuration = new HikariConfig();
+        configuration.setJdbcUrl(jdbcUrl(POSTGRESQL, "agriinsight"));
+        configuration.setUsername(RUNTIME);
+        configuration.setPassword(RUNTIME_PASSWORD);
+        configuration.setMaximumPoolSize(1);
+        configuration.setMinimumIdle(1);
+        configuration.setConnectionTimeout(1_000);
+        try (HikariDataSource dataSource = new HikariDataSource(configuration)) {
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            TenantContextState contextState = new TenantContextState();
+            TenantTransactionAspect aspect = new TenantTransactionAspect(
+                    new TenantContextBinder(jdbcTemplate),
+                    contextState,
+                    new DataSourceTransactionManager(dataSource));
+            TenantPrincipal principal = new TestPrincipal(PROFILE_A, TENANT_A);
+            SecurityContextHolder.getContext().setAuthentication(
+                    UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
+            ProceedingJoinPoint service = mock(ProceedingJoinPoint.class);
+            when(service.proceed()).thenAnswer(invocation -> {
+                contextState.requireBound(TENANT_A);
+                assertThat(jdbcTemplate.queryForObject(
+                        "SELECT agriinsight_security.app_current_tenant_id()",
+                        UUID.class)).isEqualTo(TENANT_A);
+                return jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM user_profiles",
+                        Long.class);
+            });
+
+            try {
+                assertThat(aspect.withinTenantTransaction(service)).isEqualTo(1L);
+                assertThat(contextState.currentTenantId()).isEmpty();
+                assertThat(jdbcTemplate.queryForObject(
+                        "SELECT agriinsight_security.app_current_tenant_id()",
+                        UUID.class)).isNull();
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+    }
+
+    @Test
     void bootstrapIsExactAndExternalIdentityRowsCannotBeEnumerated() throws Exception {
         try (var runtime = runtimeConnection(POSTGRESQL, "agriinsight")) {
             assertThat(count(runtime, bootstrapCountSql("subject-a"))).isEqualTo(1);
@@ -219,6 +270,14 @@ class TenantRlsIntegrationTest {
     private static String bootstrapCountSql(String subject) {
         return "SELECT count(*) FROM agriinsight_security.resolve_identity_bootstrap('"
                 + ISSUER + "', '" + subject + "')";
+    }
+
+    private record TestPrincipal(UUID profileId, UUID tenantId) implements TenantPrincipal {
+
+        @Override
+        public String getName() {
+            return profileId.toString();
+        }
     }
 
 }
