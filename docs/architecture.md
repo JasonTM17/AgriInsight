@@ -129,9 +129,29 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 - Gold datasets là data contract của UI và export service; dashboard chỉ lọc và trực quan hóa.
 - `scripts/check-workspace-disk.ps1` chỉ đọc C/D: warn dưới 10/25 GB, fail non-zero dưới 8/20 GB hoặc khi không đọc được drive; script không cleanup hay xóa dữ liệu.
 
+## Ranh giới operational backend
+
+Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
+
+Foundation hiện đã có mã nguồn, nhưng Phase 1 vẫn in-progress cho đến khi các integration gate chạy thành công:
+
+- application bootstrap và module boundary,
+- security deny-by-default; chỉ health endpoint được public,
+- correlation ID và Problem Detail không lộ diagnostics,
+- liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
+- tenant anchor dùng UUID, canonical ASCII business code, UTC audit timestamp,
+- local default bind `127.0.0.1`.
+
+| Plane | Storage owner | Không được ghi |
+|---|---|---|
+| Analytics | `artifacts/`, Gold CSV, SQLite warehouse | PostgreSQL operational state |
+| Backend | PostgreSQL + Flyway | `artifacts/`, manifest, Gold CSV, SQLite warehouse |
+
+Auth/RBAC, public API docs, business CRUD, backend CI và Docker Hub release vẫn thuộc phase sau. Không claim hoàn tất trước khi Maven/Java 21/PostgreSQL/Docker gate có evidence.
+
 ## Đường mở rộng
 
-1. Bổ sung backend nghiệp vụ Java/Spring Boot, authentication và row-level authorization.
+1. Hoàn tất backend Java/Spring Boot, authentication và row-level authorization theo các phase đã lập kế hoạch.
 2. Chuyển warehouse adapter sang PostgreSQL/ClickHouse cùng migration có version.
 3. Thêm incremental load, dbt tests, Airflow observability và source freshness SLA.
 4. Phát sự kiện IoT/inventory qua Kafka và xử lý cảnh báo realtime.

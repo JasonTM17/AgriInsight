@@ -63,6 +63,30 @@ Thiếu hoặc không đọc được drive là FAIL. Script chỉ quan sát và
 không xóa file, cache hoặc artifact. Khi WARN, dừng build/cài đặt nặng và giữ
 temp/cache trong `artifacts/_tmp` trên D.
 
+## Backend verification
+
+Dùng entry point được guard từ repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify
+```
+
+Runner chỉ bắt đầu Maven khi disk guard trả `DISK_GUARD overall=PASS`. Maven repository, temp và user-home phải resolve vào ổ D; dùng `MAVEN_REPO_LOCAL`, `MAVEN_TEMP_DIR`, `MAVEN_USER_HOME` nếu cần override. `MAVEN_ARGS`, `MAVEN_CONFIG`, `MAVEN_PROJECTBASEDIR`, và project `.mvn/maven.config` phải unset/không tồn tại; không truyền trực tiếp `-Dmaven.repo.local` hoặc `-Djava.io.tmpdir`.
+Với goal `verify`, runner kiểm tra Docker daemon trước Maven và từ chối `skipTests`, `skipIT`, `fail-never`, POM/settings/module selector thay thế, để integration gate không thể biến thành false green.
+
+Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTimeout`, and `socketTimeout` values so a black-holed host cannot turn a readiness probe into an unbounded socket wait.
+
+| Backend gate | Trạng thái hiện tại |
+|---|---|
+| Fresh Maven verification | Blocked do ổ C đang WARN dưới 10 GB |
+| Docker daemon | Stopped |
+| Testcontainers + Flyway PostgreSQL | Chưa verify |
+| Java 21 CI | Chưa verify |
+| Compose + backend image build | Chưa verify |
+| Docker Hub publish + image verification | Chưa claim |
+
+Không đổi blocked gate thành PASS bằng cách skip integration test. Chỉ push image first-party của AgriInsight sau khi test, review và release hardening đạt; không republish PostgreSQL hoặc image upstream.
+
 ## Artifact và rollback
 
 - Dashboard dùng `artifacts/_tmp/cost-reports`; XLSX adapter tạo child temp và

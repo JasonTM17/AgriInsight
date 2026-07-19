@@ -20,6 +20,26 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 - Sinh cảnh báo cùng khuyến nghị có bằng chứng dữ liệu; UI không tự tính lại logic KPI.
 - Chạy lặp lại an toàn theo seed/ngày chốt dữ liệu, có manifest, row count và SHA-256 checksum.
 
+## Backend vận hành đang triển khai
+
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1 đã có mã nguồn cho application bootstrap, security deny-by-default, correlation ID, Problem Detail, liveness/readiness và migration tenant anchor, nhưng chưa được nghiệm thu.
+
+Các cổng còn chặn:
+
+- Maven chưa được chạy lại sau thay đổi mới vì ổ C đang ở trạng thái WARN dưới 10 GB.
+- Docker daemon đang dừng; Testcontainers, Flyway PostgreSQL, Compose và image build chưa được xác minh.
+- Java 21 CI, backend image verification và Docker Hub publication chưa được xác minh.
+- Authentication, RBAC và business CRUD chưa được triển khai; không mô tả chúng như tính năng đang hoạt động.
+
+Lệnh kiểm thử backend chuẩn từ repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify
+```
+
+Wrapper chạy disk guard trước Maven, buộc Maven repo/temp/user-home nằm trên ổ D, từ chối hidden `MAVEN_ARGS`/`MAVEN_CONFIG`/`MAVEN_PROJECTBASEDIR` và dừng trước khi build nếu C/D không cùng PASS. Chỉ image first-party đã vượt đủ test/review/release gate mới được push lên Docker Hub; không republish PostgreSQL hay image upstream.
+Lệnh `verify` còn yêu cầu Docker daemon sẵn sàng và từ chối các cờ `skipTests`, `skipIT`, `fail-never`, cũng như POM/settings/module selector thay thế.
+
 ## Chạy cục bộ
 
 Yêu cầu Python 3.11–3.14.
@@ -93,7 +113,11 @@ artifacts/
 ## Tài liệu
 
 - [Kiến trúc MVP](docs/architecture.md)
+- [System architecture](docs/system-architecture.md)
 - [Data contracts](docs/data-contracts.md)
+- [Code standards](docs/code-standards.md)
+- [Design guidelines](docs/design-guidelines.md)
+- [Project roadmap](docs/project-roadmap.md)
 - [KPI catalog](docs/kpi-catalog.md)
 - [Tiêu chí nghiệm thu](docs/mvp-acceptance.md)
 - [Reporting và vận hành local](docs/reporting-and-local-operations.md)

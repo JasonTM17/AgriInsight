@@ -1,5 +1,23 @@
 # Data contracts
 
+## Không gian version
+
+| Không gian | Giá trị hiện tại | Phạm vi |
+|---|---|---|
+| Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
+| HTTP API prefix | `/api/v1` | Operational API của backend |
+| Flyway schema history | `1` | Migration tenant anchor của backend |
+
+Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
+
+## Operational identifiers
+
+- `tenants.id` là UUID ổn định cho operational API.
+- `tenants.code` được strip Unicode edge whitespace, uppercase bằng `Locale.ROOT`, rồi phải match `^[A-Z0-9][A-Z0-9._-]{0,63}$`.
+- Canonical business code là mapping key xuyên hệ thống đi cùng UUID; không thay UUID bằng code.
+- `display_name` nonblank, tối đa 200 ký tự; `version` là optimistic lock không âm.
+- Timestamp operational lưu dưới dạng timezone-aware UTC.
+
 ## Contract theo layer
 
 | Domain | Bronze | Silver | Gold |
@@ -84,4 +102,6 @@ giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm p
 
 ## Versioning
 
-Contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đổi breaking phải tạo version mới, migration warehouse tương ứng và regression test cho Gold consumers.
+Analytics contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đổi breaking phải tạo version mới, migration warehouse tương ứng và regression test cho Gold consumers.
+
+Backend operational API dùng `/api/v1`; Flyway migration number là backend schema history. Hai giá trị này không đổi analytics version.
