@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.IdentityRejectedException;
 import com.agriinsight.backend.identity.application.IdentityRejectionReason;
@@ -33,7 +34,7 @@ class JwtPrincipalAuthenticationConverterTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
-                Set.of(),
+                Set.of(Role.DATA_ANALYST),
                 Set.of(Permission.FARM_READ));
         when(mapper.map(jwt)).thenReturn(principal);
 
@@ -43,7 +44,9 @@ class JwtPrincipalAuthenticationConverterTest {
         assertThat(authentication.isAuthenticated()).isTrue();
         assertThat(authentication.getPrincipal()).isSameAs(principal);
         assertThat(authentication.getCredentials()).isNull();
-        assertThat(authentication.getAuthorities()).extracting("authority").containsExactly("FARM_READ");
+        assertThat(authentication.getAuthorities())
+                .extracting("authority")
+                .containsExactly("FARM_READ", "ROLE_DATA_ANALYST");
         assertThat(authentication.toString()).doesNotContain(jwt.getTokenValue());
     }
 

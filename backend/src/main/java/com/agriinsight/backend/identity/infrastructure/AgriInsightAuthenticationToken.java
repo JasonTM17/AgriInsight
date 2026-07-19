@@ -1,8 +1,10 @@
 package com.agriinsight.backend.identity.infrastructure;
 
 import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -18,8 +20,11 @@ final class AgriInsightAuthenticationToken extends AbstractAuthenticationToken {
 
     private static List<SimpleGrantedAuthority> authorities(AgriInsightPrincipal principal) {
         Objects.requireNonNull(principal, "principal is required");
-        return principal.permissions().stream()
-                .map(permission -> new SimpleGrantedAuthority(permission.name()))
+        return Stream.concat(
+                        principal.permissions().stream().map(permission -> permission.authority()),
+                        principal.roles().stream().map(role -> role.authority()))
+                .map(SimpleGrantedAuthority::new)
+                .sorted(Comparator.comparing(SimpleGrantedAuthority::getAuthority))
                 .toList();
     }
 

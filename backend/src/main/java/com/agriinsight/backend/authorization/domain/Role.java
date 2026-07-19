@@ -7,5 +7,9 @@ public enum Role {
     INVENTORY_MANAGER,
     DATA_ANALYST,
     FIELD_WORKER,
-    SUPPLIER
+    SUPPLIER;
+
+    public String authority() {
+        return "ROLE_" + name();
+    }
 }
