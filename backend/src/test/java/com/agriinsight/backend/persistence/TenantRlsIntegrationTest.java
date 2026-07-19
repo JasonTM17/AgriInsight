@@ -12,14 +12,24 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.agriinsight.backend.identity.application.ExternalIdentityClaims;
+import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
+import com.agriinsight.backend.identity.domain.Permission;
+import com.agriinsight.backend.identity.domain.Role;
+import com.agriinsight.backend.identity.infrastructure.PostgresIdentityBootstrapRepository;
+import com.agriinsight.backend.identity.infrastructure.PostgresTenantPrincipalRepository;
 import com.agriinsight.backend.persistence.support.SqlTestResources;
+import com.agriinsight.backend.shared.persistence.TenantContextBinder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.EnumSet;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -100,6 +110,46 @@ class TenantRlsIntegrationTest {
                 assertThat(count(reusedConnection, "SELECT count(*) FROM user_profiles")).isZero();
                 reusedConnection.commit();
             }
+        }
+    }
+
+    @Test
+    void principalLoaderUsesOneBoundConnectionAndDatabaseBackedPermissions() {
+        HikariConfig configuration = new HikariConfig();
+        configuration.setJdbcUrl(jdbcUrl(POSTGRESQL, "agriinsight"));
+        configuration.setUsername(RUNTIME);
+        configuration.setPassword(RUNTIME_PASSWORD);
+        configuration.setMaximumPoolSize(1);
+        configuration.setMinimumIdle(1);
+        configuration.setConnectionTimeout(1_000);
+        try (HikariDataSource dataSource = new HikariDataSource(configuration)) {
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            TenantPrincipalLoader loader = new TenantPrincipalLoader(
+                    new PostgresIdentityBootstrapRepository(jdbcTemplate),
+                    new PostgresTenantPrincipalRepository(jdbcTemplate),
+                    new TenantContextBinder(jdbcTemplate),
+                    new DataSourceTransactionManager(dataSource));
+
+            var principal = loader.load(new ExternalIdentityClaims(
+                    ISSUER,
+                    "subject-a",
+                    "Untrusted token display",
+                    "untrusted@example.test",
+                    "mfa"));
+
+            assertThat(principal.profileId()).isEqualTo(PROFILE_A);
+            assertThat(principal.tenantId()).isEqualTo(TENANT_A);
+            assertThat(principal.tenantCode()).isEqualTo("TENANT-A");
+            assertThat(principal.displayName()).contains("Admin A");
+            assertThat(principal.email()).isEmpty();
+            assertThat(principal.assurance()).contains("mfa");
+            assertThat(principal.roles()).containsOnly(Role.TENANT_ADMIN);
+            assertThat(principal.permissions())
+                    .containsExactlyInAnyOrderElementsOf(EnumSet.allOf(Permission.class));
+            assertThat(jdbcTemplate.queryForObject(
+                    "SELECT agriinsight_security.app_current_tenant_id()",
+                    UUID.class))
+                    .isNull();
         }
     }
 
