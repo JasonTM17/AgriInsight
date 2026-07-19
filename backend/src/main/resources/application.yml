@@ -57,7 +57,7 @@ agriinsight:
   api-docs:
     enabled: ${AGRIINSIGHT_API_DOCS_ENABLED:false}
   schema:
-    expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:1}
+    expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:3}
 
 springdoc:
   api-docs:
