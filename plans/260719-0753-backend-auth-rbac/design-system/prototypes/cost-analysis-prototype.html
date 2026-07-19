@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AgriInsight — Phân tích chi phí</title>
+  <link rel="stylesheet" href="./overview-field-ledger-foundation.css">
+  <link rel="stylesheet" href="./cost-analysis-components.css">
+  <link rel="stylesheet" href="./cost-analysis-responsive.css">
+  <script src="./cost-analysis-fixtures.js" defer></script>
+  <script src="./cost-analysis-view.js" defer></script>
+  <script src="./cost-analysis-prototype.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+  <svg class="symbol-sheet" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+    <symbol id="i-field" viewBox="0 0 24 24"><path d="M4 19c5-7 11-10 16-12M7 20c3-5 7-8 13-10M12 20c2-3 4-5 8-7M4 8c3 1 5 3 6 6M5 4c4 1 7 4 8 8"/></symbol>
+    <symbol id="i-work" viewBox="0 0 24 24"><path d="M8 5V3h8v2M5 6h14v14H5zM8 11l2 2 5-5M8 17h8"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8"/></symbol>
+    <symbol id="i-cost" viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h3M14 12h2M8 16h3M14 16h2"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19 4C10 4 5 8 5 15c0 3 2 5 5 5 7 0 9-8 9-16ZM7 18c2-4 5-7 9-9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 19h14"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3 8 8 9 5-1 8-4 8-9V7zM8 12l2.5 2.5L16 9"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="rail" id="primary-rail" aria-label="Điều hướng chính">
+      <a class="brand" href="#main-content" aria-label="AgriInsight, phân tích chi phí"><span class="brand-mark"><span></span><span></span><span></span></span><span><strong>AgriInsight</strong><small>Field ledger</small></span></a>
+      <button class="rail-close" type="button" data-nav-close aria-label="Đóng điều hướng">×</button>
+      <nav class="rail-nav">
+        <a href="./overview-field-ledger-prototype.html"><svg><use href="#i-grid"/></svg><span>Tổng quan</span></a>
+        <a href="./farm-performance-prototype.html"><svg><use href="#i-field"/></svg><span>Trang trại</span></a>
+        <a href="./work-activity-prototype.html"><svg><use href="#i-work"/></svg><span>Công việc</span></a>
+        <a href="./inventory-control-prototype.html"><svg><use href="#i-box"/></svg><span>Tồn kho</span></a>
+        <a class="is-active" href="#main-content" aria-current="page"><svg><use href="#i-cost"/></svg><span>Chi phí</span></a>
+        <span class="nav-placeholder" aria-disabled="true"><svg><use href="#i-leaf"/></svg><span>Sức khỏe cây trồng</span><small>Chưa mở</small></span>
+      </nav>
+      <div class="scope-card"><span>Phạm vi tài chính</span><strong>Doanh nghiệp · 6 nông trại</strong><small>Finance analyst · enterprise read</small><span>Fixture chỉ đọc, không có ledger mutation.</span></div>
+      <div class="rail-user"><span class="user-tile">LT</span><span><strong>Lan Trần</strong><small>Chuyên viên tài chính</small></span></div>
+    </aside>
+    <button class="nav-scrim" type="button" data-nav-close tabindex="-1" aria-hidden="true" aria-label="Đóng điều hướng"></button>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button nav-toggle" type="button" data-nav-toggle aria-controls="primary-rail" aria-expanded="false" aria-label="Mở điều hướng"><svg><use href="#i-menu"/></svg></button>
+        <div class="breadcrumbs"><span>Phân tích</span><b>/</b><strong>Chi phí</strong></div>
+        <div class="topbar-actions"><span class="freshness"><i></i>Dữ liệu đến <time datetime="2026-07-18">18/07/2026</time></span><button class="export-button" type="button" data-open-export aria-haspopup="dialog" aria-controls="cost-export-dialog"><svg><use href="#i-export"/></svg>Kiểm tra xuất dữ liệu</button></div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="cost-heading" aria-labelledby="page-title">
+          <div><p data-lens-eyebrow>Operating cost · P&amp;L</p><h1 id="page-title"><span>Phân tích chi phí</span><strong data-lens-title>Chi phí vận hành</strong></h1><span data-lens-definition>Chi phí vật tư và nhân công đã phân bổ cho hoạt động canh tác.</span></div>
+          <div class="cutoff-note"><small>Ảnh chụp tài chính</small><strong>Run synthetic-2026-07-18-20260718</strong><span>Gold cutoff 18/07/2026 · chỉ đọc</span></div>
+        </section>
+
+        <section class="lens-desk" aria-labelledby="lens-title">
+          <div class="lens-intro"><p>Chọn đúng sổ</p><h2 id="lens-title">Hai lens không thể cộng gộp</h2><span data-filter-summary>Doanh nghiệp · 6 nông trại · Operating cost</span></div>
+          <div class="lens-tabs" role="tablist" aria-label="Lens phân tích chi phí">
+            <button type="button" role="tab" id="lens-operating" aria-selected="true" aria-controls="cost-workspace" data-lens="operating"><strong>Chi phí vận hành</strong><span>P&amp;L · vật tư + nhân công</span></button>
+            <button type="button" role="tab" id="lens-procurement" aria-selected="false" aria-controls="cost-workspace" tabindex="-1" data-lens="procurement"><strong>Chi tiêu mua hàng</strong><span>Non-P&amp;L · phiếu nhập</span></button>
+          </div>
+          <div class="ledger-boundary"><strong>Không tạo “tổng chi phí” giả</strong><span>Procurement spend, operating cost và inventory value là ba đại lượng khác nhau.</span><a href="./inventory-control-prototype.html">Mở giá trị tồn kho tại Inventory <svg><use href="#i-arrow"/></svg></a></div>
+        </section>
+
+        <section class="reconciliation-banner" aria-label="Trạng thái ranh giới tài chính"><span><svg><use href="#i-shield"/></svg></span><div><strong data-reconciliation-status>48/48 mùa vụ cân bằng</strong><span data-reconciliation-note>Vật tư + nhân công = chi phí vận hành; component delta 0 ₫.</span></div><small>Gold aggregate · manifest-fenced</small></section>
+        <section class="cost-kpis" aria-label="Tóm tắt lens đang chọn" data-kpis></section>
+
+        <div class="cost-dashboard" id="cost-workspace" role="tabpanel" aria-labelledby="lens-operating">
+          <section class="trend-panel" aria-labelledby="trend-title">
+            <header><div><p>Dòng thời gian</p><h2 id="trend-title" data-trend-title>Nhịp chi phí theo tháng</h2><span data-trend-summary></span></div><span class="unit-chip">VND · tháng</span></header>
+            <div class="trend-bars" data-trend-bars aria-label="Biểu đồ xu hướng theo tháng"></div>
+            <details class="trend-table"><summary>Xem bảng số liệu đầy đủ</summary><div class="table-scroll" role="region" aria-label="Bảng xu hướng chi phí theo tháng, cuộn ngang để xem đầy đủ" tabindex="0"><table><thead data-trend-head></thead><tbody data-trend-body></tbody></table></div></details>
+          </section>
+
+          <aside class="reconciliation-panel" aria-labelledby="reconciliation-title">
+            <header><p>Ledger boundary</p><h2 id="reconciliation-title" data-reconciliation-title>Đối soát thành phần</h2></header>
+            <dl data-reconciliation-rows></dl>
+            <div class="lineage-stamp"><span>Pipeline</span><strong>agriinsight-bronze-silver-gold-v1</strong><small>Canonical KPI nằm trong Gold; browser chỉ chọn và định dạng.</small></div>
+          </aside>
+        </div>
+
+        <div class="cost-detail-grid">
+          <section class="driver-panel" aria-labelledby="driver-title">
+            <header><div><p data-driver-eyebrow>Activity cost drivers</p><h2 id="driver-title" data-driver-title>Chi phí theo hoạt động</h2><span data-driver-summary>7 nhóm · sắp theo chi phí giảm dần</span></div></header>
+            <div class="driver-list" data-driver-list></div>
+            <p class="global-selection-status" role="status" aria-live="polite" data-global-status></p>
+          </section>
+
+          <aside class="evidence-panel" aria-labelledby="evidence-title">
+            <header><div><p>Bằng chứng đang chọn</p><span data-evidence-code>bon-phan</span><h2 id="evidence-title" data-evidence-title>Bón phân</h2></div><span class="evidence-badge" data-evidence-badge>23,31%</span></header>
+            <dl class="evidence-facts" data-evidence-facts></dl>
+            <section class="latest-evidence"><header><span data-latest-label>Hoạt động gần nhất</span><strong data-latest-id>ACT-2026-0015-010</strong></header><dl data-latest-facts></dl><p data-evidence-boundary>Lineage minh họa từ Gold detail; không mở mutation.</p></section>
+          </aside>
+        </div>
+
+        <section class="comparison-panel" aria-labelledby="comparison-title">
+          <header><div><p>So sánh có phạm vi</p><h2 id="comparison-title" data-comparison-title>Chi phí vận hành theo nông trại</h2><span data-comparison-summary>6 nông trại · sắp theo chi phí giảm dần</span></div><span class="unit-chip" data-comparison-unit>VND · ha · kg</span></header>
+          <div class="table-scroll" role="region" aria-label="Bảng so sánh chi phí, cuộn ngang để xem đầy đủ" tabindex="0"><table><thead data-comparison-head></thead><tbody data-comparison-body></tbody></table></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="cost-dialog" id="cost-export-dialog" aria-labelledby="export-title" aria-describedby="export-boundary">
+    <div class="dialog-shell"><header><div><small>Export preflight · chỉ đọc</small><h2 id="export-title">Xác nhận hợp đồng dữ liệu</h2></div><button type="button" data-close-dialog aria-label="Đóng kiểm tra xuất dữ liệu">×</button></header>
+      <div class="export-boundary" id="export-boundary"><strong>Prototype không tạo tệp</strong><span>Việc sinh file chỉ mở khi analytics endpoint áp dụng quyền, giới hạn và audit.</span></div>
+      <dl class="export-contract"><div><dt>Lens</dt><dd data-export-lens></dd></div><div><dt>Phạm vi</dt><dd data-export-scope></dd></div><div><dt>Cutoff</dt><dd data-export-cutoff></dd></div><div><dt>Hợp đồng</dt><dd data-export-contract></dd></div><div><dt>Ước tính</dt><dd data-export-estimate></dd></div></dl>
+      <p>Không có URL tải tạm, đường dẫn hệ thống hay dữ liệu ngoài scope trong fixture này.</p>
+      <div class="dialog-actions"><button class="secondary-action" type="button" data-close-dialog>Đóng preflight</button><button class="primary-action" type="button" disabled>Chờ analytics endpoint</button></div>
+    </div>
+  </dialog>
+</body>
+</html>
