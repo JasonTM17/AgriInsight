@@ -23,7 +23,7 @@ This roadmap reflects the current state of the repository, not an assumed releas
 
 ## Follow-on frontend
 
-The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, and Work prototypes are ready for detailed planning. Cost Analysis now has a Gold-backed read-only prototype with source/static/browser/review gates complete; it is not production-ready and does not imply live export. Inventory now has a Gold-backed source prototype with static/review complete, but browser/responsive approval remains pending. The C/D disk guard is PASS after safe recovery. Production implementation remains queued until backend phases 1-3 stabilize the auth and OpenAPI boundary. See [design guidelines](./design-guidelines.md).
+The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, Work, Cost Analysis, and Inventory prototypes are ready for detailed planning. Cost Analysis and WH-001 Inventory now have Gold-backed read-only fixtures with source/static/browser/review gates complete; neither is production-ready or implies live export/mutation. The C/D disk guard is PASS after safe cache relocation to D. Production implementation remains queued until backend phases 1-3 stabilize the auth and OpenAPI boundary. See [design guidelines](./design-guidelines.md).
 
 ## Deferred until later
 
