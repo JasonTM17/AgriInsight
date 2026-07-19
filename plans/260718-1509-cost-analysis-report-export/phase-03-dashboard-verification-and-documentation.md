@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Dashboard Verification and Documentation"
-status: pending
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: [2]
@@ -36,11 +36,11 @@ Add a modular Cost Analysis page, keep `dashboard/app.py` as the composition she
 
 ## Success Criteria
 
-- [ ] Cost Analysis page renders with default artifacts and all filters produce stable tables/metrics.
-- [ ] AppTest and full pytest pass; compile, Docker compose config, and wheel build pass.
-- [ ] Browser QA shows no console errors, clipped KPIs, overlapping charts, or unreadable Vietnamese labels.
-- [ ] Disk guard passes current C/D thresholds; no temp/cache/report output is left outside approved folders.
-- [ ] Docs match actual file paths, commands, contracts, adapter limitation, and acceptance state.
+- [x] Cost Analysis page renders with default artifacts and all filters produce stable tables/metrics.
+- [x] AppTest and full pytest pass; compile, Docker compose config, and wheel build pass.
+- [x] Browser QA shows no console errors, clipped KPIs, overlapping charts, or unreadable Vietnamese labels.
+- [x] Disk guard passes current C/D thresholds; no temp/cache/report output is left outside approved folders.
+- [x] Docs match actual file paths, commands, contracts, adapter limitation, and acceptance state.
 
 ## Tests / Validation
 
@@ -48,7 +48,7 @@ Run focused AppTest first, then full `pytest`, `python -m compileall -q src dash
 
 ## Risk Assessment
 
-- **Medium:** the 566-line legacy app remains large. Add only a modular page; defer broad refactor to avoid regressions.
+- **Medium:** the 632-line legacy app remains large. Cost Analysis stays modular; defer broad unrelated refactor to avoid regressions.
 - **Medium:** Streamlit reruns can rebuild exports. Use form submit and cached Gold data, not global mutable state.
 - **Rollback:** remove Cost Analysis route and disk script; existing pages/artifacts remain valid.
 
@@ -58,4 +58,5 @@ No authentication is introduced; clearly label the dashboard as local/internal u
 
 ## Next Steps
 
-After all gates pass, sync phase checkboxes/plan status, run docs-manager, create a journal entry, and ask before push/PR.
+Phase closed with linked reviewer, tester, docs-manager, and PM evidence. Do not
+publish the local/internal dashboard until authentication/RBAC is implemented.
