@@ -1,0 +1,66 @@
+package com.agriinsight.backend.persistence.support;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+
+public final class SqlTestResources {
+
+    private SqlTestResources() {
+    }
+
+    public static String projectFile(String relativePath) throws IOException {
+        return Files.readString(projectPath(relativePath), StandardCharsets.UTF_8);
+    }
+
+    public static Path projectPath(String relativePath) {
+        return projectRoot().resolve(relativePath);
+    }
+
+    public static String renderPsqlScript(String relativePath, Map<String, String> variables)
+            throws IOException {
+        String rendered = projectFile(relativePath).lines()
+                .filter(line -> !line.stripLeading().startsWith("\\"))
+                .reduce("", (left, line) -> left + line + System.lineSeparator());
+        for (var variable : variables.entrySet()) {
+            rendered = rendered.replace(":'" + variable.getKey() + "'", sqlLiteral(variable.getValue()));
+        }
+        return rendered;
+    }
+
+    public static Path copyLegacyMigrations() throws IOException {
+        Path root = projectRoot();
+        Path target = Files.createTempDirectory(root.resolve("artifacts/_tmp"), "legacy-migrations-");
+        Path source = root.resolve("backend/src/main/resources/db/migration");
+        for (String file : new String[] {
+                "V1__create_tenant_anchor.sql",
+                "V2__create_identity_tables.sql",
+                "V3__seed_permissions_and_roles.sql"
+        }) {
+            Files.copy(source.resolve(file), target.resolve(file));
+        }
+        return target;
+    }
+
+    public static void deleteLegacyMigrations(Path directory) throws IOException {
+        try (var files = Files.list(directory)) {
+            for (Path file : files.toList()) {
+                Files.delete(file);
+            }
+        }
+        Files.delete(directory);
+    }
+
+    private static String sqlLiteral(String value) {
+        return "'" + value.replace("'", "''") + "'";
+    }
+
+    private static Path projectRoot() {
+        Path workingDirectory = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        return Files.isDirectory(workingDirectory.resolve("backend"))
+                ? workingDirectory
+                : workingDirectory.getParent();
+    }
+}
