@@ -408,9 +408,20 @@ def render_cost_report_pdf(
     }
     filter_rows = [
         ["Phạm vi", scope_labels[request.scope], "Nông trại", request.farm or "Tất cả"],
-        ["Cây trồng", request.crop or "Tất cả", "Hoạt động", request.activity or "Tất cả"],
-        ["Nhà cung cấp", request.supplier or "Tất cả", "Từ tháng", request.month_from or "Đầu kỳ"],
-        ["Đến tháng", request.month_to or "Cuối kỳ", "Giới hạn xếp hạng", request.top_n],
+        ["Cây trồng", request.crop or "Tất cả", "Mùa vụ", request.season or "Tất cả"],
+        [
+            "Hoạt động",
+            request.activity or "Tất cả",
+            "Nhà cung cấp",
+            request.supplier or "Tất cả",
+        ],
+        [
+            "Từ tháng",
+            request.month_from or "Đầu kỳ",
+            "Đến tháng",
+            request.month_to or "Cuối kỳ",
+        ],
+        ["Giới hạn xếp hạng", request.top_n, "", ""],
     ]
     metadata_rows = [
         ["Run ID", metadata.run_id, "Ngày dữ liệu", metadata.as_of_date],

@@ -511,15 +511,21 @@ function writeSummary(sheet, payload, frames) {
   sheet.getRange("B3:C3").values = [[
     parseWorkbookDate(payload.metadata.as_of_date, "as_of_date"),
   ]];
-  sheet.getRange("E3").values = [["Scope"]];
-  sheet.getRange("F3:G3").merge();
-  sheet.getRange("F3:G3").values = [[escapeWorkbookText(payload.request.scope)]];
-  sheet.getRange("I3").values = [["Run ID"]];
-  sheet.getRange("J3:M3").merge();
-  sheet.getRange("J3:M3").values = [[escapeWorkbookText(payload.metadata.run_id)]];
+  sheet.getRange("D3").values = [["Scope"]];
+  sheet.getRange("E3:F3").merge();
+  sheet.getRange("E3:F3").values = [[escapeWorkbookText(payload.request.scope)]];
+  sheet.getRange("G3").values = [["Season"]];
+  sheet.getRange("H3:I3").merge();
+  sheet.getRange("H3:I3").values = [[
+    escapeWorkbookText(payload.request.season ?? "All"),
+  ]];
+  sheet.getRange("J3").values = [["Run ID"]];
+  sheet.getRange("K3:M3").merge();
+  sheet.getRange("K3:M3").values = [[escapeWorkbookText(payload.metadata.run_id)]];
   sheet.getRange("A3").format.font = { bold: true, color: COLORS.darkGreen };
-  sheet.getRange("E3").format.font = { bold: true, color: COLORS.darkGreen };
-  sheet.getRange("I3").format.font = { bold: true, color: COLORS.darkGreen };
+  sheet.getRange("D3").format.font = { bold: true, color: COLORS.darkGreen };
+  sheet.getRange("G3").format.font = { bold: true, color: COLORS.darkGreen };
+  sheet.getRange("J3").format.font = { bold: true, color: COLORS.darkGreen };
   sheet.getRange("B3:C3").format.numberFormat = "yyyy-mm-dd";
   const sourceCells = writeSourceSummaryControls(sheet, summary);
 

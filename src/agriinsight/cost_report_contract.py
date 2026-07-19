@@ -15,7 +15,17 @@ MAX_BUNDLE_BYTES = 10 * 1024 * 1024
 MAX_TOP_N = 30
 REPORT_VERSION = "cost-report-v1"
 ALLOWED_REQUEST_KEYS = frozenset(
-    {"scope", "farm", "crop", "activity", "supplier", "month_from", "month_to", "top_n"}
+    {
+        "scope",
+        "farm",
+        "crop",
+        "season",
+        "activity",
+        "supplier",
+        "month_from",
+        "month_to",
+        "top_n",
+    }
 )
 ALLOWED_SCOPES = frozenset({"all", "operating", "procurement"})
 _MONTH_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
@@ -43,6 +53,7 @@ class CostReportDomains:
     activities: frozenset[str]
     suppliers: frozenset[str]
     months: frozenset[str]
+    seasons: frozenset[str] = frozenset()
 
     @classmethod
     def from_gold(cls, gold: Mapping[str, pd.DataFrame]) -> CostReportDomains:
@@ -55,6 +66,7 @@ class CostReportDomains:
             farms=_domain_values(cost, "farm_code")
             | _domain_values(procurement, "farm_code"),
             crops=_domain_values(cost, "crop_code"),
+            seasons=_domain_values(cost, "season_code"),
             activities=_domain_values(cost, "activity_type"),
             suppliers=_domain_values(procurement, "supplier_code"),
             months=_domain_values(cost, "month") | _domain_values(procurement, "month"),
@@ -100,6 +112,7 @@ class CostReportRequest:
     month_from: str | None = None
     month_to: str | None = None
     top_n: int = 15
+    season: str | None = None
 
     @classmethod
     def from_mapping(
@@ -123,6 +136,7 @@ class CostReportRequest:
             scope=scope,
             farm=_optional_domain_value(raw, "farm", domains.farms),
             crop=_optional_domain_value(raw, "crop", domains.crops),
+            season=_optional_domain_value(raw, "season", domains.seasons),
             activity=_optional_domain_value(raw, "activity", domains.activities),
             supplier=_optional_domain_value(raw, "supplier", domains.suppliers),
             month_from=_optional_month(raw, "month_from", domains.months),
@@ -135,20 +149,29 @@ class CostReportRequest:
         return request
 
     def _validate_scope_fields(self) -> None:
-        if self.scope == "all" and (self.crop or self.activity or self.supplier):
+        if self.scope == "all" and (
+            self.crop or self.season or self.activity or self.supplier
+        ):
             raise ReportValidationError(
                 "scope=all accepts only farm and month filters; select a single lens for other filters"
             )
         if self.scope == "operating" and self.supplier:
             raise ReportValidationError("supplier is only valid for procurement scope")
         if self.scope == "procurement" and (self.crop or self.activity):
-            raise ReportValidationError("crop and activity are only valid for operating scope")
+            raise ReportValidationError(
+                "crop and activity are only valid for operating scope"
+            )
+        if self.scope == "procurement" and self.season:
+            raise ReportValidationError(
+                "season is only valid for operating scope"
+            )
 
     def canonical_dict(self) -> dict[str, object]:
         return {
             "scope": self.scope,
             "farm": self.farm,
             "crop": self.crop,
+            "season": self.season,
             "activity": self.activity,
             "supplier": self.supplier,
             "month_from": self.month_from,
@@ -158,8 +181,13 @@ class CostReportRequest:
 
     @property
     def filter_hash(self) -> str:
+        canonical = self.canonical_dict()
+        # Version 1 exports predate the optional season filter. Omitting an
+        # unselected season preserves hashes and filenames for legacy requests.
+        if self.season is None:
+            canonical.pop("season")
         payload = json.dumps(
-            self.canonical_dict(), ensure_ascii=True, sort_keys=True, separators=(",", ":")
+            canonical, ensure_ascii=True, sort_keys=True, separators=(",", ":")
         )
         return hashlib.sha256(payload.encode("ascii")).hexdigest()[:12]
 

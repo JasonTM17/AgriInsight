@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from agriinsight.cost_report_assets import bundled_xlsx_builder
 from agriinsight.cost_report_contract import (
     CostReportDomains,
     CostReportMetadata,
@@ -19,8 +20,10 @@ from agriinsight.cost_report_xlsx import (
 )
 
 
-def _prepared_report(gold, manifest):
-    request = CostReportRequest.from_mapping({}, CostReportDomains.from_gold(gold))
+def _prepared_report(gold, manifest, raw=None):
+    request = CostReportRequest.from_mapping(
+        raw or {}, CostReportDomains.from_gold(gold)
+    )
     metadata = CostReportMetadata.from_manifest(manifest, request)
     return request, metadata, prepare_cost_report(gold, request, metadata)
 
@@ -28,6 +31,13 @@ def _prepared_report(gold, manifest):
 def test_xlsx_runtime_requires_both_explicit_environment_paths() -> None:
     with pytest.raises(ExportUnavailable, match="AGRIINSIGHT_NODE_EXECUTABLE"):
         detect_xlsx_runtime({})
+
+
+def test_bundled_xlsx_builder_displays_season_filter() -> None:
+    source = bundled_xlsx_builder().read_text(encoding="utf-8")
+
+    assert '[["Season"]]' in source
+    assert "payload.request.season" in source
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node runtime not available")
@@ -38,9 +48,15 @@ def test_xlsx_adapter_escapes_formulas_and_cleans_temp_on_success_and_failure(
     original_gold, manifest = report_sources
     gold = dict(original_gold)
     detail = original_gold["cost_activity_detail"].copy()
-    detail.loc[0, "notes"] = "=SUM(A1:A2)"
+    season = sorted(CostReportDomains.from_gold(gold).seasons)[0]
+    selected_index = detail.index[detail["season_code"].eq(season)][0]
+    detail.loc[selected_index, "notes"] = "=SUM(A1:A2)"
     gold["cost_activity_detail"] = detail
-    request, metadata, report = _prepared_report(gold, manifest)
+    request, metadata, report = _prepared_report(
+        gold,
+        manifest,
+        {"scope": "operating", "season": season},
+    )
 
     node_modules = tmp_path / "runtime-node-modules"
     node_modules.mkdir()
@@ -58,6 +74,12 @@ const safe = payload.report.costDetail.records.some(
   (row) => row.notes === "'=SUM(A1:A2)",
 );
 if (!safe) throw new Error("formula-like text was not escaped");
+const seasonMetadata = payload.report.metadata.records.some(
+  (row) => row.item === "filter_season" && row.value === payload.request.season,
+);
+if (typeof payload.request.season !== "string" || !seasonMetadata) {
+  throw new Error("season request metadata was not preserved");
+}
 await mkdir(process.argv[4], { recursive: true });
 await writeFile(process.argv[3], Buffer.from("xlsx"));
 process.stdout.write(JSON.stringify({

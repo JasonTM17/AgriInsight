@@ -41,12 +41,35 @@ def test_request_is_allowlisted_and_filename_is_deterministic(report_sources) ->
     assert "\\" not in first_metadata.filename(first, "pdf")
 
 
+def test_unselected_season_preserves_version_one_filter_hash() -> None:
+    assert CostReportRequest().filter_hash == "9c2828af6f25"
+
+
+def test_operating_season_is_canonical_and_changes_filter_hash(report_sources) -> None:
+    gold, _ = report_sources
+    domains = CostReportDomains.from_gold(gold)
+    season = sorted(domains.seasons)[0]
+    baseline = CostReportRequest.from_mapping({"scope": "operating"}, domains)
+    selected = CostReportRequest.from_mapping(
+        {"scope": "operating", "season": season}, domains
+    )
+
+    assert domains.seasons == frozenset(
+        gold["cost_activity_detail"]["season_code"].dropna().astype(str).unique()
+    )
+    assert selected.season == season
+    assert selected.canonical_dict()["season"] == season
+    assert selected.filter_hash != baseline.filter_hash
+
+
 @pytest.mark.parametrize(
     "raw",
     (
         {"unknown": "value"},
         {"scope": "everything"},
         {"farm": "../../escape"},
+        {"scope": "operating", "season": "../escape"},
+        {"scope": "operating", "season": "not-a-season"},
         {"month_from": "2026-13"},
         {"top_n": 0},
         {"top_n": True},
@@ -62,13 +85,22 @@ def test_request_rejects_unknown_or_unsafe_values(report_sources, raw) -> None:
 def test_request_rejects_filters_from_the_wrong_semantic_lens(report_sources) -> None:
     gold, _ = report_sources
     domains = CostReportDomains.from_gold(gold)
+    season = sorted(domains.seasons)[0]
     with pytest.raises(ReportValidationError, match="single lens"):
         CostReportRequest.from_mapping(
             {"scope": "all", "supplier": sorted(domains.suppliers)[0]}, domains
         )
+    with pytest.raises(ReportValidationError, match="single lens"):
+        CostReportRequest.from_mapping(
+            {"scope": "all", "season": season}, domains
+        )
     with pytest.raises(ReportValidationError, match="procurement"):
         CostReportRequest.from_mapping(
             {"scope": "operating", "supplier": sorted(domains.suppliers)[0]}, domains
+        )
+    with pytest.raises(ReportValidationError, match="operating"):
+        CostReportRequest.from_mapping(
+            {"scope": "procurement", "season": season}, domains
         )
 
 
@@ -107,6 +139,29 @@ def test_prepared_report_keeps_operating_and_procurement_separate(report_sources
     )
     assert set(report.checks["status"]) == {"PASS"}
     assert report.monthly["month"].is_monotonic_increasing
+
+
+def test_prepared_operating_report_filters_by_season(report_sources) -> None:
+    gold, manifest = report_sources
+    domains = CostReportDomains.from_gold(gold)
+    season = sorted(domains.seasons)[0]
+    request, metadata = _request_and_metadata(
+        gold,
+        manifest,
+        {"scope": "operating", "season": season},
+    )
+    report = prepare_cost_report(gold, request, metadata)
+    expected = gold["cost_activity_detail"].loc[
+        gold["cost_activity_detail"]["season_code"].eq(season)
+    ]
+    metadata_values = report.metadata.set_index("item")["value"]
+
+    assert not report.cost_detail.empty
+    assert report.procurement_detail.empty
+    assert report.cost_detail["season_code"].eq(season).all()
+    assert len(report.cost_detail) == len(expected)
+    assert report.summary.iloc[0]["operating_activity_count"] == len(expected)
+    assert metadata_values["filter_season"] == season
 
 
 def test_csv_is_deterministic_round_trippable_and_formula_safe(report_sources) -> None:

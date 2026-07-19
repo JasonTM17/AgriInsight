@@ -20,8 +20,10 @@ _PDF_STACK_AVAILABLE = all(
 )
 
 
-def _request_and_metadata(gold, manifest):
-    request = CostReportRequest.from_mapping({}, CostReportDomains.from_gold(gold))
+def _request_and_metadata(gold, manifest, raw=None):
+    request = CostReportRequest.from_mapping(
+        raw or {}, CostReportDomains.from_gold(gold)
+    )
     return request, CostReportMetadata.from_manifest(manifest, request)
 
 
@@ -48,6 +50,26 @@ def test_pdf_is_deterministic_and_contains_traceable_vietnamese_text(
     assert "MODEL STATUS: PASS" in extracted
     assert manifest["run_id"] in extracted
     assert all(len(text) > 200 for text in page_texts)
+
+
+@pytest.mark.skipif(not _PDF_STACK_AVAILABLE, reason="PDF report extras not installed")
+def test_pdf_includes_operating_season_filter(report_sources) -> None:
+    from pypdf import PdfReader
+
+    gold, manifest = report_sources
+    season = sorted(CostReportDomains.from_gold(gold).seasons)[0]
+    request, metadata = _request_and_metadata(
+        gold,
+        manifest,
+        {"scope": "operating", "season": season},
+    )
+    report = prepare_cost_report(gold, request, metadata)
+
+    reader = PdfReader(io.BytesIO(render_cost_report_pdf(report, request, metadata)))
+    extracted = "\n".join((page.extract_text() or "") for page in reader.pages)
+
+    assert "Mùa vụ" in extracted
+    assert season in extracted
 
 
 @pytest.mark.skipif(not _PDF_STACK_AVAILABLE, reason="PDF report extras not installed")

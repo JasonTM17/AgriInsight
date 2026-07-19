@@ -35,6 +35,8 @@ def _filter_details(
         procurement_mask &= procurement["farm_code"].eq(request.farm)
     if request.crop:
         cost_mask &= cost["crop_code"].eq(request.crop)
+    if request.season:
+        cost_mask &= cost["season_code"].eq(request.season)
     if request.activity:
         cost_mask &= cost["activity_type"].eq(request.activity)
     if request.supplier:
@@ -100,11 +102,13 @@ def _monthly(cost: pd.DataFrame, procurement: pd.DataFrame) -> pd.DataFrame:
         if not procurement.empty
         else pd.DataFrame(columns=("month", "procurement_quantity_base_unit", "procurement_spend_vnd"))
     )
-    return (
-        operating.merge(purchasing, on="month", how="outer", validate="one_to_one")
-        .fillna(0)
-        .sort_values("month", kind="stable", ignore_index=True)
+    monthly = operating.merge(
+        purchasing, on="month", how="outer", validate="one_to_one"
     )
+    numeric_columns = monthly.columns.difference(["month"])
+    for column in numeric_columns:
+        monthly[column] = pd.to_numeric(monthly[column], errors="raise").fillna(0.0)
+    return monthly.sort_values("month", kind="stable", ignore_index=True)
 
 
 def _checks(summary: pd.DataFrame, cost: pd.DataFrame, procurement: pd.DataFrame) -> pd.DataFrame:
