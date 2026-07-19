@@ -48,7 +48,7 @@ This is an API-first stateless bearer boundary. A browser BFF/server-side sessio
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\infrastructure\SecuredRouteRegistry.java`
 - Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V2__create_identity_tables.sql`
 - Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V3__seed_permissions_and_roles.sql`
-- Modify: `D:\AgriInsight\backend\src\main\resources\application.yml`, `application-test.yml`
+- Modify: `D:\AgriInsight\backend\src\main\resources\application.yml`, `D:\AgriInsight\backend\src\test\resources\application-test.yml`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\identity\IdentitySecurityTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\identity\CurrentUserApiTests.java`
 

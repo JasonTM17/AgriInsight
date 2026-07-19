@@ -1,7 +1,7 @@
 ---
 title: "Backend Application, Authentication and Row-Scoped Authorization"
 description: "Add a Java 21 Spring modular monolith for operational APIs with provider-neutral OIDC, deny-by-default RBAC, PostgreSQL tenant RLS, and a versioned outbox boundary to the Python analytics pipeline."
-status: pending
+status: in-progress
 priority: P1
 effort: "17-23d"
 branch: "main"
@@ -71,6 +71,7 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 ## Follow-on frontend and image delivery
 
 - [`frontend-follow-up-brief.md`](./frontend-follow-up-brief.md) records the CK FE sequence: `ck:ui-ux-pro-max -> ck:frontend-design -> ck:frontend-development -> ck:web-frameworks -> ck:test/web-testing -> ck:code-review`. It defines the product-specific visual direction, role-aware information architecture, accessibility/performance budgets, and the gate for a later standalone frontend plan.
+- [`design-system/MASTER.md`](./design-system/MASTER.md) is the persisted Field Ledger visual source of truth; page overrides are kept under `design-system/pages/` and do not authorize frontend implementation before the backend entry gate.
 - Phase 7 publishes only tested first-party images: `${DOCKERHUB_NAMESPACE}/agriinsight-python` and `${DOCKERHUB_NAMESPACE}/agriinsight-backend`. The future frontend plan owns `${DOCKERHUB_NAMESPACE}/agriinsight-web`. Third-party images such as PostgreSQL are consumed from their verified upstream source, never mirrored under AgriInsight without a separate supply-chain decision.
 - Pull requests build/test without pushing. A protected release job publishes immutable semantic-version and Git-SHA tags, emits OCI metadata plus SBOM/provenance, scans the result, and smoke-tests the exact pushed digest. `latest` is not moved automatically.
 - Docker Hub namespace, repository visibility, and a least-privilege write token are deployment inputs. CI secrets are named `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`; they are never committed, printed, passed as build arguments, or stored in application images.
@@ -79,7 +80,7 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Backend foundation and contracts](./phase-01-backend-foundation-and-contracts.md) | Pending |
+| 1 | [Backend foundation and contracts](./phase-01-backend-foundation-and-contracts.md) | In progress |
 | 2 | [OIDC identity and security boundary](./phase-02-oidc-identity-and-security-boundary.md) | Pending |
 | 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Pending |
 | 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Pending |

@@ -35,7 +35,7 @@ RLS is a tenant backstop, not the sole business authorization mechanism. Farm ma
 ## Related Code Files
 
 - Modify: `D:\AgriInsight\backend\pom.xml` (AOP/transaction/test dependencies if required)
-- Modify: `D:\AgriInsight\backend\src\main\resources\application.yml`, `application-test.yml` (runtime-only app credential, separate migration command settings)
+- Modify: `D:\AgriInsight\backend\src\main\resources\application.yml`, `D:\AgriInsight\backend\src\test\resources\application-test.yml` (runtime-only app credential, separate migration command settings)
 - Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\api\CurrentUserController.java`
 - Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\application\ExternalIdentityService.java`
 - Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\application\PrincipalMapper.java`
