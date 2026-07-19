@@ -12,10 +12,10 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.identity.application.ExternalIdentityClaims;
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
-import com.agriinsight.backend.identity.domain.Permission;
-import com.agriinsight.backend.identity.domain.Role;
 import com.agriinsight.backend.identity.infrastructure.PostgresIdentityBootstrapRepository;
 import com.agriinsight.backend.identity.infrastructure.PostgresTenantPrincipalRepository;
 import com.agriinsight.backend.persistence.support.SqlTestResources;

@@ -13,12 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.IdentityRejectedException;
 import com.agriinsight.backend.identity.application.IdentityRejectionReason;
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
-import com.agriinsight.backend.identity.domain.Permission;
-import com.agriinsight.backend.identity.domain.Role;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;

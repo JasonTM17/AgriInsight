@@ -1,6 +1,6 @@
 package com.agriinsight.backend.identity.infrastructure;
 
-import com.agriinsight.backend.identity.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;

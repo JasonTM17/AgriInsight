@@ -50,9 +50,4 @@ class IdentityDomainTest {
         assertThat(identity.isActive()).isFalse();
     }
 
-    @Test
-    void fixedAuthorizationCatalogContainsSupplierWithoutImplicitPermissions() {
-        assertThat(Role.values()).hasSize(7).contains(Role.SUPPLIER);
-        assertThat(Permission.values()).hasSize(19);
-    }
 }

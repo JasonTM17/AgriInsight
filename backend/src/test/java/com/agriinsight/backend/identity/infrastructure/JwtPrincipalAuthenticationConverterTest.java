@@ -5,11 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.IdentityRejectedException;
 import com.agriinsight.backend.identity.application.IdentityRejectionReason;
 import com.agriinsight.backend.identity.application.PrincipalMapper;
-import com.agriinsight.backend.identity.domain.Permission;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;

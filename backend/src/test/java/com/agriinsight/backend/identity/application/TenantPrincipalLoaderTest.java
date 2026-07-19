@@ -9,8 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.agriinsight.backend.identity.domain.Permission;
-import com.agriinsight.backend.identity.domain.Role;
+import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.shared.persistence.TenantContextBinder;
 import java.util.Optional;
 import java.util.Set;

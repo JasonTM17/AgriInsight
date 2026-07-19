@@ -1,4 +1,4 @@
-package com.agriinsight.backend.identity.domain;
+package com.agriinsight.backend.authorization.domain;
 
 public enum Permission {
     IDENTITY_USER_MANAGE,

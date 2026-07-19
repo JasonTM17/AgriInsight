@@ -1,11 +1,11 @@
 package com.agriinsight.backend.identity.infrastructure;
 
+import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.identity.application.IdentityRejectedException;
 import com.agriinsight.backend.identity.application.IdentityRejectionReason;
 import com.agriinsight.backend.identity.application.TenantPrincipalData;
 import com.agriinsight.backend.identity.application.TenantPrincipalPort;
-import com.agriinsight.backend.identity.domain.Permission;
-import com.agriinsight.backend.identity.domain.Role;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;

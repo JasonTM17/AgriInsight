@@ -1,7 +1,7 @@
 package com.agriinsight.backend.identity.application;
 
-import com.agriinsight.backend.identity.domain.Permission;
-import com.agriinsight.backend.identity.domain.Role;
+import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.authorization.domain.Role;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
