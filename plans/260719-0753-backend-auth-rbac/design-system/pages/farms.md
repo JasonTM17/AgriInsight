@@ -1,6 +1,6 @@
 # Farms page override
 
-Status: design contract only. Read-only performance exists in Gold; operational farm/field/season APIs depend on backend phase 4.
+Status: design contract plus reviewed read-only comparison fixture. Operational farm/field/season APIs depend on backend phase 4.
 
 ## User and decision
 
@@ -17,6 +17,14 @@ Status: design contract only. Read-only performance exists in Gold; operational 
 | Field health context | `field_health_status.csv` | crop, season, evidence age, risk/action |
 | Farm/field/season master | Phase 4 operational API | UUID, canonical code, active/status, optimistic version |
 | Activity/harvest lineage | Phase 4 operational API + approved analytics link | source event/run, correction lineage |
+
+## Reviewed fixture boundary
+
+- Fixture: [`../prototypes/farm-performance-prototype.html`](../prototypes/farm-performance-prototype.html)
+- Review evidence: [`../prototypes/farm-performance-review.md`](../prototypes/farm-performance-review.md)
+- Frozen fixture uses all 6 farms, 24 fields, and 12 alerts from current Gold artifacts with zero cross-check mismatches.
+- URL state covers metric, farm, and field. Crop/season/status filters remain future contract work because the current farm aggregate does not supply those dimensions.
+- The field atlas is a plot-selection model, not asserted geographic geometry. It has a keyboard/list equivalent and a mobile modal path.
 
 ## Structure and interaction
 
@@ -46,4 +54,5 @@ Status: design contract only. Read-only performance exists in Gold; operational 
 
 ## Acceptance
 
-- Comparison, empty tenant/filter, stale/partial, denied, and future conflict fixtures exist; drill/back restores exact selection.
+- Reviewed comparison/drill fixture exists; metric/farm/field drill and browser Back restore exact selection.
+- Empty tenant/filter, stale/partial, denied, API-failure, and future conflict fixtures remain required before production acceptance.

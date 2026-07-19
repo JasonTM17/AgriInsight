@@ -23,7 +23,7 @@ This roadmap reflects the current state of the repository, not an assumed releas
 
 ## Follow-on frontend
 
-The frontend follow-up brief and the persisted CK FE master/page overrides are ready for detailed planning, but implementation is queued until backend phases 1-3 stabilize the auth and OpenAPI boundary. See [design guidelines](./design-guidelines.md).
+The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, and Work prototypes are ready for detailed planning. Production implementation remains queued until backend phases 1-3 stabilize the auth and OpenAPI boundary. See [design guidelines](./design-guidelines.md).
 
 ## Deferred until later
 

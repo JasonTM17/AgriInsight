@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AgriInsight — Hiệu suất trang trại</title>
+  <link rel="stylesheet" href="./overview-field-ledger-foundation.css">
+  <link rel="stylesheet" href="./farm-performance-components.css">
+  <link rel="stylesheet" href="./farm-performance-responsive.css">
+  <script src="./farm-performance-fixtures.js" defer></script>
+  <script src="./farm-performance-prototype.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+  <svg class="symbol-sheet" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+    <symbol id="i-field" viewBox="0 0 24 24"><path d="M4 19c5-7 11-10 16-12M7 20c3-5 7-8 13-10M12 20c2-3 4-5 8-7M4 8c3 1 5 3 6 6M5 4c4 1 7 4 8 8"/></symbol>
+    <symbol id="i-work" viewBox="0 0 24 24"><path d="M8 5V3h8v2M5 6h14v14H5zM8 11l2 2 5-5M8 17h8"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19 4C10 4 5 8 5 15c0 3 2 5 5 5 7 0 9-8 9-16ZM7 18c2-4 5-7 9-9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m4 6 5-2 6 2 5-2v14l-5 2-6-2-5 2zM9 4v14M15 6v14"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+    <symbol id="i-quality" viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3 8 8 9 5-1 8-4 8-9V7zM8 12l2.5 2.5L16 9"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="rail" id="primary-rail" aria-label="Điều hướng chính">
+      <a class="brand" href="#main-content" aria-label="AgriInsight, hiệu suất trang trại"><span class="brand-mark"><span></span><span></span><span></span></span><span><strong>AgriInsight</strong><small>Field ledger</small></span></a>
+      <button class="rail-close" type="button" data-nav-close aria-label="Đóng điều hướng">×</button>
+      <nav class="rail-nav">
+        <a href="./overview-field-ledger-prototype.html"><svg><use href="#i-grid"/></svg><span>Tổng quan</span></a>
+        <a class="is-active" href="#main-content" aria-current="page"><svg><use href="#i-field"/></svg><span>Trang trại</span><b>6</b></a>
+        <a href="./work-activity-prototype.html"><svg><use href="#i-work"/></svg><span>Công việc</span></a>
+        <span class="nav-placeholder" aria-disabled="true"><svg><use href="#i-box"/></svg><span>Tồn kho</span><small>Chưa mở</small></span>
+        <span class="nav-placeholder" aria-disabled="true"><svg><use href="#i-leaf"/></svg><span>Sức khỏe cây trồng</span><small>Chưa mở</small></span>
+      </nav>
+      <div class="scope-card"><span>Phạm vi phân tích</span><strong>Công ty Nông nghiệp An Việt</strong><small>6 trang trại · 24 khu vực</small><button type="button" data-open-filter aria-haspopup="dialog" aria-controls="farm-filter-dialog">Đổi góc so sánh</button></div>
+      <div class="rail-user"><span class="user-tile">LT</span><span><strong>Linh Trần</strong><small>Giám đốc vận hành</small></span></div>
+    </aside>
+    <button class="nav-scrim" type="button" data-nav-close tabindex="-1" aria-hidden="true" aria-label="Đóng điều hướng"></button>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button nav-toggle" type="button" data-nav-toggle aria-controls="primary-rail" aria-expanded="false" aria-label="Mở điều hướng"><svg><use href="#i-menu"/></svg></button>
+        <div class="breadcrumbs"><span>Điều hành</span><b>/</b><strong>Trang trại</strong></div>
+        <div class="topbar-actions"><span class="freshness"><i></i>Dữ liệu đến <time datetime="2026-07-18">18/07/2026</time></span><button class="filter-button" type="button" data-open-filter aria-haspopup="dialog" aria-controls="farm-filter-dialog"><svg><use href="#i-filter"/></svg>Góc so sánh <span>1</span></button></div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="farm-heading" aria-labelledby="page-title">
+          <div><p>Hiệu suất và bằng chứng ruộng</p><h1 id="page-title">So sánh trang trại</h1><span>6 trang trại · 923,11 ha canh tác · Gold contract đã đối chiếu</span></div>
+          <div class="cutoff-note"><small>Ảnh chụp dữ liệu</small><strong>Run hoàn tất ngày 18/07/2026</strong><span>Chỉ đọc; chưa có master/activity API Phase 4.</span></div>
+        </section>
+
+        <section class="quality-banner" aria-label="Trạng thái dữ liệu trang trại"><span class="quality-mark"><svg><use href="#i-quality"/></svg></span><div><strong>6/6 trang trại đã đối chiếu; 12 cảnh báo mùa vụ cần điều tra</strong><span>5 trang trại có cảnh báo ngân sách hoặc sản lượng. Không cộng tồn kho hay mua hàng vào chi phí vận hành.</span></div><a href="#comparison-title">Xem so sánh <svg><use href="#i-arrow"/></svg></a></section>
+
+        <section class="farm-kpis" aria-label="Tổng hợp trang trại"><article><span>Diện tích canh tác</span><strong>923,11 <small>ha</small></strong><small>24 khu vực</small></article><article><span>Sản lượng thu hoạch</span><strong>16,57 <small>triệu kg</small></strong><small>Gold tổng hợp</small></article><article><span>Lợi nhuận vận hành</span><strong>198,79 <small>tỷ ₫</small></strong><small>không gồm mua hàng</small></article><article><span>Cảnh báo mùa vụ</span><strong>12 <small>cảnh báo</small></strong><small>5 trang trại bị ảnh hưởng</small></article></section>
+
+        <div class="farm-workspace">
+          <section class="comparison-panel" aria-labelledby="comparison-title">
+            <header><div><p>So sánh tương đối</p><h2 id="comparison-title">Xếp hạng theo chỉ số</h2><span data-metric-hint>Cao xuống thấp · lợi nhuận vận hành</span></div><div class="metric-tabs" role="tablist" aria-label="Chọn chỉ số so sánh"><button type="button" role="tab" id="metric-profit" aria-selected="true" aria-controls="farm-comparison" data-metric="profit">Lợi nhuận</button><button type="button" role="tab" id="metric-yield" aria-selected="false" aria-controls="farm-comparison" tabindex="-1" data-metric="yield">Năng suất</button><button type="button" role="tab" id="metric-margin" aria-selected="false" aria-controls="farm-comparison" tabindex="-1" data-metric="margin">Biên</button><button type="button" role="tab" id="metric-cost" aria-selected="false" aria-controls="farm-comparison" tabindex="-1" data-metric="cost">Chi phí/ha</button></div></header>
+            <div class="farm-bars" id="farm-comparison" role="tabpanel" aria-labelledby="metric-profit">
+              <div class="farm-row-wrap"><button class="farm-row is-selected" type="button" data-farm="FARM-004" aria-pressed="true"><span class="farm-rank">01</span><span class="farm-name"><strong>Nông trại Biển Hồ</strong><small>FARM-004 · biên 49,43%</small></span><span class="farm-bar" style="--bar:100%" aria-hidden="true"><i></i></span><span class="farm-value">47,27 tỷ ₫</span></button></div>
+              <div class="farm-row-wrap"><button class="farm-row" type="button" data-farm="FARM-001" aria-pressed="false"><span class="farm-rank">02</span><span class="farm-name"><strong>Nông trại Cao Nguyên</strong><small>FARM-001 · biên 39,88%</small></span><span class="farm-bar" style="--bar:92.3%" aria-hidden="true"><i></i></span><span class="farm-value">43,63 tỷ ₫</span></button></div>
+              <div class="farm-row-wrap"><button class="farm-row" type="button" data-farm="FARM-006" aria-pressed="false"><span class="farm-rank">03</span><span class="farm-name"><strong>Nông trại Bình Minh</strong><small>FARM-006 · biên 36,67%</small></span><span class="farm-bar" style="--bar:70.9%" aria-hidden="true"><i></i></span><span class="farm-value">33,52 tỷ ₫</span></button></div>
+              <div class="farm-row-wrap"><button class="farm-row" type="button" data-farm="FARM-002" aria-pressed="false"><span class="farm-rank">04</span><span class="farm-name"><strong>Nông trại Phù Sa</strong><small>FARM-002 · biên 44,06%</small></span><span class="farm-bar" style="--bar:63%" aria-hidden="true"><i></i></span><span class="farm-value">29,78 tỷ ₫</span></button></div>
+              <div class="farm-row-wrap"><button class="farm-row" type="button" data-farm="FARM-005" aria-pressed="false"><span class="farm-rank">05</span><span class="farm-name"><strong>Nông trại Cửu Long</strong><small>FARM-005 · biên 53,56%</small></span><span class="farm-bar" style="--bar:54.8%" aria-hidden="true"><i></i></span><span class="farm-value">25,91 tỷ ₫</span></button></div>
+              <div class="farm-row-wrap"><button class="farm-row" type="button" data-farm="FARM-003" aria-pressed="false"><span class="farm-rank">06</span><span class="farm-name"><strong>Nông trại Miền Đông</strong><small>FARM-003 · biên 35,00%</small></span><span class="farm-bar" style="--bar:39.5%" aria-hidden="true"><i></i></span><span class="farm-value">18,68 tỷ ₫</span></button></div>
+            </div>
+            <button class="mobile-map-button" type="button" data-open-map aria-haspopup="dialog" aria-controls="farm-map-dialog"><svg><use href="#i-map"/></svg>Xem sơ đồ trang trại đang chọn</button><p class="global-selection-status" role="status" aria-live="polite" data-global-status></p>
+            <details class="farm-table"><summary>Xem bảng dữ liệu đầy đủ</summary><div class="table-scroll" role="region" aria-label="Bảng hiệu suất trang trại, cuộn ngang để xem đầy đủ" tabindex="0"><table><thead><tr><th scope="col">Trang trại</th><th scope="col">Canh tác</th><th scope="col">Thu hoạch</th><th scope="col">Sản lượng</th><th scope="col">Năng suất</th><th scope="col">Chi phí/ha</th><th scope="col">Lợi nhuận</th><th scope="col">Biên</th></tr></thead><tbody><tr><th scope="row">Biển Hồ</th><td>150,97 ha</td><td>219,24 ha</td><td>3,32 triệu kg</td><td>15.124 kg/ha</td><td>160,15 triệu ₫</td><td>47,27 tỷ ₫</td><td>49,43%</td></tr><tr><th scope="row">Cao Nguyên</th><td>205,72 ha</td><td>315,30 ha</td><td>3,77 triệu kg</td><td>11.961 kg/ha</td><td>159,85 triệu ₫</td><td>43,63 tỷ ₫</td><td>39,88%</td></tr><tr><th scope="row">Bình Minh</th><td>191,13 ha</td><td>234,30 ha</td><td>2,29 triệu kg</td><td>9.766 kg/ha</td><td>151,47 triệu ₫</td><td>33,52 tỷ ₫</td><td>36,67%</td></tr><tr><th scope="row">Phù Sa</th><td>127,36 ha</td><td>189,43 ha</td><td>2,51 triệu kg</td><td>13.239 kg/ha</td><td>148,42 triệu ₫</td><td>29,78 tỷ ₫</td><td>44,06%</td></tr><tr><th scope="row">Cửu Long</th><td>77,61 ha</td><td>115,57 ha</td><td>1,38 triệu kg</td><td>11.931 kg/ha</td><td>144,74 triệu ₫</td><td>25,91 tỷ ₫</td><td>53,56%</td></tr><tr><th scope="row">Miền Đông</th><td>170,32 ha</td><td>250,21 ha</td><td>3,31 triệu kg</td><td>13.233 kg/ha</td><td>101,82 triệu ₫</td><td>18,68 tỷ ₫</td><td>35,00%</td></tr></tbody></table></div></details>
+          </section>
+
+          <aside class="farm-atlas" aria-labelledby="farm-detail-title"><header><div><p>Sơ đồ khu vực</p><span data-farm-code translate="no">FARM-004</span><h2 id="farm-detail-title" data-farm-title>Nông trại Biển Hồ</h2></div><span class="farm-risk" data-farm-risk>1 khu vực cần xem</span></header><dl class="farm-summary"><div><dt>Canh tác</dt><dd data-farm-area>150,97 ha</dd></div><div><dt>Thu hoạch</dt><dd data-farm-harvested-area>219,24 ha</dd></div><div><dt>Năng suất</dt><dd data-farm-yield>15.124 kg/ha</dd></div><div><dt>Cảnh báo mùa vụ</dt><dd data-farm-alerts>3</dd></div></dl><div class="plot-board" data-plot-board role="group" aria-label="Các khu vực của Nông trại Biển Hồ"><button class="plot-cell healthy" type="button" data-field="FIELD-0013" aria-pressed="false"><strong>Khu vực 4.1</strong><small>Thanh long · 31,02 ha</small><span>Khỏe · 0/100</span></button><button class="plot-cell watch is-selected" type="button" data-field="FIELD-0014" aria-pressed="true"><strong>Khu vực 4.2</strong><small>Rau màu · 37,25 ha</small><span>Theo dõi · 40/100</span></button><button class="plot-cell healthy" type="button" data-field="FIELD-0015" aria-pressed="false"><strong>Khu vực 4.3</strong><small>Cà phê · 42,03 ha</small><span>Khỏe · 0/100</span></button><button class="plot-cell healthy" type="button" data-field="FIELD-0016" aria-pressed="false"><strong>Khu vực 4.4</strong><small>Sầu riêng · 40,67 ha</small><span>Khỏe · 0/100</span></button></div><section class="field-evidence" id="field-evidence"><span>Bằng chứng đang chọn</span><h3 data-field-title>Khu vực 4.2 · Rau màu</h3><dl><div><dt>Rủi ro</dt><dd data-field-risk>Theo dõi · 40/100</dd></div><div><dt>Lần đọc cuối</dt><dd data-field-reading>13/07 · 18:00</dd></div><div><dt>Độ ẩm đất</dt><dd data-field-moisture>42,54%</dd></div></dl><p data-field-action>Kiểm tra cảm biến và kết nối IoT trong 4 giờ.</p><button class="primary-action" type="button" data-open-field aria-haspopup="dialog" aria-controls="field-dialog">Mở bằng chứng khu vực <svg><use href="#i-arrow"/></svg></button></section><p class="selection-status" data-selection-status></p></aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="farm-dialog map-dialog" id="farm-map-dialog" aria-labelledby="mobile-map-title"><div class="dialog-shell"><header><div><small>Sơ đồ khu vực</small><h2 id="mobile-map-title" data-mobile-farm-title>Nông trại Biển Hồ</h2></div><button type="button" data-close-dialog aria-label="Đóng sơ đồ">×</button></header><div class="plot-board" data-mobile-plot role="group" aria-label="Các khu vực trên trang trại đang chọn"></div><section class="field-evidence"><span>Bằng chứng đang chọn</span><h3 data-mobile-field-title>Khu vực 4.2 · Rau màu</h3><dl><div><dt>Rủi ro</dt><dd data-mobile-field-risk>Theo dõi · 40/100</dd></div><div><dt>Lần đọc cuối</dt><dd data-mobile-field-reading>13/07 · 18:00</dd></div><div><dt>Độ ẩm đất</dt><dd data-mobile-field-moisture>42,54%</dd></div></dl><p data-mobile-field-action>Kiểm tra cảm biến và kết nối IoT trong 4 giờ.</p><button class="primary-action" type="button" data-open-field aria-haspopup="dialog" aria-controls="field-dialog">Mở bằng chứng khu vực</button></section></div></dialog>
+  <dialog class="farm-dialog field-dialog" id="field-dialog" aria-labelledby="field-dialog-title"><div class="dialog-shell"><header><div><small data-dialog-field-code translate="no">FIELD-0014</small><h2 id="field-dialog-title" data-dialog-field-title>Khu vực 4.2 · Rau màu</h2></div><button type="button" data-close-dialog aria-label="Đóng bằng chứng">×</button></header><div class="evidence-boundary"><strong>Gold evidence · chỉ đọc</strong><span data-dialog-source>field_health_status.csv · cutoff 18/07/2026</span></div><dl class="dialog-evidence"><div><dt>Diện tích</dt><dd data-dialog-area>37,25 ha</dd></div><div><dt>Rủi ro</dt><dd data-dialog-risk>Theo dõi · 40/100</dd></div><div><dt>Lần đọc cuối</dt><dd data-dialog-reading>13/07 · 18:00</dd></div><div><dt>Khuyến nghị</dt><dd data-dialog-action>Kiểm tra cảm biến và kết nối IoT trong 4 giờ.</dd></div></dl><p>Activity/harvest lineage và chỉnh sửa master chưa khả dụng trước backend Phase 4. Prototype không tạo hoặc sửa bản ghi.</p><button class="secondary-action" type="button" data-close-dialog>Đóng hồ sơ</button></div></dialog>
+  <dialog class="farm-dialog filter-dialog" id="farm-filter-dialog" aria-labelledby="filter-title"><form method="dialog"><header><div><small>Góc so sánh</small><h2 id="filter-title">Chọn trang trại và chỉ số</h2></div><button value="cancel" aria-label="Đóng bộ lọc">×</button></header><label>Trang trại<select name="farm" autocomplete="off"><option value="FARM-004">Nông trại Biển Hồ</option><option value="FARM-001">Nông trại Cao Nguyên</option><option value="FARM-006">Nông trại Bình Minh</option><option value="FARM-002">Nông trại Phù Sa</option><option value="FARM-005">Nông trại Cửu Long</option><option value="FARM-003">Nông trại Miền Đông</option></select></label><label>Chỉ số xếp hạng<select name="metric" autocomplete="off"><option value="profit">Lợi nhuận vận hành</option><option value="yield">Năng suất</option><option value="margin">Biên lợi nhuận</option><option value="cost">Chi phí vận hành/ha</option></select></label><p>Không có bộ lọc cây trồng/mùa vụ vì `farm_performance.csv` hiện chỉ cung cấp tổng hợp cấp trang trại.</p><div class="dialog-actions"><button class="secondary-action" value="cancel">Hủy</button><button class="primary-action" value="apply">Áp dụng góc nhìn</button></div></form></dialog>
+</body>
+</html>
