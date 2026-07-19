@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "OIDC identity and security boundary"
-status: pending
+status: completed
 priority: P1
 effort: "2d"
 dependencies: [1]
@@ -12,6 +12,10 @@ dependencies: [1]
 ## Overview
 
 Make every API request authenticated by a provider-neutral external OIDC issuer and map the verified subject to an active internal user profile. This phase owns token verification and the minimum identity bootstrap principal only; tenant-scoped permission enrichment and user administration are the phase-3 production gate, while FK-backed farm/activity and warehouse scope arrives with phases 4 and 5.
+
+## Acceptance
+
+Accepted on 2026-07-20 for the Phase 2 boundary only. The final guarded tree passed 57 unit/security/module tests plus 1 required PostgreSQL 18/Testcontainers integration test. Flyway V1-V3 applied and validated from an empty schema; the final non-root image passed liveness/readiness, identity-disabled, and invalid-OIDC startup smoke gates. Existing Python, compileall, Node, Compose, and wheel gates remained green. Phase 3 remains mandatory before production deployment because it owns the restricted runtime role, transaction-local tenant context, permission enrichment, and PostgreSQL RLS. See the [acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [review report](./reports/reviewer-2026-07-20-backend-phase2.md), and [engineering journal](../../docs/journals/260720-0230-backend-phase2-acceptance.md).
 
 ## Requirements
 
@@ -85,16 +89,16 @@ This is an API-first stateless bearer boundary. A browser BFF/server-side sessio
 
 ## Success Criteria
 
-- [ ] No business endpoint is reachable without a valid external OIDC JWT.
-- [ ] A controller mapping without an exact route-registry entry fails the endpoint-inventory test and is denied at runtime.
-- [ ] Issuer, audience, signature, `exp`, and `nbf` failures produce safe deterministic 401 responses.
-- [ ] A validly signed ID token is rejected; only the configured provider access-token contract authenticates.
-- [ ] Unknown/disabled external identities and identities in a disabled tenant cannot obtain a tenant or role context.
-- [ ] Identity bootstrap works before tenant context without granting broad access or trusting a JWT tenant claim as the sole proof.
-- [ ] `/api/v1/me` exposes only the documented minimum identity DTO; no pre-RLS query loads the full profile or effective permissions.
-- [ ] No password, refresh token, signing private key, or raw JWT is stored or logged.
-- [ ] Role/permission seed is deterministic and migrations pass Flyway validation on a fresh PostgreSQL database.
-- [ ] Security tests prove `SUPPLIER` has no finance permission and JWT claims cannot bypass DB authorization.
+- [x] No business endpoint is reachable without a valid external OIDC JWT.
+- [x] A controller mapping without an exact route-registry entry fails the endpoint-inventory test and is denied at runtime.
+- [x] Issuer, audience, signature, `exp`, and `nbf` failures produce safe deterministic 401 responses.
+- [x] A validly signed ID token is rejected; only the configured provider access-token contract authenticates.
+- [x] Unknown/disabled external identities and identities in a disabled tenant cannot obtain a tenant or role context.
+- [x] Identity bootstrap works before tenant context without granting broad access or trusting a JWT tenant claim as the sole proof.
+- [x] `/api/v1/me` exposes only the documented minimum identity DTO; no pre-RLS query loads the full profile or effective permissions.
+- [x] No password, refresh token, signing private key, or raw JWT is stored or logged.
+- [x] Role/permission seed is deterministic and migrations pass Flyway validation on a fresh PostgreSQL database.
+- [x] Security tests prove `SUPPLIER` has no finance permission and JWT claims cannot bypass DB authorization.
 
 ## Risk Assessment
 
