@@ -60,16 +60,27 @@ giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm p
 
 | Hạng mục | Quy tắc |
 |---|---|
-| Request allowlist | Chỉ nhận `scope`, `farm`, `crop`, `activity`, `supplier`, `month_from`, `month_to`, `top_n` |
-| Rejection rules | Reject unknown key/value, path-like input, domain-invalid value, month sai format, month không tồn tại, month đảo chiều, result rỗng, hoặc detail rows vượt 25,000 |
+| Request allowlist | Chỉ nhận `scope`, `farm`, `crop`, `season`, `activity`, `supplier`, `month_from`, `month_to`, `top_n` |
+| Scope rules | `season` chỉ dùng cho operating; procurement không nhận crop/season/activity; all chỉ nhận farm/month |
+| Rejection rules | Reject unknown key/value, path-like input, domain-invalid value, sai semantic lens, month sai format/không tồn tại/đảo chiều, result rỗng, hoặc detail rows vượt 25,000 |
 | Row limits | Mỗi detail table và tổng hai detail table đều tối đa 25,000 rows; preflight chạy trước sort và render |
 | CSV | UTF-8 BOM, safe deterministic filename/hash, formula-like text được escape, mỗi dòng mang `export_version`, `run_id`, `as_of_date`, `source_pipeline`, `filter_hash` |
 | PDF | A4 landscape tiếng Việt, Noto Sans/OFL đóng gói, footer + page numbers + filters + run ID + top-N + checks |
 | XLSX | Chỉ khả dụng khi có hai biến môi trường explicit cho Node executable và node_modules path; đúng 6 sheet: Summary, Monthly, Cost Detail, Procurement Detail, Checks, Metadata |
 | XLSX QA | Formula/native chart, inspect/error scan/render cho cả 6 sheet, `MODEL STATUS: PASS`, formula escaping |
 | Bundle cap | In-memory bundle không vượt 10 MB |
-| Temp | Chỉ dùng `artifacts/_tmp/report-exports`, phải được dọn khi success hoặc failure, và không tham gia pipeline manifest checksums |
+| Temp | Chỉ dùng caller-provided directory dưới `artifacts/_tmp`; child temp phải được dọn khi success hoặc failure và không tham gia pipeline manifest checksums |
 | Fallback | XLSX unavailable không được chặn CSV/PDF; service trả typed error riêng cho contract lỗi và capability/runtime lỗi |
+
+## Dashboard Cost Analysis contract
+
+- Route yêu cầu đủ 9 frame trong Gold Cost contract và `manifest.json`; thiếu file trả một lỗi regeneration có danh sách đầy đủ.
+- Route chỉ nhận snapshot khi manifest trước/sau giống nhau và SHA-256 của đúng CSV
+  bytes đã parse khớp checksum; transition được retry một lần rồi fail closed.
+- UI “Tháng” là một tháng đơn, được normalize thành `month_from = month_to` trong export request.
+- Form operating và procurement, request/bundle/session key, table và download control tách riêng; procurement spend không đi vào operating KPI.
+- Activity/month không có budget, area hoặc harvest allocation riêng. Vì vậy operating total theo đúng detail đã lọc, còn budget variance/cost per ha/cost per kg được ghi rõ là ngữ cảnh mùa vụ đã chọn.
+- Bundle download chỉ tồn tại sau submit và phải khớp normalized request cùng manifest run/date/pipeline hiện hành.
 
 ## Versioning
 

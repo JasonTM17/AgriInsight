@@ -26,6 +26,7 @@ flowchart LR
     R --> E["CSV / PDF / optional XLSX"]
     G --> I["Evidence-backed insights"]
     G --> UI["Streamlit dashboards"]
+    UI --> R
     DQ --> UI
 ```
 
@@ -71,7 +72,17 @@ metrics.py
 ├── metrics_inventory.py
 ├── metrics_crop_health.py
 ├── metrics_cost_analysis.py
-└── metrics_cost_procurement.py
+├── metrics_cost_procurement.py
+├── cost_operating_dashboard.py
+└── cost_procurement_dashboard.py
+
+dashboard/app.py
+├── cost_analysis_page.py
+├── cost_analysis_forms.py
+├── cost_analysis_presenters.py
+├── cost_procurement_presenter.py
+├── cost_analysis_session.py
+└── cost_analysis_snapshot.py
 ```
 
 Core pipeline điều phối các domain, còn logic sinh dữ liệu, cleaning và KPI chuyên biệt nằm trong module riêng. Việc này cho phép thay nguồn giả lập bằng connector thật mà không đổi Gold contract, dashboard, hoặc export service.
@@ -84,14 +95,27 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 ## Controlled cost-report export
 
 - Service xuất báo cáo đọc Gold đã validate; formatting nằm ngoài Streamlit.
-- Request chỉ nhận allowlist `scope`, `farm`, `crop`, `activity`, `supplier`, `month_from`, `month_to`, `top_n`.
+- Request chỉ nhận allowlist `scope`, `farm`, `crop`, `season`, `activity`, `supplier`, `month_from`, `month_to`, `top_n`.
+- `season` chỉ hợp lệ với `scope=operating`; `scope=procurement` không nhận crop/season/activity; `scope=all` chỉ nhận farm/month.
 - Reject unknown key/value, path-like value, month sai format/không tồn tại, month đảo chiều, result rỗng, hoặc detail rows quá 25,000.
 - Output tách operating cost, procurement spend và inventory value; không có combined total.
 - CSV dùng UTF-8 BOM; filename và hash deterministic, safe, và mỗi dòng mang `export_version`, `run_id`, `as_of_date`, `source_pipeline`, `filter_hash`.
 - PDF là A4 landscape tiếng Việt, dùng Noto Sans/OFL đóng gói, có filters, run ID, top-N, footer, page numbers, và checks.
 - XLSX chỉ mở khi có hai biến môi trường explicit cho Node executable và node_modules path; workbook dùng `@oai/artifact-tool`, có đúng 6 sheet, formula checks, native chart, scan lỗi/formula và `MODEL STATUS: PASS`.
 - Bundle CSV/PDF cần cài Python `reports` extra; lỗi capability XLSX không làm mất hai output này.
-- Temp export chỉ dùng dưới `artifacts/_tmp/report-exports`, phải xóa khi success lẫn failure, và không tính vào manifest checksum.
+- Temp export chỉ dùng trong caller-provided directory dưới `artifacts/_tmp` (dashboard dùng `artifacts/_tmp/cost-reports`); child temp phải xóa khi success lẫn failure và không tính vào manifest checksum.
+
+## Cost Analysis UI boundary
+
+- `dashboard/app.py` chỉ composition: navigation, versioned artifact loading, kiểm tra đủ 9 Cost Gold CSV + `manifest.json`, rồi gọi page module. Thiếu Cost artifact chỉ chặn route Cost Analysis; năm route cũ vẫn dùng được.
+- Hai form operating/procurement dùng session key riêng. Thay filter chưa submit không sinh export; submit mới validate request và thay bundle cũ.
+- Snapshot loader đọc manifest trước/sau, hash và parse cùng bytes của 9 Cost Gold
+  CSV, so checksum thực tế và retry một lần khi manifest chuyển generation.
+- Bundle bị loại khi checksum fingerprint, manifest run/date/pipeline hoặc normalized request không còn khớp, tránh tải nhầm report sau khi pipeline tái sinh artifact.
+- Presentation chỉ format dữ liệu. Aggregate theo filter nằm trong domain view model; budget variance, cost/ha và cost/kg lấy ngữ cảnh Gold mùa vụ khi filter activity/month không có allocation tương ứng.
+- Procurement driver giữ farm/supplier/warehouse/material business code cùng tên,
+  không group theo display name; bảng transaction giữ định danh để audit.
+- CSV/PDF luôn là baseline khi `reports` extra có mặt. XLSX unavailable dùng thông báo UI ổn định; chi tiết runtime chỉ ở server log và không làm mất hai format baseline.
 
 ## Nguyên tắc vận hành
 
@@ -103,6 +127,7 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 - Warehouse được dựng vào file tạm, chạy `foreign_key_check`, commit rồi mới atomic replace.
 - Seed và ngày chốt dữ liệu là một phần của run identity.
 - Gold datasets là data contract của UI và export service; dashboard chỉ lọc và trực quan hóa.
+- `scripts/check-workspace-disk.ps1` chỉ đọc C/D: warn dưới 10/25 GB, fail non-zero dưới 8/20 GB hoặc khi không đọc được drive; script không cleanup hay xóa dữ liệu.
 
 ## Đường mở rộng
 

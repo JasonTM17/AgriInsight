@@ -20,12 +20,13 @@
 - [x] Nhu cầu kho 30 ngày và recommended order quantity theo run-rate.
 - [x] Crop Health: cảm biến, thời tiết, sâu bệnh, sensor freshness và risk score khu vực.
 - [x] Data Quality dashboard hiển thị before/after, lỗi Bronze và remediation actions.
+- [x] Cost Analysis lọc farm/crop/season/activity/month, hiển thị cost/budget/cost per unit, activity drivers và procurement lens riêng.
 - [x] Insight và khuyến nghị có bằng chứng định lượng.
-- [x] Dashboard render/navigation được kiểm thử tự động.
+- [x] Dashboard render/navigation, form-submit, stale bundle, missing/empty Gold và export error được kiểm thử tự động.
 
 ## Export service
 
-- [x] Phase 2 backend controlled report export service: bundle CSV/PDF chạy với `reports` extra; XLSX chỉ mở khi có explicit runtime vars; dashboard wiring vẫn ở Phase 3.
+- [x] Controlled report service và Phase 3 dashboard wiring: CSV/PDF chạy với `reports` extra; XLSX chỉ mở khi có explicit runtime vars; bundle chỉ xuất hiện sau submit.
 - [x] XLSX QA thực tế có đủ 6 sheet, 6 preview, `MODEL STATUS: PASS`, và không có formula-error match.
 
 ## Vận hành
@@ -34,11 +35,12 @@
 - [x] Có Dockerfile, Compose và hướng dẫn chạy.
 - [x] Package wheel chứa SQL schema và CLI entrypoint.
 - [x] Dataset mặc định hoàn thành trong thời gian phù hợp cho local demo/CI.
+- [x] Disk guard C/D chỉ đọc, có ngưỡng pass/warn/fail và test boundary/missing-drive.
+- [x] Cost Analysis đã được browser QA ở desktop và narrow viewport, không có console/runtime error.
 
 ## Backlog của goal cấp dự án
 
-- [ ] Cost Analysis dashboard chuyên sâu theo supplier/activity/season với drill-down giao dịch.
-- [ ] Custom Report Builder và xuất PDF được kiểm soát.
+- [ ] Custom Report Builder tự cấu hình ngoài ba format Cost Analysis đã kiểm soát.
 - [ ] Backend nghiệp vụ, authentication và row-level authorization.
 - [ ] PostgreSQL/ClickHouse, Flyway/dbt và incremental ETL bằng Airflow.
 - [ ] Realtime Kafka, cảnh báo đa kênh và mobile field application.
