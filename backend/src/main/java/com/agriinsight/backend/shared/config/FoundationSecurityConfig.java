@@ -1,32 +1,25 @@
 package com.agriinsight.backend.shared.config;
 
-import java.io.IOException;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import com.agriinsight.backend.shared.web.CorrelationIdFilter;
+import com.agriinsight.backend.shared.api.SecurityProblemWriter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
+@ConditionalOnProperty(prefix = "agriinsight.identity", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class FoundationSecurityConfig {
 
     @Bean
     SecurityFilterChain foundationSecurityFilterChain(
             HttpSecurity http,
             Environment environment,
-            JsonMapper jsonMapper,
+            SecurityProblemWriter problemWriter,
             @Value("${agriinsight.api-docs.enabled:false}") boolean apiDocsEnabled) throws Exception {
         boolean publicApiDocs = apiDocsEnabled && environment.acceptsProfiles(Profiles.of("dev", "local"));
         http
@@ -35,20 +28,10 @@ public class FoundationSecurityConfig {
                 .formLogin(formLogin -> formLogin.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, exception) -> writeProblem(
-                                request,
-                                response,
-                                jsonMapper,
-                                HttpStatus.UNAUTHORIZED,
-                                "Authentication required",
-                                "Authentication is required to access this resource."))
-                        .accessDeniedHandler((request, response, exception) -> writeProblem(
-                                request,
-                                response,
-                                jsonMapper,
-                                HttpStatus.FORBIDDEN,
-                                "Access denied",
-                                "Access to this resource is denied.")))
+                        .authenticationEntryPoint((request, response, exception) ->
+                                problemWriter.authenticationRequired(request, response))
+                        .accessDeniedHandler((request, response, exception) ->
+                                problemWriter.accessDenied(request, response)))
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(
                                     "/actuator/health",
@@ -62,22 +45,5 @@ public class FoundationSecurityConfig {
                     authorize.anyRequest().denyAll();
                 });
         return http.build();
-    }
-
-    private void writeProblem(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            JsonMapper jsonMapper,
-            HttpStatus status,
-            String title,
-            String detail) throws IOException {
-        String correlationId = CorrelationIdFilter.resolve(request);
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(title);
-        problem.setProperty("correlationId", correlationId);
-        response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.setHeader(CorrelationIdFilter.HEADER, correlationId);
-        jsonMapper.writeValue(response.getOutputStream(), problem);
     }
 }
