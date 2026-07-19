@@ -90,7 +90,11 @@ public record OidcIdentityProperties(
     private static void requireProviderUri(String value, String fieldName) {
         requireExactText(value, fieldName, 2048);
         URI uri = parseUri(value, fieldName);
-        String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        String scheme = uri.getScheme();
+        if (scheme == null) {
+            throw new IllegalArgumentException(fieldName + " must be an absolute provider URI");
+        }
+        scheme = scheme.toLowerCase(Locale.ROOT);
         boolean localHttp = scheme.equals("http") && isLoopbackHost(uri.getHost());
         if (!scheme.equals("https") && !localHttp) {
             throw new IllegalArgumentException(fieldName + " must use HTTPS outside loopback development");

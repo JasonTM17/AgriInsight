@@ -73,6 +73,23 @@ class OidcIdentityPropertiesTest {
                 List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("HTTPS");
+        assertThatThrownBy(() -> new OidcIdentityProperties(
+                true,
+                "identity.example.test/issuer",
+                null,
+                "agriinsight-api",
+                "interactive-client",
+                Duration.ofSeconds(30),
+                SignatureAlgorithm.RS256,
+                OidcIdentityProperties.DiscriminatorLocation.CLAIM,
+                "token_use",
+                "access",
+                "name",
+                "email",
+                "acr",
+                List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("absolute provider URI");
     }
 
     @Test
