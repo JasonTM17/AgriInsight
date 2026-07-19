@@ -2,6 +2,7 @@ const inventoryView = window.AGRI_INVENTORY_VIEW;
 const rail = document.querySelector("#primary-rail");
 const navToggle = document.querySelector("[data-nav-toggle]");
 const workspace = document.querySelector(".workspace");
+const mainContent = document.querySelector("#main-content");
 const railCloseButton = document.querySelector(".rail-close");
 const filterDialog = document.querySelector("#inventory-filter-dialog");
 const evidenceDialog = document.querySelector("#inventory-evidence-dialog");
@@ -9,18 +10,29 @@ const mobileNavigation = window.matchMedia("(max-width: 900px)");
 const mobileEvidenceLayout = window.matchMedia("(max-width: 640px)");
 const state = { severity: "all", type: "all", alertId: "MAT-NPK-low_stock" };
 let evidenceTrigger = null;
+let railFocusFrame = 0;
 
 function announce(message) { document.querySelectorAll("[data-global-status]").forEach((element) => { element.textContent = message; }); }
 function visible(element) { return Boolean(element && element.getClientRects().length); }
+function focusable(element) { return Boolean(visible(element) && !element.disabled && !element.closest("[inert]")); }
 
 function setRailOpen(isOpen, restoreFocus = false) {
-  const openOnMobile = mobileNavigation.matches && isOpen;
+  const mobile = mobileNavigation.matches;
+  const openOnMobile = mobile && isOpen;
+  const wasOpen = document.body.classList.contains("nav-open");
+  const focusWasInRail = Boolean(rail?.contains(document.activeElement));
+  const focusWasOnToggle = document.activeElement === navToggle;
+  if (railFocusFrame) { cancelAnimationFrame(railFocusFrame); railFocusFrame = 0; }
   rail?.classList.toggle("is-open", openOnMobile);
   document.body.classList.toggle("nav-open", openOnMobile);
   navToggle?.setAttribute("aria-expanded", String(openOnMobile));
   navToggle?.setAttribute("aria-label", openOnMobile ? "Đóng điều hướng" : "Mở điều hướng");
-  if (rail && mobileNavigation.matches && !openOnMobile) { rail.setAttribute("inert", ""); rail.setAttribute("aria-hidden", "true"); } else { rail?.removeAttribute("inert"); rail?.removeAttribute("aria-hidden"); }
-  if (workspace && openOnMobile) { workspace.setAttribute("inert", ""); workspace.setAttribute("aria-hidden", "true"); railCloseButton?.focus(); } else { workspace?.removeAttribute("inert"); workspace?.removeAttribute("aria-hidden"); if (restoreFocus) navToggle?.focus(); }
+  if (rail && mobile && !openOnMobile) { rail.setAttribute("inert", ""); rail.setAttribute("aria-hidden", "true"); } else { rail?.removeAttribute("inert"); rail?.removeAttribute("aria-hidden"); }
+  if (workspace && openOnMobile) { workspace.setAttribute("inert", ""); workspace.setAttribute("aria-hidden", "true"); } else { workspace?.removeAttribute("inert"); workspace?.removeAttribute("aria-hidden"); }
+  if (openOnMobile) railFocusFrame = requestAnimationFrame(() => { railFocusFrame = 0; if (mobileNavigation.matches && document.body.classList.contains("nav-open")) railCloseButton?.focus(); });
+  else if (restoreFocus || wasOpen || (mobile && focusWasInRail) || (!mobile && focusWasOnToggle)) {
+    railFocusFrame = requestAnimationFrame(() => { railFocusFrame = 0; (mobile ? navToggle : mainContent)?.focus(); });
+  }
 }
 
 function normalizeSelection() {
@@ -31,7 +43,9 @@ function normalizeSelection() {
 
 function renderAll() {
   normalizeSelection();
-  return inventoryView.render(state, selectAlert);
+  const alerts = inventoryView.render(state, selectAlert);
+  if (!state.alertId && evidenceDialog?.open) evidenceDialog.close();
+  return alerts;
 }
 
 function updateUrl(mode = "push") {
@@ -56,7 +70,16 @@ function restoreFromUrl() {
   renderAll(); updateUrl("replace");
 }
 
-function focusAlert(alertId) { requestAnimationFrame(() => document.querySelector(`[data-alert-id="${alertId}"]`)?.focus()); }
+function alertRowFor(alertId) { return Array.from(document.querySelectorAll("[data-alert-id]")).find((row) => row.dataset.alertId === alertId); }
+function focusAlert(alertId) { requestAnimationFrame(() => alertRowFor(alertId)?.focus()); }
+
+function focusSelectionOrActiveTab(alerts) {
+  requestAnimationFrame(() => {
+    const selectedRow = alerts.length && state.alertId ? alertRowFor(state.alertId) : null;
+    const activeTab = document.querySelector("[data-severity][aria-selected='true']");
+    (focusable(selectedRow) ? selectedRow : activeTab ?? mainContent)?.focus();
+  });
+}
 
 function selectAlert(alertId, focusRow = false) {
   if (!inventoryView.alertsFor(state).some((alert) => alert.id === alertId)) return;
@@ -89,8 +112,24 @@ function openEvidence(event) {
 function restoreEvidenceFocus() {
   const inlineTrigger = document.querySelector(".inventory-evidence [data-open-evidence]");
   const mobileTrigger = document.querySelector(".mobile-evidence-button");
-  const target = visible(evidenceTrigger) ? evidenceTrigger : mobileEvidenceLayout.matches ? mobileTrigger : inlineTrigger;
+  const layoutTrigger = mobileEvidenceLayout.matches ? mobileTrigger : inlineTrigger;
+  const activeTab = document.querySelector("[data-severity][aria-selected='true']");
+  const target = focusable(evidenceTrigger) ? evidenceTrigger : focusable(layoutTrigger) ? layoutTrigger : activeTab ?? mainContent;
   requestAnimationFrame(() => target?.focus()); evidenceTrigger = null;
+}
+
+function preparePrintDetails() {
+  document.querySelectorAll(".queue-table, .abc-table").forEach((details) => {
+    if (!details.hasAttribute("data-print-was-open")) details.dataset.printWasOpen = String(details.open);
+    details.open = true;
+  });
+}
+
+function restorePrintDetails() {
+  document.querySelectorAll("[data-print-was-open]").forEach((details) => {
+    details.open = details.dataset.printWasOpen === "true";
+    delete details.dataset.printWasOpen;
+  });
 }
 
 document.querySelectorAll("svg:not([role='img'])").forEach((icon) => { icon.setAttribute("aria-hidden", "true"); icon.setAttribute("focusable", "false"); });
@@ -102,7 +141,7 @@ document.addEventListener("keydown", (event) => { if (event.key === "Escape" && 
 document.querySelectorAll("[data-severity]").forEach((tab) => { tab.addEventListener("click", () => selectSeverity(tab.dataset.severity)); tab.addEventListener("keydown", handleSeverityKeydown); });
 document.querySelectorAll("[data-open-filter]").forEach((button) => button.addEventListener("click", () => { if (!filterDialog) return; inventoryView.syncFilterControls(state); filterDialog.returnValue = ""; filterDialog.showModal(); }));
 document.querySelectorAll("[data-open-evidence]").forEach((button) => button.addEventListener("click", openEvidence));
-document.querySelector("[data-clear-filter]")?.addEventListener("click", () => { state.severity = "all"; state.type = "all"; renderAll(); updateUrl(); announce("Đã xóa bộ lọc cảnh báo."); });
+document.querySelector("[data-clear-filter]")?.addEventListener("click", () => { state.severity = "all"; state.type = "all"; const alerts = renderAll(); updateUrl(); announce("Đã xóa bộ lọc cảnh báo."); focusSelectionOrActiveTab(alerts); });
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog")?.close()));
 document.querySelectorAll("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
 evidenceDialog?.addEventListener("close", restoreEvidenceFocus);
@@ -113,5 +152,7 @@ filterDialog?.addEventListener("close", () => {
   state.severity = severity; state.type = type; const alerts = renderAll(); updateUrl(); announce(`Đã áp dụng bộ lọc, còn ${alerts.length} cảnh báo.`);
 });
 window.addEventListener("popstate", restoreFromUrl);
+window.addEventListener("beforeprint", preparePrintDetails);
+window.addEventListener("afterprint", restorePrintDetails);
 
 setRailOpen(false); restoreFromUrl();

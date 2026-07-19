@@ -1,10 +1,40 @@
 (() => {
-  const fixture = window.AGRI_INVENTORY_FIXTURE ?? { scope: {}, alerts: [], abc: [] };
+  const rawFixture = window.AGRI_INVENTORY_FIXTURE;
+  const emptyFixture = { scope: {}, alerts: [], abc: [] };
   const severityValues = new Set(["all", "critical", "warning", "watch"]);
   const typeValues = new Set(["all", "stockout", "low_stock", "expiring_soon", "overstock"]);
   const unitLabels = { kg: "kg", liter: "lít", piece: "cái" };
   const severityLabels = { critical: "Nghiêm trọng", warning: "Cảnh báo", watch: "Theo dõi" };
   const alertTypeLabels = { stockout: "Hết hàng", low_stock: "Thiếu hàng", expiring_soon: "Sắp hết hạn", overstock: "Tồn dư" };
+  const unitValues = new Set(Object.keys(unitLabels));
+  const abcValues = new Set(["A", "B", "C"]);
+  const alertNonNegativeFields = ["reorderPoint", "targetStock", "inventoryValue", "recommendedOrder", "predictedNeed30d"];
+  const abcNumberFields = ["inventoryValue", "scopeValueShare", "scopeCumulativeShare"];
+
+  function isRecord(value) { return Boolean(value && typeof value === "object" && !Array.isArray(value)); }
+  function hasText(value) { return typeof value === "string" && value.trim().length > 0; }
+  function hasFiniteNumbers(value, fields) { return fields.every((field) => Number.isFinite(value[field])); }
+  function isNonNegative(value) { return Number.isFinite(value) && value >= 0; }
+  function isIsoDate(value) { return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value); }
+  function hasUniqueValue(items, field) { return new Set(items.map((item) => item[field])).size === items.length; }
+  function validBatch(batch) { return batch == null || (isRecord(batch) && ["batchCode", "supplierName", "transactionId"].every((field) => hasText(batch[field]))); }
+  function validMovement(movement) { return movement == null || (isRecord(movement) && isIsoDate(movement.date) && ["IN", "OUT"].includes(movement.type) && unitValues.has(movement.unit) && Number.isFinite(movement.quantity)); }
+  function validAlert(alert) {
+    const textFields = ["id", "materialCode", "materialName", "category", "abcClass", "unit", "alertType", "severity", "message", "action"];
+    return isRecord(alert) && textFields.every((field) => hasText(alert[field])) && severityValues.has(alert.severity) && alert.severity !== "all" && typeValues.has(alert.alertType) && alert.alertType !== "all" && abcValues.has(alert.abcClass) && unitValues.has(alert.unit) && Number.isFinite(alert.quantity) && alertNonNegativeFields.every((field) => isNonNegative(alert[field])) && (alert.daysSupply == null || isNonNegative(alert.daysSupply)) && (alert.nearestExpiry == null || isIsoDate(alert.nearestExpiry)) && validBatch(alert.batchEvidence) && validMovement(alert.lastMovement);
+  }
+  function validAbcRow(row) { return isRecord(row) && ["materialCode", "materialName", "category", "abcClass"].every((field) => hasText(row[field])) && abcValues.has(row.abcClass) && hasFiniteNumbers(row, abcNumberFields) && abcNumberFields.every((field) => isNonNegative(row[field])) && row.scopeValueShare <= 100 && row.scopeCumulativeShare <= 100; }
+  function validFixture(value) {
+    if (!isRecord(value) || !isRecord(value.scope) || !Array.isArray(value.alerts) || !Array.isArray(value.abc) || value.alerts.length > 50 || value.abc.length > 100) return false;
+    const counts = ["alerts", "locations", "critical", "stockout", "expiring"];
+    if (value.scope.code !== "WH-001" || !hasText(value.scope.name) || !isNonNegative(value.scope.inventoryValue) || !counts.every((field) => Number.isInteger(value.scope[field]) && value.scope[field] >= 0)) return false;
+    if (!value.alerts.every(validAlert) || !value.abc.every(validAbcRow) || !hasUniqueValue(value.alerts, "id") || !hasUniqueValue(value.abc, "materialCode")) return false;
+    const abcCodes = new Set(value.abc.map((row) => row.materialCode)); const inventoryValue = value.abc.reduce((total, row) => total + row.inventoryValue, 0);
+    return value.scope.alerts === value.alerts.length && value.scope.locations === value.abc.length && value.scope.critical === value.alerts.filter((alert) => alert.severity === "critical").length && value.scope.stockout === value.alerts.filter((alert) => alert.alertType === "stockout").length && value.scope.expiring === value.alerts.filter((alert) => alert.alertType === "expiring_soon").length && value.alerts.every((alert) => abcCodes.has(alert.materialCode)) && Math.abs(value.scope.inventoryValue - inventoryValue) < 0.01;
+  }
+
+  const fixtureAvailable = validFixture(rawFixture);
+  const fixture = fixtureAvailable ? rawFixture : emptyFixture;
 
   function formatNumber(value, digits = 2) { return new Intl.NumberFormat("vi-VN", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value); }
   function formatDate(value) { if (!value) return "Chưa xác định"; const [year, month, day] = value.split("-"); return `${day}/${month}/${year}`; }
@@ -66,6 +96,8 @@
     if (container) container.replaceChildren();
     empty?.toggleAttribute("hidden", alerts.length > 0);
     container?.toggleAttribute("hidden", alerts.length === 0);
+    const clearButton = document.querySelector("[data-clear-filter]");
+    if (clearButton) { clearButton.hidden = false; clearButton.disabled = false; }
     setText("[data-result-count]", `${alerts.length} cảnh báo trong bộ lọc`);
     setText("[data-filter-count]", String(Number(state.severity !== "all") + Number(state.type !== "all")));
     alerts.forEach((alert) => {
@@ -85,6 +117,11 @@
   }
 
   function renderEvidence(alert) {
+    const panel = document.querySelector(".inventory-evidence");
+    const heading = document.querySelector(".inventory-evidence > header");
+    if (heading) heading.hidden = !alert;
+    if (panel && alert) { panel.setAttribute("aria-labelledby", "evidence-title"); panel.removeAttribute("aria-label"); }
+    if (panel && !alert) { panel.removeAttribute("aria-labelledby"); panel.setAttribute("aria-label", "Bằng chứng số dư"); }
     document.querySelectorAll("[data-evidence-empty]").forEach((element) => { element.hidden = Boolean(alert); });
     document.querySelectorAll("[data-evidence-content]").forEach((element) => { element.hidden = !alert; });
     document.querySelectorAll("[data-open-evidence]").forEach((button) => { button.disabled = !alert; });
@@ -115,7 +152,8 @@
 
   function renderAbc() {
     const bars = document.querySelector("[data-abc-bars]"); const body = document.querySelector("[data-abc-table-body]");
-    bars?.replaceChildren(); body?.replaceChildren(); const maximum = Math.max(...fixture.abc.map((row) => row.scopeValueShare), 1);
+    bars?.replaceChildren(); body?.replaceChildren(); let maximum = 1;
+    fixture.abc.forEach((row) => { maximum = Math.max(maximum, row.scopeValueShare); });
     fixture.abc.slice(0, 5).forEach((item) => {
       const row = makeElement("div", "abc-row"); const name = makeElement("span", "abc-name"); name.append(makeElement("strong", "", item.materialName), makeElement("span", "", `${item.materialCode} · ABC ${item.abcClass}`));
       const track = makeElement("span", "abc-track"); track.style.setProperty("--share", `${(item.scopeValueShare / maximum) * 100}%`); track.setAttribute("aria-hidden", "true"); track.append(makeElement("i"));
@@ -125,7 +163,18 @@
   }
 
   function syncFilterControls(state) { const severity = document.querySelector("select[name='severity']"); const type = document.querySelector("select[name='type']"); if (severity) severity.value = state.severity; if (type) type.value = state.type; }
-  function render(state, onSelect) { renderSummary(); renderTabs(state); const alerts = renderQueue(state, onSelect); renderEvidence(alerts.find((alert) => alert.id === state.alertId)); renderAbc(); syncFilterControls(state); return alerts; }
+  function renderUnavailable(state) {
+    renderTabs(state); setText("[data-scope-value], [data-scope-critical], [data-scope-stockout], [data-scope-expiring]", "—");
+    setText("[data-result-count]", "Dữ liệu tồn kho không khả dụng"); setText("[data-filter-count]", "0");
+    setText("[data-queue-empty] strong", "Không thể xác minh dữ liệu tồn kho"); setText("[data-queue-empty] span", "Fixture không đạt hợp đồng dữ liệu; hàng đợi đã dừng để tránh hiển thị sai.");
+    setText(".inventory-heading > div:first-child > span", "WH-001 · fixture không khả dụng · không hiển thị số liệu"); setText(".inventory-kpis article:first-child > small", "Không thể xác minh SKU-location");
+    setText(".quality-banner strong", "Dữ liệu tồn kho không khả dụng"); setText(".quality-banner div > span", "Fixture không đạt kiểm tra cấu trúc, số hữu hạn và khóa duy nhất.");
+    setText(".abc-panel > header div > span, .abc-table summary", "Không thể xác minh phân bổ ABC từ fixture hiện tại."); setText(".abc-note", "Không khả dụng");
+    const container = document.querySelector("#inventory-queue"); const empty = document.querySelector("[data-queue-empty]"); const clearButton = document.querySelector("[data-clear-filter]");
+    container?.replaceChildren(); container?.setAttribute("hidden", ""); empty?.removeAttribute("hidden"); if (clearButton) { clearButton.hidden = true; clearButton.disabled = true; }
+    renderQueueTable([]); renderEvidence(); const bars = document.querySelector("[data-abc-bars]"); bars?.replaceChildren(makeElement("p", "data-unavailable", "Không thể tải phân bổ ABC.")); document.querySelector("[data-abc-table-body]")?.replaceChildren(); syncFilterControls(state); return [];
+  }
+  function render(state, onSelect) { if (!fixtureAvailable) return renderUnavailable(state); renderSummary(); renderTabs(state); const alerts = renderQueue(state, onSelect); renderEvidence(alerts.find((alert) => alert.id === state.alertId)); renderAbc(); syncFilterControls(state); return alerts; }
 
-  window.AGRI_INVENTORY_VIEW = { fixture, severityValues, typeValues, severityLabels, alertTypeLabels, alertsFor, alertForUrl, render, renderEvidence, syncFilterControls };
+  window.AGRI_INVENTORY_VIEW = { fixture, fixtureAvailable, severityValues, typeValues, severityLabels, alertTypeLabels, alertsFor, alertForUrl, render, renderEvidence, syncFilterControls };
 })();
