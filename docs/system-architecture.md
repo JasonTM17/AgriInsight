@@ -30,32 +30,44 @@ flowchart LR
 
 The backend is a separate Java 21 Spring Boot project under `backend/`.
 
-Foundation currently present in source:
+Verified foundation and identity boundary currently present in source:
 
-- application bootstrap
-- deny-by-default security
-- correlation IDs
-- problem-detail responses
-- liveness/readiness split
-- Flyway tenant anchor migration
+- Java 21/Spring Boot application and Spring Modulith boundary
+- deny-by-default stateless OAuth2 resource server
+- issuer, audience, signature/algorithm, time, subject, and access-token discriminator validation
+- exact `(issuer, subject)` bootstrap to active profile and tenant
+- exact route registry, endpoint inventory, and minimum `GET /api/v1/me` response
+- correlation IDs, redacted Problem Details, and redacted authentication audit events
+- liveness/readiness split and Flyway V1-V3 tenant/identity/RBAC seed migrations
 
-The backend currently owns operational identity scaffolding, not business CRUD.
+```mermaid
+flowchart LR
+    T["Bearer JWT"] --> V["Signature and claim validators"]
+    V --> I["Exact issuer + subject bootstrap"]
+    I --> P["Internal principal without raw JWT"]
+    P --> R["Exact route registry"]
+    R --> M["GET /api/v1/me"]
+    R --> D["Unregistered route: deny"]
+```
+
+The backend currently owns the verified identity boundary, not tenant permission enrichment or business CRUD. Phase 3 must install the restricted runtime role, transaction-local tenant context, effective permissions, and PostgreSQL RLS before production deployment.
 
 ## Boundaries
 
 | Plane | Owns | Does not own |
 |---|---|---|
-| Analytics | artifacts, Gold contracts, local reporting, dashboard views | PostgreSQL operational state, auth/RBAC, backend images |
-| Backend | operational API boundary, health, tenant anchor, schema history | `artifacts/`, Gold CSVs, SQLite warehouse, report generation |
+| Analytics | artifacts, Gold contracts, local reporting, dashboard views | PostgreSQL operational state, OIDC/RBAC, backend images |
+| Backend | operational API boundary, OIDC identity, health, tenant/identity schema history | `artifacts/`, Gold CSVs, SQLite warehouse, report generation |
 
 ## Current status
 
 | Area | Status |
 |---|---|
 | Analytics MVP | Verified by its existing regression suite |
-| Backend phase 1 scaffold | In progress |
-| Backend auth/RBAC | Not yet implemented |
+| Backend phase 1 foundation | Accepted 2026-07-19 |
+| Backend phase 2 OIDC identity | Accepted 2026-07-20; identity disabled by default |
+| Tenant RBAC/RLS | Phase 3 pending; production blocker |
 | Docker Hub publication | Not yet claimed |
-| Image verification | Not yet verified |
+| Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
 
-The right way to read the repo is: analytics is live today, backend is being added as a separate operational boundary. Do not collapse the two stories in docs or status reports.
+The right way to read the repo is: analytics is live today; the backend identity boundary is locally verified; tenant authorization, business APIs, and release publication remain sequential gates. Do not collapse those claims in docs or status reports.

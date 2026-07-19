@@ -8,15 +8,16 @@ This roadmap reflects the current state of the repository, not an assumed releas
 |---|---|---|
 | Analytics MVP | Active and regression-verified | Bronze/Silver/Gold pipeline, reporting, dashboard |
 | Backend phase 1 | Completed and regression-verified | Java 21 foundation, PostgreSQL/Flyway, probes, non-root image smoke |
-| Backend phase 2 | Ready to start | OIDC identity and security boundary; Phase 1 dependency accepted |
+| Backend phase 2 | Completed and regression-verified | OIDC identity/security boundary, exact bootstrap, route inventory, local image smoke |
+| Backend phase 3 | Ready to start | Restricted runtime role, tenant RBAC/context, provisioning, and PostgreSQL RLS |
 
 ## Next backend phases
 
 | Phase | Goal | Dependency |
 |---|---|---|
 | Phase 1 | Backend foundation and contracts | Accepted 2026-07-19 |
-| Phase 2 | OIDC identity and security boundary | Ready; Phase 1 accepted |
-| Phase 3 | Tenant RBAC and PostgreSQL RLS | Phases 1-2 accepted |
+| Phase 2 | OIDC identity and security boundary | Accepted 2026-07-20 |
+| Phase 3 | Tenant RBAC and PostgreSQL RLS | Ready; Phases 1-2 accepted |
 | Phase 4 | Farm, season, workforce, and activity APIs | Phase 3 accepted |
 | Phase 5 | Inventory and procurement APIs | Phase 3 accepted |
 | Phase 6 | Cost management and reporting boundary | Phases 4-5 accepted |
@@ -32,7 +33,7 @@ The frontend follow-up brief, persisted CK FE master/page overrides, and reviewe
 - Backend CI enforcement
 - Registry digest verification, image scanning, and SBOM/provenance checks
 - Public web application deployment
-- Any claim that auth/RBAC is already live
+- Any claim that tenant RBAC/RLS or production authentication is live before Phase 3
 
 ## Roadmap rule
 

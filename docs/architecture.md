@@ -133,21 +133,24 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Foundation hiện đã có mã nguồn, nhưng Phase 1 vẫn in-progress cho đến khi các integration gate chạy thành công:
+Phase 1 foundation và Phase 2 OIDC identity boundary đã được nghiệm thu bằng unit/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
 
 - application bootstrap và module boundary,
-- security deny-by-default; chỉ health endpoint được public,
-- correlation ID và Problem Detail không lộ diagnostics,
+- security deny-by-default; chỉ exact health allowlist được public,
+- JWT kiểm tra signature/algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator,
+- exact `(issuer, subject)` bootstrap sang profile/tenant active; JWT role/tenant claim không cấp row scope,
+- `/api/v1/me` chỉ trả minimum internal principal; route chưa đăng ký bị deny,
+- correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- tenant anchor dùng UUID, canonical ASCII business code, UTC audit timestamp,
-- local default bind `127.0.0.1`.
+- Flyway V1-V3 tạo tenant anchor, identity/RBAC schema, 19 permissions và 7 fixed roles,
+- local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 
 | Plane | Storage owner | Không được ghi |
 |---|---|---|
 | Analytics | `artifacts/`, Gold CSV, SQLite warehouse | PostgreSQL operational state |
 | Backend | PostgreSQL + Flyway | `artifacts/`, manifest, Gold CSV, SQLite warehouse |
 
-Auth/RBAC, public API docs, business CRUD, backend CI và Docker Hub release vẫn thuộc phase sau. Không claim hoàn tất trước khi Maven/Java 21/PostgreSQL/Docker gate có evidence.
+Phase 2 chưa phải production release. Restricted runtime DB role, permission enrichment, transaction-local tenant context, PostgreSQL RLS và provisioning thuộc Phase 3; business CRUD thuộc Phase 4-6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định tắt cho đến khi đủ contract và Phase 3 gate hoàn tất.
 
 ## Đường mở rộng
 

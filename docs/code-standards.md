@@ -34,6 +34,10 @@ This repository contains a Python analytics plane and a Java operational backend
 - Target Java 21.
 - Use Spring Boot with problem-detail responses for client-facing errors.
 - Keep security deny-by-default until a route is explicitly allowed.
+- Validate external JWT signature/algorithm, issuer, API audience, time claims, subject, and the configured access-token discriminator before identity lookup.
+- Resolve external identities by exact `(issuer, subject)` and retain only the internal principal in the security context; never log/store raw bearer tokens or trust JWT role/tenant claims for row scope.
+- Register every business mapping as an exact HTTP method + Spring `PathPattern`; endpoint inventory and `anyRequest().denyAll()` must catch omissions.
+- Keep identity disabled when the complete provider contract is absent. Provider URLs use HTTPS outside loopback development; CORS origins are exact allowlist values.
 - Use UUIDs for operational identifiers and canonical ASCII business codes where needed.
 - Persist timestamps in UTC.
 - Keep Open Session in View disabled.
