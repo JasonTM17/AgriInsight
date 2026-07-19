@@ -36,11 +36,11 @@ The bugs that mattered:
 4. The live-region status text needed to remain announced without being visually exposed.
 5. Print output had to hide skip link, nav scrim, and navigation chrome so the PDF is usable.
 
-## What We Tried
+## Decisions and rejected alternatives
 
-- We first tried to treat the Cost screen as a single blended finance view. Rejected: it would have mixed operating cost and procurement spend, which is a double-counting trap.
-- We considered letting the browser recalculate canonical finance values from fixture rows. Rejected: the UI should render and validate precomputed Gold data, not become a second accounting engine.
-- We considered shipping the export action as an active file generator. Rejected: the backend export contract is not accepted yet, so the prototype keeps export as a disabled preflight only.
+- A single blended finance view was evaluated and rejected: it would mix operating cost and procurement spend, creating a double-counting trap.
+- Browser-side recalculation of canonical finance values was evaluated and rejected: the UI should render and validate precomputed Gold data, not become a second accounting engine.
+- An active file-generating export was evaluated and rejected: the backend export contract is not accepted, so the prototype keeps export as a disabled preflight only.
 
 ## Root Cause Analysis
 
