@@ -26,10 +26,10 @@ Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1 đã có mã 
 
 Các cổng còn chặn:
 
-- Maven chưa được chạy lại sau thay đổi mới vì ổ C đang ở trạng thái WARN dưới 10 GB.
+- Disk guard C/D hiện PASS sau safe recovery, nhưng Maven chưa được chạy lại trên bộ trạng thái mới.
 - Docker daemon đang dừng; Testcontainers, Flyway PostgreSQL, Compose và image build chưa được xác minh.
 - Java 21 CI, backend image verification và Docker Hub publication chưa được xác minh.
-- Authentication, RBAC và business CRUD chưa được triển khai; không mô tả chúng như tính năng đang hoạt động.
+- Authentication, RBAC và business CRUD chưa được triển khai; cũng chưa được coi là accepted, nên không mô tả chúng như tính năng đang hoạt động.
 
 Lệnh kiểm thử backend chuẩn từ repository root:
 

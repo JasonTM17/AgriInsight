@@ -1,6 +1,8 @@
 # Costs page override
 
-Status: design contract only. Current Gold data is read-only; operational ledger mutations depend on backend phase 6.
+Status: design contract plus browser-gate-approved read-only prototype. Current Gold data remains immutable; operational ledger mutations depend on backend Phase 6.
+
+Reviewed fixture: [`cost-analysis-prototype.html`](../prototypes/cost-analysis-prototype.html), with source, interaction, responsive, zoom, offline, print, and review evidence recorded in [`cost-analysis-review.md`](../prototypes/cost-analysis-review.md). This approval covers the frozen design fixture only; it does not approve a production frontend, backend API, or file-generating export.
 
 ## User and decision
 
@@ -49,4 +51,6 @@ Every measure carries VND/unit/date granularity and data cutoff. Browser code fo
 
 ## Acceptance
 
-- Separate operating/procurement/inventory journeys, reconciliation mismatch, stale/empty/denied/export-failure, and mobile comparison states exist before production code.
+- Prototype gate passed for separate operating and procurement lenses, Gold reconciliation, bounded data, URL/history state, keyboard navigation, export preflight, 375/768/1024/1440 responsive layouts, landscape, reduced motion, 200% browser zoom, offline reload, and print.
+- Inventory value remains a separate journey and is never merged into either Cost lens.
+- Reconciliation mismatch, stale, denied, loading, and export-failure fixtures still must exist before production code.
