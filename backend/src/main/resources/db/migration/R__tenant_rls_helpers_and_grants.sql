@@ -37,6 +37,121 @@ GRANT EXECUTE ON FUNCTION agriinsight_security.resolve_identity_bootstrap(TEXT, 
 
 RESET ROLE;
 
+CREATE OR REPLACE FUNCTION agriinsight_security.assert_admin_path_remains(
+    p_profile_id UUID,
+    p_identity_id UUID,
+    p_remove_all_profile_paths BOOLEAN
+)
+RETURNS VOID
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+    target_contributes BOOLEAN;
+    remaining_admin_path BOOLEAN;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL THEN
+        RAISE EXCEPTION 'Tenant context is required'
+            USING ERRCODE = '42501';
+    END IF;
+
+    PERFORM 1
+      FROM public.tenants AS tenant
+     WHERE tenant.id = resolved_tenant
+     FOR UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Tenant context is not active'
+            USING ERRCODE = '42501';
+    END IF;
+
+    IF p_remove_all_profile_paths THEN
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.id = p_profile_id
+               AND profile.active = TRUE
+        ) INTO target_contributes;
+
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.id <> p_profile_id
+               AND profile.active = TRUE
+        ) INTO remaining_admin_path;
+    ELSE
+        IF p_identity_id IS NULL THEN
+            RAISE EXCEPTION 'Identity id is required'
+                USING ERRCODE = '22004';
+        END IF;
+
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.id = p_profile_id
+               AND profile.active = TRUE
+               AND identity_row.id = p_identity_id
+        ) INTO target_contributes;
+
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.active = TRUE
+               AND identity_row.id <> p_identity_id
+        ) INTO remaining_admin_path;
+    END IF;
+
+    IF target_contributes AND NOT remaining_admin_path THEN
+        RAISE EXCEPTION 'The final active tenant administrator path cannot be removed'
+            USING ERRCODE = '23514',
+                  CONSTRAINT = 'tenant_last_active_admin_path';
+    END IF;
+END
+$function$;
+
 CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity(
     p_identity_id UUID,
     p_profile_id UUID,
@@ -99,6 +214,12 @@ BEGIN
             USING ERRCODE = '42501';
     END IF;
 
+    PERFORM agriinsight_security.assert_admin_path_remains(
+        p_profile_id,
+        p_identity_id,
+        FALSE
+    );
+
     UPDATE public.external_identities
        SET active = FALSE,
            version = version + 1,
@@ -117,10 +238,13 @@ GRANT USAGE ON SCHEMA agriinsight_security TO agriinsight_runtime;
 GRANT USAGE, CREATE ON SCHEMA agriinsight_security TO agriinsight_identity_definer;
 
 REVOKE ALL ON FUNCTION agriinsight_security.app_current_tenant_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_tenant_id()
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT)
     TO agriinsight_runtime;

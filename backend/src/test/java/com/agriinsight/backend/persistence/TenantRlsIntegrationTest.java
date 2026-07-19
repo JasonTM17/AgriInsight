@@ -35,6 +35,7 @@ import java.util.UUID;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.postgresql.util.PSQLException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -48,6 +49,7 @@ class TenantRlsIntegrationTest {
 
     private static final UUID TENANT_A = UUID.fromString("10000000-0000-0000-0000-000000000001");
     private static final UUID TENANT_B = UUID.fromString("10000000-0000-0000-0000-000000000002");
+    private static final UUID TENANT_C = UUID.fromString("10000000-0000-0000-0000-000000000003");
     private static final UUID PROFILE_A = UUID.fromString("20000000-0000-0000-0000-000000000001");
     private static final UUID PROFILE_B = UUID.fromString("20000000-0000-0000-0000-000000000002");
     private static final String ISSUER = "https://identity.example.test/issuer";
@@ -226,6 +228,70 @@ class TenantRlsIntegrationTest {
     }
 
     @Test
+    void finalAdministratorIdentityCannotBeUnlinked() throws Exception {
+        try (var runtime = runtimeConnection(POSTGRESQL, "agriinsight")) {
+            runtime.setAutoCommit(false);
+            setTenant(runtime, TENANT_C);
+            assertThatThrownBy(() -> count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.unlink_external_identity(
+                        '20000000-0000-0000-0000-000000000003',
+                        '21000000-0000-0000-0000-000000000003'
+                    ) AS unlinked
+                    WHERE unlinked
+                    """))
+                    .isInstanceOfSatisfying(PSQLException.class, exception -> {
+                        var serverError = exception.getServerErrorMessage();
+                        assertThat(serverError).isNotNull();
+                        assertThat(serverError.getConstraint())
+                                .isEqualTo("tenant_last_active_admin_path");
+                    });
+            runtime.rollback();
+        }
+
+        try (var runtime = runtimeConnection(POSTGRESQL, "agriinsight")) {
+            runtime.setAutoCommit(false);
+            setTenant(runtime, TENANT_C);
+            execute(runtime, """
+                    INSERT INTO user_profiles (id, tenant_id, display_name)
+                    VALUES (
+                        '20000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000003',
+                        'Backup Admin C'
+                    )
+                    """);
+            execute(runtime, """
+                    INSERT INTO user_roles (id, tenant_id, user_profile_id, role_code)
+                    VALUES (
+                        '22000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000003',
+                        '20000000-0000-0000-0000-000000000004',
+                        'TENANT_ADMIN'
+                    )
+                    """);
+            assertThat(count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.link_external_identity(
+                        '21000000-0000-0000-0000-000000000004',
+                        '20000000-0000-0000-0000-000000000004',
+                        'https://identity.example.test/issuer',
+                        'subject-c-backup'
+                    ) AS linked
+                    WHERE linked
+                    """)).isEqualTo(1);
+            assertThat(count(runtime, """
+                    SELECT count(*)
+                    FROM agriinsight_security.unlink_external_identity(
+                        '20000000-0000-0000-0000-000000000003',
+                        '21000000-0000-0000-0000-000000000003'
+                    ) AS unlinked
+                    WHERE unlinked
+                    """)).isEqualTo(1);
+            runtime.rollback();
+        }
+    }
+
+    @Test
     void policyCatalogKeepsForceRlsAndRoleSpecificPermissivePolicies() throws Exception {
         try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(count(operator, """
@@ -247,6 +313,30 @@ class TenantRlsIntegrationTest {
                     WHERE tablename = 'external_identities'
                       AND 'agriinsight_runtime' = ANY(roles)
                     """)).isZero();
+            assertThat(count(operator, """
+                    SELECT count(*)
+                    FROM pg_proc procedure
+                    JOIN pg_namespace namespace ON namespace.oid = procedure.pronamespace
+                    JOIN pg_roles owner_role ON owner_role.oid = procedure.proowner
+                    WHERE namespace.nspname = 'agriinsight_security'
+                      AND procedure.proname = 'assert_admin_path_remains'
+                      AND procedure.prosecdef
+                      AND procedure.proconfig = ARRAY['search_path=pg_catalog']::TEXT[]
+                      AND owner_role.rolname = 'agriinsight_migrator'
+                      AND has_function_privilege(
+                            'agriinsight_runtime',
+                            procedure.oid,
+                            'EXECUTE')
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM aclexplode(COALESCE(
+                            procedure.proacl,
+                            acldefault('f', procedure.proowner)
+                        )) AS privilege
+                        WHERE privilege.grantee = 0
+                          AND privilege.privilege_type = 'EXECUTE'
+                      )
+                    """)).isEqualTo(1);
         }
     }
 
