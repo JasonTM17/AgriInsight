@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AgriInsight — Tổng quan điều hành</title>
+  <link rel="stylesheet" href="./overview-field-ledger-foundation.css">
+  <link rel="stylesheet" href="./overview-field-ledger-components.css">
+  <link rel="stylesheet" href="./overview-field-ledger-responsive.css">
+  <script src="./overview-field-ledger-prototype.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+  <svg class="symbol-sheet" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+    <symbol id="i-field" viewBox="0 0 24 24"><path d="M4 19c5-7 11-10 16-12M7 20c3-5 7-8 13-10M12 20c2-3 4-5 8-7M4 8c3 1 5 3 6 6M5 4c4 1 7 4 8 8"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8"/></symbol>
+    <symbol id="i-cost" viewBox="0 0 24 24"><path d="M6 5h12v14H6zM9 9h6M9 13h2M14 13h1M9 16h2M14 16h1"/></symbol>
+    <symbol id="i-quality" viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3 8 8 9 5-1 8-4 8-9V7zM8 12l2.5 2.5L16 9"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="rail" id="primary-rail" aria-label="Điều hướng chính">
+      <a class="brand" href="#main-content" aria-label="AgriInsight, trang tổng quan">
+        <span class="brand-mark"><span></span><span></span><span></span></span>
+        <span><strong>AgriInsight</strong><small>Field ledger</small></span>
+      </a>
+      <button class="rail-close" type="button" data-nav-close aria-label="Đóng điều hướng">×</button>
+      <nav class="rail-nav">
+        <a class="is-active" href="#main-content" aria-current="page"><svg><use href="#i-grid"/></svg><span>Tổng quan</span></a>
+        <a href="#farm-ranking"><svg><use href="#i-field"/></svg><span>Trang trại</span></a>
+        <a href="#inventory-insight"><svg><use href="#i-box"/></svg><span>Tồn kho</span><b>15</b></a>
+        <a href="#financial-trend"><svg><use href="#i-cost"/></svg><span>Chi phí</span></a>
+        <a href="#data-quality"><svg><use href="#i-quality"/></svg><span>Chất lượng dữ liệu</span></a>
+      </nav>
+      <div class="scope-card">
+        <span>Phạm vi hiện tại</span>
+        <strong>Công ty Nông nghiệp An Việt</strong>
+        <small>6 trang trại · 13 mùa vụ</small>
+        <button type="button" data-open-filters aria-haspopup="dialog" aria-controls="filter-dialog">Đổi phạm vi</button>
+      </div>
+      <div class="rail-user"><span class="user-tile">LT</span><span><strong>Linh Trần</strong><small>Giám đốc vận hành</small></span></div>
+    </aside>
+    <button class="nav-scrim" type="button" data-nav-close tabindex="-1" aria-hidden="true" aria-label="Đóng điều hướng"></button>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button nav-toggle" type="button" data-nav-toggle aria-controls="primary-rail" aria-expanded="false" aria-label="Mở điều hướng"><svg><use href="#i-menu"/></svg></button>
+        <div class="breadcrumbs"><span>Điều hành</span><b>/</b><strong>Tổng quan</strong></div>
+        <div class="topbar-actions"><span class="freshness"><i></i>Dữ liệu đến <time datetime="2026-07-18">18/07/2026</time></span><button class="filter-button" type="button" data-open-filters aria-haspopup="dialog" aria-controls="filter-dialog"><svg><use href="#i-filter"/></svg>Bộ lọc <span>3</span></button></div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="page-heading" aria-labelledby="page-title">
+          <div><p>Nhịp vận hành hôm nay</p><h1 id="page-title">Tổng quan mùa vụ</h1><span>923,11 ha đang canh tác · tổng hợp từ Gold contract đã kiểm chứng</span></div>
+          <div class="heading-note"><small>Ưu tiên ngày 19/07</small><strong>Kiểm tra cảm biến Khu vực 1.1 trong 4 giờ</strong></div>
+        </section>
+
+        <section class="quality-banner" id="data-quality" aria-label="Trạng thái chất lượng dữ liệu">
+          <span class="quality-mark"><svg><use href="#i-quality"/></svg></span>
+          <div><strong>Pipeline hoàn tất, còn 49 cảnh báo cần phân loại</strong><span>12 mùa vụ · 36 tồn kho · 1 sức khỏe cây trồng. Không có contract drift.</span></div>
+          <a href="#decision-ledger">Xem hàng đợi <svg><use href="#i-arrow"/></svg></a>
+        </section>
+
+        <div class="overview-grid">
+          <div class="overview-primary">
+            <section class="metric-ledger" aria-label="Chỉ số điều hành chính">
+              <article><span>Doanh thu</span><strong>465,77 <small>tỷ ₫</small></strong><div class="bullet"><i style="--value:82%"></i><b style="--target:74%"></b></div><small>82% kế hoạch năm</small></article>
+              <article><span>Lợi nhuận</span><strong>198,79 <small>tỷ ₫</small></strong><div class="bullet"><i style="--value:88%"></i><b style="--target:78%"></b></div><small>cao hơn mục tiêu 10 điểm</small></article>
+              <article><span>Biên lợi nhuận</span><strong>42,68 <small>%</small></strong><div class="bullet"><i style="--value:71%"></i><b style="--target:65%"></b></div><small>mục tiêu 39,0%</small></article>
+              <article><span>Sản lượng</span><strong>16,57 <small>triệu kg</small></strong><div class="bullet"><i style="--value:76%"></i><b style="--target:81%"></b></div><small>còn thiếu 5 điểm kế hoạch</small></article>
+            </section>
+
+            <section class="data-panel trend-panel" id="financial-trend" aria-labelledby="trend-title">
+              <header><div><p>Dòng tài chính theo tháng</p><h2 id="trend-title">Lợi nhuận biến động theo lịch thu hoạch</h2></div><span class="legend"><i></i>Lợi nhuận</span></header>
+              <div class="chart-wrap">
+                <svg class="trend-chart" viewBox="0 0 720 250" role="img" aria-labelledby="chart-title chart-desc">
+                  <title id="chart-title">Lợi nhuận từng tháng năm 2025</title><desc id="chart-desc">Lợi nhuận âm trong sáu tháng đầu, đạt đỉnh 145,76 tỷ đồng vào tháng 9 và kết năm ở 32,91 tỷ đồng.</desc>
+                  <g class="grid-lines"><path d="M54 30H700M54 84H700M54 138H700M54 192H700"/><path d="M54 28V212M215 28V212M376 28V212M537 28V212M698 28V212"/></g>
+                  <path class="zero-line" d="M54 151H700"/><path class="profit-area" d="M54 169 113 189 171 205 230 191 289 142 347 187 406 76 465 159 523 34 582 63 641 155 699 121V212H54Z"/>
+                  <path class="profit-line" d="M54 169 113 189 171 205 230 191 289 142 347 187 406 76 465 159 523 34 582 63 641 155 699 121"/>
+                  <g class="chart-points"><circle cx="54" cy="169" r="4"/><circle cx="289" cy="142" r="4"/><circle cx="406" cy="76" r="4"/><circle cx="523" cy="34" r="5"/><circle cx="699" cy="121" r="4"/></g>
+                  <g class="axis-labels"><text x="54" y="235">T1</text><text x="215" y="235">T4</text><text x="376" y="235">T7</text><text x="537" y="235">T10</text><text x="686" y="235">T12</text><text x="4" y="36">150 tỷ</text><text x="20" y="156">0</text><text x="3" y="207">−50 tỷ</text></g>
+                  <g class="peak-label"><rect x="489" y="4" width="94" height="24" rx="5"/><text x="536" y="20">T9 · 145,76 tỷ</text></g>
+                </svg>
+              </div>
+              <details class="chart-table"><summary>Xem bảng dữ liệu biểu đồ</summary><div class="table-scroll"><table><thead><tr><th>Tháng</th><th>Lợi nhuận</th><th>Diễn giải</th></tr></thead><tbody><tr><td>04/2025</td><td>−35,79 tỷ ₫</td><td>Chi phí chăm sóc trước thu hoạch</td></tr><tr><td>07/2025</td><td>83,67 tỷ ₫</td><td>Doanh thu mùa vụ chính</td></tr><tr><td>09/2025</td><td>145,76 tỷ ₫</td><td>Đỉnh thu hoạch</td></tr><tr><td>12/2025</td><td>32,91 tỷ ₫</td><td>Chốt vụ cuối năm</td></tr></tbody></table></div></details>
+            </section>
+
+            <section class="farm-ranking" id="farm-ranking" aria-labelledby="farm-title">
+              <header><div><p>So sánh theo trang trại</p><h2 id="farm-title">Lợi nhuận và biên đóng góp</h2></div><button type="button">Mở phân tích trang trại <svg><use href="#i-arrow"/></svg></button></header>
+              <ol><li><span><b>01</b>Nông trại Biển Hồ<small>Biên 49,43%</small></span><i style="--rank:100%"></i><strong>47,27 tỷ ₫</strong></li><li><span><b>02</b>Nông trại Cao Nguyên<small>Biên 39,88%</small></span><i style="--rank:92%"></i><strong>43,63 tỷ ₫</strong></li><li><span><b>03</b>Nông trại Bình Minh<small>Biên 36,67%</small></span><i style="--rank:71%"></i><strong>33,52 tỷ ₫</strong></li><li><span><b>04</b>Nông trại Phù Sa<small>Biên 44,06%</small></span><i style="--rank:63%"></i><strong>29,78 tỷ ₫</strong></li></ol>
+            </section>
+          </div>
+
+          <aside class="field-intelligence" aria-labelledby="field-title">
+            <header><p>Bằng chứng tại ruộng</p><h2 id="field-title">Khu vực 1.1 · Cà phê</h2><span class="risk-label"><i></i>Rủi ro cao · 55/100</span></header>
+            <div class="plot-map" role="img" aria-label="Sơ đồ Khu vực 1.1 với cảm biến phía bắc đang mất dữ liệu 5 ngày">
+              <span class="contour c1"></span><span class="contour c2"></span><span class="contour c3"></span>
+              <div class="plot-row r1"></div><div class="plot-row r2"></div><div class="plot-row r3"></div><div class="plot-row r4"></div>
+              <span class="sensor is-offline"><i></i><b>Cảm biến S-01</b><small>trễ 5 ngày</small></span><span class="map-caption">38,63 ha · Nông trại Cao Nguyên</span>
+            </div>
+            <dl class="field-readings"><div><dt>Độ ẩm đất</dt><dd>41,11%</dd></div><div><dt>pH đất</dt><dd>6,44</dd></div><div><dt>Mưa 7 ngày</dt><dd>2,21 mm</dd></div><div><dt>Lần đọc cuối</dt><dd>13/07 · 18:00</dd></div></dl>
+            <section class="recommended-action"><span>01</span><div><small>Hành động được khuyến nghị</small><strong>Kiểm tra cảm biến và kết nối IoT trong 4 giờ.</strong><p>Bằng chứng: tuổi dữ liệu 5 ngày; độ ẩm thấp hơn trung vị của 24 khu vực đang theo dõi.</p></div></section>
+            <button class="primary-action" type="button">Mở hồ sơ khu vực <svg><use href="#i-arrow"/></svg></button>
+          </aside>
+        </div>
+
+        <section class="decision-ledger" id="decision-ledger" aria-labelledby="ledger-title">
+          <header><div><p>Hàng đợi quyết định</p><h2 id="ledger-title">Ưu tiên dựa trên bằng chứng</h2></div><span>3 việc cần xử lý trước 12:00</span></header>
+          <div class="decision-list">
+            <button type="button" class="decision-row" aria-expanded="true" aria-controls="decision-evidence-inventory"><span class="priority critical">P1</span><span><strong>Tồn kho hạt giống lúa dưới điểm đặt hàng</strong><small id="inventory-insight">Kho vật tư Nông trại Biển Hồ · còn 480 kg</small></span><b>Đề nghị nhập 3.120 kg</b><svg><use href="#i-arrow"/></svg></button>
+            <div class="decision-evidence" id="decision-evidence-inventory"><span>Nguồn: inventory_alerts</span><span>Mức: critical</span><a href="#inventory-insight">Xem lô và FEFO</a></div>
+            <button type="button" class="decision-row" aria-expanded="false" aria-controls="decision-evidence-season"><span class="priority warning">P2</span><span><strong>12 mùa vụ vượt ngân sách hoặc hụt sản lượng</strong><small>4 vượt ngân sách · 8 dưới 85% mục tiêu</small></span><b>Giao chủ sở hữu trước 10:30</b><svg><use href="#i-arrow"/></svg></button>
+            <div class="decision-evidence" id="decision-evidence-season" hidden><span>Nguồn: season alerts</span><span>Mức: warning</span><a href="#financial-trend">Đối chiếu chi phí</a></div>
+            <button type="button" class="decision-row" aria-expanded="false" aria-controls="decision-evidence-cost"><span class="priority watch">P3</span><span><strong>Bón phân chiếm 23,31% chi phí chăm sóc</strong><small>62,24 tỷ ₫ · nhóm chi phí lớn nhất</small></span><b>So sánh định mức theo vụ</b><svg><use href="#i-arrow"/></svg></button>
+            <div class="decision-evidence" id="decision-evidence-cost" hidden><span>Nguồn: cost_activity</span><span>Mức: watch</span><a href="#farm-ranking">Xem theo trang trại</a></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="filter-dialog" id="filter-dialog" aria-labelledby="filter-title"><form method="dialog"><header><div><small>Phạm vi dữ liệu</small><h2 id="filter-title">Bộ lọc điều hành</h2></div><button value="cancel" aria-label="Đóng bộ lọc">×</button></header><label>Trang trại<select name="farm" autocomplete="off"><option>Tất cả 6 trang trại</option><option>Nông trại Biển Hồ</option><option>Nông trại Cao Nguyên</option></select></label><label>Mùa vụ<select name="season" autocomplete="off"><option>13 mùa vụ đang hoạt động</option><option>Vụ Đông Xuân 2025–2026</option></select></label><label>Khoảng thời gian<select name="period" autocomplete="off"><option>Năm 2025</option><option>12 tháng gần nhất</option></select></label><div class="dialog-actions"><button value="reset" class="secondary-action">Đặt lại</button><button value="apply" class="primary-action">Áp dụng 3 bộ lọc</button></div></form></dialog>
+</body>
+</html>

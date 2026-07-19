@@ -6,3 +6,4 @@ Primary job: executive scan from revenue/cost/profit/yield/risk to one evidence-
 - Charts: bullet KPI-vs-target group, monthly line trend, farm ranking bars, optional profit waterfall with a text bridge.
 - Required states: stale run banner, missing Gold contract, partial farm scope, permission-denied insight, and export failure with retry.
 - Mobile: KPI list becomes a prioritized stack; map/plot panel follows the first insight; charts have table fallback.
+- Reviewed design fixture: [`../prototypes/overview-field-ledger-prototype.html`](../prototypes/overview-field-ledger-prototype.html), with evidence in [`../prototypes/overview-prototype-review.md`](../prototypes/overview-prototype-review.md).

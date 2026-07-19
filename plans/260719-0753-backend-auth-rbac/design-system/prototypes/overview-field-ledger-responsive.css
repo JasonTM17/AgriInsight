@@ -1,0 +1,52 @@
+@media (max-width: 1180px) {
+  .app-shell { grid-template-columns: 224px minmax(0, 1fr); }
+  .overview-grid { grid-template-columns: minmax(0, 1fr) 360px; }
+  .metric-ledger { grid-template-columns: 1fr 1fr; }
+  .metric-ledger article:nth-child(2) { border-right: 0; }
+  .metric-ledger article:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+}
+
+@media (max-width: 900px) {
+  .app-shell { display: block; }
+  .rail { position: fixed; z-index: calc(var(--z-overlay) + 1); left: 0; width: 272px; padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-105%); transition: transform 220ms cubic-bezier(.2,.8,.2,1); box-shadow: 18px 0 40px -24px rgba(20,38,26,.6); }
+  .rail.is-open { transform: translateX(0); }
+  .rail-close { position: absolute; top: 17px; right: 12px; width: 44px; height: 44px; border: 0; background: transparent; color: #fff; font-size: 26px; cursor: pointer; }
+  .rail.is-open .rail-close { display: block; }
+  .nav-scrim { position: fixed; z-index: var(--z-overlay); inset: 0; padding: 0; border: 0; background: rgba(20,38,26,.48); }
+  body.nav-open .nav-scrim { display: block; }
+  .brand { padding-right: 46px; }
+  .nav-toggle { display: grid; }
+  .breadcrumbs { margin-right: auto; margin-left: 12px; }
+  .freshness { display: none; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .field-intelligence { position: static; grid-row: 1; }
+  .plot-map { height: 260px; }
+}
+
+@media (max-width: 640px) {
+  .topbar { min-height: 60px; padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  .filter-button { width: 44px; padding: 0; justify-content: center; font-size: 0; }
+  .filter-button span { position: absolute; transform: translate(14px,-14px); font-size: 9px; min-width: 17px; }
+  main { padding: 24px 14px 48px; }
+  .page-heading { align-items: start; flex-direction: column; gap: 18px; }
+  .heading-note { max-width: none; }
+  .quality-banner { grid-template-columns: 36px 1fr; }.quality-banner > a { grid-column: 2; }
+  .metric-ledger { grid-template-columns: 1fr; }.metric-ledger article { border-right: 0; border-bottom: 1px solid var(--border); }.metric-ledger article:last-child { border-bottom: 0; }
+  .data-panel > header, .farm-ranking > header, .decision-ledger > header { padding: 16px; flex-direction: column; }
+  .trend-chart { min-width: 0; }.chart-wrap { overflow: visible; padding-inline: 8px; }
+  .axis-labels text { font-size: 17px; }.peak-label text { font-size: 15px; }
+  .farm-ranking li { grid-template-columns: minmax(160px,1fr) auto; gap: 10px; }.farm-ranking li > i { display: none; }
+  .field-intelligence > header h2 { padding-right: 0; }.risk-label { position: static; margin-top: 10px; }
+  .plot-map { height: 230px; margin-inline: 16px; }.field-readings { margin-inline: 16px; }.recommended-action { margin-inline: 16px; }.field-intelligence > .primary-action { width: calc(100% - 32px); margin-inline: 16px; }
+  .decision-list { padding-inline: 16px; }.decision-row { grid-template-columns: 34px minmax(0,1fr) 20px; }.decision-row > b { grid-column: 2; }.decision-evidence { padding-left: 0; flex-wrap: wrap; gap: 6px 12px; }.decision-evidence a { width: 100%; margin-left: 0; }
+  .dialog-actions { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+@media print {
+  .rail, .topbar, .filter-dialog, button { display: none !important; }
+  .app-shell { display: block; }.overview-grid { grid-template-columns: 1fr; }.field-intelligence { position: static; }
+}
