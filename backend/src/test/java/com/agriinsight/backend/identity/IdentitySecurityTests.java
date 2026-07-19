@@ -2,6 +2,7 @@ package com.agriinsight.backend.identity;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,7 +19,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -27,6 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @IdentitySecurityContext
+@ExtendWith(OutputCaptureExtension.class)
 class IdentitySecurityTests {
 
     private static final UUID PROFILE_ID = UUID.fromString("20000000-0000-0000-0000-000000000001");
@@ -42,7 +47,7 @@ class IdentitySecurityTests {
     private IdentityBootstrapPort bootstrapPort;
 
     @Test
-    void missingAndMalformedTokensReturnRedactedProblemDetails() throws Exception {
+    void missingAndMalformedTokensReturnRedactedProblemDetails(CapturedOutput output) throws Exception {
         mockMvc.perform(get("/api/v1/me").header("X-Correlation-Id", "missing-token-01"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string("X-Correlation-Id", "missing-token-01"))
@@ -56,6 +61,12 @@ class IdentitySecurityTests {
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
                 .andExpect(content().string(not(containsString("provider key diagnostics"))))
                 .andExpect(content().string(not(containsString("malformed-sensitive-token"))));
+
+        assertThat(output)
+                .contains("security.authentication_required correlationId=missing-token-01 method=GET path=/api/v1/me")
+                .doesNotContain("provider key diagnostics")
+                .doesNotContain("malformed-sensitive-token")
+                .doesNotContain("Authorization");
     }
 
     @Test

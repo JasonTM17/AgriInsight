@@ -4,6 +4,8 @@ import com.agriinsight.backend.shared.web.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,6 +16,8 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 public class SecurityProblemWriter {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityProblemWriter.class);
+
     private final JsonMapper jsonMapper;
 
     public SecurityProblemWriter(JsonMapper jsonMapper) {
@@ -21,6 +25,11 @@ public class SecurityProblemWriter {
     }
 
     public void authenticationRequired(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        LOGGER.warn(
+                "security.authentication_required correlationId={} method={} path={}",
+                CorrelationIdFilter.resolve(request),
+                request.getMethod(),
+                request.getRequestURI());
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
         write(
                 request,
