@@ -81,13 +81,15 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Backend foundation and contracts](./phase-01-backend-foundation-and-contracts.md) | In progress |
+| 1 | [Backend foundation and contracts](./phase-01-backend-foundation-and-contracts.md) | Completed |
 | 2 | [OIDC identity and security boundary](./phase-02-oidc-identity-and-security-boundary.md) | Pending |
 | 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Pending |
 | 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Pending |
 | 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | Pending |
 | 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Pending |
 | 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
+
+Phase 1 was accepted on 2026-07-19. The next executable dependency is Phase 2; see the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md).
 
 ## Dependencies
 

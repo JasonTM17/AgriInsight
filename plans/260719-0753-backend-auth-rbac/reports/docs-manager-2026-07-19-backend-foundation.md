@@ -1,5 +1,7 @@
 # Backend Foundation Docs Report
 
+> Historical documentation snapshot from before runtime acceptance. Current status is recorded in [Backend Phase 1 Acceptance](./acceptance-2026-07-19-backend-phase1.md).
+
 ## Current State Assessment
 
 - Backend phase 1 is scaffolded but not accepted.

@@ -1,6 +1,6 @@
 # Backend Phase 1 Code Quality Review
 
-> Historical Stage 2 review. Findings were remediated or explicitly deferred; see the current spec and final adversarial review for adjudication and acceptance status.
+> Historical Stage 2 review. Findings were remediated or explicitly deferred; see [Backend Phase 1 Acceptance](./acceptance-2026-07-19-backend-phase1.md) for the final gate evidence.
 
 ## Scope
 

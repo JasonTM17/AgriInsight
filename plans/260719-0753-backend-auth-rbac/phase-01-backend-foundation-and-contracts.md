@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Backend foundation and contracts"
-status: in-progress
+status: completed
 priority: P1
 effort: "2-3d"
 dependencies: []
@@ -12,6 +12,10 @@ dependencies: []
 ## Overview
 
 Create the isolated Java 21 Spring Boot application, reproducible Maven build, PostgreSQL/Flyway foundation, module boundary checks, safe configuration, and API/error conventions. This phase proves that the new backend can be built and tested without changing the Python pipeline or requiring Docker at developer startup.
+
+## Acceptance
+
+Accepted on 2026-07-19. The guarded current-tree verification passed 24 unit tests plus 1 required PostgreSQL 18/Testcontainers integration test; Flyway V1 applied and validated from an empty schema. A Temurin 21 multi-stage image built successfully and passed a loopback-only, non-root runtime smoke test. Existing Python, compileall, Node, Compose-config, and wheel gates remained green. See the [acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md) and [engineering journal](../../docs/journals/260719-2310-backend-phase1-acceptance.md).
 
 ## Requirements
 
@@ -91,13 +95,13 @@ Phase 1 owns only shared/foundation code and the `tenants` anchor table. It must
 
 ## Success Criteria
 
-- [ ] `backend/` builds with Temurin 21 in the image/verification environment and with the local newer JDK using `--release 21`; the shared protected CI job remains a Phase 7 release gate.
-- [ ] Fresh PostgreSQL applies Flyway V1; checksum validation is enabled and applied SQL is never edited in place.
-- [ ] Spring Modulith/ArchUnit boundary test is green and proves the foundation does not depend on domain internals.
-- [ ] DB/schema-aware readiness and process-only liveness have focused 200/503 tests with hidden details; no business route is accidentally public.
-- [ ] Open Session in View is disabled in every profile. No transactional business response exists in Phase 1; the focused serialization/no-SQL proof is a mandatory acceptance gate for the first transactional API phase.
-- [ ] Existing Python test suite, compileall, Node check, and Compose config remain green.
-- [ ] Maven/Docker/temp outputs are outside tracked files and under D when generated locally.
+- [x] `backend/` builds with Temurin 21 in the image/verification environment and with the local newer JDK using `--release 21`; the shared protected CI job remains a Phase 7 release gate.
+- [x] Fresh PostgreSQL applies Flyway V1; checksum validation is enabled and applied SQL is never edited in place.
+- [x] Spring Modulith/ArchUnit boundary test is green and proves the foundation does not depend on domain internals.
+- [x] DB/schema-aware readiness and process-only liveness have focused 200/503 tests with hidden details; no business route is accidentally public.
+- [x] Open Session in View is disabled in every profile. No transactional business response exists in Phase 1; the focused serialization/no-SQL proof is a mandatory acceptance gate for the first transactional API phase.
+- [x] Existing Python test suite, compileall, Node check, and Compose config remain green.
+- [x] Maven/Docker/temp outputs are outside tracked files and under D when generated locally.
 
 ## Risk Assessment
 

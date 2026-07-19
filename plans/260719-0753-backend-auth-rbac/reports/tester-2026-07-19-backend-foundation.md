@@ -1,5 +1,7 @@
 ## Backend Phase 1 Verification Report
 
+> Historical disk-blocked verification snapshot. The final guarded test and image gates are recorded in [Backend Phase 1 Acceptance](./acceptance-2026-07-19-backend-phase1.md).
+
 ### Scope
 - Objective: independently verify current Backend Phase 1 foundation after scout fixes
 - Allowed writes: none used

@@ -1,5 +1,7 @@
 # Backend Phase 1 Spec Compliance
 
+> Historical pre-acceptance snapshot. Runtime gates later passed; see [Backend Phase 1 Acceptance](./acceptance-2026-07-19-backend-phase1.md).
+
 Date: 2026-07-19
 Scope: current uncommitted `backend/`, `scripts/run-backend-tests.ps1`, Phase 1 plan, and supporting docs.
 

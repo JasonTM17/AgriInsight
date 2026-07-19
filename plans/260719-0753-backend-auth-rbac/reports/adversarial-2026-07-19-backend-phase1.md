@@ -1,5 +1,7 @@
 # Backend Phase 1 Adversarial Review
 
+> Historical pre-runtime-gate review. The final guarded test and image evidence is recorded in [Backend Phase 1 Acceptance](./acceptance-2026-07-19-backend-phase1.md).
+
 ## Scope
 
 - Review target: current uncommitted `backend/`, guarded Maven runner, test resources, delivery files, and Phase 1 contract.

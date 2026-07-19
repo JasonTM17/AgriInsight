@@ -22,14 +22,22 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1 đã có mã nguồn cho application bootstrap, security deny-by-default, correlation ID, Problem Detail, liveness/readiness và migration tenant anchor, nhưng chưa được nghiệm thu.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1 đã được nghiệm thu ngày 2026-07-19 với application bootstrap, security deny-by-default, correlation ID, Problem Detail, liveness/readiness, Spring Modulith boundary và migration tenant anchor.
 
-Các cổng còn chặn:
+Bằng chứng hiện tại:
 
-- Disk guard C/D hiện PASS sau safe recovery, nhưng Maven chưa được chạy lại trên bộ trạng thái mới.
-- Docker daemon đang dừng; Testcontainers, Flyway PostgreSQL, Compose và image build chưa được xác minh.
-- Java 21 CI, backend image verification và Docker Hub publication chưa được xác minh.
-- Authentication, RBAC và business CRUD chưa được triển khai; cũng chưa được coi là accepted, nên không mô tả chúng như tính năng đang hoạt động.
+- Disk guard PASS trước các tác vụ nặng; Maven `verify` đạt 24 unit test và 1 Testcontainers integration test trên PostgreSQL 18 sạch, gồm Flyway V1 apply + validate.
+- Local JDK mới hơn biên dịch bằng `--release 21`; multi-stage image dùng Temurin 21, chạy non-root `10001:10001`, chỉ chứa `/app/app.jar` và đã qua smoke test liveness/readiness.
+- Regression analytics đạt 65 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
+- Docker Desktop đã được trả về trạng thái dừng sau kiểm thử; không xóa image/volume và không để lại container Testcontainers.
+
+Các cổng còn mở thuộc phase sau:
+
+- Authentication/OIDC bắt đầu ở Phase 2; tenant RBAC/RLS và business CRUD thuộc Phase 3-6 nên chưa được mô tả như tính năng đang hoạt động.
+- Protected Java 21 CI, image scan, SBOM/provenance và publication immutable lên Docker Hub thuộc Phase 7. Image backend hiện chỉ có local tag kiểm thử; chưa push registry.
+- PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
+
+Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md).
 
 Lệnh kiểm thử backend chuẩn từ repository root:
 

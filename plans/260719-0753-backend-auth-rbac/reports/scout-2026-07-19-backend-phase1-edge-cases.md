@@ -1,6 +1,6 @@
 # Backend Phase 1 Edge-Case Scout
 
-> Historical pre-remediation scout. Findings below describe the source at scout time; the current adjudication is in `spec-2026-07-19-backend-foundation.md` and `adversarial-2026-07-19-backend-phase1.md`.
+> Historical pre-remediation scout. Findings below describe the source at scout time; see [Backend Phase 1 Acceptance](./acceptance-2026-07-19-backend-phase1.md) for the final gate evidence.
 
 ## Summary
 
