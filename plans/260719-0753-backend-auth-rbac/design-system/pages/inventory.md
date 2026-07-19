@@ -27,7 +27,7 @@ Current artifact: [`inventory-control-prototype.html`](../prototypes/inventory-c
 2. Priority queue grouped by required action, not color; each row keeps material code, unit, quantity, expiry context, ABC, and days of supply.
 3. Current evidence sheet shows aggregate balance plus the source receipt and latest movement. It explicitly marks FEFO unavailable because no source contract provides remaining quantity or quality by lot.
 4. ABC and days-of-supply comparison with text/table alternative.
-5. Mutation flow shows before/after balance, unit, warehouse/lot, idempotency state, confirmation, and audit reason.
+5. Planned Phase 5 mutation flow will show before/after balance, unit, warehouse/lot, idempotency state, confirmation, and audit reason.
 
 ## State contract
 
