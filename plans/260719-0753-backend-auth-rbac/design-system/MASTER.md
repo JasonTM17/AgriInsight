@@ -87,6 +87,7 @@ Each page must define role, primary task, data source, loading/empty/error/denie
 
 - [Overview](./pages/overview.md)
 - [Farms](./pages/farms.md)
+- [Work](./pages/work.md)
 - [Inventory](./pages/inventory.md)
 - [Costs](./pages/costs.md)
 - [Crop health](./pages/crop-health.md)

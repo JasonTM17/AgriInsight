@@ -105,7 +105,7 @@ The frontend milestone creates a multi-stage, non-root `web/Dockerfile` using th
 
 - Backend phases 1-3 have a stable OpenAPI/Auth/RBAC contract and representative error fixtures.
 - User confirms OIDC provider/BFF session direction, Vietnamese-only vs bilingual launch, and Docker Hub namespace/visibility.
-- Design phase produces one approved master system plus page-specific overrides for Overview, Farms, Inventory, Costs, Crop Health, Data Quality, and Administration.
+- Design phase produces one approved master system plus page-specific role/data/state contracts for Overview, Farms, Work, Inventory, Costs, Crop Health, Data Quality, and Administration.
 - No implementation begins from polished dashboard screenshots alone; each screen has role, task, data source, loading/error/empty behavior, drill path, and acceptance criteria.
 
 ## Unresolved questions
