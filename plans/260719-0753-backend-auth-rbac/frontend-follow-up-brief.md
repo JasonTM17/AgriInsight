@@ -2,6 +2,7 @@
 
 Status: queued follow-on milestone; design direction approved for detailed planning, no frontend implementation in this backend phase.
 Source: supplied AgriInsight specification plus CK UI/UX Pro Max design-system, agriculture color, typography, chart, and UX searches run on 2026-07-19.
+Canonical artifacts: [`design-system/MASTER.md`](./design-system/MASTER.md) and its page overrides.
 
 ## Why this is separate
 
