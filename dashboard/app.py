@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
+from agriinsight.metrics_cost_contracts import COST_GOLD_CONTRACTS
+from dashboard.cost_analysis_page import render_cost_analysis_page
+from dashboard.cost_analysis_snapshot import (
+    CostSnapshotError,
+    load_cost_analysis_snapshot,
+)
 
 
 st.set_page_config(
@@ -22,6 +30,7 @@ STOCK_COLORS = {
     "stockout": "#C62828",
     "overstock": "#1565C0",
 }
+_LOGGER = logging.getLogger(__name__)
 
 
 def _artifact_root() -> Path:
@@ -31,14 +40,26 @@ def _artifact_root() -> Path:
     return (Path(__file__).resolve().parents[1] / "artifacts").resolve()
 
 
-@st.cache_data
-def _load_csv(path: Path) -> pd.DataFrame:
+@st.cache_data(ttl=300, max_entries=64)
+def _load_csv_versioned(path: str, modified_ns: int, size: int) -> pd.DataFrame:
+    del modified_ns, size
     return pd.read_csv(path)
 
 
-@st.cache_data
+def _load_csv(path: Path) -> pd.DataFrame:
+    stat = path.stat()
+    return _load_csv_versioned(str(path), stat.st_mtime_ns, stat.st_size)
+
+
+@st.cache_data(ttl=300, max_entries=64)
+def _load_json_versioned(path: str, modified_ns: int, size: int) -> dict:
+    del modified_ns, size
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
 def _load_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+    stat = path.stat()
+    return _load_json_versioned(str(path), stat.st_mtime_ns, stat.st_size)
 
 
 def _money(value: float) -> str:
@@ -508,6 +529,38 @@ def _data_quality_page(data: dict[str, object]) -> None:
     st.dataframe(remediation, hide_index=True, width="stretch")
 
 
+def _cost_analysis_route(root: Path) -> None:
+    gold_paths = {
+        name: root / "gold" / f"{name}.csv" for name in COST_GOLD_CONTRACTS
+    }
+    manifest_path = root / "manifest.json"
+    missing = [path for path in (*gold_paths.values(), manifest_path) if not path.is_file()]
+    if missing:
+        st.error("Chưa đủ Cost Gold để hiển thị trang Phân tích chi phí.")
+        st.code("python -m agriinsight run --output artifacts")
+        st.caption(
+            "Thiếu: "
+            + ", ".join(path.relative_to(root).as_posix() for path in missing)
+        )
+        return
+    try:
+        snapshot = load_cost_analysis_snapshot(root, tuple(gold_paths))
+    except CostSnapshotError:
+        _LOGGER.exception("Unable to load the checksum-verified Cost Gold snapshot")
+        st.error(
+            "Cost Gold chưa tạo thành một snapshot nhất quán và đọc được. "
+            "Hãy tạo lại artifact rồi thử lại."
+        )
+        st.code("python -m agriinsight run --output artifacts")
+        return
+    render_cost_analysis_page(
+        snapshot.gold,
+        snapshot.manifest,
+        temp_root=(root / "_tmp" / "cost-reports").resolve(),
+        source_fingerprint=snapshot.source_fingerprint,
+    )
+
+
 root = _artifact_root()
 required = (
     root / "gold" / "executive_summary.csv",
@@ -519,7 +572,10 @@ missing = [path for path in required if not path.exists()]
 if missing:
     st.error("Chưa có artifact để hiển thị.")
     st.code("python -m agriinsight run --output artifacts")
-    st.caption("Thiếu: " + ", ".join(str(path) for path in missing))
+    st.caption(
+        "Thiếu: "
+        + ", ".join(path.relative_to(root).as_posix() for path in missing)
+    )
     st.stop()
 
 data: dict[str, object] = {
@@ -550,7 +606,15 @@ st.caption(
 )
 page = st.sidebar.radio(
     "Dashboard",
-    ("Executive", "Farm Performance", "Inventory", "Crop Health", "Data Quality"),
+    (
+        "Executive",
+        "Farm Performance",
+        "Inventory",
+        "Crop Health",
+        "Data Quality",
+        "Cost Analysis",
+    ),
+    key="dashboard_page",
 )
 st.sidebar.caption("Bronze → Silver → Star Schema → Gold")
 
@@ -562,5 +626,7 @@ elif page == "Inventory":
     _inventory_page(data)
 elif page == "Crop Health":
     _crop_health_page(data)
-else:
+elif page == "Data Quality":
     _data_quality_page(data)
+else:
+    _cost_analysis_route(root)
