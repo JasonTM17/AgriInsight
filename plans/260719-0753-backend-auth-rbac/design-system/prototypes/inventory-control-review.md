@@ -1,6 +1,6 @@
 # Inventory control prototype review
 
-Status: source-complete and static-verified; browser, responsive, keyboard, zoom, offline, and visual approval pending.
+Status: source-complete, static-verified, browser-approved, and CK sequential review PASS; production integration remains gated by backend Phase 5.
 
 ## Artifacts
 
@@ -33,7 +33,7 @@ The source receipt whose expiry matches the Gold nearest-expiry value is lineage
 - Inventory value and procurement context are labelled separately from operating cost.
 - Evidence dialog is read-only. There is no receipt, issue, reversal, retry, or browser-side KPI calculation.
 - URL state is allowlisted for severity, type, material, and alert. Assigned warehouse is deliberately absent from client-controlled URL state in this single-warehouse fixture.
-- Mobile source collapses to priority rows and a labelled evidence dialog with safe-area padding; runtime verification is pending.
+- Mobile source collapses to priority rows and a labelled evidence dialog with safe-area padding; browser verification covers portrait, landscape, breakpoint changes, modal focus, zoom, and large text.
 
 ## Static gates
 
@@ -46,6 +46,7 @@ The source receipt whose expiry matches the Gold nearest-expiry value is lineage
 | JavaScript data selectors | PASS — no unresolved selector |
 | External runtime, unsafe DOM sinks, browser storage, focus suppression, broad transition, debt markers, and cross-warehouse payload fingerprints | PASS — none found |
 | Source files under the 200-line modularization threshold | PASS |
+| Fixture boundary adversarial matrix | PASS — 11/11 for missing arrays, duplicate keys, non-finite/range errors, foreign warehouse, invalid dates, inconsistent counts, orphan material, and row caps |
 
 A debugger audit found that an unsupported `warehouse` query was silently overwritten with `WH-001`. The finding was accepted and fixed by removing warehouse from prototype URL state; the future production URL may carry warehouse only after server-side authorization resolves permitted scope.
 
@@ -58,19 +59,27 @@ The adversarial source review found two more boundary defects. Enterprise summar
 | Unsupported warehouse query was silently overwritten | Accepted and fixed | Prototype URL has no warehouse read/write path |
 | Enterprise totals and ABC values crossed the WH-001 client boundary | Accepted and fixed | Payload fingerprint gate plus scoped-value reconciliation pass |
 | Material-only URL selection was ignored | Accepted and fixed | Five-case pure Node URL regression passes |
+| Clearing an empty filter discarded focus | Accepted and fixed | Focus moves to the selected queue row; browser result `MAT-UREA-stockout` |
+| Browser history could leave stale evidence dialog content open | Accepted and fixed | Empty popstate closes the dialog, hides stale content, and focuses the active severity tab |
+| Malformed or oversized fixtures could throw or freeze rendering | Accepted and fixed | Schema/range/uniqueness/scope reconciliation, 50-alert/100-ABC caps, iterative maximum, and explicit unavailable UI pass |
+| Fixture alert IDs entered a dynamic CSS selector | Sequential review finding; fixed | Row lookup now compares `dataset.alertId` without selector interpolation; special-character probe does not throw |
+| Repeated `beforeprint` could overwrite original disclosure state | Sequential review finding; fixed | Two `beforeprint` events followed by `afterprint` restore both disclosures to their original closed state |
 
-Three bounded independent code-reviewer attempts produced no final result and were discarded. The CK sequential fallback completed spec, quality-checklist, and adversarial passes, but no independent-review PASS is claimed. Browser-dependent behavior remains explicitly outside this source review.
+The independent reviewer produced the three Medium findings above with zero Critical/High findings. Its bounded re-review attempt later hit the agent service quota before returning a verdict. CK sequential fallback therefore repeated the critical and informational passes, added the selector/print findings above, ran 30/30 static checks, 11/11 adversarial fixture checks, and reran focused browser regressions. No independent re-review PASS is claimed; the recorded sequential gate is PASS with zero remaining Critical/High/Medium findings.
 
-## Browser gate pending
+## Browser gate
 
-Do not promote this fixture to reviewed until the disk guard passes and browser evidence covers:
+Evidence: [`reports/inventory-control-browser-gate/`](../../reports/inventory-control-browser-gate/).
 
-- 375, 768, 1024, and 1440 px plus 812 × 375 landscape with no page overflow;
-- keyboard tabs, queue selection, filter cancel/apply, native details, both dialogs, layered Escape, and focus restoration;
-- URL history/back plus malformed and inherited-property-like values;
-- empty filter combinations, negative stock, overstock, missing days of supply, and missing batch evidence;
-- 200% browser zoom and text-only scaling, reduced motion, offline reload, print, touch targets, and console/page errors;
-- final desktop/mobile screenshots and contrast inspection.
+| Browser check | Result |
+|---|---|
+| Responsive layout | PASS — 375, 768, 1024, 1440, 812 × 375, and 844 × 390; zero page overflow and zero visible targets below 44 px |
+| Keyboard and focus | PASS — severity roving tabs, queue selection, filter cancel/apply/clear, native details, rail/dialog Escape, breakpoint focus routing, and dialog restoration |
+| URL/history boundary | PASS — Back/Forward restoration; alert-only, material-only, mismatched pair, malformed, inherited-property-like, unknown, and unsupported warehouse values canonicalize safely |
+| Data edges | PASS — empty filter, negative/zero balance, overstock, missing days supply, missing batch evidence, invalid fixture unavailable state, and capped fixture boundary |
+| Accessibility/resilience | PASS — 200% browser zoom, 200% text scaling, reduced motion, local/offline resource reload, touch targets, ARIA hidden-state parity, and no console/page errors |
+| Print | PASS — disclosures restore after repeated print events; rendered PDF has three pages with all 10 alert and 15 ABC rows, repeating headers, and no rail/skip-link leakage |
+| Visual evidence | PASS — desktop, tablet, mobile, both landscapes, evidence dialog, zoom, large-text, and print screenshots inspected |
 
 ## Production entry gates
 
