@@ -56,6 +56,21 @@ management:
 agriinsight:
   api-docs:
     enabled: ${AGRIINSIGHT_API_DOCS_ENABLED:false}
+  identity:
+    enabled: ${AGRIINSIGHT_IDENTITY_ENABLED:false}
+    issuer-uri: ${AGRIINSIGHT_OIDC_ISSUER_URI:}
+    jwk-set-uri: ${AGRIINSIGHT_OIDC_JWK_SET_URI:}
+    api-audience: ${AGRIINSIGHT_OIDC_API_AUDIENCE:}
+    interactive-client-id: ${AGRIINSIGHT_OIDC_INTERACTIVE_CLIENT_ID:}
+    clock-skew: ${AGRIINSIGHT_OIDC_CLOCK_SKEW:60s}
+    jws-algorithm: ${AGRIINSIGHT_OIDC_JWS_ALGORITHM:RS256}
+    discriminator-location: ${AGRIINSIGHT_OIDC_DISCRIMINATOR_LOCATION:CLAIM}
+    discriminator-name: ${AGRIINSIGHT_OIDC_DISCRIMINATOR_NAME:token_use}
+    discriminator-value: ${AGRIINSIGHT_OIDC_DISCRIMINATOR_VALUE:access}
+    display-name-claim: ${AGRIINSIGHT_OIDC_DISPLAY_NAME_CLAIM:name}
+    email-claim: ${AGRIINSIGHT_OIDC_EMAIL_CLAIM:email}
+    assurance-claim: ${AGRIINSIGHT_OIDC_ASSURANCE_CLAIM:acr}
+    cors-allowed-origins: ${AGRIINSIGHT_CORS_ALLOWED_ORIGINS:}
   schema:
     expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:3}
 

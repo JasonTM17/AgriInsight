@@ -24,6 +24,8 @@ management:
 agriinsight:
   api-docs:
     enabled: false
+  identity:
+    enabled: false
 
 springdoc:
   api-docs:
