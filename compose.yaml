@@ -29,10 +29,10 @@ services:
     environment:
       AGRIINSIGHT_ARTIFACTS: /app/artifacts
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8501:8501"
     volumes:
       - ./artifacts:/app/artifacts:ro
+      - ./artifacts/_tmp:/app/artifacts/_tmp
     depends_on:
       pipeline:
         condition: service_completed_successfully
-
