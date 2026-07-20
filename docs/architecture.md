@@ -133,16 +133,19 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Phase 1 foundation và Phase 2 OIDC identity boundary đã được nghiệm thu bằng unit/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
+Phase 1-3 đã được nghiệm thu bằng unit/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
 - JWT kiểm tra signature/algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator,
-- exact `(issuer, subject)` bootstrap sang profile/tenant active; JWT role/tenant claim không cấp row scope,
-- `/api/v1/me` chỉ trả minimum internal principal; route chưa đăng ký bị deny,
+- exact `(issuer, subject)` bootstrap sang profile/tenant active, sau đó nạp role/permission dưới tenant context; JWT role/tenant claim không cấp row scope,
+- `/api/v1/me` và các route quản trị tenant dùng exact method/template + permission; route chưa đăng ký bị deny,
+- runtime database role tách khỏi migration/identity-definer role, không phải owner/superuser/`BYPASSRLS`,
+- `@TenantScoped` đặt `app.tenant_id` transaction-local trước data access; PostgreSQL `ENABLE/FORCE RLS` chặn cross-tenant read/write và pooled-connection leakage,
+- mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway V1-V3 tạo tenant anchor, identity/RBAC schema, 19 permissions và 7 fixed roles,
+- Flyway V1-V4 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, 19 permissions và 7 fixed roles,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 
 | Plane | Storage owner | Không được ghi |
@@ -150,7 +153,7 @@ Phase 1 foundation và Phase 2 OIDC identity boundary đã được nghiệm thu
 | Analytics | `artifacts/`, Gold CSV, SQLite warehouse | PostgreSQL operational state |
 | Backend | PostgreSQL + Flyway | `artifacts/`, manifest, Gold CSV, SQLite warehouse |
 
-Phase 2 chưa phải production release. Restricted runtime DB role, permission enrichment, transaction-local tenant context, PostgreSQL RLS và provisioning thuộc Phase 3; business CRUD thuộc Phase 4-6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định tắt cho đến khi đủ contract và Phase 3 gate hoàn tất.
+Phase 3 đã đóng tenant authorization foundation và tenant-administration boundary, nhưng chưa phải production release của toàn sản phẩm. Business CRUD thuộc Phase 4-6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 
 ## Đường mở rộng
 

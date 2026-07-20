@@ -9,7 +9,8 @@ This roadmap reflects the current state of the repository, not an assumed releas
 | Analytics MVP | Active and regression-verified | Bronze/Silver/Gold pipeline, reporting, dashboard |
 | Backend phase 1 | Completed and regression-verified | Java 21 foundation, PostgreSQL/Flyway, probes, non-root image smoke |
 | Backend phase 2 | Completed and regression-verified | OIDC identity/security boundary, exact bootstrap, route inventory, local image smoke |
-| Backend phase 3 | Ready to start | Restricted runtime role, tenant RBAC/context, provisioning, and PostgreSQL RLS |
+| Backend phase 3 | Completed and regression-verified | Restricted roles, tenant RBAC/context, provisioning, FORCE RLS, idempotency, tenant administration |
+| Backend phase 4 | Next | Farm, field, season, workforce, activity, and harvest APIs |
 
 ## Next backend phases
 
@@ -17,15 +18,15 @@ This roadmap reflects the current state of the repository, not an assumed releas
 |---|---|---|
 | Phase 1 | Backend foundation and contracts | Accepted 2026-07-19 |
 | Phase 2 | OIDC identity and security boundary | Accepted 2026-07-20 |
-| Phase 3 | Tenant RBAC and PostgreSQL RLS | Ready; Phases 1-2 accepted |
-| Phase 4 | Farm, season, workforce, and activity APIs | Phase 3 accepted |
-| Phase 5 | Inventory and procurement APIs | Phase 3 accepted |
+| Phase 3 | Tenant RBAC and PostgreSQL RLS | Accepted 2026-07-20 |
+| Phase 4 | Farm, season, workforce, and activity APIs | Next; Phase 3 accepted |
+| Phase 5 | Inventory and procurement APIs | Dependency unblocked; sequentially follows Phase 4 |
 | Phase 6 | Cost management and reporting boundary | Phases 4-5 accepted |
 | Phase 7 | Outbox operations and release hardening | Phases 4-6 accepted |
 
 ## Follow-on frontend
 
-The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, Work, Cost Analysis, and Inventory prototypes are ready for detailed planning. Cost Analysis and WH-001 Inventory now have Gold-backed read-only fixtures with source/static/browser/review gates complete; neither is production-ready or implies live export/mutation. The C/D disk guard is PASS after safe cache relocation to D. Production implementation remains queued until backend phases 1-3 stabilize the auth and OpenAPI boundary. See [design guidelines](./design-guidelines.md).
+The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, Work, Cost Analysis, and Inventory prototypes are ready for detailed planning. Backend phases 1-3 now stabilize the identity, tenant authorization, and tenant-administration OpenAPI boundary, so the CK FE planning/design track may proceed. Production screens that depend on farms, work, inventory, or cost mutations still wait for their Phase 4-6 APIs. See [design guidelines](./design-guidelines.md).
 
 ## Deferred until later
 
@@ -33,7 +34,7 @@ The frontend follow-up brief, persisted CK FE master/page overrides, and reviewe
 - Backend CI enforcement
 - Registry digest verification, image scanning, and SBOM/provenance checks
 - Public web application deployment
-- Any claim that tenant RBAC/RLS or production authentication is live before Phase 3
+- Any claim that Phase 3 alone makes the full product production-ready
 
 ## Roadmap rule
 

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide documents the verified local/runtime contracts through Backend Phase 2. It is not a production deployment runbook: Phase 3 tenant RBAC/RLS and Phase 7 release hardening are still required.
+This guide documents the verified local/runtime contracts through Backend Phase 3. It is not yet a production deployment runbook: domain phases 4-6 and Phase 7 release hardening remain required.
 
 ## Supported execution boundaries
 
@@ -8,7 +8,7 @@ This guide documents the verified local/runtime contracts through Backend Phase 
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
-| Java backend, identity enabled | Controlled OIDC contract testing | Not production-ready until Phase 3 |
+| Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
 ## Preflight
@@ -34,7 +34,41 @@ powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify
 | `AGRIINSIGHT_FLYWAY_USERNAME` | Migration owner login | `agriinsight_migrator` placeholder |
 | `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration owner password | empty |
 
-Never run the application with the Flyway owner as its runtime identity. Phase 3 owns actual role creation/grants and production provisioning; Phase 2 alone is not deployable against a least-privilege production database.
+Never run the application with the Flyway owner as its runtime identity. The checked-in Phase 3 role gate creates or verifies `agriinsight_migrator`, `agriinsight_runtime`, and the non-login `agriinsight_identity_definer`; it refuses unsafe attributes or forbidden memberships.
+
+## Database role and migration gate
+
+`scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
+
+Required deployment inputs:
+
+| Environment variable | Purpose |
+|---|---|
+| `AGRIINSIGHT_DB_HOST`, `AGRIINSIGHT_DB_PORT`, `AGRIINSIGHT_DB_NAME` | Exact guarded PostgreSQL target |
+| `AGRIINSIGHT_DB_OPERATOR_USERNAME`, `AGRIINSIGHT_DB_OPERATOR_PASSWORD` | Short-lived role bootstrap credential; must not be the migrator |
+| `AGRIINSIGHT_FLYWAY_URL`, `AGRIINSIGHT_FLYWAY_USERNAME`, `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration connection; username must be `agriinsight_migrator` |
+| `AGRIINSIGHT_DB_ADOPTION_USERNAME`, `AGRIINSIGHT_DB_ADOPTION_PASSWORD` | Required only for the explicit Phase 1/2 legacy-owner adoption path |
+
+Fresh database:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-migrations.ps1
+```
+
+Controlled Phase 1/2 upgrade:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-migrations.ps1 `
+  -AdoptLegacyOwnership -LegacyOwner '<verified-legacy-owner>'
+```
+
+Do not set `AGRIINSIGHT_FLYWAY_ENABLED=true` in the normal application. Do not replace the adoption allowlist with `REASSIGN OWNED`, and do not pass the operator/adoption credential to Flyway or runtime.
+
+## First tenant provisioning
+
+After migrations, a verified operator runs `backend/ops/postgres/provision-tenant-admin.sql` as the migration owner with psql variables for `tenant_code`, `tenant_display_name`, `admin_display_name`, optional `admin_email`, exact OIDC `issuer`/`subject`, and `correlation_id`. Supply values through deployment automation or a protected operator session, not checked-in files or shell history.
+
+The script takes advisory transaction locks and atomically creates the tenant, first active profile, exact external identity, `TENANT_ADMIN` assignment, and audit event. Duplicate tenant code or identity fails without partial rows. There is intentionally no public first-admin or JWT JIT-provisioning route. Subsequent users are managed through the tenant-admin API.
 
 ## OIDC settings
 
@@ -94,6 +128,7 @@ The image runs as `10001:10001`. A local tag is not release evidence.
 - Public health responses use `show-details=never`.
 - Security responses are generic Problem Details with correlation IDs.
 - Authentication logs contain correlation ID, method, path, reason/fingerprint where available; never Authorization headers, tokens, private keys, or provider diagnostics.
+- Tenant-resolved route/service denials persist bounded actor, tenant, target, reason, correlation, and outcome metadata. A service denial is audited only after its rejected business transaction releases the connection.
 
 ## Docker Hub release policy
 
@@ -101,13 +136,11 @@ No registry push is authorized by a successful local build. Phase 7 must run pro
 
 ## Production blockers
 
-- Restricted non-owner runtime role and identity bootstrap grants
-- Transaction-local tenant context and connection-pool reset proof
-- DB-backed effective permissions and tenant/farm/warehouse/task scopes
-- PostgreSQL `ENABLE/FORCE ROW LEVEL SECURITY` plus direct-SQL isolation tests
-- Operator tenant/first-admin provisioning and last-admin safety
-- Production OIDC fixtures/MFA policy and audit retention
-- Protected CI, scan, SBOM/provenance, immutable registry publication
+- Phase 4 farm/field/season/workforce/activity APIs and FK-backed assignment scopes
+- Phase 5 inventory/procurement APIs and warehouse scopes
+- Phase 6 operating-cost ledger/reporting boundary
+- Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership
+- Protected Java 21 CI, dependency/image scan, SBOM/provenance, immutable registry publication, and pulled-digest smoke test
 
 ## Unresolved Questions
 

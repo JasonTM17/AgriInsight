@@ -22,24 +22,26 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1 được nghiệm thu ngày 2026-07-19; Phase 2 OIDC identity/security boundary được nghiệm thu ngày 2026-07-20. Backend hiện có application foundation, deny-by-default security, external JWT validation, exact identity bootstrap, route inventory và endpoint tối thiểu `GET /api/v1/me`.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-3 đã được nghiệm thu đến ngày 2026-07-20. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit và API quản trị tenant.
 
 Bằng chứng hiện tại:
 
-- Disk guard PASS trước các tác vụ nặng; Maven `verify` đạt 57 unit/security/module test và 1 Testcontainers integration test trên PostgreSQL 18 sạch, gồm Flyway V1-V3 apply + validate.
-- OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác sang profile/tenant đang active mà không tin JWT role/tenant claim.
-- Public route chỉ gồm health allowlist; `/api/v1/me` yêu cầu JWT hợp lệ; mapping chưa đăng ký bị deny. Security response/log không chứa raw token hoặc provider diagnostics.
+- Disk guard PASS trước các tác vụ nặng; Maven `verify` đạt 134 unit/security/module test và 23 Testcontainers integration test trên PostgreSQL 18 sạch (157 tổng), gồm Flyway V1-V4 apply/validate, fresh install và allowlisted upgrade.
+- OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
+- Public route chỉ gồm health allowlist. `/api/v1/me` và các route quản trị user/external identity/role dùng exact method/template + permission; mapping chưa đăng ký bị deny. Security response/log không chứa raw token hoặc provider diagnostics.
+- Runtime database role không phải owner/superuser/`BYPASSRLS`; tenant context chỉ tồn tại trong transaction. Direct-SQL tests chứng minh thiếu/sai context, cross-tenant read/write, `WITH CHECK` và pooled-connection reuse đều fail closed.
+- Mutation quản trị dùng optimistic version + canonical idempotency bound theo tenant/principal/route; user/identity/role lifecycle, last-admin invariant, conflict và authorization-denial audit đều được kiểm thử.
 - Local JDK mới hơn biên dịch bằng `--release 21`; multi-stage image dùng Temurin 21, chạy non-root `10001:10001`, chỉ chứa `/app/app.jar` và đã qua smoke test liveness/readiness/fail-closed OIDC.
 - Regression analytics đạt 65 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
-- Docker Desktop đã được trả về trạng thái dừng sau kiểm thử; không để lại smoke/Testcontainers container và vẫn giữ upstream `postgres:18.0-alpine`.
+- Không để lại smoke/Testcontainers PostgreSQL container; các container dự án khác không bị dọn. Upstream `postgres:18.0-alpine` vẫn chỉ là dependency kiểm thử.
 
 Các cổng còn mở thuộc phase sau:
 
-- Phase 2 chỉ đóng identity boundary. Tenant permission enrichment, restricted runtime DB role, transaction-local tenant context, PostgreSQL RLS và provisioning thuộc Phase 3; business CRUD thuộc Phase 4-6. Vì vậy backend chưa production-ready và identity mặc định vẫn tắt.
+- Phase 3 đóng tenant authorization foundation và tenant-administration boundary. Farm/workforce, inventory/procurement và cost CRUD thuộc Phase 4-6; vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 - Protected Java 21 CI, image scan, SBOM/provenance và publication immutable lên Docker Hub thuộc Phase 7. Image backend hiện chỉ có local tag kiểm thử; chưa push registry.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
-Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md) và [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md).
+Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md) và [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md).
 
 Lệnh kiểm thử backend chuẩn từ repository root:
 

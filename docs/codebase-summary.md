@@ -26,35 +26,43 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 
 | Module | Current responsibility |
 |---|---|
-| `shared` | API version, correlation IDs, Problem Details, health/readiness, persistence/audit primitives, foundation security |
-| `identity.api` | Minimum `GET /api/v1/me` contract |
-| `identity.application` | Exact external identity claims, bootstrap service, internal principal mapping |
-| `identity.domain` | Profile/external identity entities and fixed role/permission enums |
-| `identity.infrastructure` | OIDC config/decoder/validators, JWT conversion, bootstrap query, exact route registry |
-| `db/migration` | V1 tenant anchor, V2 identity/RBAC tables + hardened bootstrap function, V3 deterministic role/permission grants |
+| `shared` | API/error contracts, correlation, canonical command hashing, durable idempotency, tenant context, health/readiness |
+| `identity.api` | Current user plus exact tenant-user and external-identity HTTP contracts |
+| `identity.application` | Exact identity bootstrap, DB-enriched principal, tenant-user lifecycle and command orchestration |
+| `identity.infrastructure` | OIDC validation, exact route registry, bounded PostgreSQL user/identity/principal stores |
+| `authorization` | Fixed roles/permissions, scope evaluation, tenant transaction aspect, role lifecycle, audit publishers |
+| `db/migration` | V1-V3 foundation/identity catalog; V4 tenant audit/idempotency/RLS; repeatable least-privilege helpers/grants |
+| `backend/ops/postgres` | Idempotent role gate, allowlisted legacy ownership adoption, operator first-admin provisioning |
 
-Phase 2 validates external JWT signature/algorithm, issuer, API audience, expiration/not-before, subject, and access-token discriminator. It resolves exact `(issuer, subject)` to an active internal profile/tenant, then discards the raw JWT from the application principal. JWT roles and tenant claims are ignored for authorization.
+Phase 2 validates external JWT signature/algorithm, issuer, API audience, expiration/not-before, subject, and access-token discriminator. Phase 3 resolves exact `(issuer, subject)`, loads the active internal profile plus database roles/permissions under tenant context, and discards the raw JWT. JWT roles and tenant claims remain ignored for authorization.
 
 ## Current public contracts
 
 - Public: `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`
 - Authenticated when identity enabled: `GET /api/v1/me`
+- User management: `GET/POST /api/v1/users`, `GET /api/v1/users/{id}`
+- User lifecycle: `POST /api/v1/users/{id}/deactivate|reactivate`
+- External identities: link and exact identity unlink routes below `/api/v1/users/{id}/external-identities`
+- Role lifecycle: grant and revoke routes below `/api/v1/users/{id}/roles`
 - Development-only when explicitly enabled: OpenAPI/Swagger metadata
 - All unregistered routes: denied
 
-`/api/v1/me` returns only `profileId`, `tenantId`, and optional bounded `displayName`, `email`, and `assurance`. It does not expose issuer, subject, raw claims/token, roles, or database diagnostics.
+`/api/v1/me` returns the enriched internal profile, tenant code, fixed roles, and effective permissions without issuer, subject, raw claims/token, or database diagnostics. Tenant-administration responses expose only bounded internal/public fields and optimistic versions.
 
 ## Verification snapshot
 
-- Backend: 57 unit/security/module tests plus 1 PostgreSQL 18/Flyway integration test PASS.
-- Migrations: V1-V3 fresh apply/validate; 19 permissions, 7 roles, supplier has zero grants.
+- Backend: 134 unit/security/module tests plus 23 PostgreSQL 18/Flyway integration tests PASS (157 total).
+- Migrations: V1-V4 plus repeatable grants apply/validate on fresh and allowlisted upgrade databases.
+- Isolation: missing/invalid tenant, cross-tenant read/write, `WITH CHECK`, pooled-connection reset, role attributes, function grants, and policy catalog PASS.
+- Commands: same-key concurrency, rollback retry, response-loss replay, changed path/`If-Match` conflict, actor binding, and no sensitive snapshot PASS.
+- Administration: user/identity/role lifecycle, exact routes, bounded query counts, last-admin invariant, durable success/conflict/denial audit PASS.
 - Local image: non-root UID/GID `10001`, liveness/readiness/fail-closed smoke PASS.
 - Analytics: 65 tests PASS, 3 expected optional-PDF skips; compileall, Node syntax, Compose config, and wheel PASS.
 - Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; heavy work requires both PASS.
 
 ## Next boundary
 
-Phase 3 owns restricted database roles/grants, operator provisioning, transaction-local tenant context, DB-backed permissions, PostgreSQL RLS, direct-SQL cross-tenant tests, and pooled-connection reset proof. No business API or production authentication claim should precede that gate.
+Phase 3 is accepted. Phase 4 is next in the sequential workflow and owns farms, fields, seasons, employees, assignments, activities, and harvest APIs plus their FK-backed scope resolvers. Phase 5 is dependency-unblocked but remains after Phase 4 by default. Release CI, scans, SBOM/provenance, and Docker Hub publication remain Phase 7.
 
 ## Unresolved Questions
 
