@@ -31,14 +31,27 @@ public final class SqlTestResources {
     }
 
     public static Path copyLegacyMigrations() throws IOException {
-        Path root = projectRoot();
-        Path target = Files.createTempDirectory(root.resolve("artifacts/_tmp"), "legacy-migrations-");
-        Path source = root.resolve("backend/src/main/resources/db/migration");
-        for (String file : new String[] {
+        return copyMigrations("legacy-migrations-", new String[] {
                 "V1__create_tenant_anchor.sql",
                 "V2__create_identity_tables.sql",
                 "V3__seed_permissions_and_roles.sql"
-        }) {
+        });
+    }
+
+    public static Path copyMigrationsThroughV4() throws IOException {
+        return copyMigrations("phase-three-migrations-", new String[] {
+                "V1__create_tenant_anchor.sql",
+                "V2__create_identity_tables.sql",
+                "V3__seed_permissions_and_roles.sql",
+                "V4__add_tenant_security_and_idempotency.sql"
+        });
+    }
+
+    private static Path copyMigrations(String prefix, String[] migrationFiles) throws IOException {
+        Path root = projectRoot();
+        Path target = Files.createTempDirectory(root.resolve("artifacts/_tmp"), prefix);
+        Path source = root.resolve("backend/src/main/resources/db/migration");
+        for (String file : migrationFiles) {
             Files.copy(source.resolve(file), target.resolve(file));
         }
         return target;

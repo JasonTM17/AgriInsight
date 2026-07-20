@@ -59,7 +59,7 @@ class OwnershipAdoptionIntegrationTest {
 
         var migration = migrate(POSTGRESQL, database);
         assertThat(migration.success).isTrue();
-        assertThat(migration.migrationsExecuted).isEqualTo(2);
+        assertThat(migration.migrationsExecuted).isEqualTo(4);
         try (var operator = operatorConnection(POSTGRESQL, database)) {
             assertThat(com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.count(
                     operator,

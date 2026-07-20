@@ -24,6 +24,16 @@ VALUES (
     :'tenant_display_name'
 );
 
+INSERT INTO public.activity_types (tenant_id, code, display_name) VALUES
+    (:'new_tenant_id'::UUID, 'PLANTING', 'Planting'),
+    (:'new_tenant_id'::UUID, 'IRRIGATION', 'Irrigation'),
+    (:'new_tenant_id'::UUID, 'FERTILIZATION', 'Fertilization'),
+    (:'new_tenant_id'::UUID, 'PEST_CONTROL', 'Pest control'),
+    (:'new_tenant_id'::UUID, 'WEEDING', 'Weeding'),
+    (:'new_tenant_id'::UUID, 'PEST_INSPECTION', 'Pest inspection'),
+    (:'new_tenant_id'::UUID, 'HARVEST', 'Harvest'),
+    (:'new_tenant_id'::UUID, 'TRANSPORT', 'Transport');
+
 INSERT INTO public.user_profiles (id, tenant_id, display_name, email)
 VALUES (
     :'new_profile_id'::UUID,

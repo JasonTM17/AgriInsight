@@ -377,9 +377,40 @@ REVOKE ALL ON user_roles FROM PUBLIC;
 REVOKE ALL ON role_permissions FROM PUBLIC;
 REVOKE ALL ON api_command_records FROM PUBLIC;
 REVOKE ALL ON tenant_audit_events FROM PUBLIC;
+REVOKE ALL ON farms FROM PUBLIC;
+REVOKE ALL ON crops FROM PUBLIC;
+REVOKE ALL ON fields FROM PUBLIC;
+REVOKE ALL ON seasons FROM PUBLIC;
+REVOKE ALL ON employees FROM PUBLIC;
+REVOKE ALL ON user_farm_assignments FROM PUBLIC;
+REVOKE ALL ON activity_types FROM PUBLIC;
+REVOKE ALL ON activities FROM PUBLIC;
+REVOKE ALL ON activity_assignees FROM PUBLIC;
+REVOKE ALL ON activity_logs FROM PUBLIC;
+REVOKE ALL ON harvests FROM PUBLIC;
 REVOKE ALL ON flyway_schema_history FROM PUBLIC;
 
+REVOKE ALL ON tenants FROM agriinsight_runtime;
+REVOKE ALL ON user_profiles FROM agriinsight_runtime;
 REVOKE ALL ON external_identities FROM agriinsight_runtime;
+REVOKE ALL ON roles FROM agriinsight_runtime;
+REVOKE ALL ON permissions FROM agriinsight_runtime;
+REVOKE ALL ON user_roles FROM agriinsight_runtime;
+REVOKE ALL ON role_permissions FROM agriinsight_runtime;
+REVOKE ALL ON api_command_records FROM agriinsight_runtime;
+REVOKE ALL ON tenant_audit_events FROM agriinsight_runtime;
+REVOKE ALL ON farms FROM agriinsight_runtime;
+REVOKE ALL ON crops FROM agriinsight_runtime;
+REVOKE ALL ON fields FROM agriinsight_runtime;
+REVOKE ALL ON seasons FROM agriinsight_runtime;
+REVOKE ALL ON employees FROM agriinsight_runtime;
+REVOKE ALL ON user_farm_assignments FROM agriinsight_runtime;
+REVOKE ALL ON activity_types FROM agriinsight_runtime;
+REVOKE ALL ON activities FROM agriinsight_runtime;
+REVOKE ALL ON activity_assignees FROM agriinsight_runtime;
+REVOKE ALL ON activity_logs FROM agriinsight_runtime;
+REVOKE ALL ON harvests FROM agriinsight_runtime;
+REVOKE ALL ON flyway_schema_history FROM agriinsight_runtime;
 
 GRANT SELECT ON tenants TO agriinsight_runtime;
 GRANT SELECT, INSERT, UPDATE ON user_profiles TO agriinsight_runtime;
@@ -389,6 +420,41 @@ GRANT SELECT, INSERT, UPDATE ON user_roles TO agriinsight_runtime;
 GRANT SELECT ON role_permissions TO agriinsight_runtime;
 GRANT SELECT, INSERT, UPDATE ON api_command_records TO agriinsight_runtime;
 GRANT INSERT ON tenant_audit_events TO agriinsight_runtime;
+GRANT SELECT, INSERT ON farms TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, active, version, updated_at)
+    ON farms TO agriinsight_runtime;
+GRANT SELECT, INSERT ON crops TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, scientific_name, active, version, updated_at)
+    ON crops TO agriinsight_runtime;
+GRANT SELECT, INSERT ON fields TO agriinsight_runtime;
+GRANT UPDATE (
+    code, display_name, area_hectares, responsible_employee_id, latitude, longitude,
+    soil_type, irrigation_type, active, version, updated_at)
+    ON fields TO agriinsight_runtime;
+GRANT SELECT, INSERT ON seasons TO agriinsight_runtime;
+GRANT UPDATE (
+    code, display_name, variety_name, planned_start_date, planned_end_date,
+    started_on, ended_on, planted_area_hectares, budget_vnd, status, version, updated_at)
+    ON seasons TO agriinsight_runtime;
+GRANT SELECT, INSERT ON employees TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, job_title, active, version, updated_at)
+    ON employees TO agriinsight_runtime;
+GRANT SELECT, INSERT ON user_farm_assignments TO agriinsight_runtime;
+GRANT UPDATE (revoked_at, version, updated_at)
+    ON user_farm_assignments TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activity_types TO agriinsight_runtime;
+GRANT UPDATE (display_name, active, version, updated_at)
+    ON activity_types TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activities TO agriinsight_runtime;
+GRANT UPDATE (
+    code, title, description, planned_start_at, due_at, started_at, completed_at,
+    cancelled_at, status, version, updated_at)
+    ON activities TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activity_assignees TO agriinsight_runtime;
+GRANT UPDATE (revoked_at, version, updated_at)
+    ON activity_assignees TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activity_logs TO agriinsight_runtime;
+GRANT SELECT, INSERT ON harvests TO agriinsight_runtime;
 GRANT SELECT ON flyway_schema_history TO agriinsight_runtime;
 
 GRANT SELECT (id, tenant_id, user_profile_id, issuer, subject, active)

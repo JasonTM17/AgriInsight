@@ -70,6 +70,11 @@ class TenantProvisioningIntegrationTest {
                       AND outcome = 'SUCCEEDED'
                       AND target_reference IN ('TENANT-A', 'TENANT-B')
                     """)).isEqualTo(2);
+            assertThat(count(operator, """
+                    SELECT count(*) FROM activity_types activity_type
+                    JOIN tenants tenant ON tenant.id = activity_type.tenant_id
+                    WHERE tenant.code IN ('TENANT-A', 'TENANT-B')
+                    """)).isEqualTo(16);
             assertThat(count(operator, "SELECT count(*) FROM tenants WHERE code = 'TENANT-C'"))
                     .isZero();
         }
@@ -93,6 +98,11 @@ class TenantProvisioningIntegrationTest {
             assertThat(count(operator, """
                     SELECT count(*) FROM external_identities WHERE subject = 'subject-concurrent'
                     """)).isEqualTo(1);
+            assertThat(count(operator, """
+                    SELECT count(*) FROM activity_types activity_type
+                    JOIN tenants tenant ON tenant.id = activity_type.tenant_id
+                    WHERE tenant.code = 'TENANT-CONCURRENT'
+                    """)).isEqualTo(8);
         }
     }
 
