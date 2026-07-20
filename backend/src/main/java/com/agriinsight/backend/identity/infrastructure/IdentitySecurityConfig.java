@@ -3,6 +3,7 @@ package com.agriinsight.backend.identity.infrastructure;
 import com.agriinsight.backend.identity.application.ExternalIdentityService;
 import com.agriinsight.backend.identity.application.PrincipalMapper;
 import com.agriinsight.backend.shared.api.SecurityProblemWriter;
+import com.agriinsight.backend.shared.api.SecuredRouteRegistry;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -123,9 +124,9 @@ public class IdentitySecurityConfig {
                                         PathPatternRequestMatcher.pathPattern("/swagger-ui.html"))
                                 .permitAll();
                     }
-                    routeRegistry.routes().forEach(route -> route.minimumPermission().ifPresentOrElse(
-                            permission -> authorize.requestMatchers(route.requestMatcher())
-                                    .hasAuthority(permission.name()),
+                    routeRegistry.routes().forEach(route -> route.requiredAuthority().ifPresentOrElse(
+                            authority -> authorize.requestMatchers(route.requestMatcher())
+                                    .hasAuthority(authority),
                             () -> authorize.requestMatchers(route.requestMatcher()).authenticated()));
                     authorize.anyRequest().denyAll();
                 });

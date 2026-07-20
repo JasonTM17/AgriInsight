@@ -3,7 +3,7 @@ package com.agriinsight.backend.identity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agriinsight.backend.identity.application.IdentityBootstrapPort;
-import com.agriinsight.backend.identity.infrastructure.SecuredRouteRegistry;
+import com.agriinsight.backend.shared.api.SecuredRouteRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;

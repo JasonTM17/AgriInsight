@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agriinsight.backend.authorization.domain.Permission;
+import com.agriinsight.backend.shared.api.SecuredRouteRegistry;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -17,7 +18,7 @@ class SecuredRouteRegistryTest {
                 SecuredRouteRegistry.Route.permission(
                         HttpMethod.GET,
                         "/api/v1/farms/{id}",
-                        Permission.FARM_READ))));
+                        Permission.FARM_READ.name()))));
 
         assertThat(registry.contains(HttpMethod.GET, "/api/v1/me")).isTrue();
         assertThat(registry.contains(HttpMethod.POST, "/api/v1/me")).isFalse();

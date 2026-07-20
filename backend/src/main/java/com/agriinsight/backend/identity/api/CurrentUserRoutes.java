@@ -1,7 +1,7 @@
 package com.agriinsight.backend.identity.api;
 
-import com.agriinsight.backend.identity.infrastructure.SecuredRouteRegistry;
 import com.agriinsight.backend.shared.api.ApiVersion;
+import com.agriinsight.backend.shared.api.SecuredRouteRegistry;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

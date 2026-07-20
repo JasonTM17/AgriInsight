@@ -1,6 +1,5 @@
 package com.agriinsight.backend.shared.api;
 
-import com.agriinsight.backend.shared.web.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -27,7 +26,7 @@ public class SecurityProblemWriter {
     public void authenticationRequired(HttpServletRequest request, HttpServletResponse response) throws IOException {
         LOGGER.warn(
                 "security.authentication_required correlationId={} method={} path={}",
-                CorrelationIdFilter.resolve(request),
+                RequestCorrelation.resolve(request),
                 request.getMethod(),
                 request.getRequestURI());
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
@@ -54,13 +53,13 @@ public class SecurityProblemWriter {
             HttpStatus status,
             String title,
             String detail) throws IOException {
-        String correlationId = CorrelationIdFilter.resolve(request);
+        String correlationId = RequestCorrelation.resolve(request);
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
         problem.setProperty("correlationId", correlationId);
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.setHeader(CorrelationIdFilter.HEADER, correlationId);
+        response.setHeader(RequestCorrelation.HEADER, correlationId);
         jsonMapper.writeValue(response.getOutputStream(), problem);
     }
 }
