@@ -11,12 +11,16 @@ import static org.mockito.Mockito.when;
 import com.agriinsight.backend.shared.domain.ApiCommandRecord;
 import com.agriinsight.backend.shared.domain.CanonicalCommandHasher;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
+import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 class CommandExecutionServiceTest {
 
@@ -42,6 +46,16 @@ class CommandExecutionServiceTest {
         contextState = mock(TenantContextState.class);
         conflictPublisher = mock(IdempotencyConflictPublisher.class);
         service = new CommandExecutionService(store, contextState, conflictPublisher);
+        TenantPrincipal principal = mock(TenantPrincipal.class);
+        when(principal.tenantId()).thenReturn(TENANT_ID);
+        when(principal.profileId()).thenReturn(PRINCIPAL_ID);
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(principal, null, java.util.List.of()));
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test

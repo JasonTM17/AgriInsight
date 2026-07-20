@@ -2,13 +2,17 @@ package com.agriinsight.backend.shared.application;
 
 import com.agriinsight.backend.shared.domain.ApiCommandRecord;
 import com.agriinsight.backend.shared.domain.CanonicalCommandHasher;
+import com.agriinsight.backend.shared.persistence.TenantContextRequiredException;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
+import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,6 +39,7 @@ public class CommandExecutionService {
         Objects.requireNonNull(request, "request is required");
         Objects.requireNonNull(mutation, "mutation is required");
         Objects.requireNonNull(replayLoader, "replayLoader is required");
+        requireAuthenticatedActor(request);
         contextState.requireBound(request.tenantId());
 
         ApiCommandRecord reservation = reservation(request);
@@ -128,6 +133,17 @@ public class CommandExecutionService {
                 || !record.routeTemplate().equals(fingerprint.routeTemplate())
                 || !record.idempotencyKeyDigest().equals(request.idempotencyKey().digest())) {
             throw new IllegalStateException("Command store returned a record from another external binding");
+        }
+    }
+
+    private void requireAuthenticatedActor(CommandExecutionRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof TenantPrincipal principal)
+                || !principal.tenantId().equals(request.tenantId())
+                || !principal.profileId().equals(request.principalId())) {
+            throw new TenantContextRequiredException("Command actor must match the authenticated tenant principal");
         }
     }
 }
