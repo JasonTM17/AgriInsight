@@ -62,6 +62,10 @@ public record TenantAuditEvent(
         EXTERNAL_IDENTITY_UNLINKED,
         ROLE_GRANTED,
         ROLE_REVOKED,
+        FARM_CREATED,
+        FARM_UPDATED,
+        FARM_DEACTIVATED,
+        FARM_REACTIVATED,
         AUTHORIZATION_DENIED,
         IDEMPOTENCY_CONFLICT
     }
@@ -70,6 +74,7 @@ public record TenantAuditEvent(
         USER_PROFILE,
         EXTERNAL_IDENTITY,
         USER_ROLE,
+        FARM,
         API_COMMAND
     }
 
