@@ -7,6 +7,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
 import com.agriinsight.backend.shared.web.CorrelationIdFilter;
+import com.agriinsight.backend.shared.application.ResourceNotFoundException;
+import com.agriinsight.backend.shared.application.ResourceStateConflictException;
+import com.agriinsight.backend.shared.application.VersionConflictException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -67,6 +70,33 @@ public class ApiExceptionHandler {
         ProblemDetail problem = problem(HttpStatus.NOT_FOUND, "Resource not found",
                 "The requested resource does not exist.", request);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ResponseEntity<ProblemDetail> handleResourceNotFound(
+            ResourceNotFoundException exception,
+            HttpServletRequest request) {
+        ProblemDetail problem = problem(HttpStatus.NOT_FOUND, "Resource not found",
+                "The requested resource does not exist.", request);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    @ExceptionHandler({
+            ResourceStateConflictException.class,
+            VersionConflictException.class,
+            IdempotencyConflictException.class
+    })
+    ResponseEntity<ProblemDetail> handleStateConflict(
+            RuntimeException exception,
+            HttpServletRequest request) {
+        ProblemDetail problem = problem(HttpStatus.CONFLICT, "Request conflict",
+                "The request could not be applied because its state is stale or conflicts with an earlier command.",
+                request);
+        if (exception instanceof VersionConflictException versionConflict) {
+            problem.setProperty("expectedVersion", versionConflict.expectedVersion());
+            problem.setProperty("currentVersion", versionConflict.currentVersion());
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
