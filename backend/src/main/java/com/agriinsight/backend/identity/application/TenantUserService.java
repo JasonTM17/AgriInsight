@@ -161,7 +161,7 @@ public class TenantUserService {
                 active ? "Tenant user is already active" : "Tenant user is already inactive");
     }
 
-    private ScopeContext requireUserManagement() {
+    ScopeContext requireUserManagement() {
         return permissionEvaluator.requireTenant(Permission.IDENTITY_USER_MANAGE);
     }
 

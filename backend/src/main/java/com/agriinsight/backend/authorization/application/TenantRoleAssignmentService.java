@@ -111,7 +111,14 @@ public class TenantRoleAssignmentService {
         return assignment;
     }
 
-    private ScopeContext requireRoleManagement() {
+    public TenantRoleAssignment get(UUID profileId, Role role) {
+        ScopeContext scope = requireRoleManagement();
+        UUID requiredProfileId = requireProfile(scope, profileId);
+        return store.find(scope, requiredProfileId, Objects.requireNonNull(role, "role is required"))
+                .orElseThrow(() -> new ResourceNotFoundException("Role assignment"));
+    }
+
+    ScopeContext requireRoleManagement() {
         return permissionEvaluator.requireTenant(Permission.IDENTITY_ROLE_MANAGE);
     }
 
