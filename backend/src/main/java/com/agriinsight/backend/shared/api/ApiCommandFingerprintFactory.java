@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class ApiCommandFingerprintFactory {
 
     private final CanonicalCommandHasher hasher = new CanonicalCommandHasher();

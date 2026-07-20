@@ -6,7 +6,6 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
-import com.agriinsight.backend.shared.web.CorrelationIdFilter;
 import com.agriinsight.backend.shared.application.ResourceNotFoundException;
 import com.agriinsight.backend.shared.application.ResourceStateConflictException;
 import com.agriinsight.backend.shared.application.VersionConflictException;
@@ -19,6 +18,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -57,11 +57,21 @@ public class ApiExceptionHandler {
             ConstraintViolationException.class,
             HandlerMethodValidationException.class,
             MethodArgumentTypeMismatchException.class,
+            MissingRequestHeaderException.class,
             MissingServletRequestParameterException.class
     })
     ResponseEntity<ProblemDetail> handleInvalidRequest(Exception exception, HttpServletRequest request) {
         ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid request",
                 "One or more request parameters are invalid.", request);
+        return ResponseEntity.badRequest().body(problem);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ResponseEntity<ProblemDetail> handleIllegalArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request) {
+        ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid request",
+                "One or more request values are invalid.", request);
         return ResponseEntity.badRequest().body(problem);
     }
 
@@ -134,6 +144,6 @@ public class ApiExceptionHandler {
     }
 
     private String correlationId(HttpServletRequest request) {
-        return CorrelationIdFilter.resolve(request);
+        return RequestCorrelation.resolve(request);
     }
 }

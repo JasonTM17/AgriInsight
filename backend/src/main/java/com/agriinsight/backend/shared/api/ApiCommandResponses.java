@@ -20,12 +20,19 @@ public final class ApiCommandResponses {
         return completed(result);
     }
 
-    public static <T> ResponseEntity<T> body(
+    public static <T, R> ResponseEntity<R> body(
             CommandExecutionResult.Completed<T> result,
-            T body) {
+            R body) {
+        return body(result, body, result.target().resourceVersion());
+    }
+
+    public static <T, R> ResponseEntity<R> body(
+            CommandExecutionResult.Completed<T> result,
+            R body,
+            long representationVersion) {
         Objects.requireNonNull(result, "result is required");
         return ResponseEntity.status(result.responseStatus())
-                .headers(headers(result.target()))
+                .headers(headers(representationVersion))
                 .body(body);
     }
 
@@ -38,8 +45,15 @@ public final class ApiCommandResponses {
 
     public static HttpHeaders headers(CommandTarget target) {
         Objects.requireNonNull(target, "target is required");
+        return headers(target.resourceVersion());
+    }
+
+    public static HttpHeaders headers(long resourceVersion) {
+        if (resourceVersion < 0) {
+            throw new IllegalArgumentException("resourceVersion must not be negative");
+        }
         HttpHeaders headers = new HttpHeaders();
-        headers.setETag("\"" + target.resourceVersion() + "\"");
+        headers.setETag("\"" + resourceVersion + "\"");
         return headers;
     }
 

@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -77,6 +78,16 @@ class ApiExceptionHandlerTest {
                 .andExpect(content().string(not(containsString("must be greater"))));
     }
 
+    @Test
+    void missingHeadersAndIllegalArgumentsReturnGenericBadRequests() throws Exception {
+        mockMvc.perform(get("/test/header"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid request"));
+        mockMvc.perform(get("/test/argument"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(not(containsString("sensitive parser detail"))));
+    }
+
     record TestRequest(@NotBlank String name) {
     }
 
@@ -94,6 +105,15 @@ class ApiExceptionHandlerTest {
 
         @GetMapping("/test/page")
         void page(@RequestParam @Min(1) int page) {
+        }
+
+        @GetMapping("/test/header")
+        void header(@RequestHeader("Required-Header") String value) {
+        }
+
+        @GetMapping("/test/argument")
+        void argument() {
+            throw new IllegalArgumentException("sensitive parser detail");
         }
     }
 }
