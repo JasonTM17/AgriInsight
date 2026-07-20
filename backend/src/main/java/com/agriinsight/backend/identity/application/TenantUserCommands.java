@@ -1,5 +1,6 @@
 package com.agriinsight.backend.identity.application;
 
+import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -8,22 +9,12 @@ public final class TenantUserCommands {
     private TenantUserCommands() {
     }
 
-    public record AuditMetadata(
-            Optional<String> reasonCode,
-            Optional<String> correlationId) {
-
-        public AuditMetadata {
-            reasonCode = Objects.requireNonNull(reasonCode, "reasonCode is required");
-            correlationId = Objects.requireNonNull(correlationId, "correlationId is required");
-        }
-    }
-
     public record Create(
             String displayName,
             Optional<String> email,
             String issuer,
             String subject,
-            AuditMetadata audit) {
+            TenantAuditMetadata audit) {
 
         public Create {
             Objects.requireNonNull(displayName, "displayName is required");
@@ -41,7 +32,7 @@ public final class TenantUserCommands {
 
     public record Lifecycle(
             long expectedVersion,
-            AuditMetadata audit) {
+            TenantAuditMetadata audit) {
 
         public Lifecycle {
             if (expectedVersion < 0) {
@@ -54,7 +45,7 @@ public final class TenantUserCommands {
     public record LinkIdentity(
             String issuer,
             String subject,
-            AuditMetadata audit) {
+            TenantAuditMetadata audit) {
 
         public LinkIdentity {
             Objects.requireNonNull(issuer, "issuer is required");

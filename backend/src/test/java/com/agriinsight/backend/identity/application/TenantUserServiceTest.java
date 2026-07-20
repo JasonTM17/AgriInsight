@@ -13,7 +13,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.agriinsight.backend.authorization.application.PermissionEvaluator;
+import com.agriinsight.backend.authorization.application.TenantAdministratorGuard;
 import com.agriinsight.backend.authorization.application.TenantAuditEvent;
+import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import com.agriinsight.backend.authorization.application.TenantAuditPublisher;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
@@ -40,20 +42,22 @@ class TenantUserServiceTest {
             ACTOR_ID,
             ScopeContext.Type.TENANT,
             Optional.empty());
-    private static final TenantUserCommands.AuditMetadata AUDIT =
-            new TenantUserCommands.AuditMetadata(
+    private static final TenantAuditMetadata AUDIT =
+            new TenantAuditMetadata(
                     Optional.of("ACCESS_APPROVED"),
                     Optional.of("request-01"));
 
     private final PermissionEvaluator permissionEvaluator = mock(PermissionEvaluator.class);
     private final TenantUserStore store = mock(TenantUserStore.class);
+    private final TenantAdministratorGuard administratorGuard = mock(TenantAdministratorGuard.class);
     private final TenantAuditPublisher auditPublisher = mock(TenantAuditPublisher.class);
     private TenantUserService service;
 
     @BeforeEach
     void createService() {
         when(permissionEvaluator.requireTenant(Permission.IDENTITY_USER_MANAGE)).thenReturn(SCOPE);
-        service = new TenantUserService(permissionEvaluator, store, () -> ISSUER, auditPublisher);
+        service = new TenantUserService(
+                permissionEvaluator, store, () -> ISSUER, administratorGuard, auditPublisher);
     }
 
     @Test
@@ -114,8 +118,8 @@ class TenantUserServiceTest {
         assertThat(service.deactivate(PROFILE_ID, new TenantUserCommands.Lifecycle(3, AUDIT)))
                 .isEqualTo(deactivated);
 
-        var order = inOrder(store, auditPublisher);
-        order.verify(store).assertAdminPathRemains(SCOPE, PROFILE_ID);
+        var order = inOrder(administratorGuard, store, auditPublisher);
+        order.verify(administratorGuard).assertPathRemains(SCOPE, PROFILE_ID);
         order.verify(store).updateActive(SCOPE, PROFILE_ID, 3, false);
         order.verify(auditPublisher).publish(any(TenantAuditEvent.class));
     }

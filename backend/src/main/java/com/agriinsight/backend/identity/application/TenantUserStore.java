@@ -20,8 +20,6 @@ public interface TenantUserStore {
             long expectedVersion,
             boolean active);
 
-    void assertAdminPathRemains(ScopeContext scope, UUID profileId);
-
     Optional<ExternalIdentityReference> linkIdentity(
             ScopeContext scope,
             ExternalIdentity identity);

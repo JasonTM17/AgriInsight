@@ -1,7 +1,9 @@
 package com.agriinsight.backend.identity.application;
 
 import com.agriinsight.backend.authorization.application.PermissionEvaluator;
+import com.agriinsight.backend.authorization.application.TenantAdministratorGuard;
 import com.agriinsight.backend.authorization.application.TenantAuditEvent;
+import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import com.agriinsight.backend.authorization.application.TenantAuditPublisher;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
@@ -27,16 +29,19 @@ public class TenantUserService {
     private final PermissionEvaluator permissionEvaluator;
     private final TenantUserStore store;
     private final ConfiguredIdentityProvider identityProvider;
+    private final TenantAdministratorGuard administratorGuard;
     private final TenantAuditPublisher auditPublisher;
 
     public TenantUserService(
             PermissionEvaluator permissionEvaluator,
             TenantUserStore store,
             ConfiguredIdentityProvider identityProvider,
+            TenantAdministratorGuard administratorGuard,
             TenantAuditPublisher auditPublisher) {
         this.permissionEvaluator = Objects.requireNonNull(permissionEvaluator, "permissionEvaluator is required");
         this.store = Objects.requireNonNull(store, "store is required");
         this.identityProvider = Objects.requireNonNull(identityProvider, "identityProvider is required");
+        this.administratorGuard = Objects.requireNonNull(administratorGuard, "administratorGuard is required");
         this.auditPublisher = Objects.requireNonNull(auditPublisher, "auditPublisher is required");
     }
 
@@ -108,7 +113,7 @@ public class TenantUserService {
     public long unlinkIdentity(
             UUID profileId,
             UUID identityId,
-            TenantUserCommands.AuditMetadata audit) {
+            TenantAuditMetadata audit) {
         ScopeContext scope = requireUserManagement();
         UUID requiredIdentityId = requiredId(identityId, "identityId");
         long version = store.unlinkIdentity(
@@ -129,7 +134,7 @@ public class TenantUserService {
         UUID requiredProfileId = requiredId(profileId, "profileId");
         Objects.requireNonNull(command, "command is required");
         if (!active) {
-            store.assertAdminPathRemains(scope, requiredProfileId);
+            administratorGuard.assertPathRemains(scope, requiredProfileId);
         }
         Optional<TenantUserProfile> updated = store.updateActive(
                 scope,
@@ -166,7 +171,7 @@ public class TenantUserService {
             TenantAuditEvent.TargetType targetType,
             UUID targetId,
             Optional<String> targetReference,
-            TenantUserCommands.AuditMetadata metadata) {
+            TenantAuditMetadata metadata) {
         Objects.requireNonNull(metadata, "audit is required");
         auditPublisher.publish(new TenantAuditEvent(
                 scope,

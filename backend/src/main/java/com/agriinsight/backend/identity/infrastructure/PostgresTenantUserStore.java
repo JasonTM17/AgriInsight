@@ -135,18 +135,6 @@ public class PostgresTenantUserStore implements TenantUserStore {
     }
 
     @Override
-    public void assertAdminPathRemains(ScopeContext scope, UUID profileId) {
-        requireTenantScope(scope);
-        Objects.requireNonNull(profileId, "profileId is required");
-        Boolean invoked = jdbcTemplate.queryForObject("""
-                SELECT agriinsight_security.assert_admin_path_remains(?, NULL, TRUE)
-                """, (result, rowNumber) -> Boolean.TRUE, profileId);
-        if (!Boolean.TRUE.equals(invoked)) {
-            throw new IllegalStateException("Tenant administrator guard was not evaluated");
-        }
-    }
-
-    @Override
     public Optional<ExternalIdentityReference> linkIdentity(
             ScopeContext scope,
             ExternalIdentity identity) {

@@ -3,13 +3,14 @@ package com.agriinsight.backend.identity.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class TenantUserCommandsTest {
 
-    private static final TenantUserCommands.AuditMetadata AUDIT =
-            new TenantUserCommands.AuditMetadata(
+    private static final TenantAuditMetadata AUDIT =
+            new TenantAuditMetadata(
                     Optional.of("ACCESS_APPROVED"),
                     Optional.of("request-01"));
 
