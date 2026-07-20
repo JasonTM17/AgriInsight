@@ -14,8 +14,11 @@ import static org.mockito.Mockito.when;
 import com.agriinsight.backend.shared.persistence.TenantContextBinder;
 import com.agriinsight.backend.shared.persistence.TenantContextRequiredException;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedException;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedRecorder;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.AfterEach;
@@ -139,6 +142,31 @@ class TenantTransactionAspectTest {
 
         verify(contextBinder).bind(TENANT_ID);
         verify(transactionManager).commit(transactionStatus);
+    }
+
+    @Test
+    void recordsTenantDenialOnlyAfterTheRejectedTransactionRollsBack() throws Throwable {
+        TenantAuthorizationDeniedRecorder recorder = mock(TenantAuthorizationDeniedRecorder.class);
+        aspect = new TenantTransactionAspect(contextBinder, contextState, transactionManager, recorder);
+        var decision = new TenantAuthorizationDeniedRecorder.Decision(
+                TENANT_ID,
+                PROFILE_ID,
+                "permission=COST_READ;scope=TENANT",
+                "MISSING_PERMISSION",
+                Optional.empty(),
+                Optional.empty());
+        var denial = new TenantAuthorizationDeniedException(decision);
+        ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
+        when(joinPoint.proceed()).thenThrow(denial);
+
+        assertThatThrownBy(() -> aspect.withinTenantTransaction(joinPoint)).isSameAs(denial);
+
+        var order = inOrder(transactionManager, joinPoint, recorder);
+        order.verify(transactionManager).getTransaction(any());
+        order.verify(joinPoint).proceed();
+        order.verify(transactionManager).rollback(transactionStatus);
+        order.verify(recorder).record(decision);
+        assertThat(denial.auditRecorded()).isTrue();
     }
 
     private void authenticate(UUID tenantId) {

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.agriinsight.backend.authorization.infrastructure.TenantTransactionAspect;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedRecorder;
 import com.agriinsight.backend.shared.persistence.TenantContextBinder;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
 import com.zaxxer.hikari.HikariConfig;
@@ -21,16 +22,13 @@ public final class TenantTransactionTestHarness implements AutoCloseable {
     private final HikariDataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
     private final TenantContextState contextState;
-    private final TenantTransactionAspect aspect;
+    private final DataSourceTransactionManager transactionManager;
 
     private TenantTransactionTestHarness(HikariDataSource dataSource) {
         this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.contextState = new TenantContextState();
-        this.aspect = new TenantTransactionAspect(
-                new TenantContextBinder(jdbcTemplate),
-                contextState,
-                new DataSourceTransactionManager(dataSource));
+        this.transactionManager = new DataSourceTransactionManager(dataSource);
     }
 
     public static TenantTransactionTestHarness runtime(
@@ -53,11 +51,27 @@ public final class TenantTransactionTestHarness implements AutoCloseable {
         return contextState;
     }
 
+    public DataSourceTransactionManager transactionManager() {
+        return transactionManager;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T withinTenant(ThrowingSupplier<T> operation) throws Throwable {
+        return withinTenant(decision -> { }, operation);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T withinTenant(
+            TenantAuthorizationDeniedRecorder deniedRecorder,
+            ThrowingSupplier<T> operation) throws Throwable {
+        TenantTransactionAspect scopedAspect = new TenantTransactionAspect(
+                new TenantContextBinder(jdbcTemplate),
+                contextState,
+                transactionManager,
+                deniedRecorder);
         ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
         when(joinPoint.proceed()).thenAnswer(invocation -> operation.get());
-        return (T) aspect.withinTenantTransaction(joinPoint);
+        return (T) scopedAspect.withinTenantTransaction(joinPoint);
     }
 
     @Override

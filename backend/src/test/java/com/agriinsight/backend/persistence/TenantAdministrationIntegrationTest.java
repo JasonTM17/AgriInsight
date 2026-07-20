@@ -15,6 +15,7 @@ import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAuditPublisher;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAdministratorGuard;
+import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAuthorizationDeniedRecorder;
 import com.agriinsight.backend.identity.application.ProvisionedTenantUser;
 import com.agriinsight.backend.identity.application.TenantUserCommands;
 import com.agriinsight.backend.identity.application.TenantUserQuery;
@@ -24,6 +25,7 @@ import com.agriinsight.backend.identity.infrastructure.PostgresTenantUserStore;
 import com.agriinsight.backend.persistence.support.SqlTestResources;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
 import com.agriinsight.backend.shared.application.VersionConflictException;
+import com.agriinsight.backend.shared.persistence.TenantContextBinder;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.util.List;
@@ -32,6 +34,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -135,12 +138,49 @@ class TenantAdministrationIntegrationTest {
         }
     }
 
+    @Test
+    void authorizationDenialAuditCommitsWhenTheRejectedBusinessTransactionRollsBack() throws Throwable {
+        try (TenantTransactionTestHarness harness = TenantTransactionTestHarness.runtime(
+                POSTGRESQL, "agriinsight")) {
+            JdbcTemplate jdbcTemplate = harness.jdbcTemplate();
+            var recorder = new PostgresTenantAuthorizationDeniedRecorder(
+                    new TenantContextBinder(jdbcTemplate),
+                    new PostgresTenantAuditPublisher(jdbcTemplate),
+                    harness.transactionManager());
+            PermissionEvaluator evaluator = new PermissionEvaluator(
+                    new ScopeResolver(List.of()),
+                    harness.contextState());
+            authenticateAdmin();
+            try {
+                assertThatThrownBy(() -> harness.withinTenant(recorder, () -> {
+                    evaluator.requireTenant(Permission.COST_READ);
+                    return null;
+                })).isInstanceOf(AccessDeniedException.class);
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            assertThat(count(operator, """
+                    SELECT count(*)
+                    FROM tenant_audit_events
+                    WHERE tenant_id = '10000000-0000-0000-0000-000000000001'
+                      AND actor_profile_id = '20000000-0000-0000-0000-000000000001'
+                      AND action = 'AUTHORIZATION_DENIED'
+                      AND target_reference = 'permission=COST_READ;scope=TENANT'
+                      AND outcome = 'DENIED'
+                    """)).isEqualTo(1);
+        }
+    }
+
     private void assertAuditTrail() throws Exception {
         try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(count(operator, """
                     SELECT count(*) FROM tenant_audit_events
                     WHERE tenant_id = '10000000-0000-0000-0000-000000000001'
                       AND actor_profile_id = '20000000-0000-0000-0000-000000000001'
+                      AND action <> 'AUTHORIZATION_DENIED'
                     """)).isEqualTo(6);
             assertThat(count(operator, """
                     SELECT count(*) FROM tenant_audit_events

@@ -2,6 +2,8 @@ package com.agriinsight.backend.authorization.application;
 
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedException;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedRecorder;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.util.Objects;
@@ -52,15 +54,34 @@ public class PermissionEvaluator {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
                 || !authentication.isAuthenticated()
-                || !(authentication.getPrincipal() instanceof TenantPrincipal principal)
-                || authentication.getAuthorities().stream()
-                        .noneMatch(authority -> permission.authority().equals(authority.getAuthority()))) {
+                || !(authentication.getPrincipal() instanceof TenantPrincipal principal)) {
             throw new AccessDeniedException(ACCESS_DENIED);
+        }
+        if (authentication.getAuthorities().stream()
+                .noneMatch(authority -> permission.authority().equals(authority.getAuthority()))) {
+            throw denied(principal, permission, type, resourceId, "MISSING_PERMISSION");
         }
         contextState.requireBound(principal.tenantId());
 
-        return scopeResolver
-                .resolve(authentication, principal, type, resourceId)
-                .orElseThrow(() -> new AccessDeniedException(ACCESS_DENIED));
+        Optional<ScopeContext> resolved = scopeResolver.resolve(authentication, principal, type, resourceId);
+        if (resolved.isEmpty()) {
+            throw denied(principal, permission, type, resourceId, "SCOPE_UNRESOLVED");
+        }
+        return resolved.orElseThrow();
+    }
+
+    private TenantAuthorizationDeniedException denied(
+            TenantPrincipal principal,
+            Permission permission,
+            ScopeContext.Type type,
+            Optional<UUID> resourceId,
+            String reasonCode) {
+        return new TenantAuthorizationDeniedException(new TenantAuthorizationDeniedRecorder.Decision(
+                principal.tenantId(),
+                principal.profileId(),
+                "permission=" + permission.name() + ";scope=" + type.name(),
+                reasonCode,
+                resourceId,
+                Optional.empty()));
     }
 }

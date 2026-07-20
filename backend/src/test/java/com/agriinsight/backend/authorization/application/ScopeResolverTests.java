@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedException;
 import com.agriinsight.backend.shared.persistence.TenantContextRequiredException;
 import com.agriinsight.backend.shared.persistence.TenantContextState;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
@@ -72,6 +73,23 @@ class ScopeResolverTests {
     }
 
     @Test
+    void tenantResolvedPermissionDenialCarriesRedactedAuditMetadata() {
+        PermissionEvaluator evaluator = evaluator(List.of());
+        bindTenant();
+        authenticate(Role.SUPPLIER);
+
+        assertThatThrownBy(() -> evaluator.requireTenant(Permission.COST_READ))
+                .isInstanceOfSatisfying(TenantAuthorizationDeniedException.class, exception -> {
+                    assertThat(exception.decision().tenantId()).isEqualTo(TENANT_ID);
+                    assertThat(exception.decision().principalId()).isEqualTo(PROFILE_ID);
+                    assertThat(exception.decision().targetReference())
+                            .isEqualTo("permission=COST_READ;scope=TENANT");
+                    assertThat(exception.decision().reasonCode()).isEqualTo("MISSING_PERMISSION");
+                    assertThat(exception.decision().correlationId()).isEmpty();
+                });
+    }
+
+    @Test
     void uninstalledDomainScopeDeniesUntilItsModuleProvidesAResolver() {
         PermissionEvaluator evaluator = evaluator(List.of());
         bindTenant();
@@ -81,8 +99,11 @@ class ScopeResolverTests {
                         Permission.FARM_READ,
                         ScopeContext.Type.FARM,
                         FARM_ID))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Access is denied");
+                .isInstanceOfSatisfying(TenantAuthorizationDeniedException.class, exception -> {
+                    assertThat(exception.getMessage()).isEqualTo("Access is denied");
+                    assertThat(exception.decision().reasonCode()).isEqualTo("SCOPE_UNRESOLVED");
+                    assertThat(exception.decision().targetId()).contains(FARM_ID);
+                });
     }
 
     @Test
