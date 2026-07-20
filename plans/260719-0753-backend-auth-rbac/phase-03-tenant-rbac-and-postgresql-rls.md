@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Tenant RBAC and PostgreSQL RLS"
-status: pending
+status: completed
 priority: P1
 effort: "3-4d"
 dependencies: [1, 2]
@@ -34,37 +34,18 @@ RLS is a tenant backstop, not the sole business authorization mechanism. Farm ma
 
 ## Related Code Files
 
-- Modify: `D:\AgriInsight\backend\pom.xml` (AOP/transaction/test dependencies if required)
-- Modify: `D:\AgriInsight\backend\src\main\resources\application.yml`, `D:\AgriInsight\backend\src\test\resources\application-test.yml` (runtime-only app credential, separate migration command settings)
-- Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\api\CurrentUserController.java`
-- Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\application\ExternalIdentityService.java`
-- Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\application\PrincipalMapper.java`
-- Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\infrastructure\IdentitySecurityConfig.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\application\TenantPrincipalLoader.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\application\PermissionEvaluator.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\application\ScopeResolver.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\ScopeContext.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\infrastructure\TenantScoped.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\infrastructure\TenantTransactionAspect.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\infrastructure\AuthorizationAuditPublisher.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\api\TenantRoleAssignmentController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\api\AuthorizationRouteAuthorization.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\application\TenantRoleAssignmentService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\api\TenantUserController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\application\TenantUserService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\shared\application\CommandExecutionService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\shared\domain\ApiCommandRecord.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V4__add_tenant_security_and_idempotency.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql`
-- Create: `D:\AgriInsight\backend\ops\postgres\bootstrap-roles.sql` (migration/runtime/identity-definer role template with placeholders only; no credentials; applied before Flyway)
-- Create: `D:\AgriInsight\backend\ops\postgres\adopt-schema-ownership.sql` (upgrade-only, allowlisted V1-V3 object ownership transition; refuses unexpected owners/objects)
-- Create: `D:\AgriInsight\backend\ops\postgres\provision-tenant-admin.sql` (parameterized operator-only command per new tenant; no identity data or credentials committed)
-- Create: `D:\AgriInsight\scripts\run-backend-migrations.ps1` (separate Flyway owner command; never starts the app as owner)
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\authorization\ScopeResolverTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\authorization\TenantRlsIntegrationTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\identity\TenantUserLifecycleTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\tenancy\FreshDatabaseBootstrapTests.java`
-- Create: `D:\AgriInsight\backend\src\test\resources\sql\rls-fixtures.sql`
+Representative implementation paths (verified on completion):
+
+- Authorization/context: `backend/src/main/java/com/agriinsight/backend/authorization/application/PermissionEvaluator.java`, `ScopeResolver.java`, `domain/ScopeContext.java`, `infrastructure/TenantScoped.java`, and `TenantTransactionAspect.java`.
+- Principal enrichment: `backend/src/main/java/com/agriinsight/backend/identity/application/TenantPrincipalLoader.java` and `identity/infrastructure/PostgresTenantPrincipalRepository.java`.
+- Tenant administration API: `identity/api/TenantUserReadController.java`, `TenantUserMutationController.java`, `TenantUserIdentityController.java`, and `authorization/api/TenantRoleController.java`.
+- Tenant administration services: `identity/application/TenantUserService.java`, `TenantUserCommandService.java`, and `authorization/application/TenantRoleAssignmentService.java`.
+- Audit: `authorization/infrastructure/PostgresTenantAuditPublisher.java`, `PostgresTenantAuthorizationDeniedRecorder.java`, and `shared/application/TenantAuthorizationDeniedException.java`.
+- Idempotency: `shared/application/CommandExecutionService.java`, `shared/domain/ApiCommandRecord.java`, `shared/api/ApiCommandFingerprintFactory.java`, and `shared/persistence/PostgresApiCommandRecordStore.java`.
+- Database security: `backend/src/main/resources/db/migration/V4__add_tenant_security_and_idempotency.sql` and `R__tenant_rls_helpers_and_grants.sql`.
+- Operator workflow: `backend/ops/postgres/bootstrap-roles.sql`, `adopt-schema-ownership.sql`, `provision-tenant-admin.sql`, and `scripts/run-backend-migrations.ps1`.
+- Integration evidence: `backend/src/test/java/com/agriinsight/backend/persistence/TenantRlsIntegrationTest.java`, `FlywayMigrationIntegrationTest.java`, `TenantProvisioningIntegrationTest.java`, and `TenantRoleAssignmentIntegrationTest.java`.
+- Contract/query evidence: tenant HTTP contract tests, `identity/infrastructure/TenantQueryCountTest.java`, authorization catalog tests, and shared idempotency tests under `backend/src/test/java`.
 
 ## Implementation Steps (TDD: red → green → refactor)
 
@@ -87,6 +68,7 @@ RLS is a tenant backstop, not the sole business authorization mechanism. Farm ma
 - `app_current_tenant_id()` returns NULL when the setting is absent/invalid; policies then deny rather than raising an information-leaking error.
 - Use transaction-local (`is_local=true`) settings only. Session-level `SET` is prohibited because JDBC pools reuse connections.
 - Tenant-scoped services do not open `REQUIRES_NEW` or switch data sources unless the new boundary explicitly reapplies and tests the tenant context; async work never inherits request scope implicitly.
+- A tenant-resolved authorization denial carries only redacted decision metadata out of the failed business transaction. `TenantTransactionAspect` first rolls back and releases its connection, then records the denial in an independent audit transaction. This ordering prevents pool exhaustion/deadlock when the runtime pool has one connection; audit persistence failure never changes the generic 403 contract.
 - Route authorization always sees the enriched authentication created before `AuthorizationFilter`; service transactions independently reapply the same DB-verified tenant. A request cannot supply or override that tenant through a header, path, or JWT tenant claim.
 - Runtime DB user is not table owner, superuser, or `BYPASSRLS`; migration owner is separate. The role template contains no password and is applied by deployment automation later.
 - Spring Flyway and JPA data access use distinct configured credentials; production startup fails closed if both resolve to the same role. Tests inspect `current_user` on each path.
@@ -103,28 +85,35 @@ RLS is a tenant backstop, not the sole business authorization mechanism. Farm ma
 ## Focused validation
 
 - `powershell -ExecutionPolicy Bypass -File scripts/check-workspace-disk.ps1`
-- `backend\mvnw.cmd -Dmaven.repo.local=..\artifacts\_tmp\m2-repository -Dtest='*Scope*Test,*Rls*Test,*Authorization*Test' test`
+- `powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify`
 - Testcontainers PostgreSQL direct SQL test with separate runtime role and pooled connection reuse.
 - Flyway `validate` after applying all current migrations; inspect policies, grants, indexes, and role attributes.
 - `git diff --check` and a secret scan over `backend/ops/postgres`.
 
 ## Success Criteria
 
-- [ ] Every user-facing domain transaction establishes exactly one tenant context or fails closed.
-- [ ] JWT validation -> bootstrap -> tenant-scoped principal load -> route authorization ordering is proven; no permission check runs against the phase-2 minimum principal.
-- [ ] Cross-tenant reads and writes are blocked both by application tests and direct SQL/RLS tests.
-- [ ] Connection pooling cannot leak tenant A's context to tenant B.
-- [ ] Identity bootstrap resolves only the verified issuer/subject before RLS and cannot enumerate full identity rows.
-- [ ] Tenant role rules match the role matrix; no client can self-grant a role, and unknown domain scope types deny until phases 4/5 install FK-backed resolvers.
-- [ ] A fresh database can be migrated and operator-provisioned into a usable first tenant; a second enterprise can be provisioned safely, while duplicate/concurrent tenant or identity provisioning fails without partial rows.
-- [ ] Tenant admins can provision/deactivate profiles and link exact issuer/subject identities, but cannot remove the last active tenant admin.
-- [ ] Runtime role lacks owner/superuser/BYPASSRLS privileges; migration role is not used by the app.
-- [ ] A phase-1/2 database upgrades through the explicit V1-V3 ownership allowlist, while unexpected/shared ownership fails before Flyway or RLS changes.
-- [ ] RLS policies include both read (`USING`) and write (`WITH CHECK`) behavior and future-table guidance.
-- [ ] Fresh install and upgrade migrations succeed with FORCE RLS left enabled; no applied migration is edited or policy temporarily disabled.
-- [ ] No later phase is allowed to add a tenant-owned table without a policy and cross-tenant test.
-- [ ] Idempotency replay/hash-conflict behavior is tenant/principal/route bound and safe under concurrent duplicate requests.
-- [ ] Tests cover same key/same hash concurrency, same key/different hash, changed `If-Match`/path with reused key, first transaction rollback, response lost after commit, canonical-hash version stability, no raw key/body snapshot, and no duplicate-enabling purge.
+- [x] Every user-facing domain transaction establishes exactly one tenant context or fails closed.
+- [x] JWT validation -> bootstrap -> tenant-scoped principal load -> route authorization ordering is proven; no permission check runs against the phase-2 minimum principal.
+- [x] Cross-tenant reads and writes are blocked both by application tests and direct SQL/RLS tests.
+- [x] Connection pooling cannot leak tenant A's context to tenant B.
+- [x] Identity bootstrap resolves only the verified issuer/subject before RLS and cannot enumerate full identity rows.
+- [x] Tenant role rules match the role matrix; no client can self-grant a role, and unknown domain scope types deny until phases 4/5 install FK-backed resolvers.
+- [x] A fresh database can be migrated and operator-provisioned into a usable first tenant; a second enterprise can be provisioned safely, while duplicate/concurrent tenant or identity provisioning fails without partial rows.
+- [x] Tenant admins can provision/deactivate profiles and link exact issuer/subject identities, but cannot remove the last active tenant admin.
+- [x] Runtime role lacks owner/superuser/BYPASSRLS privileges; migration role is not used by the app.
+- [x] A phase-1/2 database upgrades through the explicit V1-V3 ownership allowlist, while unexpected/shared ownership fails before Flyway or RLS changes.
+- [x] RLS policies include both read (`USING`) and write (`WITH CHECK`) behavior and future-table guidance.
+- [x] Fresh install and upgrade migrations succeed with FORCE RLS left enabled; no applied migration is edited or policy temporarily disabled.
+- [x] No later phase is allowed to add a tenant-owned table without a policy and cross-tenant test.
+- [x] Idempotency replay/hash-conflict behavior is tenant/principal/route bound and safe under concurrent duplicate requests.
+- [x] Tests cover same key/same hash concurrency, same key/different hash, changed `If-Match`/path with reused key, first transaction rollback, response lost after commit, canonical-hash version stability, no raw key/body snapshot, and no duplicate-enabling purge.
+
+## Completion Evidence
+
+- Accepted: 2026-07-20.
+- Canonical guarded `verify`: 134 unit/security/module tests + 23 PostgreSQL/Flyway integration tests = 157, with zero failures, errors, or skips.
+- Review baseline/head: `d14353a..99d1712`; no remaining Critical or High finding in Phase 3 scope.
+- Reports: [acceptance](./reports/acceptance-2026-07-20-backend-phase3.md) and [code review](./reports/reviewer-2026-07-20-backend-phase3.md).
 
 ## Risk Assessment
 

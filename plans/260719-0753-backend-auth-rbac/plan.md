@@ -83,13 +83,13 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 |-------|------|--------|
 | 1 | [Backend foundation and contracts](./phase-01-backend-foundation-and-contracts.md) | Completed |
 | 2 | [OIDC identity and security boundary](./phase-02-oidc-identity-and-security-boundary.md) | Completed |
-| 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Pending |
+| 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Completed |
 | 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Pending |
 | 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | Pending |
 | 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Pending |
 | 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
 
-Phases 1 and 2 were accepted on 2026-07-19 and 2026-07-20 respectively. The next executable dependency is Phase 3; see the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md) and [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md).
+Phases 1-3 were accepted through 2026-07-20. Phase 4 is the next sequential implementation boundary; Phase 5 is dependency-unblocked but remains ordered after Phase 4. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), and [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md).
 
 ## Dependencies
 
