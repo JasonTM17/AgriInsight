@@ -224,6 +224,44 @@ BEGIN
 END
 $function$;
 
+CREATE OR REPLACE FUNCTION agriinsight_security.read_external_identity(
+    p_tenant_id UUID,
+    p_profile_id UUID,
+    p_identity_id UUID
+)
+RETURNS TABLE (
+    identity_id UUID,
+    identity_issuer TEXT,
+    identity_active BOOLEAN,
+    identity_version BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL OR resolved_tenant <> p_tenant_id THEN
+        RAISE EXCEPTION 'Tenant context does not match the requested tenant'
+            USING ERRCODE = '42501';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        identity_row.id,
+        identity_row.issuer::TEXT,
+        identity_row.active,
+        identity_row.version
+      FROM public.external_identities AS identity_row
+     WHERE identity_row.tenant_id = resolved_tenant
+       AND identity_row.user_profile_id = p_profile_id
+       AND identity_row.id = p_identity_id;
+END
+$function$;
+
 CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity(
     p_identity_id UUID,
     p_profile_id UUID,
@@ -310,6 +348,7 @@ GRANT USAGE, CREATE ON SCHEMA agriinsight_security TO agriinsight_identity_defin
 REVOKE ALL ON FUNCTION agriinsight_security.app_current_tenant_id() FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity_versioned(UUID, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID) FROM PUBLIC;
@@ -319,6 +358,8 @@ GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_tenant_id()
 GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT)
     TO agriinsight_runtime;

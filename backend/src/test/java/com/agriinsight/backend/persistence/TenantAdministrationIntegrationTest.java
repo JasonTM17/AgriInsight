@@ -19,6 +19,7 @@ import com.agriinsight.backend.identity.application.ProvisionedTenantUser;
 import com.agriinsight.backend.identity.application.TenantUserCommands;
 import com.agriinsight.backend.identity.application.TenantUserQuery;
 import com.agriinsight.backend.identity.application.TenantUserService;
+import com.agriinsight.backend.identity.infrastructure.PostgresTenantExternalIdentityStore;
 import com.agriinsight.backend.identity.infrastructure.PostgresTenantUserStore;
 import com.agriinsight.backend.persistence.support.SqlTestResources;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
@@ -110,6 +111,10 @@ class TenantAdministrationIntegrationTest {
                                 audit)));
                 assertThat(harness.withinTenant(() -> service.unlinkIdentity(
                         provisioned.profile().id(), secondary.id(), audit))).isEqualTo(1);
+                var unlinked = harness.withinTenant(() -> service.getIdentity(
+                        provisioned.profile().id(), secondary.id()));
+                assertThat(unlinked.active()).isFalse();
+                assertThat(unlinked.version()).isEqualTo(1);
 
                 assertAuditTrail();
                 assertThat(jdbcTemplate.queryForObject("""
@@ -152,6 +157,7 @@ class TenantAdministrationIntegrationTest {
         return new TenantUserService(
                 permissionEvaluator,
                 new PostgresTenantUserStore(jdbcTemplate),
+                new PostgresTenantExternalIdentityStore(jdbcTemplate),
                 () -> ISSUER,
                 new PostgresTenantAdministratorGuard(jdbcTemplate),
                 new PostgresTenantAuditPublisher(jdbcTemplate));

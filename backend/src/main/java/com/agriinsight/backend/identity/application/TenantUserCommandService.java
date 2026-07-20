@@ -79,14 +79,7 @@ public class TenantUserCommandService {
                             linked.version(),
                             linked);
                 },
-                target -> {
-                    tenantUsers.get(requiredProfileId);
-                    return Optional.of(new ExternalIdentityReference(
-                            target.resourceId(),
-                            command.issuer(),
-                            true,
-                            target.resourceVersion()));
-                });
+                target -> Optional.of(tenantUsers.getIdentity(requiredProfileId, target.resourceId())));
     }
 
     public CommandExecutionResult<CommandTarget> unlinkIdentity(

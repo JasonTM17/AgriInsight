@@ -49,6 +49,7 @@ class TenantUserServiceTest {
 
     private final PermissionEvaluator permissionEvaluator = mock(PermissionEvaluator.class);
     private final TenantUserStore store = mock(TenantUserStore.class);
+    private final TenantExternalIdentityStore externalIdentities = mock(TenantExternalIdentityStore.class);
     private final TenantAdministratorGuard administratorGuard = mock(TenantAdministratorGuard.class);
     private final TenantAuditPublisher auditPublisher = mock(TenantAuditPublisher.class);
     private TenantUserService service;
@@ -57,7 +58,12 @@ class TenantUserServiceTest {
     void createService() {
         when(permissionEvaluator.requireTenant(Permission.IDENTITY_USER_MANAGE)).thenReturn(SCOPE);
         service = new TenantUserService(
-                permissionEvaluator, store, () -> ISSUER, administratorGuard, auditPublisher);
+                permissionEvaluator,
+                store,
+                externalIdentities,
+                () -> ISSUER,
+                administratorGuard,
+                auditPublisher);
     }
 
     @Test
@@ -66,7 +72,7 @@ class TenantUserServiceTest {
             UserProfile profile = invocation.getArgument(1);
             return profile(profile.getId(), true, 0);
         });
-        when(store.linkIdentity(any(), any(ExternalIdentity.class))).thenAnswer(invocation -> {
+        when(externalIdentities.link(any(), any(ExternalIdentity.class))).thenAnswer(invocation -> {
             ExternalIdentity identity = invocation.getArgument(1);
             return Optional.of(new ExternalIdentityReference(identity.getId(), identity.getIssuer(), true, 0));
         });
@@ -82,7 +88,7 @@ class TenantUserServiceTest {
         assertThat(provisioned.profile().displayName()).isEqualTo("New User");
         assertThat(provisioned.profile().email()).contains("new.user@example.test");
         ArgumentCaptor<ExternalIdentity> identity = ArgumentCaptor.forClass(ExternalIdentity.class);
-        verify(store).linkIdentity(eq(SCOPE), identity.capture());
+        verify(externalIdentities).link(eq(SCOPE), identity.capture());
         assertThat(identity.getValue().getSubject()).isEqualTo(SUBJECT);
         ArgumentCaptor<TenantAuditEvent> events = ArgumentCaptor.forClass(TenantAuditEvent.class);
         verify(auditPublisher, times(2)).publish(events.capture());
@@ -107,7 +113,7 @@ class TenantUserServiceTest {
         assertThatThrownBy(() -> service.create(command))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("configured identity provider");
-        verifyNoInteractions(store, auditPublisher);
+        verifyNoInteractions(store, externalIdentities, auditPublisher);
     }
 
     @Test
@@ -149,7 +155,7 @@ class TenantUserServiceTest {
     @Test
     void missingIdentityCannotProduceASuccessAudit() {
         UUID identityId = UUID.fromString("21000000-0000-0000-0000-000000000002");
-        when(store.unlinkIdentity(SCOPE, PROFILE_ID, identityId)).thenReturn(Optional.empty());
+        when(externalIdentities.unlink(SCOPE, PROFILE_ID, identityId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.unlinkIdentity(PROFILE_ID, identityId, AUDIT))
                 .isInstanceOf(ResourceNotFoundException.class)

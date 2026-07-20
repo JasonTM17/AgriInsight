@@ -213,6 +213,36 @@ class TenantRlsIntegrationTest {
             assertThat(count(runtime, bootstrapCountSql("SUBJECT-A"))).isZero();
             assertThatThrownBy(() -> count(runtime, "SELECT count(*) FROM external_identities"))
                     .isInstanceOf(SQLException.class);
+            assertThatThrownBy(() -> count(runtime, """
+                    SELECT count(*) FROM agriinsight_security.read_external_identity(
+                        '10000000-0000-0000-0000-000000000001',
+                        '20000000-0000-0000-0000-000000000001',
+                        '21000000-0000-0000-0000-000000000001'
+                    )
+                    """))
+                    .isInstanceOfSatisfying(PSQLException.class, exception ->
+                            assertThat(exception.getSQLState()).isEqualTo("42501"));
+            runtime.setAutoCommit(false);
+            setTenant(runtime, TENANT_A);
+            assertThat(count(runtime, """
+                    SELECT count(*) FROM agriinsight_security.read_external_identity(
+                        '10000000-0000-0000-0000-000000000001',
+                        '20000000-0000-0000-0000-000000000001',
+                        '21000000-0000-0000-0000-000000000001'
+                    ) WHERE identity_issuer = 'https://identity.example.test/issuer'
+                        AND identity_active
+                        AND identity_version = 0
+                    """)).isEqualTo(1);
+            assertThatThrownBy(() -> count(runtime, """
+                    SELECT count(*) FROM agriinsight_security.read_external_identity(
+                        '10000000-0000-0000-0000-000000000002',
+                        '20000000-0000-0000-0000-000000000002',
+                        '21000000-0000-0000-0000-000000000002'
+                    )
+                    """))
+                    .isInstanceOfSatisfying(PSQLException.class, exception ->
+                            assertThat(exception.getSQLState()).isEqualTo("42501"));
+            runtime.rollback();
             runtime.setAutoCommit(false);
             setTenant(runtime, TENANT_A);
             assertThat(count(runtime, """
@@ -407,6 +437,7 @@ class TenantRlsIntegrationTest {
                     WHERE namespace.nspname = 'agriinsight_security'
                       AND procedure.proname IN (
                         'link_external_identity_versioned',
+                        'read_external_identity',
                         'unlink_external_identity_versioned'
                       )
                       AND procedure.prosecdef
@@ -425,7 +456,7 @@ class TenantRlsIntegrationTest {
                         WHERE privilege.grantee = 0
                           AND privilege.privilege_type = 'EXECUTE'
                       )
-                    """)).isEqualTo(2);
+                    """)).isEqualTo(3);
         }
     }
 

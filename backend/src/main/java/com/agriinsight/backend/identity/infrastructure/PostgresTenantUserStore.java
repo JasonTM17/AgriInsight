@@ -1,12 +1,10 @@
 package com.agriinsight.backend.identity.infrastructure;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
-import com.agriinsight.backend.identity.application.ExternalIdentityReference;
 import com.agriinsight.backend.identity.application.TenantUserPage;
 import com.agriinsight.backend.identity.application.TenantUserProfile;
 import com.agriinsight.backend.identity.application.TenantUserQuery;
 import com.agriinsight.backend.identity.application.TenantUserStore;
-import com.agriinsight.backend.identity.domain.ExternalIdentity;
 import com.agriinsight.backend.identity.domain.UserProfile;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,43 +130,6 @@ public class PostgresTenantUserStore implements TenantUserStore {
                 profileId,
                 expectedVersion,
                 active));
-    }
-
-    @Override
-    public Optional<ExternalIdentityReference> linkIdentity(
-            ScopeContext scope,
-            ExternalIdentity identity) {
-        requireTenantScope(scope);
-        Objects.requireNonNull(identity, "identity is required");
-        requireSameTenant(scope, identity.getTenantId());
-        List<ExternalIdentityReference> rows = jdbcTemplate.query("""
-                SELECT identity_id, identity_version
-                FROM agriinsight_security.link_external_identity_versioned(?, ?, ?, ?)
-                """,
-                (result, rowNumber) -> new ExternalIdentityReference(
-                        result.getObject("identity_id", UUID.class),
-                        identity.getIssuer(),
-                        true,
-                        result.getLong("identity_version")),
-                identity.getId(),
-                identity.getUserProfileId(),
-                identity.getIssuer(),
-                identity.getSubject());
-        return exactlyOneOrEmpty(rows);
-    }
-
-    @Override
-    public Optional<Long> unlinkIdentity(
-            ScopeContext scope,
-            UUID profileId,
-            UUID identityId) {
-        requireTenantScope(scope);
-        Objects.requireNonNull(profileId, "profileId is required");
-        Objects.requireNonNull(identityId, "identityId is required");
-        Long version = jdbcTemplate.queryForObject("""
-                SELECT agriinsight_security.unlink_external_identity_versioned(?, ?)
-                """, Long.class, profileId, identityId);
-        return Optional.ofNullable(version);
     }
 
     private void requireTenantScope(ScopeContext scope) {

@@ -28,6 +28,7 @@ public class TenantUserService {
 
     private final PermissionEvaluator permissionEvaluator;
     private final TenantUserStore store;
+    private final TenantExternalIdentityStore externalIdentities;
     private final ConfiguredIdentityProvider identityProvider;
     private final TenantAdministratorGuard administratorGuard;
     private final TenantAuditPublisher auditPublisher;
@@ -35,11 +36,13 @@ public class TenantUserService {
     public TenantUserService(
             PermissionEvaluator permissionEvaluator,
             TenantUserStore store,
+            TenantExternalIdentityStore externalIdentities,
             ConfiguredIdentityProvider identityProvider,
             TenantAdministratorGuard administratorGuard,
             TenantAuditPublisher auditPublisher) {
         this.permissionEvaluator = Objects.requireNonNull(permissionEvaluator, "permissionEvaluator is required");
         this.store = Objects.requireNonNull(store, "store is required");
+        this.externalIdentities = Objects.requireNonNull(externalIdentities, "externalIdentities is required");
         this.identityProvider = Objects.requireNonNull(identityProvider, "identityProvider is required");
         this.administratorGuard = Objects.requireNonNull(administratorGuard, "administratorGuard is required");
         this.auditPublisher = Objects.requireNonNull(auditPublisher, "auditPublisher is required");
@@ -73,7 +76,7 @@ public class TenantUserService {
                 command.issuer(),
                 command.subject());
         TenantUserProfile created = store.create(scope, profile);
-        ExternalIdentityReference linked = store.linkIdentity(scope, identity)
+        ExternalIdentityReference linked = externalIdentities.link(scope, identity)
                 .orElseThrow(() -> new IllegalStateException("New tenant user identity was not linked"));
         publish(scope, TenantAuditEvent.Action.USER_CREATED,
                 TenantAuditEvent.TargetType.USER_PROFILE, created.id(), Optional.empty(), command.audit());
@@ -103,7 +106,7 @@ public class TenantUserService {
                 requiredProfileId,
                 command.issuer(),
                 command.subject());
-        ExternalIdentityReference linked = store.linkIdentity(scope, identity)
+        ExternalIdentityReference linked = externalIdentities.link(scope, identity)
                 .orElseThrow(() -> new ResourceNotFoundException("Active tenant user"));
         publish(scope, TenantAuditEvent.Action.EXTERNAL_IDENTITY_LINKED,
                 TenantAuditEvent.TargetType.EXTERNAL_IDENTITY, linked.id(), Optional.of(linked.issuer()), command.audit());
@@ -116,7 +119,7 @@ public class TenantUserService {
             TenantAuditMetadata audit) {
         ScopeContext scope = requireUserManagement();
         UUID requiredIdentityId = requiredId(identityId, "identityId");
-        long version = store.unlinkIdentity(
+        long version = externalIdentities.unlink(
                         scope,
                         requiredId(profileId, "profileId"),
                         requiredIdentityId)
@@ -124,6 +127,15 @@ public class TenantUserService {
         publish(scope, TenantAuditEvent.Action.EXTERNAL_IDENTITY_UNLINKED,
                 TenantAuditEvent.TargetType.EXTERNAL_IDENTITY, requiredIdentityId, Optional.empty(), audit);
         return version;
+    }
+
+    public ExternalIdentityReference getIdentity(UUID profileId, UUID identityId) {
+        ScopeContext scope = requireUserManagement();
+        return externalIdentities.findById(
+                        scope,
+                        requiredId(profileId, "profileId"),
+                        requiredId(identityId, "identityId"))
+                .orElseThrow(() -> new ResourceNotFoundException("External identity"));
     }
 
     private TenantUserProfile changeActive(

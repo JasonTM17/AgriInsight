@@ -1,7 +1,6 @@
 package com.agriinsight.backend.identity.application;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
-import com.agriinsight.backend.identity.domain.ExternalIdentity;
 import com.agriinsight.backend.identity.domain.UserProfile;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,12 +19,4 @@ public interface TenantUserStore {
             long expectedVersion,
             boolean active);
 
-    Optional<ExternalIdentityReference> linkIdentity(
-            ScopeContext scope,
-            ExternalIdentity identity);
-
-    Optional<Long> unlinkIdentity(
-            ScopeContext scope,
-            UUID profileId,
-            UUID identityId);
 }
