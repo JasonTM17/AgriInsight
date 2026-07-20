@@ -3,6 +3,8 @@ package com.agriinsight.backend.identity;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -19,6 +21,7 @@ import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.IdentityRejectedException;
 import com.agriinsight.backend.identity.application.IdentityRejectionReason;
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedRecorder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -51,6 +55,9 @@ class IdentitySecurityTests {
 
     @Autowired
     private TenantPrincipalLoader principalLoader;
+
+    @MockitoBean
+    private TenantAuthorizationDeniedRecorder deniedRecorder;
 
     @Test
     void missingAndMalformedTokensReturnRedactedProblemDetails(CapturedOutput output) throws Exception {
@@ -129,10 +136,40 @@ class IdentitySecurityTests {
         stubActiveIdentity("role-claim-token");
 
         mockMvc.perform(get("/api/v1/farms")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer role-claim-token"))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer role-claim-token")
+                        .header("X-Correlation-Id", "route-denied-01"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.title").value("Access denied"))
                 .andExpect(content().string(not(containsString("TENANT_ADMIN"))));
+
+        ArgumentCaptor<TenantAuthorizationDeniedRecorder.Decision> decision =
+                ArgumentCaptor.forClass(TenantAuthorizationDeniedRecorder.Decision.class);
+        verify(deniedRecorder).record(decision.capture());
+        assertThat(decision.getValue().tenantId()).isEqualTo(TENANT_ID);
+        assertThat(decision.getValue().principalId()).isEqualTo(PROFILE_ID);
+        assertThat(decision.getValue().targetReference()).isEqualTo("/api/v1/farms");
+        assertThat(decision.getValue().reasonCode()).isEqualTo("ROUTE_PERMISSION_DENIED");
+        assertThat(decision.getValue().correlationId()).contains("route-denied-01");
+    }
+
+    @Test
+    void routeDenialRemainsForbiddenWhenAuditPersistenceFails(CapturedOutput output) throws Exception {
+        stubActiveIdentity("audit-failure-token");
+        doThrow(new IllegalStateException("private database diagnostics"))
+                .when(deniedRecorder)
+                .record(any());
+
+        mockMvc.perform(get("/api/v1/farms")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer audit-failure-token")
+                        .header("X-Correlation-Id", "route-denied-audit-failure-01"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.title").value("Access denied"))
+                .andExpect(content().string(not(containsString("private database diagnostics"))));
+
+        assertThat(output)
+                .contains("security.authorization_denied_audit_failed")
+                .contains("errorType=IllegalStateException")
+                .doesNotContain("private database diagnostics");
     }
 
     @Test

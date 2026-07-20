@@ -8,6 +8,7 @@ import jakarta.validation.ConstraintViolationException;
 
 import com.agriinsight.backend.shared.application.ResourceNotFoundException;
 import com.agriinsight.backend.shared.application.ResourceStateConflictException;
+import com.agriinsight.backend.shared.application.TenantAuthorizationDeniedException;
 import com.agriinsight.backend.shared.application.VersionConflictException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -91,6 +93,20 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
     }
 
+    @ExceptionHandler(TenantAuthorizationDeniedException.class)
+    ResponseEntity<ProblemDetail> handleTenantAuthorizationDenied(
+            TenantAuthorizationDeniedException exception,
+            HttpServletRequest request) {
+        return authorizationDenied(request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ProblemDetail> handleAccessDenied(
+            AccessDeniedException exception,
+            HttpServletRequest request) {
+        return authorizationDenied(request);
+    }
+
     @ExceptionHandler({
             ResourceStateConflictException.class,
             VersionConflictException.class,
@@ -141,6 +157,15 @@ public class ApiExceptionHandler {
         problem.setTitle(title);
         problem.setProperty("correlationId", correlationId(request));
         return problem;
+    }
+
+    private ResponseEntity<ProblemDetail> authorizationDenied(HttpServletRequest request) {
+        ProblemDetail problem = problem(
+                HttpStatus.FORBIDDEN,
+                "Access denied",
+                "Access to this resource is denied.",
+                request);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
     private String correlationId(HttpServletRequest request) {

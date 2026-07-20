@@ -31,7 +31,7 @@ public class FoundationSecurityConfig {
                         .authenticationEntryPoint((request, response, exception) ->
                                 problemWriter.authenticationRequired(request, response))
                         .accessDeniedHandler((request, response, exception) ->
-                                problemWriter.accessDenied(request, response)))
+                                problemWriter.accessDenied(request, response, exception)))
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(
                                     "/actuator/health",

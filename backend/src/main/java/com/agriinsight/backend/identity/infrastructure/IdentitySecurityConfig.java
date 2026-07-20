@@ -102,12 +102,12 @@ public class IdentitySecurityConfig {
                         .authenticationEntryPoint((request, response, exception) ->
                                 problemWriter.authenticationRequired(request, response))
                         .accessDeniedHandler((request, response, exception) ->
-                                problemWriter.accessDenied(request, response)))
+                                problemWriter.accessDenied(request, response, exception)))
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .authenticationEntryPoint((request, response, exception) ->
                                 problemWriter.authenticationRequired(request, response))
                         .accessDeniedHandler((request, response, exception) ->
-                                problemWriter.accessDenied(request, response))
+                                problemWriter.accessDenied(request, response, exception))
                         .jwt(jwt -> jwt
                                 .decoder(jwtDecoder)
                                 .jwtAuthenticationConverter(authenticationConverter)))
