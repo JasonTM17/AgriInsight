@@ -56,7 +56,7 @@ Seasons belong to fields for this MVP and carry farm/tenant columns for indexed 
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityStatus.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityLog.java`
 - Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V5__create_farm_and_operations_tables.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V6__add_operation_rls_policies.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V6__add_farm_and_operations_rls_policies.sql`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmSeasonApiTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\ActivityAuthorizationTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\OperationDatabaseTests.java`
