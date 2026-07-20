@@ -63,7 +63,8 @@ public class PermissionEvaluator {
         }
         contextState.requireBound(principal.tenantId());
 
-        Optional<ScopeContext> resolved = scopeResolver.resolve(authentication, principal, type, resourceId);
+        Optional<ScopeContext> resolved = scopeResolver.resolve(
+                authentication, principal, permission, type, resourceId);
         if (resolved.isEmpty()) {
             throw denied(principal, permission, type, resourceId, "SCOPE_UNRESOLVED");
         }

@@ -1,5 +1,6 @@
 package com.agriinsight.backend.authorization.application;
 
+import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
@@ -17,11 +18,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ScopeResolver {
-
-    private static final Set<Role> TENANT_WIDE_ROLES = Set.of(
-            Role.TENANT_ADMIN,
-            Role.EXECUTIVE,
-            Role.DATA_ANALYST);
 
     private final Map<ScopeContext.Type, DomainScopeResolver> domainResolvers;
 
@@ -46,10 +42,12 @@ public class ScopeResolver {
     public Optional<ScopeContext> resolve(
             Authentication authentication,
             TenantPrincipal principal,
+            Permission permission,
             ScopeContext.Type type,
             Optional<UUID> resourceId) {
         Objects.requireNonNull(authentication, "authentication is required");
         Objects.requireNonNull(principal, "principal is required");
+        Objects.requireNonNull(permission, "permission is required");
         Objects.requireNonNull(type, "type is required");
         Objects.requireNonNull(resourceId, "resourceId is required");
         if (!(authentication.getPrincipal() instanceof TenantPrincipal authenticatedPrincipal)
@@ -60,17 +58,25 @@ public class ScopeResolver {
 
         Set<Role> roles = roles(authentication.getAuthorities());
         if (type == ScopeContext.Type.TENANT) {
-            if (resourceId.isPresent() || roles.stream().noneMatch(TENANT_WIDE_ROLES::contains)) {
+            if (resourceId.isPresent() || roles.stream().noneMatch(role ->
+                    role.tenantWide() && role.grants(permission))) {
                 return Optional.empty();
             }
             return Optional.of(ScopeContext.tenant(principal));
         }
 
         DomainScopeResolver resolver = domainResolvers.get(type);
-        if (resolver == null || !resolver.permits(principal, roles, resourceId)) {
+        if (resolver == null) {
             return Optional.empty();
         }
-        return Optional.of(ScopeContext.domain(principal, type, resourceId));
+        DomainAccess access = Objects.requireNonNull(
+                resolver.access(principal, roles, permission, resourceId),
+                "domain access is required");
+        return switch (access) {
+            case DENIED -> Optional.empty();
+            case TENANT_WIDE -> Optional.of(ScopeContext.tenant(principal));
+            case DOMAIN -> Optional.of(ScopeContext.domain(principal, type, resourceId));
+        };
     }
 
     private Set<Role> roles(Collection<? extends org.springframework.security.core.GrantedAuthority> authorities) {
@@ -87,9 +93,16 @@ public class ScopeResolver {
 
         ScopeContext.Type type();
 
-        boolean permits(
+        DomainAccess access(
                 TenantPrincipal principal,
                 Set<Role> roles,
+                Permission permission,
                 Optional<UUID> resourceId);
+    }
+
+    public enum DomainAccess {
+        DENIED,
+        TENANT_WIDE,
+        DOMAIN
     }
 }

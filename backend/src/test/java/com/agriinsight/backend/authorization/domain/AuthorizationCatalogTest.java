@@ -12,5 +12,12 @@ class AuthorizationCatalogTest {
         assertThat(Permission.values()).hasSize(19);
         assertThat(Role.TENANT_ADMIN.authority()).isEqualTo("ROLE_TENANT_ADMIN");
         assertThat(Permission.IDENTITY_ROLE_MANAGE.authority()).isEqualTo("IDENTITY_ROLE_MANAGE");
+        assertThat(Role.TENANT_ADMIN.permissions()).containsExactlyInAnyOrder(Permission.values());
+        assertThat(Role.DATA_ANALYST.tenantWide()).isTrue();
+        assertThat(Role.DATA_ANALYST.grants(Permission.FARM_READ)).isTrue();
+        assertThat(Role.DATA_ANALYST.grants(Permission.FARM_MANAGE)).isFalse();
+        assertThat(Role.FARM_MANAGER.tenantWide()).isFalse();
+        assertThat(Role.FARM_MANAGER.grants(Permission.FARM_MANAGE)).isTrue();
+        assertThat(Role.SUPPLIER.permissions()).isEmpty();
     }
 }

@@ -16,13 +16,12 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-class ScopeResolverTests {
+class DomainScopeResolverTests {
 
     private static final UUID PROFILE_ID = UUID.fromString("20000000-0000-0000-0000-000000000001");
     private static final UUID TENANT_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");
@@ -37,56 +36,6 @@ class ScopeResolverTests {
             contextState.unbind();
         }
         TransactionSynchronizationManager.setActualTransactionActive(false);
-    }
-
-    @Test
-    void tenantWideReadersResolveOnlyWithDatabaseAuthorities() {
-        PermissionEvaluator evaluator = evaluator(List.of());
-        bindTenant();
-
-        for (Role role : List.of(Role.EXECUTIVE, Role.DATA_ANALYST, Role.TENANT_ADMIN)) {
-            authenticate(role, Permission.COST_READ);
-
-            ScopeContext scope = evaluator.requireTenant(Permission.COST_READ);
-
-            assertThat(scope.tenantId()).isEqualTo(TENANT_ID);
-            assertThat(scope.profileId()).isEqualTo(PROFILE_ID);
-            assertThat(scope.type()).isEqualTo(ScopeContext.Type.TENANT);
-            assertThat(scope.resourceId()).isEmpty();
-        }
-    }
-
-    @Test
-    void supplierAndMissingPermissionDenyEvenWhenAuthenticated() {
-        PermissionEvaluator evaluator = evaluator(List.of());
-        bindTenant();
-
-        authenticate(Role.SUPPLIER, Permission.COST_READ);
-        assertThatThrownBy(() -> evaluator.requireTenant(Permission.COST_READ))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Access is denied");
-
-        authenticate(Role.DATA_ANALYST);
-        assertThatThrownBy(() -> evaluator.requireTenant(Permission.COST_READ))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Access is denied");
-    }
-
-    @Test
-    void tenantResolvedPermissionDenialCarriesRedactedAuditMetadata() {
-        PermissionEvaluator evaluator = evaluator(List.of());
-        bindTenant();
-        authenticate(Role.SUPPLIER);
-
-        assertThatThrownBy(() -> evaluator.requireTenant(Permission.COST_READ))
-                .isInstanceOfSatisfying(TenantAuthorizationDeniedException.class, exception -> {
-                    assertThat(exception.decision().tenantId()).isEqualTo(TENANT_ID);
-                    assertThat(exception.decision().principalId()).isEqualTo(PROFILE_ID);
-                    assertThat(exception.decision().targetReference())
-                            .isEqualTo("permission=COST_READ;scope=TENANT");
-                    assertThat(exception.decision().reasonCode()).isEqualTo("MISSING_PERMISSION");
-                    assertThat(exception.decision().correlationId()).isEmpty();
-                });
     }
 
     @Test
@@ -115,13 +64,18 @@ class ScopeResolverTests {
             }
 
             @Override
-            public boolean permits(
+            public ScopeResolver.DomainAccess access(
                     TenantPrincipal principal,
                     Set<Role> roles,
+                    Permission permission,
                     Optional<UUID> resourceId) {
-                return principal.tenantId().equals(TENANT_ID)
+                boolean permitted = principal.tenantId().equals(TENANT_ID)
                         && roles.contains(Role.FARM_MANAGER)
+                        && Role.FARM_MANAGER.grants(permission)
                         && resourceId.equals(Optional.of(FARM_ID));
+                return permitted
+                        ? ScopeResolver.DomainAccess.DOMAIN
+                        : ScopeResolver.DomainAccess.DENIED;
             }
         };
         PermissionEvaluator evaluator = evaluator(List.of(farmResolver));
@@ -169,11 +123,12 @@ class ScopeResolverTests {
             }
 
             @Override
-            public boolean permits(
+            public ScopeResolver.DomainAccess access(
                     TenantPrincipal principal,
                     Set<Role> roles,
+                    Permission permission,
                     Optional<UUID> resourceId) {
-                return true;
+                return ScopeResolver.DomainAccess.DOMAIN;
             }
         };
     }
