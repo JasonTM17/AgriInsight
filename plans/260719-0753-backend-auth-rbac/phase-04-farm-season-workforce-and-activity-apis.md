@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Farm season workforce and activity APIs"
-status: pending
+status: in-progress
 priority: P1
 effort: "2-3d"
 dependencies: [3]
@@ -12,6 +12,8 @@ dependencies: [3]
 ## Overview
 
 Add the operational farm hierarchy and field-work records: farms, fields, crops, seasons, employees, activities, assignments, and harvests. Every command uses the phase-3 scope/transaction boundary and has no analytics-file side effects.
+
+Current progress (2026-07-21): the operations schema, FORCE RLS, permission-aware farm core, and versioned farm read/create/update/deactivate/reactivate HTTP slice are implemented and verified. This phase remains in progress until the field, crop, season, workforce, activity, log, harvest, and assignment boundaries meet every success criterion below.
 
 ## Requirements
 
@@ -33,7 +35,26 @@ Seasons belong to fields for this MVP and carry farm/tenant columns for indexed 
 
 ## Related Code Files
 
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmController.java`
+Implemented in the current farm slice:
+
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmReadController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmMutationController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmLifecycleController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmRoutes.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FarmService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FarmCommandService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\infrastructure\PostgresFarmStore.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\infrastructure\PostgresFarmLifecycleStore.java`
+- `D:\AgriInsight\backend\src\main\resources\db\migration\V5__create_farm_and_operations_tables.sql`
+- `D:\AgriInsight\backend\src\main\resources\db\migration\V6__add_farm_and_operations_rls_policies.sql`
+- `D:\AgriInsight\backend\src\main\resources\db\migration\V7__serialize_farm_lifecycle_dependencies.sql`
+- `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmReadHttpContractTest.java`
+- `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmMutationHttpContractTest.java`
+- `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmLifecycleHttpContractTest.java`
+- `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\FarmLifecycleConcurrencyIntegrationTest.java`
+
+Remaining planned Phase 4 boundaries:
+
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\CropController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\SeasonController.java`
@@ -42,8 +63,6 @@ Seasons belong to fields for this MVP and carry farm/tenant columns for indexed 
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\HarvestController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\EmployeeController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmAssignmentController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmRouteAuthorization.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FarmService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FieldService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\CropService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\SeasonService.java`
@@ -55,9 +74,7 @@ Seasons belong to fields for this MVP and carry farm/tenant columns for indexed 
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityAssignment.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityStatus.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityLog.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V5__create_farm_and_operations_tables.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V6__add_farm_and_operations_rls_policies.sql`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmSeasonApiTests.java`
+- Create focused field/crop/season HTTP contract tests under `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\`.
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\ActivityAuthorizationTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\OperationDatabaseTests.java`
 - Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\domain\UserProfile.java` (nullable employee link only)

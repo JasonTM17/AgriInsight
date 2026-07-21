@@ -37,13 +37,13 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - issuer, audience, signature/algorithm, time, subject, and access-token discriminator validation
 - exact `(issuer, subject)` bootstrap to active profile and tenant
 - database-backed role/permission enrichment before route authorization
-- exact route registry and tenant-administration APIs for users, external identities, and role assignments
+- exact route registry and tenant-administration APIs for users, external identities, role assignments, and farms
 - one `@TenantScoped` business transaction that binds `app.tenant_id` before repository access
 - restricted runtime/migration/identity-definer PostgreSQL roles and `ENABLE/FORCE ROW LEVEL SECURITY`
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V4 migrations
+- liveness/readiness split and Flyway V1-V7 migrations
 
 ```mermaid
 flowchart LR
@@ -65,6 +65,8 @@ Authorization denial audit follows a deliberate ordering invariant: the rejected
 
 Mutation routes authorize before claiming an idempotency key. The command store binds a SHA-256 key digest and canonical request hash to tenant, principal, method, and route template. It stores no request body, raw key, token, or response snapshot; committed replay reconstructs a currently authorized representation.
 
+The farm slice uses the same boundary for assignment-aware reads and mutations. Lifecycle transactions explicitly use READ_COMMITTED; parent deactivation and live-child inserts/updates lock the farm row in a consistent order. V7 preflight fails closed on inconsistent upgrade data, and rollback preserves ENABLE/FORCE RLS.
+
 ## Boundaries
 
 | Plane | Owns | Does not own |
@@ -79,9 +81,10 @@ Mutation routes authorize before claiming an idempotency key. The command store 
 | Analytics MVP | Verified by its existing regression suite |
 | Backend phase 1 foundation | Accepted 2026-07-19 |
 | Backend phase 2 OIDC identity | Accepted 2026-07-20 |
-| Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; 157 backend tests green |
+| Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; current backend regression gate has 202 tests green |
 | Tenant administration | Exact read/mutation routes verified; broader farm/work APIs remain Phase 4 |
+| Farm slice | List/get/create/update/deactivate/reactivate verified; remaining Phase 4 domains stay open |
 | Docker Hub publication | Not yet claimed |
 | Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
 
-The right way to read the repo is: analytics is live today; backend identity plus tenant authorization are locally verified; farm/workforce, inventory, cost, outbox, and release publication remain sequential gates. Phase 3 acceptance is not a full production-release claim.
+The right way to read the repo is: analytics is live today; backend identity, tenant authorization, and the first farm slice are locally verified; remaining field/crop/season/workforce/activity/log/harvest work, inventory, cost, outbox, and release publication remain sequential gates. Phase 3 acceptance and partial Phase 4 progress are not a full production-release claim.

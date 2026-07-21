@@ -22,22 +22,24 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-3 đã được nghiệm thu đến ngày 2026-07-20. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit và API quản trị tenant.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-3 đã được nghiệm thu đến ngày 2026-07-20; Phase 4 đang triển khai. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, API quản trị tenant và lát cắt farm đầu tiên.
 
 Bằng chứng hiện tại:
 
-- Disk guard PASS trước các tác vụ nặng; Maven `verify` đạt 134 unit/security/module test và 23 Testcontainers integration test trên PostgreSQL 18 sạch (157 tổng), gồm Flyway V1-V4 apply/validate, fresh install và allowlisted upgrade.
+- Disk guard PASS trước các tác vụ nặng; Maven `verify` đạt 161 unit/security/module test và 41 Testcontainers integration test trên PostgreSQL 18 sạch (202 tổng), gồm Flyway V1-V7 apply/validate, fresh install và allowlisted upgrade.
 - OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
 - Public route chỉ gồm health allowlist. `/api/v1/me` và các route quản trị user/external identity/role dùng exact method/template + permission; mapping chưa đăng ký bị deny. Security response/log không chứa raw token hoặc provider diagnostics.
 - Runtime database role không phải owner/superuser/`BYPASSRLS`; tenant context chỉ tồn tại trong transaction. Direct-SQL tests chứng minh thiếu/sai context, cross-tenant read/write, `WITH CHECK` và pooled-connection reuse đều fail closed.
 - Mutation quản trị dùng optimistic version + canonical idempotency bound theo tenant/principal/route; user/identity/role lifecycle, last-admin invariant, conflict và authorization-denial audit đều được kiểm thử.
+- Farm API hiện có list/get/create/update/deactivate/reactivate với exact route permissions, assignment-aware visibility, `ETag`/`If-Match`, canonical idempotency và response không lộ `tenantId`.
+- Farm deactivation fail closed khi còn field, season, activity hoặc assignment đang hoạt động. Giao dịch chạy explicit READ_COMMITTED; Flyway V7 dùng trigger ở cả farm cha và live child để serialize hai thứ tự cạnh tranh, đồng thời kiểm tra dữ liệu V6→V7 trước nâng cấp mà không làm yếu ENABLE/FORCE RLS khi rollback.
 - Local JDK mới hơn biên dịch bằng `--release 21`; multi-stage image dùng Temurin 21, chạy non-root `10001:10001`, chỉ chứa `/app/app.jar` và đã qua smoke test liveness/readiness/fail-closed OIDC.
 - Regression analytics đạt 65 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
 - Không để lại smoke/Testcontainers PostgreSQL container; các container dự án khác không bị dọn. Upstream `postgres:18.0-alpine` vẫn chỉ là dependency kiểm thử.
 
 Các cổng còn mở thuộc phase sau:
 
-- Phase 3 đóng tenant authorization foundation và tenant-administration boundary. Farm/workforce, inventory/procurement và cost CRUD thuộc Phase 4-6; vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+- Phase 3 đóng tenant authorization foundation và tenant-administration boundary. Phase 4 vẫn còn field, crop, season, workforce, activity, log, harvest và assignment boundaries; inventory/procurement và cost CRUD thuộc Phase 5-6. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 - Protected Java 21 CI, image scan, SBOM/provenance và publication immutable lên Docker Hub thuộc Phase 7. Image backend hiện chỉ có local tag kiểm thử; chưa push registry.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 

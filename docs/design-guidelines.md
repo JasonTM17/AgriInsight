@@ -1,6 +1,6 @@
 # Design guidelines
 
-The queued web application follows the CK FE **Field Ledger** direction: a precise agricultural operations desk grounded in plots, seasons, evidence, and Vietnamese-first copy. It is intentionally separate from the existing Streamlit analytics MVP until backend auth, tenant scope, RBAC, and OpenAPI contracts stabilize.
+The queued web application follows the CK FE **Field Ledger** direction: a precise agricultural operations desk grounded in plots, seasons, evidence, and Vietnamese-first copy. It is intentionally separate from the existing Streamlit analytics MVP. Backend auth, tenant scope, RBAC, and the first farm contracts are stable, while the remaining Phase 4-6 domain APIs are still being implemented.
 
 ## Source of truth
 
@@ -15,4 +15,4 @@ The queued web application follows the CK FE **Field Ledger** direction: a preci
 - p75 budgets: LCP ≤2.5s, INP ≤200ms, CLS ≤0.1; lists over 50 visible rows are paged or virtualized.
 - No browser token storage, no client-side canonical KPI recomputation, no hidden authorization in navigation, and no unproven image publication.
 
-Production UI implementation starts only after the frontend entry gate in the follow-up brief is satisfied. The current turn creates design artifacts only; it does not pretend that backend contracts or image release are ready.
+Production UI implementation starts only after the frontend entry gate in the follow-up brief is satisfied. The repository currently contains reviewed design artifacts and prototypes, not a production web application; image release also remains gated.

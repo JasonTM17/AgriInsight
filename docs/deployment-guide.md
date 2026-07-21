@@ -40,6 +40,8 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
+The current schema is Flyway V1-V7 plus repeatable least-privilege helpers/grants; application readiness expects schema version `7`. V7 audits all existing V6 farm dependencies before installing lifecycle triggers. Inconsistent live-child data aborts the migration, and transaction rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on every affected table.
+
 Required deployment inputs:
 
 | Environment variable | Purpose |
@@ -136,7 +138,7 @@ No registry push is authorized by a successful local build. Phase 7 must run pro
 
 ## Production blockers
 
-- Phase 4 farm/field/season/workforce/activity APIs and FK-backed assignment scopes
+- Remaining Phase 4 field/crop/season/workforce/activity/log/harvest APIs and FK-backed assignment scopes; the farm list/create/update/deactivate/reactivate slice is verified
 - Phase 5 inventory/procurement APIs and warehouse scopes
 - Phase 6 operating-cost ledger/reporting boundary
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership

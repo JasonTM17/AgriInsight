@@ -73,3 +73,12 @@ This repository contains a Python analytics plane and a Java operational backend
 - Cover both happy path and failure path where the contract can fail.
 - Do not weaken tests to hide a blocked integration gate.
 - Keep backend verification separate from analytics verification when the stacks diverge.
+
+## Farm lifecycle standards
+
+- Farm create and lifecycle operations require tenant-wide scope; update may use assigned-farm or tenant-wide scope.
+- Farm list/read/update/lifecycle mappings stay exact, permission-bound, and hidden as `404` when outside the caller's authorized visibility.
+- State-changing routes require canonical `Idempotency-Key`; update/deactivate/reactivate also require strong `If-Match` version checks.
+- Deactivation fails closed while a field, planned/active season, planned/started activity, or unrevoked assignment remains live.
+- Application lifecycle transactions explicitly use READ_COMMITTED. Parent deactivation and live-child writes must lock the same farm row so both race orderings serialize.
+- Upgrade preflight and rollback must preserve ENABLE/FORCE ROW LEVEL SECURITY; migration failures must not weaken tenant isolation.

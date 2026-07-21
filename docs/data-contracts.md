@@ -6,9 +6,28 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `1` | Migration tenant anchor của backend |
+| Flyway schema history | `7` | Tenant anchor, identity/RBAC và farm operations của backend |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
+
+## Backend farm HTTP contract
+
+Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại chỉ bao phủ farm:
+
+| Method | Path | Permission | Contract chính |
+|---|---|---|---|
+| **GET** | `/api/v1/farms` | FARM_READ | `limit=1..100`, `offset=0..10000`, optional `active`/`search`, stable page order |
+| **GET** | `/api/v1/farms/{id}` | FARM_READ | assignment-aware visibility, strong `ETag` |
+| **POST** | `/api/v1/farms` | FARM_MANAGE | tenant-wide scope, `Idempotency-Key`, `201` + Location |
+| **PATCH** | `/api/v1/farms/{id}` | FARM_MANAGE | assigned or tenant-wide scope, `Idempotency-Key` + strong `If-Match` |
+| **POST** | `/api/v1/farms/{id}/deactivate` | FARM_MANAGE | tenant-wide scope, reason, idempotency and optimistic version |
+| **POST** | `/api/v1/farms/{id}/reactivate` | FARM_MANAGE | tenant-wide scope, reason, idempotency and optimistic version |
+
+FarmCreateRequest yêu cầu `code`, `displayName`; `reasonCode` optional. FarmUpdateRequest yêu cầu ít nhất một trong `code` hoặc `displayName`. Lifecycle yêu cầu `reasonCode`. Code/reason được canonical hóa trước validation và fingerprint; unknown JSON fields bị từ chối.
+
+FarmResponse chỉ gồm `id`, `code`, `displayName`, `active`, `version`; không trả `tenantId`. Page response gồm `items`, `limit`, `offset`, `hasMore`. Không có hard-delete route.
+
+Deactivate bị chặn khi farm còn field active, season PLANNED/ACTIVE, activity PLANNED/STARTED, hoặc assignment chưa revoked. Application transaction dùng explicit READ_COMMITTED; V7 khóa farm cha từ cả parent-deactivation và live-child write để serialize hai thứ tự cạnh tranh. Upgrade preflight fail closed trên dữ liệu V6 bất nhất và rollback giữ nguyên ENABLE/FORCE RLS.
 
 ## Operational identifiers
 

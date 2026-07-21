@@ -48,3 +48,10 @@
 - [ ] AI Assistant Text-to-SQL với guardrails và audit trail.
 
 Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm vi cuối cùng của AgriInsight.
+
+## Backend hiện trạng
+
+- [x] Backend Phase 1-3 đã nghiệm thu.
+- [x] Farm list/get/create/update/deactivate/reactivate đã qua 202-test backend gate và review không còn blocker.
+- [ ] Phase 4 hoàn tất field/crop/season/workforce/activity/log/harvest/assignment boundaries.
+- [ ] Protected Java 21 CI, scan/SBOM/provenance và Docker Hub pulled-digest release gate.
