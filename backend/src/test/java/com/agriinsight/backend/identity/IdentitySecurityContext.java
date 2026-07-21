@@ -4,6 +4,8 @@ import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
 import com.agriinsight.backend.identity.application.TenantUserCommandService;
 import com.agriinsight.backend.identity.application.TenantUserService;
 import com.agriinsight.backend.authorization.application.TenantRoleCommandService;
+import com.agriinsight.backend.farm.application.FarmCommandService;
+import com.agriinsight.backend.farm.application.FarmService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -42,7 +44,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         TenantPrincipalLoader.class,
         TenantUserService.class,
         TenantUserCommandService.class,
-        TenantRoleCommandService.class
+        TenantRoleCommandService.class,
+        FarmService.class,
+        FarmCommandService.class
 })
-@interface IdentitySecurityContext {
+public @interface IdentitySecurityContext {
 }

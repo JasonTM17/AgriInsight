@@ -135,7 +135,7 @@ class IdentitySecurityTests {
     void jwtRolesCannotOpenAnUnregisteredBusinessRoute() throws Exception {
         stubActiveIdentity("role-claim-token");
 
-        mockMvc.perform(get("/api/v1/farms")
+        mockMvc.perform(get("/api/v1/unregistered-business-route")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer role-claim-token")
                         .header("X-Correlation-Id", "route-denied-01"))
                 .andExpect(status().isForbidden())
@@ -147,7 +147,7 @@ class IdentitySecurityTests {
         verify(deniedRecorder).record(decision.capture());
         assertThat(decision.getValue().tenantId()).isEqualTo(TENANT_ID);
         assertThat(decision.getValue().principalId()).isEqualTo(PROFILE_ID);
-        assertThat(decision.getValue().targetReference()).isEqualTo("/api/v1/farms");
+        assertThat(decision.getValue().targetReference()).isEqualTo("/api/v1/unregistered-business-route");
         assertThat(decision.getValue().reasonCode()).isEqualTo("ROUTE_PERMISSION_DENIED");
         assertThat(decision.getValue().correlationId()).contains("route-denied-01");
     }
@@ -159,7 +159,7 @@ class IdentitySecurityTests {
                 .when(deniedRecorder)
                 .record(any());
 
-        mockMvc.perform(get("/api/v1/farms")
+        mockMvc.perform(get("/api/v1/unregistered-business-route")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer audit-failure-token")
                         .header("X-Correlation-Id", "route-denied-audit-failure-01"))
                 .andExpect(status().isForbidden())
