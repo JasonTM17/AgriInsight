@@ -27,13 +27,15 @@ final class FarmScopeSql {
         if (scope.type() != ScopeContext.Type.FARM) {
             throw new IllegalArgumentException("Farm store requires tenant or farm scope");
         }
-        if (targetFarmId == null && scope.resourceId().isPresent()) {
-            throw new IllegalArgumentException("Farm list scope cannot target one farm");
-        }
+        UUID scopedFarmId = scope.resourceId().orElse(null);
         if (targetFarmId != null
-                && scope.resourceId().isPresent()
-                && !scope.resourceId().orElseThrow().equals(targetFarmId)) {
+                && scopedFarmId != null
+                && !scopedFarmId.equals(targetFarmId)) {
             throw new IllegalArgumentException("Farm scope cannot target another farm");
+        }
+        if (scopedFarmId != null) {
+            sql.append(" AND farm.id = ?");
+            parameters.add(scopedFarmId);
         }
         sql.append("""
                  AND EXISTS (
