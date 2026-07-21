@@ -6,6 +6,8 @@ import com.agriinsight.backend.identity.application.TenantUserService;
 import com.agriinsight.backend.authorization.application.TenantRoleCommandService;
 import com.agriinsight.backend.farm.application.FarmCommandService;
 import com.agriinsight.backend.farm.application.FarmService;
+import com.agriinsight.backend.farm.application.FieldCommandService;
+import com.agriinsight.backend.farm.application.FieldService;
 import com.agriinsight.backend.farm.application.SeasonCommandService;
 import com.agriinsight.backend.farm.application.SeasonService;
 import java.lang.annotation.ElementType;
@@ -49,6 +51,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         TenantRoleCommandService.class,
         FarmService.class,
         FarmCommandService.class,
+        FieldService.class,
+        FieldCommandService.class,
         SeasonService.class,
         SeasonCommandService.class
 })
