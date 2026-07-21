@@ -66,6 +66,17 @@ public record TenantAuditEvent(
         FARM_UPDATED,
         FARM_DEACTIVATED,
         FARM_REACTIVATED,
+        FIELD_CREATED,
+        FIELD_UPDATED,
+        FIELD_DEACTIVATED,
+        FIELD_REACTIVATED,
+        CROP_CREATED,
+        CROP_UPDATED,
+        CROP_DEACTIVATED,
+        CROP_REACTIVATED,
+        SEASON_CREATED,
+        SEASON_UPDATED,
+        SEASON_TRANSITIONED,
         AUTHORIZATION_DENIED,
         IDEMPOTENCY_CONFLICT
     }
@@ -75,6 +86,9 @@ public record TenantAuditEvent(
         EXTERNAL_IDENTITY,
         USER_ROLE,
         FARM,
+        FIELD,
+        CROP,
+        SEASON,
         API_COMMAND
     }
 
