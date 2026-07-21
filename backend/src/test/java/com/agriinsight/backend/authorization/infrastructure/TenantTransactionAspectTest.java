@@ -85,6 +85,8 @@ class TenantTransactionAspectTest {
         order.verify(transactionManager).commit(transactionStatus);
         assertThat(definition.getValue().getPropagationBehavior())
                 .isEqualTo(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        assertThat(definition.getValue().getIsolationLevel())
+                .isEqualTo(TransactionDefinition.ISOLATION_READ_COMMITTED);
     }
 
     @Test

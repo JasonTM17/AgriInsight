@@ -25,4 +25,6 @@ public interface FarmStore {
             UUID farmId,
             long expectedVersion,
             boolean active);
+
+    boolean hasDeactivationBlockers(ScopeContext scope, UUID farmId);
 }

@@ -47,6 +47,17 @@ public final class SqlTestResources {
         });
     }
 
+    public static Path copyMigrationsThroughV6() throws IOException {
+        return copyMigrations("phase-four-schema-migrations-", new String[] {
+                "V1__create_tenant_anchor.sql",
+                "V2__create_identity_tables.sql",
+                "V3__seed_permissions_and_roles.sql",
+                "V4__add_tenant_security_and_idempotency.sql",
+                "V5__create_farm_and_operations_tables.sql",
+                "V6__add_farm_and_operations_rls_policies.sql"
+        });
+    }
+
     private static Path copyMigrations(String prefix, String[] migrationFiles) throws IOException {
         Path root = projectRoot();
         Path target = Files.createTempDirectory(root.resolve("artifacts/_tmp"), prefix);

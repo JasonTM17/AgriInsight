@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,6 +16,7 @@ class ConfigurationSafetyTest {
 
     private static final List<String> SECRET_KEYS = List.of(
             "password", "token", "client-secret", "private-key");
+    private static final Pattern VERSIONED_MIGRATION = Pattern.compile("^V(\\d+)__.+[.]sql$");
 
     @Test
     void sourceConfigurationContainsNoInlineSecretsOrPrivateKeys() throws IOException {
@@ -31,6 +33,22 @@ class ConfigurationSafetyTest {
                 assertSecretValuesAreEnvironmentBacked(file, content);
             }
         }
+    }
+
+    @Test
+    void defaultReadinessTracksTheLatestVersionedMigration() throws IOException {
+        Path migrations = Path.of("src", "main", "resources", "db", "migration");
+        int latest;
+        try (Stream<Path> files = Files.list(migrations)) {
+            latest = files.map(path -> VERSIONED_MIGRATION.matcher(path.getFileName().toString()))
+                    .filter(java.util.regex.Matcher::matches)
+                    .mapToInt(matcher -> Integer.parseInt(matcher.group(1)))
+                    .max()
+                    .orElseThrow();
+        }
+
+        assertThat(Files.readString(Path.of("src", "main", "resources", "application.yml")))
+                .contains("expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:" + latest + "}");
     }
 
     private void assertSecretValuesAreEnvironmentBacked(Path file, String content) {

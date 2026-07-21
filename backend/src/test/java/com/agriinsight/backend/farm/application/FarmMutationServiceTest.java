@@ -100,6 +100,20 @@ class FarmMutationServiceTest {
         verify(auditPublisher, never()).publish(any());
     }
 
+    @Test
+    void activeDependentsBlockFarmDeactivationWithoutSuccessAudit() {
+        FarmCommands.Lifecycle command = new FarmCommands.Lifecycle(4, AUDIT);
+        when(store.updateActive(TENANT_SCOPE, FARM_ID, 4, false)).thenReturn(Optional.empty());
+        when(store.findById(TENANT_SCOPE, FARM_ID)).thenReturn(Optional.of(farm(4, true)));
+        when(store.hasDeactivationBlockers(TENANT_SCOPE, FARM_ID)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.deactivate(FARM_ID, command))
+                .isInstanceOf(ResourceStateConflictException.class)
+                .hasMessageContaining("active dependents");
+
+        verify(auditPublisher, never()).publish(any());
+    }
+
     private FarmRecord farm(long version, boolean active) {
         return new FarmRecord(FARM_ID, TENANT_ID, "NORTH", "North Farm", active, version);
     }

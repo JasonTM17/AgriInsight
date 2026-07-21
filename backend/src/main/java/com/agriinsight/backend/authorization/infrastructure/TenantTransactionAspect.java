@@ -55,6 +55,7 @@ public class TenantTransactionAspect {
                 Objects.requireNonNull(transactionManager, "transactionManager is required"));
         this.transaction.setName("tenant-scoped-service");
         this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         this.deniedRecorder = Objects.requireNonNull(deniedRecorder, "deniedRecorder is required");
     }
 

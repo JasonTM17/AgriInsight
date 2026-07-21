@@ -2,6 +2,7 @@ package com.agriinsight.backend.persistence;
 
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.migrateAndSeed;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
@@ -106,11 +107,13 @@ class PostgresFarmStoreIntegrationTest {
                         2,
                         Optional.of("FARM-A-UPDATED"),
                         Optional.empty())).isEmpty();
-                assertThat(store.updateActive(
+                assertThatThrownBy(() -> store.updateActive(
                         assignedScope,
                         ASSIGNED_FARM_ID,
                         2,
-                        true)).isEmpty();
+                        true))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessageContaining("tenant-wide");
 
                 harness.jdbcTemplate().update("""
                         INSERT INTO user_roles (
@@ -126,6 +129,30 @@ class PostgresFarmStoreIntegrationTest {
                 assertThat(store.findAll(tenantScope, tenantQuery()).items())
                         .extracting(item -> item.id())
                         .containsExactly(UNASSIGNED_FARM_ID, ASSIGNED_FARM_ID);
+                assertThat(store.updateActive(
+                        tenantScope,
+                        ASSIGNED_FARM_ID,
+                        2,
+                        false)).isEmpty();
+                assertThat(store.hasDeactivationBlockers(tenantScope, ASSIGNED_FARM_ID)).isTrue();
+                harness.jdbcTemplate().update("""
+                        WITH target AS (SELECT CAST(? AS UUID) AS tenant_id, CAST(? AS UUID) AS farm_id),
+                        closed_fields AS (UPDATE fields SET active = FALSE, version = version + 1
+                            FROM target WHERE fields.tenant_id = target.tenant_id
+                            AND fields.farm_id = target.farm_id RETURNING 1),
+                        closed_seasons AS (UPDATE seasons SET status = 'COMPLETED', ended_on = planned_end_date,
+                            version = version + 1 FROM target WHERE seasons.tenant_id = target.tenant_id
+                            AND seasons.farm_id = target.farm_id RETURNING 1),
+                        closed_activities AS (UPDATE activities SET status = 'COMPLETED', completed_at = due_at,
+                            version = version + 1 FROM target WHERE activities.tenant_id = target.tenant_id
+                            AND activities.farm_id = target.farm_id RETURNING 1)
+                        UPDATE user_farm_assignments SET revoked_at = CURRENT_TIMESTAMP, version = version + 1
+                            FROM target WHERE user_farm_assignments.tenant_id = target.tenant_id
+                            AND user_farm_assignments.farm_id = target.farm_id
+                        """, TENANT_ID, ASSIGNED_FARM_ID);
+                assertThat(store.hasDeactivationBlockers(tenantScope, ASSIGNED_FARM_ID)).isFalse();
+                assertThat(store.updateActive(tenantScope, ASSIGNED_FARM_ID, 2, false))
+                        .get().satisfies(farm -> assertThat(farm.version()).isEqualTo(3));
                 return null;
             });
         }

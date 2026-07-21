@@ -35,9 +35,11 @@ public class PostgresFarmStore implements FarmStore {
             result.getLong("version"));
 
     private final JdbcTemplate jdbcTemplate;
+    private final PostgresFarmLifecycleStore lifecycleStore;
 
     public PostgresFarmStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+        this.lifecycleStore = new PostgresFarmLifecycleStore(jdbcTemplate, MAPPER);
     }
 
     @Override
@@ -148,23 +150,12 @@ public class PostgresFarmStore implements FarmStore {
             UUID farmId,
             long expectedVersion,
             boolean active) {
-        requireVersion(expectedVersion);
-        UUID requiredFarmId = Objects.requireNonNull(farmId, "farmId is required");
-        StringBuilder sql = new StringBuilder("""
-                UPDATE farms AS farm
-                   SET active = ?,
-                       version = farm.version + 1,
-                       updated_at = CURRENT_TIMESTAMP
-                 WHERE farm.tenant_id = ?
-                   AND farm.id = ?
-                   AND farm.version = ?
-                   AND farm.active <> ?
-                """);
-        List<Object> parameters = new ArrayList<>(List.of(
-                active, requireScope(scope).tenantId(), requiredFarmId, expectedVersion, active));
-        FarmScopeSql.append(sql, parameters, scope, requiredFarmId);
-        sql.append(" RETURNING ").append(COLUMNS);
-        return exactlyOneOrEmpty(jdbcTemplate.query(sql.toString(), MAPPER, parameters.toArray()));
+        return lifecycleStore.updateActive(scope, farmId, expectedVersion, active);
+    }
+
+    @Override
+    public boolean hasDeactivationBlockers(ScopeContext scope, UUID farmId) {
+        return lifecycleStore.hasDeactivationBlockers(scope, farmId);
     }
 
     private ScopeContext requireScope(ScopeContext scope) {

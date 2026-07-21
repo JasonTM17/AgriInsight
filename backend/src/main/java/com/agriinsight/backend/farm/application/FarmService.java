@@ -118,8 +118,23 @@ public class FarmService {
                     command.audit());
             return farm;
         }
+        return failedLifecycleMutation(scope, requiredFarmId, command.expectedVersion(), active);
+    }
+
+    private FarmRecord failedLifecycleMutation(
+            ScopeContext scope,
+            UUID farmId,
+            long expectedVersion,
+            boolean active) {
+        FarmRecord current = requiredFarm(scope, farmId);
+        if (current.version() != expectedVersion) {
+            throw new VersionConflictException(expectedVersion, current.version());
+        }
+        if (!active && current.active() && store.hasDeactivationBlockers(scope, farmId)) {
+            throw new ResourceStateConflictException("Farm has active dependents");
+        }
         String message = active ? "Farm is already active" : "Farm is already inactive";
-        return failedMutation(scope, requiredFarmId, command.expectedVersion(), message);
+        throw new ResourceStateConflictException(message);
     }
 
     private FarmRecord failedMutation(
