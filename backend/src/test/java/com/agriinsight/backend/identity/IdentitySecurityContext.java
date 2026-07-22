@@ -16,6 +16,8 @@ import com.agriinsight.backend.farm.application.SeasonCommandService;
 import com.agriinsight.backend.farm.application.SeasonService;
 import com.agriinsight.backend.operations.application.EmployeeCommandService;
 import com.agriinsight.backend.operations.application.EmployeeService;
+import com.agriinsight.backend.operations.application.ActivityCommandService;
+import com.agriinsight.backend.operations.application.ActivityService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -66,7 +68,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         SeasonService.class,
         SeasonCommandService.class,
         EmployeeService.class,
-        EmployeeCommandService.class
+        EmployeeCommandService.class,
+        ActivityService.class,
+        ActivityCommandService.class
 })
 public @interface IdentitySecurityContext {
 }
