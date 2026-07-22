@@ -50,7 +50,7 @@ class PostgresWarehouseStoreIntegrationTest {
 
     @Test
     void assignmentFilteringVersionedMutationAndLifecycleFailClosed() throws Throwable {
-        authenticateInventoryManager();
+        authenticateTenantAdmin();
         try (TenantTransactionTestHarness harness = TenantTransactionTestHarness.runtime(
                 POSTGRESQL, "agriinsight")) {
             PostgresWarehouseStore store = new PostgresWarehouseStore(harness.jdbcTemplate());
@@ -63,6 +63,7 @@ class PostgresWarehouseStoreIntegrationTest {
                     PRINCIPAL, ScopeContext.Type.WAREHOUSE, Optional.of(UNASSIGNED_ID));
 
             harness.withinTenant(() -> {
+                insertTenantAdminRole(harness);
                 store.create(tenantScope, warehouse(ASSIGNED_ID, "WH-ASSIGNED", "BBB Assigned"));
                 store.create(tenantScope, warehouse(UNASSIGNED_ID, "WH-UNASSIGNED", "AAA Unassigned"));
                 insertAssignment(harness);
@@ -104,15 +105,18 @@ class PostgresWarehouseStoreIntegrationTest {
                 assertThat(store.hasDeactivationBlockers(tenantScope, ASSIGNED_ID)).isTrue();
                 assertThat(store.updateActive(tenantScope, ASSIGNED_ID, 2, false)).isEmpty();
 
-                revokeAssignmentAndInsertStock(harness);
+                insertStockAndHistory(harness);
                 assertThat(store.hasDeactivationBlockers(tenantScope, ASSIGNED_ID)).isTrue();
                 assertThat(store.updateActive(tenantScope, ASSIGNED_ID, 2, false)).isEmpty();
                 clearStock(harness);
-                assertThat(store.hasDeactivationBlockers(tenantScope, ASSIGNED_ID)).isFalse();
-                assertThat(store.updateActive(tenantScope, ASSIGNED_ID, 2, false))
+                revokeAssignment(harness);
+                assertThat(store.hasDeactivationBlockers(tenantScope, ASSIGNED_ID)).isTrue();
+                assertThat(store.updateActive(tenantScope, ASSIGNED_ID, 2, false)).isEmpty();
+                assertThat(store.hasDeactivationBlockers(tenantScope, UNASSIGNED_ID)).isFalse();
+                assertThat(store.updateActive(tenantScope, UNASSIGNED_ID, 0, false))
                         .get().satisfies(item -> {
                             assertThat(item.active()).isFalse();
-                            assertThat(item.version()).isEqualTo(3L);
+                            assertThat(item.version()).isEqualTo(1L);
                         });
                 return null;
             });
@@ -137,17 +141,28 @@ class PostgresWarehouseStoreIntegrationTest {
                 TENANT_ID, PROFILE_ID, ASSIGNED_ID);
     }
 
-    private void revokeAssignmentAndInsertStock(TenantTransactionTestHarness harness) {
+    private void insertTenantAdminRole(TenantTransactionTestHarness harness) {
         harness.jdbcTemplate().update("""
-                UPDATE user_warehouse_assignments
-                   SET revoked_at = CURRENT_TIMESTAMP, version = version + 1,
-                       updated_at = CURRENT_TIMESTAMP
-                 WHERE tenant_id = ? AND warehouse_id = ? AND revoked_at IS NULL
-                """, TENANT_ID, ASSIGNED_ID);
+                INSERT INTO user_roles (id, tenant_id, user_profile_id, role_code)
+                VALUES (?, ?, ?, 'TENANT_ADMIN')
+                """, UUID.fromString("51000000-0000-0000-0000-000000000007"),
+                TENANT_ID, PROFILE_ID);
+    }
+
+    private void insertStockAndHistory(TenantTransactionTestHarness harness) {
         harness.jdbcTemplate().update("""
                 INSERT INTO materials (id, tenant_id, code, display_name, base_unit)
                 VALUES (?, ?, 'FERTILIZER', 'Fertilizer', 'KG')
                 """, MATERIAL_ID, TENANT_ID);
+        harness.jdbcTemplate().update("""
+                INSERT INTO inventory_transactions (
+                    id, tenant_id, warehouse_id, material_id, kind, unit_code,
+                    quantity_base, signed_quantity_effect, occurred_at, reason,
+                    recorded_by_profile_id)
+                VALUES (?, ?, ?, ?, 'ISSUE', 'KG', 1, -1, clock_timestamp(),
+                        'Historical usage fixture', ?)
+                """, UUID.fromString("51000000-0000-0000-0000-000000000006"),
+                TENANT_ID, ASSIGNED_ID, MATERIAL_ID, PROFILE_ID);
         harness.jdbcTemplate().update("""
                 INSERT INTO stock_balances (
                     id, tenant_id, warehouse_id, material_id, unit_code,
@@ -156,6 +171,15 @@ class PostgresWarehouseStoreIntegrationTest {
                 """,
                 UUID.fromString("51000000-0000-0000-0000-000000000005"),
                 TENANT_ID, ASSIGNED_ID, MATERIAL_ID);
+    }
+
+    private void revokeAssignment(TenantTransactionTestHarness harness) {
+        harness.jdbcTemplate().update("""
+                UPDATE user_warehouse_assignments
+                   SET revoked_at = CURRENT_TIMESTAMP, version = version + 1,
+                       updated_at = CURRENT_TIMESTAMP
+                 WHERE tenant_id = ? AND warehouse_id = ? AND revoked_at IS NULL
+                """, TENANT_ID, ASSIGNED_ID);
     }
 
     private void clearStock(TenantTransactionTestHarness harness) {
@@ -167,12 +191,12 @@ class PostgresWarehouseStoreIntegrationTest {
                 """, TENANT_ID, ASSIGNED_ID);
     }
 
-    private void authenticateInventoryManager() {
+    private void authenticateTenantAdmin() {
         SecurityContextHolder.getContext().setAuthentication(
                 UsernamePasswordAuthenticationToken.authenticated(
                         PRINCIPAL,
                         null,
-                        List.of(new SimpleGrantedAuthority(Role.INVENTORY_MANAGER.authority()))));
+                        List.of(new SimpleGrantedAuthority(Role.TENANT_ADMIN.authority()))));
     }
 
     private record TestPrincipal() implements TenantPrincipal {
