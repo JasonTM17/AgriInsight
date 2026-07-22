@@ -1,7 +1,7 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.5  
-Updated: 2026-07-22  
+Version: 0.5
+Updated: 2026-07-22
 Status: backend Phases 1-5 accepted locally; product release not yet claimed
 
 ## Product goal
