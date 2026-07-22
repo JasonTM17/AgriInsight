@@ -399,7 +399,7 @@ class TenantRlsIntegrationTest {
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_policies
                     WHERE schemaname = 'public' AND permissive = 'PERMISSIVE'
-                    """)).isEqualTo(36);
+                    """)).isEqualTo(52);
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_policies
                     WHERE tablename = 'external_identities'
