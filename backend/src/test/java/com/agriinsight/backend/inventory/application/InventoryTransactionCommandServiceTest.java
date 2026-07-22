@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
@@ -49,17 +50,34 @@ class InventoryTransactionCommandServiceTest {
     }
 
     @Test
-    void reversalValidationPrecedesIdempotencyClaim() {
+    void reversalAuthorizationPrecedesIdempotencyClaim() {
         CommandExecutionRequest request = mock(CommandExecutionRequest.class);
         var command = new InventoryTransactionCommands.Reversal(
                 BigDecimal.ONE, "Correction", 0, AUDIT);
         doThrow(new AccessDeniedException("denied"))
-                .when(inventory).requireReversalTarget(TRANSACTION_ID, command);
+                .when(inventory).requireReversalAccess(TRANSACTION_ID);
 
         assertThatThrownBy(() -> service.reverse(request, TRANSACTION_ID, command))
                 .isInstanceOf(AccessDeniedException.class);
 
         verifyNoInteractions(executions);
+    }
+
+    @Test
+    void authorizedReversalClaimsBeforeVersionValidation() {
+        CommandExecutionRequest request = mock(CommandExecutionRequest.class);
+        var command = new InventoryTransactionCommands.Reversal(
+                BigDecimal.ONE, "Correction", 0, AUDIT);
+        CommandExecutionResult.Conflict<InventoryTransactionRecord> conflict =
+                new CommandExecutionResult.Conflict<>(COMMAND_ID);
+        doReturn(conflict).when(executions).execute(eq(request), any(), any());
+
+        assertThat(service.reverse(request, TRANSACTION_ID, command)).isEqualTo(conflict);
+
+        var order = inOrder(inventory, executions);
+        order.verify(inventory).requireReversalAccess(TRANSACTION_ID);
+        order.verify(executions).execute(eq(request), any(), any());
+        verifyNoMoreInteractions(inventory);
     }
 
     @Test

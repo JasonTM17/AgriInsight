@@ -43,7 +43,7 @@ public class InventoryTransactionCommandService {
             UUID transactionId,
             InventoryTransactionCommands.Reversal command) {
         UUID target = Objects.requireNonNull(transactionId, "transactionId is required");
-        inventory.requireReversalTarget(target, command);
+        inventory.requireReversalAccess(target);
         return commands.execute(
                 request,
                 () -> completion(201, inventory.reverse(target, command)),

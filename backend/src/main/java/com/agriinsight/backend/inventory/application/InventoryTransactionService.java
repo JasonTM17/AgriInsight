@@ -78,12 +78,17 @@ public class InventoryTransactionService {
             UUID transactionId,
             InventoryTransactionCommands.Reversal command) {
         Objects.requireNonNull(command, "command is required");
+        InventoryTransactionRecord original = requireReversalAccess(transactionId);
+        if (original.version() != command.expectedVersion()) {
+            throw new VersionConflictException(command.expectedVersion(), original.version());
+        }
+        return original;
+    }
+
+    InventoryTransactionRecord requireReversalAccess(UUID transactionId) {
         InventoryTransactionRecord original = getForManagement(transactionId);
         if (original.kind() == InventoryTransactionKind.REVERSAL) {
             throw new ResourceStateConflictException("A reversal cannot be reversed");
-        }
-        if (original.version() != command.expectedVersion()) {
-            throw new VersionConflictException(command.expectedVersion(), original.version());
         }
         return original;
     }
