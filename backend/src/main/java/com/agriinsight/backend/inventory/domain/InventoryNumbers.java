@@ -33,6 +33,10 @@ public final class InventoryNumbers {
         return normalized(amount, "money", 18, 2);
     }
 
+    public static BigDecimal signedMoney(BigDecimal value) {
+        return normalized(value, "money", 18, 2);
+    }
+
     private static BigDecimal normalized(
             BigDecimal value,
             String fieldName,
