@@ -15,6 +15,7 @@ from dashboard.cost_analysis_snapshot import (
     CostSnapshotError,
     load_cost_analysis_snapshot,
 )
+from dashboard.page_visuals import render_page_visual
 
 
 st.set_page_config(
@@ -77,6 +78,7 @@ def _executive_page(data: dict[str, object]) -> None:
     insights = data["insights"]
 
     st.header("Tổng quan điều hành")
+    render_page_visual("Executive")
     metric_columns = st.columns(4)
     metric_columns[0].metric("Doanh thu", _money(float(executive["total_revenue_vnd"])))
     metric_columns[1].metric("Chi phí", _money(float(executive["total_cost_vnd"])))
@@ -172,6 +174,7 @@ def _farm_page(data: dict[str, object]) -> None:
     farms = data["farms"]
     crops = data["crops"]
     st.header("Hiệu suất trang trại")
+    render_page_visual("Farm Performance")
     selected = st.selectbox(
         "Drill-down theo trang trại",
         ["Tất cả", *farms["farm_name"].sort_values().tolist()],
@@ -255,6 +258,7 @@ def _inventory_page(data: dict[str, object]) -> None:
     alerts = data["inventory_alerts"]
 
     st.header("Quản lý và phân tích kho vật tư")
+    render_page_visual("Inventory")
     primary_metrics = st.columns(3)
     primary_metrics[0].metric(
         "Giá trị tồn kho", _money(float(summary["total_inventory_value_vnd"]))
@@ -369,6 +373,7 @@ def _crop_health_page(data: dict[str, object]) -> None:
     alerts = data["health_alerts"]
 
     st.header("Sức khỏe cây trồng và môi trường")
+    render_page_visual("Crop Health")
     primary_metrics = st.columns(3)
     primary_metrics[0].metric("Khu vực theo dõi", int(summary["monitored_fields"]))
     primary_metrics[1].metric("Khu vực rủi ro cao", int(summary["high_risk_fields"]))
@@ -485,6 +490,7 @@ def _crop_health_page(data: dict[str, object]) -> None:
 def _data_quality_page(data: dict[str, object]) -> None:
     quality = data["quality"]
     st.header("Chất lượng và độ tin cậy dữ liệu")
+    render_page_visual("Data Quality")
     quality_view = pd.DataFrame(
         {
             "Chỉ số": ["Completeness", "Validity", "Uniqueness", "Freshness"],

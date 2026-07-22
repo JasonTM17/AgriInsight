@@ -29,6 +29,7 @@ from dashboard.cost_analysis_session import (
     submit_report,
     validated_session_request,
 )
+from dashboard.page_visuals import render_page_visual
 
 
 _OPERATING_REQUEST_KEY = "cost_operating_request"
@@ -47,6 +48,7 @@ def render_cost_analysis_page(
     source_fingerprint: str,
 ) -> None:
     st.header("Phân tích chi phí")
+    render_page_visual("Cost Analysis")
     st.warning("Dashboard nội bộ — chưa có xác thực và phân quyền theo dòng dữ liệu.")
     try:
         validate_cost_gold_contracts(gold)

@@ -84,29 +84,35 @@ def test_executive_dashboard_renders_pipeline_outputs(
         "Cost Analysis",
     ]
     assert len(app.metric) == 8
+    assert len(app.get("imgs")) == 1
     assert app.metric[0].label == "Doanh thu"
     assert app.metric[7].label == "Data validity"
     assert any("Insight" in heading.value for heading in app.subheader)
 
     app.radio[0].set_value("Farm Performance").run()
     assert not app.exception
+    assert len(app.get("imgs")) == 1
     assert app.header[0].value == "Hiệu suất trang trại"
     assert app.metric[0].label == "Doanh thu"
 
     app.radio[0].set_value("Inventory").run()
     assert not app.exception
+    assert len(app.get("imgs")) == 1
     assert app.header[0].value == "Quản lý và phân tích kho vật tư"
     assert app.metric[0].label == "Giá trị tồn kho"
     assert app.metric[5].label == "Days of supply TB"
 
     app.radio[0].set_value("Crop Health").run()
     assert not app.exception
+    assert len(app.get("imgs")) == 1
+    assert any("AI-generated demo evidence" in item.value for item in app.warning)
     assert app.header[0].value == "Sức khỏe cây trồng và môi trường"
     assert app.metric[0].label == "Khu vực theo dõi"
     assert app.metric[3].label == "Cảm biến offline"
 
     app.radio[0].set_value("Data Quality").run()
     assert not app.exception
+    assert len(app.get("imgs")) == 1
     assert app.header[0].value == "Chất lượng và độ tin cậy dữ liệu"
 
 
@@ -126,6 +132,7 @@ def test_cost_analysis_builds_downloads_only_after_submit(
     app.radio("dashboard_page").set_value("Cost Analysis").run()
 
     assert not app.exception
+    assert len(app.get("imgs")) == 1
     assert app.header[0].value == "Phân tích chi phí"
     assert app.get("download_button") == []
     farm_code = pd.read_csv(
