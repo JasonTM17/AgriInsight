@@ -39,18 +39,18 @@ final class PostgresInventoryReversalPoster {
         InventoryTransactionRecord original = ledger.find(
                         scope, originalTransactionId, true)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory transaction"));
-        requireReversible(original, command);
+        BigDecimal previouslyReversed = requireReversible(original, command);
         balances.lock(scope, original.warehouseId(), original.materialId(), original.unit());
         var lotPlan = lots.lockPlan(scope, original, command.quantityBase());
         InventoryTransactionRecord reversal = ledger.insert(reversalRecord(
-                scope, reversalTransactionId, original, command));
+                scope, reversalTransactionId, original, command, previouslyReversed));
         lots.apply(scope, reversal, lotPlan);
         ledger.incrementVersion(scope, original.id(), command.expectedVersion());
         balances.recompute(scope, original.warehouseId(), original.materialId());
         return reversal;
     }
 
-    private void requireReversible(
+    private BigDecimal requireReversible(
             InventoryTransactionRecord original,
             InventoryTransactionCommands.Reversal command) {
         if (original.kind() == InventoryTransactionKind.REVERSAL) {
@@ -70,18 +70,20 @@ final class PostgresInventoryReversalPoster {
             throw new ResourceStateConflictException(
                     "Reversal quantity exceeds remaining original quantity");
         }
+        return reversed;
     }
 
     private InventoryTransactionRecord reversalRecord(
             ScopeContext scope,
             UUID reversalTransactionId,
             InventoryTransactionRecord original,
-            InventoryTransactionCommands.Reversal command) {
+            InventoryTransactionCommands.Reversal command,
+            BigDecimal previouslyReversed) {
         boolean receipt = original.kind() == InventoryTransactionKind.RECEIPT;
         Optional<BigDecimal> unitCost = receipt ? original.unitCostVnd() : Optional.empty();
         BigDecimal procurementEffect = receipt
-                ? InventoryNumbers.money(
-                        command.quantityBase(), unitCost.orElseThrow()).negate()
+                ? receiptReversalProcurementEffect(
+                        original, command.quantityBase(), previouslyReversed)
                 : BigDecimal.ZERO;
         return new InventoryTransactionRecord(
                 reversalTransactionId,
@@ -103,5 +105,27 @@ final class PostgresInventoryReversalPoster {
                 Optional.of(original.id()),
                 scope.profileId(),
                 0);
+    }
+
+    private BigDecimal receiptReversalProcurementEffect(
+            InventoryTransactionRecord original,
+            BigDecimal quantity,
+            BigDecimal previouslyReversed) {
+        BigDecimal cumulative = previouslyReversed.add(quantity);
+        BigDecimal previousAmount = cumulativeReceiptAmount(original, previouslyReversed);
+        BigDecimal cumulativeAmount = cumulativeReceiptAmount(original, cumulative);
+        return cumulativeAmount.subtract(previousAmount).negate();
+    }
+
+    private BigDecimal cumulativeReceiptAmount(
+            InventoryTransactionRecord original,
+            BigDecimal reversedQuantity) {
+        if (reversedQuantity.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        if (reversedQuantity.compareTo(original.quantityBase()) == 0) {
+            return original.procurementEffectVnd();
+        }
+        return InventoryNumbers.money(reversedQuantity, original.unitCostVnd().orElseThrow());
     }
 }

@@ -117,8 +117,8 @@ public final class InventoryLedgerAssertions {
             var store = new PostgresInventoryReconciliationStore(harness.jdbcTemplate());
             var report = store.reconcile(scope);
             assertThat(report.consistent()).isTrue();
-            assertThat(report.checkedTransactionCount()).isEqualTo(9);
-            assertThat(report.checkedLotCount()).isEqualTo(3);
+            assertThat(report.checkedTransactionCount()).isEqualTo(12);
+            assertThat(report.checkedLotCount()).isEqualTo(4);
             assertThat(report.checkedBalanceCount()).isEqualTo(1);
             return null;
         });

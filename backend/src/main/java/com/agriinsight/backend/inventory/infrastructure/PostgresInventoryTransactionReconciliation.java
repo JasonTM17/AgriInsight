@@ -30,6 +30,7 @@ final class PostgresInventoryTransactionReconciliation {
                 ), reversal_totals AS (
                     SELECT reversal.reversal_of,
                            SUM(reversal.quantity_base) AS quantity,
+                           SUM(reversal.procurement_effect_vnd) AS procurement_effect,
                            COUNT(*) AS reversal_count
                       FROM inventory_transactions AS reversal
                      WHERE reversal.tenant_id = ? AND reversal.kind = 'REVERSAL'
@@ -42,6 +43,10 @@ final class PostgresInventoryTransactionReconciliation {
                                OR COALESCE(allocation_totals.quantity, 0) <> 0
                                OR COALESCE(reversal_totals.quantity, 0)
                                    > transaction.quantity_base
+                               OR COALESCE(reversal_totals.procurement_effect, 0)
+                                   IS DISTINCT FROM -ROUND(
+                                       COALESCE(reversal_totals.quantity, 0)
+                                       * transaction.unit_cost_vnd, 2)
                                OR transaction.version IS DISTINCT FROM
                                    COALESCE(reversal_totals.reversal_count, 0)
                              WHEN 'ISSUE' THEN
@@ -67,9 +72,7 @@ final class PostgresInventoryTransactionReconciliation {
                                       COALESCE(allocation_totals.quantity, 0) <> 0
                                       OR transaction.unit_cost_vnd
                                           IS DISTINCT FROM original.unit_cost_vnd
-                                      OR transaction.procurement_effect_vnd IS DISTINCT FROM
-                                          -ROUND(transaction.quantity_base
-                                              * original.unit_cost_vnd, 2)
+                                      OR transaction.procurement_effect_vnd > 0
                                       OR transaction.supplier_id
                                           IS DISTINCT FROM original.supplier_id
                                       OR transaction.batch_code

@@ -138,6 +138,19 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                     .isInstanceOf(ResourceStateConflictException.class)
                     .hasMessage("Reversal quantity exceeds remaining original quantity");
             assertThat(late.version()).isZero();
+
+            InventoryTransactionRecord roundingReceipt = post(harness, store, receipt(
+                    "ROUNDING", "1", "0.01", "2028-12-31", "2027-01-01T08:03:00Z"));
+            assertThat(reverse(harness, store, roundingReceipt.id(), "0.5", 0)
+                    .procurementEffectVnd()).isEqualByComparingTo("-0.01");
+            assertThat(reverse(harness, store, roundingReceipt.id(), "0.5", 1)
+                    .procurementEffectVnd()).isEqualByComparingTo("0.00");
+            assertThat(harness.withinTenant(() -> harness.jdbcTemplate().queryForObject("""
+                    SELECT SUM(procurement_effect_vnd)
+                      FROM inventory_transactions
+                     WHERE tenant_id = ? AND (id = ? OR reversal_of = ?)
+                    """, BigDecimal.class, TENANT_ID, roundingReceipt.id(), roundingReceipt.id())))
+                    .isEqualByComparingTo("0.00");
             assertReconciliationDetectsDrift(
                     harness, SCOPE, TENANT_ID, WAREHOUSE_ID, MATERIAL_ID);
         }
