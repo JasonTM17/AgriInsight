@@ -111,16 +111,16 @@ Outbox payload uses stable Java UUIDs plus canonical business codes and a contra
 
 ## Success Criteria
 
-- [ ] Domain commit and outbox commit are atomic; duplicate retries are idempotent.
-- [ ] Lease/retry/ack is token+generation fenced, stale acknowledgements fail, max attempts dead-letter, and no path is publicly exposed.
-- [ ] Event schema/version and the distinct non-inheritable integration-role grants/RLS policies are documented and tested.
-- [ ] Java cannot write artifacts, SQLite, Gold, or manifest; Python ownership tests remain green.
-- [ ] Optional Compose overlay is loopback-bound, stores DB data on D, and leaves root pipeline/dashboard startup unchanged.
+- [x] Domain commit and outbox commit are atomic; duplicate retries are idempotent.
+- [x] Lease/retry/ack is token+generation fenced, stale acknowledgements fail, max attempts dead-letter, and no path is publicly exposed.
+- [x] Event schema/version and the distinct non-inheritable integration-role grants/RLS policies are documented and tested.
+- [x] Java cannot write artifacts, SQLite, Gold, or manifest; Python ownership tests remain green.
+- [x] Optional Compose overlay is loopback-bound, stores DB data on D, and leaves root pipeline/dashboard startup unchanged.
 - [ ] Python and backend first-party images build reproducibly, run non-root, contain no secrets/runtime artifacts, publish only from the protected release job with immutable version/SHA tags, and pass an exact-digest smoke test; no automatic `latest` tag exists.
-- [ ] CI has Java 21 and existing Python/Node gates; no secrets or caches are committed.
-- [ ] Backup/restore drill passes from a D-local explicit target; production deployment is blocked until RPO, RTO, retention, encrypted off-host storage, and ownership are approved.
-- [ ] Security/review/validation reports have zero unresolved critical/high findings.
-- [ ] User-facing docs explain configuration, local disk guard, rollback, and deferred stages.
+- [x] CI has Java 21 and existing Python/Node gates; no secrets or caches are committed.
+- [x] Backup/restore drill passes from a D-local explicit target; production deployment is blocked until RPO, RTO, retention, encrypted off-host storage, and ownership are approved.
+- [x] Security/review/validation reports have zero unresolved critical/high findings.
+- [x] User-facing docs explain configuration, local disk guard, rollback, and deferred stages.
 
 ## Risk Assessment
 
