@@ -25,13 +25,17 @@ public class PostgresInventoryReconciliationStore implements InventoryReconcilia
     @Override
     public InventoryReconciliationReport reconcile(ScopeContext scope) {
         ScopeContext required = Objects.requireNonNull(scope, "scope is required");
-        Counts lots = reconcileLots(required);
-        Counts balances = reconcileBalances(required);
+        InventoryReconciliationCounts transactions =
+                new PostgresInventoryTransactionReconciliation(jdbcTemplate)
+                        .reconcile(required);
+        InventoryReconciliationCounts lots = reconcileLots(required);
+        InventoryReconciliationCounts balances = reconcileBalances(required);
         return new InventoryReconciliationReport(
+                transactions.checked(), transactions.drifted(),
                 lots.checked(), lots.drifted(), balances.checked(), balances.drifted());
     }
 
-    private Counts reconcileLots(ScopeContext scope) {
+    private InventoryReconciliationCounts reconcileLots(ScopeContext scope) {
         StringBuilder sql = new StringBuilder("""
                 WITH allocation_effect AS (
                     SELECT allocation.stock_lot_id,
@@ -93,7 +97,7 @@ public class PostgresInventoryReconciliationStore implements InventoryReconcilia
         return counts(sql, parameters);
     }
 
-    private Counts reconcileBalances(ScopeContext scope) {
+    private InventoryReconciliationCounts reconcileBalances(ScopeContext scope) {
         StringBuilder sql = new StringBuilder("""
                 WITH lot_projection AS (
                     SELECT lot.tenant_id, lot.warehouse_id, lot.material_id,
@@ -141,15 +145,14 @@ public class PostgresInventoryReconciliationStore implements InventoryReconcilia
         return counts(sql, parameters);
     }
 
-    private Counts counts(StringBuilder sql, List<Object> parameters) {
-        Counts result = jdbcTemplate.queryForObject(
+    private InventoryReconciliationCounts counts(
+            StringBuilder sql,
+            List<Object> parameters) {
+        InventoryReconciliationCounts result = jdbcTemplate.queryForObject(
                 sql.toString(),
-                (row, rowNumber) -> new Counts(
+                (row, rowNumber) -> new InventoryReconciliationCounts(
                         row.getLong("checked"), row.getLong("drifted")),
                 parameters.toArray());
         return Objects.requireNonNull(result, "Reconciliation counts are required");
-    }
-
-    private record Counts(long checked, long drifted) {
     }
 }

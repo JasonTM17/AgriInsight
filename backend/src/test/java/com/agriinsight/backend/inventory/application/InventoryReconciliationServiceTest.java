@@ -28,7 +28,7 @@ class InventoryReconciliationServiceTest {
 
     @Test
     void consistentProjectionReturnsScopedReport() {
-        var report = new InventoryReconciliationReport(3, 0, 1, 0);
+        var report = new InventoryReconciliationReport(7, 0, 3, 0, 1, 0);
         when(permissions.requireDomainList(
                 Permission.INVENTORY_MANAGE, ScopeContext.Type.WAREHOUSE)).thenReturn(SCOPE);
         when(store.reconcile(SCOPE)).thenReturn(report);
@@ -39,7 +39,7 @@ class InventoryReconciliationServiceTest {
 
     @Test
     void driftFailsWithoutRepairingProjection() {
-        var report = new InventoryReconciliationReport(3, 1, 1, 1);
+        var report = new InventoryReconciliationReport(7, 1, 3, 1, 1, 1);
         when(permissions.requireDomainList(
                 Permission.INVENTORY_MANAGE, ScopeContext.Type.WAREHOUSE)).thenReturn(SCOPE);
         when(store.reconcile(SCOPE)).thenReturn(report);

@@ -15,6 +15,7 @@ import com.agriinsight.backend.inventory.infrastructure.PostgresInventoryReconci
 import com.agriinsight.backend.inventory.infrastructure.PostgresInventoryTransactionStore;
 import com.agriinsight.backend.shared.application.ResourceStateConflictException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -116,6 +117,7 @@ public final class InventoryLedgerAssertions {
             var store = new PostgresInventoryReconciliationStore(harness.jdbcTemplate());
             var report = store.reconcile(scope);
             assertThat(report.consistent()).isTrue();
+            assertThat(report.checkedTransactionCount()).isEqualTo(9);
             assertThat(report.checkedLotCount()).isEqualTo(3);
             assertThat(report.checkedBalanceCount()).isEqualTo(1);
             return null;
@@ -130,8 +132,19 @@ public final class InventoryLedgerAssertions {
                      WHERE tenant_id = ? AND warehouse_id = ? AND material_id = ?
                        AND batch_code = 'EARLY'
                     """, tenantId, warehouseId, materialId);
+            harness.jdbcTemplate().update("""
+                    INSERT INTO inventory_transactions (
+                        id, tenant_id, warehouse_id, material_id, kind, unit_code,
+                        quantity_base, signed_quantity_effect, occurred_at, reason,
+                        recorded_by_profile_id)
+                    VALUES (?, ?, ?, ?, 'ISSUE', 'KG', 1, -1, ?,
+                        'Unallocated ledger drift', ?)
+                    """, UUID.randomUUID(), tenantId, warehouseId, materialId,
+                    Timestamp.from(Instant.parse("2027-02-02T00:00:00Z")),
+                    scope.profileId());
             var report = new PostgresInventoryReconciliationStore(
                     harness.jdbcTemplate()).reconcile(scope);
+            assertThat(report.transactionDriftCount()).isEqualTo(1);
             assertThat(report.lotDriftCount()).isEqualTo(1);
             assertThat(report.balanceDriftCount()).isEqualTo(1);
             return null;
