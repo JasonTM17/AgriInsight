@@ -71,6 +71,12 @@ final class OperatingCostQuerySql {
         return sql;
     }
 
+    static Query forEntry(java.util.UUID tenantId, java.util.UUID entryId) {
+        return new Query(
+                new StringBuilder(" WHERE entry.tenant_id = ? AND entry.id = ?"),
+                new ArrayList<>(List.of(tenantId, entryId)));
+    }
+
     private static Query bounded(
             java.util.UUID tenantId,
             java.time.Instant occurredFrom,

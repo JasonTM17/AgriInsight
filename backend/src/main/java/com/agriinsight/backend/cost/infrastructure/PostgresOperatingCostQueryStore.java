@@ -55,12 +55,13 @@ public class PostgresOperatingCostQueryStore implements OperatingCostQueryStore 
     public Optional<OperatingCostRecord> findById(
             ScopeContext scope, UUID entryId) {
         ScopeContext required = OperatingCostReadScope.require(scope);
-        List<OperatingCostRecord> rows = jdbcTemplate.query("""
-                SELECT %s FROM operating_cost_entries AS entry
-                 WHERE entry.tenant_id = ? AND entry.id = ?
-                """.formatted(OperatingCostRowMapping.COLUMNS),
-                OperatingCostRowMapping.MAPPER,
+        var filter = OperatingCostQuerySql.forEntry(
                 required.tenantId(), Objects.requireNonNull(entryId, "entryId is required"));
+        appendTargetedScope(filter, required);
+        String sql = "SELECT " + OperatingCostRowMapping.COLUMNS
+                + OperatingCostQuerySql.HIERARCHY_FROM + filter.sql();
+        List<OperatingCostRecord> rows = jdbcTemplate.query(
+                sql, OperatingCostRowMapping.MAPPER, filter.parameters().toArray());
         return OperatingCostRowMapping.exactlyOneOrEmpty(rows);
     }
 

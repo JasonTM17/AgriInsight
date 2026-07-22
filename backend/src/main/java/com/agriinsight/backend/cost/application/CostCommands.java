@@ -60,8 +60,9 @@ public final class CostCommands {
             occurredAt = validated.occurredAt();
             description = validated.description();
             sourceReference = validated.sourceReference();
+            Objects.requireNonNull(correctionReason, "correctionReason is required");
             correctionReason = OperatingCostEntry.optionalText(
-                            Optional.ofNullable(correctionReason),
+                            Optional.of(correctionReason),
                             "correctionReason",
                             CORRECTION_REASON_MAX_LENGTH)
                     .orElseThrow();

@@ -73,6 +73,13 @@ class PostgresOperatingCostQueryStoreIntegrationTest {
                                 "66000000-0000-0000-0000-000000000002",
                                 "66000000-0000-0000-0000-000000000001");
                 assertThat(store.findById(farmScope, TENANT_ENTRY_ID)).isEmpty();
+                ScopeContext unrelatedFarmScope = ScopeContext.domain(
+                        principal, ScopeContext.Type.FARM, Optional.of(UUID.fromString(
+                                "66000000-0000-0000-0000-000000000099")));
+                assertThat(store.findById(
+                        unrelatedFarmScope,
+                        UUID.fromString("66000000-0000-0000-0000-000000000001")))
+                        .isEmpty();
 
                 var month = store.summarize(farmScope, summary(CostSummaryGroup.MONTH));
                 assertThat(month.items()).singleElement().satisfies(item -> {
