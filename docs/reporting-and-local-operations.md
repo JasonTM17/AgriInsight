@@ -98,7 +98,7 @@ Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTim
 
 | Backend gate | Trạng thái hiện tại |
 |---|---|
-| Fresh Maven verification | PASS: 442 Surefire + 96 Failsafe; zero failures/errors/skips |
+| Fresh Maven verification | PASS: 622 tests (98 Failsafe integration); zero failures/errors/skips |
 | Docker daemon | Available during guarded verification |
 | Testcontainers + Flyway PostgreSQL | PASS; không còn container test treo sau gate |
 | Java 21 CI | Chưa verify |

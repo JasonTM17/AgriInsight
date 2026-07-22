@@ -1,6 +1,6 @@
 # Design guidelines
 
-The queued web application follows the CK FE **Field Ledger** direction: a precise agricultural operations desk grounded in plots, seasons, evidence, and Vietnamese-first copy. It is intentionally separate from the existing Streamlit analytics MVP. Backend auth, tenant scope, RBAC, farm operations, Phase 5 inventory contracts, and Phase 6 cost APIs are stable; Phase 7 release hardening remains the implementation gate. Production frontend work must consume the versioned OpenAPI contracts and preserve warehouse assignment and farm cost scope.
+The queued web application follows the CK FE **Field Ledger** direction: a precise agricultural operations desk grounded in plots, seasons, evidence, and Vietnamese-first copy. It is intentionally separate from the existing Streamlit analytics MVP. Backend auth, tenant scope, RBAC, farm operations, Phase 5 inventory contracts, Phase 6 cost APIs, and Phase 7 outbox/release contracts are stable; protected production approval remains the deployment gate. Production frontend work must consume the versioned OpenAPI contracts and preserve warehouse assignment and farm cost scope.
 
 ## Source of truth
 

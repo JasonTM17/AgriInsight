@@ -103,14 +103,15 @@ subject to PostgreSQL ENABLE/FORCE RLS.
 
 ## Verification snapshot
 
-- Backend guarded `mvn verify`: 442 Surefire + 96 Failsafe; zero failures,
+- Backend guarded `mvn verify` (2026-07-22): 622 tests, including 98 Failsafe
+  integration tests; zero failures,
   errors, and skips.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
 - OpenAPI contract: `/v3/api-docs` operation summaries and request examples
   verified by `InventoryOpenApiContractTest`.
-- Analytics: Python 75 passed, 3 expected optional-PDF skips; compileall and
+- Analytics: Python 76 passed, 3 expected optional-PDF skips; compileall and
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.

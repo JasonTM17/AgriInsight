@@ -84,14 +84,16 @@ Phase 5 acceptance evidence is recorded in
 tests with zero failures/errors/skips, Python 65 passed/3 skipped, and disk
 guards PASS. The later
 [`visual-data-scale` checkpoint](../plans/260722-visual-data-scale/plan.md)
-records the current Python 75 passed/3 skipped result and a verified
+records the prior Python 75 passed/3 skipped result and a verified
 1,050,000-row big-data warehouse sensor fact.
 
 Phase 6 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase6.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md):
 26 focused cost tests, guarded backend `442 Surefire + 96 Failsafe` with zero
 failures/errors/skips, fresh PostgreSQL V17/RLS/concurrency/query-plan checks,
-and Python `75 passed, 3 skipped` unchanged.
+and Python `75 passed, 3 skipped` unchanged at that checkpoint. Phase 7
+acceptance updates the current gate to 622 backend tests (98 Failsafe) and
+Python `76 passed, 3 skipped`.
 
 ## Non-functional requirements
 

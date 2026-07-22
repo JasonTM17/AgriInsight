@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide documents the verified local/runtime contracts through Backend Phase 6. It is not yet a production deployment runbook: Phase 7 release hardening remains required.
+This guide documents the verified local/runtime contracts through Backend Phase 7 core. It is not a production deployment approval: protected registry release, environment review, and a scheduled recovery drill remain required before production.
 
 ## Supported execution boundaries
 
