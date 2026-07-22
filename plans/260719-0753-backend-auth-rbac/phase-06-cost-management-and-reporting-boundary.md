@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Cost management and reporting boundary"
-status: in-progress
+status: completed
 priority: P1
 effort: "1-2d"
 dependencies: [4, 5]
@@ -11,7 +11,7 @@ dependencies: [4, 5]
 
 ## Overview
 
-Add a single operating-cost ledger and secured cost query surface while preserving the existing Python Cost Analysis contract. This phase deliberately does not generate CSV/PDF/XLSX or claim COGS/allocation that the current Gold v1 does not define.
+Add a single operating-cost ledger and secured cost query surface while preserving the existing Python Cost Analysis contract. This phase is accepted after the guarded backend and Python gates below. It deliberately does not generate CSV/PDF/XLSX or claim COGS/allocation that the current Gold v1 does not define.
 
 ## Requirements
 
@@ -32,19 +32,11 @@ stock balance ---------> inventory value lens (separate)
 ## Related Code Files
 
 - Modify: `D:\AgriInsight\backend\pom.xml` (only if query/projection dependency is required)
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\api\OperatingCostController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\api\CostQueryController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\api\CostRouteAuthorization.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\application\OperatingCostService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\application\CostQueryService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\domain\OperatingCostEntry.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\domain\CostCategory.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\infrastructure\CostProjectionRepository.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V16__create_operating_cost_ledger.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V17__add_cost_rls_policies.sql`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\cost\OperatingCostApiTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\cost\CostAuthorizationTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\cost\CostInvariantTests.java`
+- API: `backend/src/main/java/com/agriinsight/backend/cost/api/`
+- Application/domain: `backend/src/main/java/com/agriinsight/backend/cost/application/` and `backend/src/main/java/com/agriinsight/backend/cost/domain/`
+- PostgreSQL stores, hierarchy-derived queries, scope SQL, and row mapping: `backend/src/main/java/com/agriinsight/backend/cost/infrastructure/`
+- Migrations: `backend/src/main/resources/db/migration/V16__create_operating_cost_ledger.sql`, `V17__add_cost_rls_policies.sql`, and the repeatable grants migration
+- Tests: cost unit/HTTP/OpenAPI tests under `backend/src/test/java/com/agriinsight/backend/cost/` plus PostgreSQL/RLS/concurrency/query-plan tests under `backend/src/test/java/com/agriinsight/backend/persistence/`
 
 ## Implementation Steps (TDD: red → green → refactor)
 
@@ -58,7 +50,7 @@ stock balance ---------> inventory value lens (separate)
 
 ## API and data contracts
 
-- Routes: `/api/v1/cost-entries`, `/api/v1/cost-entries/{id}`, `/api/v1/cost-summaries` (exact request/response schemas are committed in OpenAPI).
+- Routes: `GET /api/v1/cost-entries`, `GET /api/v1/cost-entries/{id}`, `GET /api/v1/cost-summaries`, `POST /api/v1/cost-entries`, and `POST /api/v1/cost-entries/{id}/corrections` (exact request/response schemas are committed in OpenAPI).
 - Categories start with `LABOR`, `MATERIAL`, `MACHINERY`, `TRANSPORT`, `UTILITY`, `OTHER`; adding a category requires a migration and contract note.
 - A manual `MATERIAL` operating-cost posting cannot reference or auto-copy an inventory transaction. Inventory consumption/allocation needs a future versioned ledger contract before it may feed operating cost.
 - Operating cost is never automatically derived from inventory `IN` procurement, stock value, or an unallocated `OUT`. Existing docs explicitly state there is no outbound-to-activity allocation ledger.
@@ -69,20 +61,25 @@ stock balance ---------> inventory value lens (separate)
 ## Focused validation
 
 - `powershell -ExecutionPolicy Bypass -File scripts/check-workspace-disk.ps1`
-- `backend\mvnw.cmd -Dmaven.repo.local=..\artifacts\_tmp\m2-repository -Dtest='*Cost*Test' test`
+- `powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify`
+- `python -m pytest` (existing analytics contract)
 - Testcontainers PostgreSQL + Flyway/RLS + query-plan checks.
 - Run the full Python cost/report tests and verify no new files appear under `artifacts/`.
 - `git diff --check` and secret scan.
 
 ## Success Criteria
 
-- [ ] Operating cost ledger has one source of truth, immutable posting, audited reversals, and idempotent creation.
-- [ ] Cost routes enforce role and farm scope, with no inventory-manager/supplier finance leak.
-- [ ] BigDecimal/NUMERIC, category, parent, and time invariants pass unit and database tests.
-- [ ] One-hot canonical targets and derived hierarchy tests prevent same-tenant cross-farm/season/activity summary corruption; reversals copy the original target exactly.
-- [ ] Summaries are bounded, indexed, and distinguish operating/procurement/inventory-value lenses.
-- [ ] No duplicate integration read port/adapter exists; Java writes no Gold/manifest/SQLite and phase 7 outbox remains the sole machine handoff.
-- [ ] Existing nine-frame Cost Analysis and controlled export tests remain green and unchanged.
+- [x] Operating cost ledger has one source of truth, immutable posting, audited reversals, and idempotent creation.
+- [x] Cost routes enforce role and farm scope, with no inventory-manager/supplier finance leak.
+- [x] BigDecimal/NUMERIC, category, parent, and time invariants pass unit and database tests.
+- [x] One-hot canonical targets and derived hierarchy tests prevent same-tenant cross-farm/season/activity summary corruption; reversals copy the original target exactly.
+- [x] Summaries are bounded, indexed, and distinguish operating/procurement/inventory-value lenses.
+- [x] No duplicate integration read port/adapter exists; Java writes no Gold/manifest/SQLite and Phase 7 outbox remains the sole machine handoff.
+- [x] Existing Cost Analysis and controlled export tests remain green and unchanged.
+
+## Acceptance evidence
+
+The phase is accepted on 2026-07-22. The detailed gate, security review, API inventory, schema, concurrency, query-plan, disk, and rollback evidence is recorded in [`acceptance-2026-07-22-backend-phase6.md`](./reports/acceptance-2026-07-22-backend-phase6.md).
 
 ## Risk Assessment
 

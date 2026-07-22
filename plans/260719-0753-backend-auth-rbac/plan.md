@@ -95,10 +95,10 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 | 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Completed |
 | 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Completed |
 | 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | Completed |
-| 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | In progress |
+| 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Completed |
 | 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
 
-Phases 1-4 were accepted through 2026-07-22, and Phase 5 was accepted on 2026-07-22 with inventory masters, warehouse assignments, immutable ledger/projections, reversal/reconciliation rules, role-aware RLS, and OpenAPI contracts verified. Phase 6 cost management is now the active sequential boundary; Phase 7 remains the release/container boundary. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md), [Phase 4 acceptance report](./reports/acceptance-2026-07-22-backend-phase4.md), and [Phase 5 acceptance report](./reports/acceptance-2026-07-22-backend-phase5.md).
+Phases 1-6 were accepted through 2026-07-22. Phase 6 closes the operating-cost ledger and bounded reporting boundary; Phase 7 remains the release/container boundary. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md), [Phase 4 acceptance report](./reports/acceptance-2026-07-22-backend-phase4.md), [Phase 5 acceptance report](./reports/acceptance-2026-07-22-backend-phase5.md), and [Phase 6 acceptance report](./reports/acceptance-2026-07-22-backend-phase6.md).
 
 ## Dependencies
 
