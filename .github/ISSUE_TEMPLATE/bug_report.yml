@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible defect in AgriInsight
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Provide a minimal reproduction and remove all secrets or personal data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include commands, inputs, logs, and the smallest safe fixture.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or release
+      placeholder: main @ <sha>
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets, tokens, credentials, and personal data.
+          required: true
+        - label: I searched existing issues and documentation first.
+          required: true

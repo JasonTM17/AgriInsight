@@ -1,0 +1,3 @@
+# Default review owner. Database, security, and release changes still require
+# explicit maintainer review even when an additional owner is added later.
+* @JasonTM17

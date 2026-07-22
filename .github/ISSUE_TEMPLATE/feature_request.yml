@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a scoped improvement to AgriInsight
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and users
+      description: Who needs this and what decision or workflow does it improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful contract, including boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List testable success criteria and failure/authorization cases.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Scope checks
+      options:
+        - label: I checked the roadmap and existing plans.
+          required: true
+        - label: I considered analytics/backend ownership and data privacy.
+          required: true
