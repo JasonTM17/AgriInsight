@@ -8,19 +8,25 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  python:
+    name: Python analytics
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
           cache: pip
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24"
       - run: python -m pip install ".[dev,dashboard,reports]"
+      - run: python -m pip check
       - run: pytest
       - run: node --check src/agriinsight/report-assets/build-cost-report.mjs
       - name: Smoke-test installed wheel report assets
@@ -39,3 +45,80 @@ jobs:
           PY
       - run: python -m agriinsight run --output artifacts --farms 2 --fields-per-farm 2 --activities-per-season 6
       - run: python -m compileall -q src dashboard tests
+
+  backend:
+    name: Java backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Verify unit, integration, RLS, and OpenAPI contracts
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+          ./mvnw --batch-mode --no-transfer-progress verify
+
+  security:
+    name: Dependency, configuration, and secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          skip-files: backend/src/test/java/com/agriinsight/backend/shared/config/ConfigurationSafetyTest.java
+
+  images:
+    name: Build ${{ matrix.name }} image without push
+    needs: [python, backend, security]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: python
+            context: .
+            file: ./Dockerfile
+            tag: agriinsight-python:ci
+            version: 0.2.0-ci
+          - name: backend
+            context: ./backend
+            file: ./backend/Dockerfile
+            tag: agriinsight-backend:ci
+            version: 0.1.0-ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          load: true
+          push: false
+          tags: ${{ matrix.tag }}
+          build-args: |
+            OCI_REVISION=${{ github.sha }}
+            OCI_VERSION=${{ matrix.version }}
+      - name: Scan the image before any release can publish it
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ matrix.tag }}
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Smoke-test Python image
+        if: matrix.name == 'python'
+        run: docker run --rm --entrypoint python ${{ matrix.tag }} -c "import agriinsight; print('agriinsight-python-ok')"
+      - name: Smoke-test backend image
+        if: matrix.name == 'backend'
+        run: docker run --rm --entrypoint /bin/sh ${{ matrix.tag }} -ec 'test -s /app/app.jar && java -version'

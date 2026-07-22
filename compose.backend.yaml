@@ -1,0 +1,107 @@
+services:
+  postgres:
+    profiles: ["backend"]
+    image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+    environment:
+      POSTGRES_DB: agriinsight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${AGRIINSIGHT_POSTGRES_OPERATOR_PASSWORD:?set operator password}
+    ports:
+      - "127.0.0.1:${AGRIINSIGHT_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./backend/.runtime/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agriinsight"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  backend-role-bootstrap:
+    profiles: ["backend"]
+    image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+    environment:
+      PGDATABASE: agriinsight
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${AGRIINSIGHT_POSTGRES_OPERATOR_PASSWORD:?set operator password}
+      AGRIINSIGHT_DB_MIGRATOR_PASSWORD: ${AGRIINSIGHT_DB_MIGRATOR_PASSWORD:?set migrator password}
+      AGRIINSIGHT_DB_RUNTIME_PASSWORD: ${AGRIINSIGHT_DB_RUNTIME_PASSWORD:?set runtime password}
+    volumes:
+      - ./backend/ops/postgres:/ops:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        psql -v ON_ERROR_STOP=1 -f /ops/bootstrap-roles.sql
+        psql -v ON_ERROR_STOP=1 \
+          -v migrator_password="$${AGRIINSIGHT_DB_MIGRATOR_PASSWORD}" \
+          -v runtime_password="$${AGRIINSIGHT_DB_RUNTIME_PASSWORD}" \
+          -f /ops/configure-local-role-passwords.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  backend-migrate:
+    profiles: ["backend"]
+    build:
+      context: ./backend
+      args:
+        OCI_REVISION: ${AGRIINSIGHT_IMAGE_REVISION:-local}
+        OCI_VERSION: ${AGRIINSIGHT_BACKEND_VERSION:-0.1.0-local}
+    environment:
+      SPRING_MAIN_WEB_APPLICATION_TYPE: none
+      AGRIINSIGHT_IDENTITY_ENABLED: "false"
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight
+      AGRIINSIGHT_DB_RUNTIME_USERNAME: agriinsight_migrator
+      AGRIINSIGHT_DB_RUNTIME_PASSWORD: ${AGRIINSIGHT_DB_MIGRATOR_PASSWORD:?set migrator password}
+      AGRIINSIGHT_FLYWAY_ENABLED: "true"
+      AGRIINSIGHT_FLYWAY_URL: jdbc:postgresql://postgres:5432/agriinsight
+      AGRIINSIGHT_FLYWAY_USERNAME: agriinsight_migrator
+      AGRIINSIGHT_FLYWAY_PASSWORD: ${AGRIINSIGHT_DB_MIGRATOR_PASSWORD:?set migrator password}
+    depends_on:
+      backend-role-bootstrap:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  backend:
+    profiles: ["backend"]
+    build:
+      context: ./backend
+      args:
+        OCI_REVISION: ${AGRIINSIGHT_IMAGE_REVISION:-local}
+        OCI_VERSION: ${AGRIINSIGHT_BACKEND_VERSION:-0.1.0-local}
+    environment:
+      AGRIINSIGHT_IDENTITY_ENABLED: "true"
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight
+      AGRIINSIGHT_DB_RUNTIME_USERNAME: agriinsight_runtime
+      AGRIINSIGHT_DB_RUNTIME_PASSWORD: ${AGRIINSIGHT_DB_RUNTIME_PASSWORD:?set runtime password}
+      AGRIINSIGHT_FLYWAY_ENABLED: "false"
+      AGRIINSIGHT_OIDC_ISSUER_URI: ${AGRIINSIGHT_OIDC_ISSUER_URI:?set OIDC issuer}
+      AGRIINSIGHT_OIDC_API_AUDIENCE: ${AGRIINSIGHT_OIDC_API_AUDIENCE:?set OIDC API audience}
+      AGRIINSIGHT_OIDC_INTERACTIVE_CLIENT_ID: ${AGRIINSIGHT_OIDC_INTERACTIVE_CLIENT_ID:?set OIDC client id}
+    ports:
+      - "127.0.0.1:${AGRIINSIGHT_BACKEND_PORT:-8080}:8080"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
