@@ -81,6 +81,8 @@ public record TenantAuditEvent(
         EMPLOYEE_UPDATED,
         EMPLOYEE_DEACTIVATED,
         EMPLOYEE_REACTIVATED,
+        FARM_ASSIGNMENT_GRANTED,
+        FARM_ASSIGNMENT_REVOKED,
         AUTHORIZATION_DENIED,
         IDEMPOTENCY_CONFLICT
     }
@@ -94,6 +96,7 @@ public record TenantAuditEvent(
         CROP,
         SEASON,
         EMPLOYEE,
+        FARM_ASSIGNMENT,
         API_COMMAND
     }
 
