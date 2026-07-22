@@ -17,6 +17,14 @@ public final class InventoryNumbers {
         return normalized;
     }
 
+    public static BigDecimal nonnegativeQuantity(BigDecimal value) {
+        BigDecimal normalized = normalized(value, "quantity", 16, 4);
+        if (normalized.signum() < 0) {
+            throw new IllegalArgumentException("quantity must not be negative");
+        }
+        return normalized;
+    }
+
     public static BigDecimal nonnegativeUnitCost(BigDecimal value) {
         BigDecimal normalized = normalized(value, "unitCostVnd", 16, 2);
         if (normalized.signum() < 0) {
