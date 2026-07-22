@@ -13,9 +13,9 @@ dependencies: [3]
 
 Add the operational farm hierarchy and field-work records: farms, fields, crops, seasons, employees, activities, assignments, and harvests. Every command uses the phase-3 scope/transaction boundary and has no analytics-file side effects.
 
-Current progress (2026-07-22): the operations schema through V8, FORCE RLS, permission-aware farm core, and versioned farm/field/crop/season read-create-update-lifecycle HTTP slices are implemented and verified. Assignment locking, parent visibility-before-claim, tenant-wide Field writes, schema-aligned season validation, and parent/child lifecycle serialization are covered by focused tests. This phase remains in progress until workforce, activity, log, harvest, and assignment boundaries meet every success criterion below.
+Current progress (2026-07-22): the operations schema through V10, FORCE RLS, permission-aware farm core, versioned farm/field/crop/season masters, Employee lifecycle/redacted picker, and tenant-admin farm-assignment grant/revoke are implemented and verified. Assignment locking, idempotent replay, parent visibility-before-claim, tenant-wide Field writes, schema-aligned validation, and parent/child/profile/employee lifecycle serialization are covered by focused tests. This phase remains in progress until activity, activity-assignment, log, harvest, and worker-scope boundaries meet every success criterion below.
 
-Gate evidence: [Phase 4 master-data production review](./reports/reviewer-2026-07-22-phase4-master-data.md).
+Gate evidence: [Phase 4 master-data production review](./reports/reviewer-2026-07-22-phase4-master-data.md) and [workforce/assignment production review](./reports/reviewer-2026-07-22-phase4-workforce-assignments.md).
 
 ## Requirements
 
@@ -51,6 +51,13 @@ Implemented and verified in the current master-data slice:
 - `D:\AgriInsight\backend\src\main\resources\db\migration\V6__add_farm_and_operations_rls_policies.sql`
 - `D:\AgriInsight\backend\src\main\resources\db\migration\V7__serialize_farm_lifecycle_dependencies.sql`
 - `D:\AgriInsight\backend\src\main\resources\db\migration\V8__serialize_field_crop_and_season_lifecycle.sql`
+- `D:\AgriInsight\backend\src\main\resources\db\migration\V9__serialize_employee_lifecycle_dependencies.sql`
+- `D:\AgriInsight\backend\src\main\resources\db\migration\V10__serialize_farm_assignment_profile_lifecycle.sql`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\EmployeeService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\EmployeeRoutes.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FarmAssignmentService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmAssignmentController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\domain\UserProfile.java`
 - `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldCreateController.java`
 - `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldReadController.java`
 - `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldUpdateController.java`
@@ -78,20 +85,15 @@ Remaining planned Phase 4 boundaries:
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityLogController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\HarvestController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\EmployeeController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmAssignmentController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityLogService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\EmployeeService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\HarvestService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\domain\FarmAssignment.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityAssignment.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityStatus.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityLog.java`
 - Create focused field/crop/season HTTP contract tests under `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\`.
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\ActivityAuthorizationTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\OperationDatabaseTests.java`
-- Modify: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\identity\domain\UserProfile.java` (nullable employee link only)
 
 ## Implementation Steps (TDD: red -> green -> refactor)
 
@@ -140,7 +142,9 @@ Remaining planned Phase 4 boundaries:
 - [x] Farm/field/crop/season master routes use versioned HTTP contracts, idempotency, ETag/If-Match, bounded reads, and safe ProblemDetail errors.
 - [x] Field/Crop/Season parent and tenant invariants are enforced by both application predicates and V5–V8 PostgreSQL constraints/triggers.
 - [x] FARM-scoped writes lock active assignments through commit; tenant-wide administrator writes remain supported where the permission matrix allows them.
-- [x] Current master-data unit, HTTP, migration, persistence, RLS, and concurrency tests pass; workforce/activity/log/harvest/assignment criteria remain open.
+- [x] Current master-data, Employee, and farm-assignment unit/HTTP/migration/persistence/RLS/concurrency gates pass; activity/log/harvest and worker-scope criteria remain open.
+- [x] Employee full-master and redacted-picker contracts, active-responsibility lifecycle guards, and V9 upgrade safety pass.
+- [x] Tenant-admin farm grant/revoke is tenant-safe, append-preserved, idempotent, versioned, and serialized with profile/farm lifecycle through V10.
 
 ## Risk Assessment
 

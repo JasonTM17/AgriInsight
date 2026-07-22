@@ -89,7 +89,7 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 | 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Pending |
 | 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
 
-Phases 1-3 were accepted through 2026-07-20. Phase 4 is the active sequential implementation boundary: its operations schema through V8, FORCE RLS, scoped farm core, and versioned farm/field/crop/season master-data HTTP slices are implemented and verified; workforce, activity, log, assignment, and harvest APIs remain open. Phase 5 is dependency-unblocked but remains ordered after Phase 4. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), and [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md).
+Phases 1-3 were accepted through 2026-07-20. Phase 4 is the active sequential implementation boundary: its operations schema through V10, FORCE RLS, scoped farm core, versioned farm/field/crop/season master-data HTTP, Employee, and tenant-admin farm-assignment slices are implemented and verified; activity, activity-assignment, log, harvest, and worker-scope APIs remain open. Phase 5 is dependency-unblocked but remains ordered after Phase 4. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), and [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md).
 
 ## Dependencies
 

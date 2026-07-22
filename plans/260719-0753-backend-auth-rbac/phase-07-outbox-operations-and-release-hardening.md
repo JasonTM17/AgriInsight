@@ -53,8 +53,8 @@ Outbox payload uses stable Java UUIDs plus canonical business codes and a contra
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\integration\application\OutboxWriter.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\integration\application\OutboxDrainService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\integration\infrastructure\OutboxRepository.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V11__create_outbox_tables.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V12__add_outbox_rls_and_indexes.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V15__create_outbox_tables.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V16__add_outbox_rls_and_indexes.sql`
 - Create: `D:\AgriInsight\backend\src\main\resources\contracts\agriinsight-operational-events-v1.schema.json`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\integration\OutboxAtomicityTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\integration\OutboxLeaseTests.java`

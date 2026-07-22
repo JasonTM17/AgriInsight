@@ -52,8 +52,8 @@ supplier  ------------^ for RECEIPT only
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\InventoryLotAllocation.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\WarehouseAssignment.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\CanonicalUnit.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V7__create_inventory_tables.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V8__add_inventory_rls_policies.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V11__create_inventory_tables.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V12__add_inventory_rls_policies.sql`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\inventory\InventoryApiTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\inventory\InventoryConcurrencyTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\inventory\InventoryReconciliationTests.java`

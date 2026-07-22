@@ -138,7 +138,7 @@ No registry push is authorized by a successful local build. Phase 7 must run pro
 
 ## Production blockers
 
-- Remaining Phase 4 workforce/activity/log/harvest APIs and FK-backed assignment scopes; farm/field/crop/season master-data routes are verified
+- Remaining Phase 4 activity/log/harvest APIs and worker/activity scopes; farm/field/crop/season, Employee, and farm-assignment routes are verified
 - Phase 5 inventory/procurement APIs and warehouse scopes
 - Phase 6 operating-cost ledger/reporting boundary
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership

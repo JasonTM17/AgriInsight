@@ -6,13 +6,13 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `8` | Tenant anchor, identity/RBAC và farm master data của backend |
+| Flyway schema history | `10` | Tenant anchor, identity/RBAC, farm master data, Employee và assignment lifecycle guards |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
 ## Backend farm/master-data HTTP contract
 
-Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại bao phủ farm, field, crop và season:
+Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại bao phủ farm, field, crop, season, employee và farm assignment:
 
 | Method | Path | Permission | Contract chính |
 |---|---|---|---|
@@ -36,11 +36,21 @@ Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại bao ph�
 | **POST/PATCH** | `/api/v1/seasons`, `/api/v1/seasons/{id}` | SEASON_MANAGE | visible active parents; idempotency + strong `If-Match` |
 | **POST** | `/api/v1/seasons/{id}/transition` | SEASON_MANAGE | explicit state transition, reason, idempotency + optimistic locking |
 
+| Method | Path | Permission | Contract chính |
+|---|---|---|---|
+| **GET** | `/api/v1/employees` | WORKFORCE_MANAGE | tenant-wide full master list; bounded active/search filters |
+| **GET** | `/api/v1/employees/{id}` | WORKFORCE_MANAGE | full employee master, strong `ETag` |
+| **GET** | `/api/v1/employees/eligible` | WORKFORCE_PICKER_READ | active-only redacted `id/code/displayName/active`; no job title/version |
+| **POST/PATCH** | `/api/v1/employees`, `/api/v1/employees/{id}` | WORKFORCE_MANAGE | canonical master command, idempotency, strong version for update |
+| **POST** | `/api/v1/employees/{id}/deactivate|reactivate` | WORKFORCE_MANAGE | reason, idempotency, optimistic version; live responsibility blocks deactivate |
+| **POST** | `/api/v1/farm-assignments` | FARM_ASSIGNMENT_MANAGE | tenant-wide active profile/farm targets, version-zero grant, append-preserved history |
+| **POST** | `/api/v1/farm-assignments/{id}/revoke` | FARM_ASSIGNMENT_MANAGE | tenant-wide audited one-way revoke, strong `If-Match` |
+
 FarmCreateRequest yêu cầu `code`, `displayName`; `reasonCode` optional. FarmUpdateRequest yêu cầu ít nhất một trong `code` hoặc `displayName`. Lifecycle yêu cầu `reasonCode`. Code/reason được canonical hóa trước validation và fingerprint; unknown JSON fields bị từ chối.
 
 FarmResponse chỉ gồm `id`, `code`, `displayName`, `active`, `version`; không trả `tenantId`. Page response gồm `items`, `limit`, `offset`, `hasMore`. Không có hard-delete route.
 
-Deactivate bị chặn khi farm còn field active, season PLANNED/ACTIVE, activity PLANNED/STARTED, hoặc assignment chưa revoked. Application transaction dùng explicit READ_COMMITTED; V7 khóa farm cha từ cả parent-deactivation và live-child write để serialize hai thứ tự cạnh tranh. V8 áp dụng cùng nguyên tắc cho field/crop/season, fail closed khi upgrade gặp dữ liệu lifecycle bất nhất, và giữ nguyên ENABLE/FORCE RLS khi rollback. FARM-scoped write khóa active assignment tới lúc commit để revoke không thể chen giữa authorization và mutation.
+Deactivate bị chặn khi farm còn field active, season PLANNED/ACTIVE, activity PLANNED/STARTED, hoặc assignment chưa revoked. Application transaction dùng explicit READ_COMMITTED; V7 khóa farm cha từ cả parent-deactivation và live-child write để serialize hai thứ tự cạnh tranh. V8 áp dụng cùng nguyên tắc cho field/crop/season. V9 khóa Employee khi gán trách nhiệm/hoạt động và chặn deactivate khi quan hệ còn sống. V10 khóa profile cho farm assignment và serialize cả grant-first lẫn profile-deactivation-first. Các migration fail closed trên dữ liệu nâng cấp bất nhất và giữ ENABLE/FORCE RLS khi rollback. FARM-scoped write khóa active assignment tới commit để revoke không chen giữa authorization và mutation.
 
 ## Operational identifiers
 
