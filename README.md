@@ -22,7 +22,9 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đang đóng transactional outbox và release hardening. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+
+Phase 7 bổ sung V18-V19 `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, optional backend Compose profile, pinned non-root images, CI image gate, protected Docker Hub/GHCR publication workflow và D-local backup/restore wrappers. Outbox chưa có consumer/Kafka/HTTP route; đây là handoff an toàn, at-least-once cho phase kế tiếp.
 
 Bằng chứng hiện tại:
 
@@ -40,11 +42,11 @@ Bằng chứng hiện tại:
 
 Các cổng còn mở thuộc phase sau:
 
-- Phase 6 đã đóng operating-cost/reporting boundary; outbox, CI, scans, SBOM/provenance và image publication thuộc Phase 7. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
-- Protected Java 21 CI, image scan, SBOM/provenance và publication immutable lên Docker Hub thuộc Phase 7. Image backend hiện chỉ có local tag kiểm thử; chưa push registry.
+- Phase 7 core đã có focused atomicity/lease/RLS tests; full guarded acceptance và protected registry release vẫn là gate cuối của phase. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+- Registry release yêu cầu repository variable `DOCKERHUB_NAMESPACE`, environment secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` và reviewer protection; không có automatic `latest`. Workflow xuất cả Docker Hub và GHCR, scan exact digest rồi smoke-test digest.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
-Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md) và [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md).
+Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md), [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md), [backend development](docs/backend-development.md) và [backend deployment/recovery](docs/backend-deployment.md).
 
 Lệnh kiểm thử backend chuẩn từ repository root:
 
@@ -96,6 +98,16 @@ python -m agriinsight run --output artifacts `
 docker compose up --build pipeline
 docker compose up --build dashboard
 ```
+
+Backend local/staging là profile riêng, không khởi động cùng pipeline/dashboard:
+
+```powershell
+Copy-Item .env.example .env.backend.local
+docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.yaml --profile backend config --quiet
+docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.yaml --profile backend up --build backend
+```
+
+Profile này bind PostgreSQL/API trên loopback, lưu database ở `backend/.runtime/postgres` trên D và chạy role bootstrap → Flyway → runtime restricted. Xem [backend deployment](docs/backend-deployment.md) trước khi dùng.
 
 Docker Desktop cần được khởi động trước. Dashboard chỉ publish tại
 `127.0.0.1:8501`; Gold được mount read-only, còn `artifacts/_tmp` là overlay

@@ -64,3 +64,11 @@ Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm
 - [x] Backend Phase 1-6 đã nghiệm thu theo từng boundary.
 - [x] Phase 5 warehouse/material/supplier/assignment/inventory ledger/reversal/reconciliation/RLS/OpenAPI đã qua 32 focused tests và full guarded backend gate (487 Surefire + 92 Failsafe; zero failures/errors/skips).
 - [ ] Protected Java 21 CI, scan/SBOM/provenance và Docker Hub pulled-digest release gate.
+
+## Backend Phase 7 release-hardening status
+
+- [x] Transactional outbox V18-V19, typed schema v1, dedicated NOLOGIN integration role và RLS/grant boundary.
+- [x] Lease/retry/ack fencing bằng owner + token + generation, predecessor ordering và bounded dead-letter; có Testcontainers atomicity/lease/RLS tests.
+- [x] Pinned non-root Python/backend images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR workflow.
+- [x] D-local checksum/metadata backup và empty-target restore wrappers; production RPO/RTO/off-host encryption/owner approval còn bắt buộc trước production.
+- [ ] Full guarded Phase 7 acceptance, registry publish evidence và timed backup/restore drill.

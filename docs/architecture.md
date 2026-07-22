@@ -133,7 +133,7 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Phase 1-5 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
+Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke. Phase 7 bổ sung transactional outbox và delivery hardening:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
@@ -164,7 +164,9 @@ are linked, bounded, and service-generated. V15 binds tenant and profile context
 transaction-locally and separates read/write RLS by role and assignment. This
 plane does not mutate the Python Gold inventory contract or write `artifacts/`.
 
-Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger V16-V17, correction lineage, bounded summaries và role/farm-aware RLS. Backend inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger V16-V17, correction lineage, bounded summaries và role/farm-aware RLS. Phase 7 thêm V18-V19 outbox, event schema v1, role `agriinsight_integration`, fenced internal drain, image hardening, optional Compose overlay, CI scan/build và protected registry workflow. Backend inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+
+Outbox write nằm trong transaction của command record; event envelope được serialize trước commit và rollback-safe. Drain không phải broker: không có scheduler, consumer hay public route. Aggregate version là ordering key; `occurred_at` chỉ là metadata. Chi tiết role/lease/schema nằm ở [backend-development.md](backend-development.md), còn Compose, image, backup/restore và production approval nằm ở [backend-deployment.md](backend-deployment.md).
 
 ## Đường mở rộng
 
