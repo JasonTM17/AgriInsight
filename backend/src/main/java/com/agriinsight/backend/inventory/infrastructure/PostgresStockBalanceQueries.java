@@ -5,7 +5,6 @@ import com.agriinsight.backend.inventory.application.StockBalancePage;
 import com.agriinsight.backend.inventory.application.StockBalanceQuery;
 import com.agriinsight.backend.inventory.application.StockBalanceRecord;
 import com.agriinsight.backend.inventory.domain.CanonicalUnit;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
