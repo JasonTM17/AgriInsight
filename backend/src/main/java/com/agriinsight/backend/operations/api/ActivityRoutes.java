@@ -25,7 +25,10 @@ public class ActivityRoutes implements SecuredRouteRegistry.Contributor {
                 permission(HttpMethod.POST, ACTIVITIES + "/{id}/transition", Permission.ACTIVITY_MANAGE),
                 permission(HttpMethod.POST, ACTIVITIES + "/{id}/assignments", Permission.ACTIVITY_MANAGE),
                 permission(HttpMethod.POST, ACTIVITIES + "/{id}/assignments/{assignmentId}/revoke",
-                        Permission.ACTIVITY_MANAGE));
+                        Permission.ACTIVITY_MANAGE),
+                permission(HttpMethod.POST, ACTIVITIES + "/{id}/logs", Permission.ACTIVITY_LOG_APPEND),
+                permission(HttpMethod.POST, ACTIVITIES + "/{id}/logs/{logId}/corrections",
+                        Permission.ACTIVITY_LOG_APPEND));
     }
 
     private static SecuredRouteRegistry.Route permission(

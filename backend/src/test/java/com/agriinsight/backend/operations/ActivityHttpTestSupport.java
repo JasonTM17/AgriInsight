@@ -9,10 +9,14 @@ import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
 import com.agriinsight.backend.operations.application.ActivityRecord;
 import com.agriinsight.backend.operations.application.ActivityAssignmentRecord;
+import com.agriinsight.backend.operations.application.ActivityLogRecord;
+import com.agriinsight.backend.operations.domain.ActivityLogCorrectionKind;
+import com.agriinsight.backend.operations.domain.ActivityLogUnit;
 import com.agriinsight.backend.operations.domain.ActivityStatus;
 import com.agriinsight.backend.operations.domain.ActivityType;
 import com.agriinsight.backend.shared.application.CommandExecutionResult;
 import com.agriinsight.backend.shared.application.CommandTarget;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +34,7 @@ final class ActivityHttpTestSupport {
     static final UUID ACTIVITY_ID = UUID.fromString("36000000-0000-0000-0000-000000000001");
     static final UUID EMPLOYEE_ID = UUID.fromString("37000000-0000-0000-0000-000000000001");
     static final UUID ASSIGNMENT_ID = UUID.fromString("39000000-0000-0000-0000-000000000001");
+    static final UUID LOG_ID = UUID.fromString("62000000-0000-0000-0000-000000000001");
     static final UUID COMMAND_ID = UUID.fromString("33000000-0000-0000-0000-000000000006");
     static final String TOKEN = "activity-api-token";
     static final String AUTHORIZATION = "Bearer " + TOKEN;
@@ -92,5 +97,26 @@ final class ActivityHttpTestSupport {
                 new CommandTarget(
                         "ACTIVITY_ASSIGNMENT", assignment.id(), assignment.version()),
                 Optional.of(assignment));
+    }
+
+    static ActivityLogRecord activityLog(boolean correction) {
+        return new ActivityLogRecord(
+                LOG_ID, TENANT_ID, ACTIVITY_ID, EMPLOYEE_ID, ACTOR_ID,
+                Instant.parse("2027-01-01T01:00:00Z"),
+                Optional.of(correction ? "Voided" : "Harvested"),
+                correction ? Optional.empty() : Optional.of(new BigDecimal("100")),
+                correction ? Optional.empty() : Optional.of(ActivityLogUnit.KG),
+                Optional.empty(),
+                correction ? Optional.of(UUID.fromString("62000000-0000-0000-0000-000000000002"))
+                        : Optional.empty(),
+                correction ? Optional.of(ActivityLogCorrectionKind.VOID) : Optional.empty(),
+                correction ? Optional.of("Duplicate entry") : Optional.empty(),
+                0);
+    }
+
+    static CommandExecutionResult.Completed<ActivityLogRecord> completedLog(ActivityLogRecord log) {
+        return new CommandExecutionResult.Completed<>(
+                COMMAND_ID, false, 201,
+                new CommandTarget("ACTIVITY_LOG", log.id(), log.version()), Optional.of(log));
     }
 }
