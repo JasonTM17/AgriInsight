@@ -11,6 +11,8 @@ public interface FieldStore {
 
     Optional<FieldRecord> findById(ScopeContext scope, UUID fieldId);
 
+    boolean farmVisible(ScopeContext scope, UUID farmId);
+
     boolean liveParentsAvailable(
             ScopeContext scope,
             UUID farmId,

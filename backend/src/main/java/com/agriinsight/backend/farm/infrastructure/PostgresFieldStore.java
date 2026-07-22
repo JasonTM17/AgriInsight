@@ -72,6 +72,11 @@ public class PostgresFieldStore implements FieldStore {
     }
 
     @Override
+    public boolean farmVisible(ScopeContext scope, UUID farmId) {
+        return FarmScopeSql.farmVisible(jdbcTemplate, scope, farmId);
+    }
+
+    @Override
     public boolean liveParentsAvailable(
             ScopeContext scope,
             UUID farmId,

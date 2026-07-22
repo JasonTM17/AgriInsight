@@ -13,6 +13,8 @@ public interface SeasonStore {
 
     Optional<SeasonRecord> findById(ScopeContext scope, UUID seasonId);
 
+    boolean farmVisible(ScopeContext scope, UUID farmId);
+
     boolean liveParentsAvailable(
             ScopeContext scope,
             UUID farmId,

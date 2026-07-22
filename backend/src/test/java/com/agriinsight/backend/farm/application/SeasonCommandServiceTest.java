@@ -42,6 +42,18 @@ class SeasonCommandServiceTest {
     }
 
     @Test
+    void hiddenParentFarmPrecedesCreateIdempotencyClaim() {
+        CommandExecutionRequest request = mock(CommandExecutionRequest.class);
+        doThrow(new ResourceNotFoundException("Farm"))
+                .when(seasons).requireFarmManagement(FARM_ID);
+
+        assertThatThrownBy(() -> service.create(request, createCommand()))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verifyNoInteractions(executions);
+    }
+
+    @Test
     void scopedSeasonVisibilityPrecedesPatchIdempotencyClaim() {
         CommandExecutionRequest request = mock(CommandExecutionRequest.class);
         doThrow(new ResourceNotFoundException("Season")).when(seasons).getForManagement(SEASON_ID);

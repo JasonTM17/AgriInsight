@@ -42,6 +42,18 @@ class FieldCommandServiceTest {
     }
 
     @Test
+    void hiddenParentFarmPrecedesCreateIdempotencyClaim() {
+        CommandExecutionRequest request = mock(CommandExecutionRequest.class);
+        doThrow(new ResourceNotFoundException("Farm"))
+                .when(fields).requireFarmManagement(FARM_ID);
+
+        assertThatThrownBy(() -> service.create(request, createCommand()))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verifyNoInteractions(executions);
+    }
+
+    @Test
     void scopedFieldVisibilityPrecedesPatchIdempotencyClaim() {
         CommandExecutionRequest request = mock(CommandExecutionRequest.class);
         doThrow(new ResourceNotFoundException("Field")).when(fields).getForManagement(FIELD_ID);

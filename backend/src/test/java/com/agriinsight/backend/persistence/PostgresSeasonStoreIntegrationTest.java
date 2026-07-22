@@ -76,6 +76,8 @@ class PostgresSeasonStoreIntegrationTest {
                         .containsExactly(EXISTING_SEASON_ID);
                 assertThat(managerPage.hasMore()).isFalse();
                 assertThat(store.findById(listScope, UNASSIGNED_SEASON_ID)).isEmpty();
+                assertThat(store.farmVisible(listScope, FARM_ID)).isTrue();
+                assertThat(store.farmVisible(listScope, UNASSIGNED_FARM_ID)).isFalse();
                 assertThat(store.liveParentsAvailable(
                         farmScope, FARM_ID, FIELD_ID, CROP_ID, new BigDecimal("12.5"))).isTrue();
                 assertThat(store.liveParentsAvailable(

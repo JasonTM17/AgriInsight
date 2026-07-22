@@ -1,9 +1,11 @@
 package com.agriinsight.backend.farm.infrastructure;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 final class FarmScopeSql {
 
@@ -70,5 +72,27 @@ final class FarmScopeSql {
                  )
                 """);
         parameters.add(scope.profileId());
+    }
+
+    static boolean farmVisible(
+            JdbcTemplate jdbcTemplate,
+            ScopeContext scope,
+            UUID farmId) {
+        Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+        ScopeContext requiredScope = Objects.requireNonNull(scope, "scope is required");
+        UUID requiredFarmId = Objects.requireNonNull(farmId, "farmId is required");
+        StringBuilder sql = new StringBuilder("""
+                SELECT farm.id
+                  FROM farms AS farm
+                 WHERE farm.tenant_id = ?
+                   AND farm.id = ?
+                """);
+        List<Object> parameters = new ArrayList<>(List.of(
+                requiredScope.tenantId(), requiredFarmId));
+        append(sql, parameters, requiredScope, requiredFarmId);
+        return !jdbcTemplate.query(
+                sql.toString(),
+                (result, rowNumber) -> result.getObject("id", UUID.class),
+                parameters.toArray()).isEmpty();
     }
 }

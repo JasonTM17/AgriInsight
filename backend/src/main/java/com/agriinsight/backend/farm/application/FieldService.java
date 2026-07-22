@@ -88,7 +88,13 @@ public class FieldService {
     }
 
     ScopeContext requireFarmManagement(UUID farmId) {
-        return permissions.requireDomain(Permission.FARM_MANAGE, ScopeContext.Type.FARM, requiredId(farmId));
+        UUID requiredFarmId = requiredId(farmId);
+        ScopeContext scope = permissions.requireDomain(
+                Permission.FARM_MANAGE, ScopeContext.Type.FARM, requiredFarmId);
+        if (!store.farmVisible(scope, requiredFarmId)) {
+            throw new ResourceNotFoundException("Farm");
+        }
+        return scope;
     }
 
     FieldRecord getForManagement(UUID fieldId) {

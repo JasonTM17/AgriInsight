@@ -74,6 +74,8 @@ class PostgresFieldStoreIntegrationTest {
                         .containsExactly(EXISTING_FIELD_ID);
                 assertThat(page.hasMore()).isFalse();
                 assertThat(store.findById(listScope, UNASSIGNED_FIELD_ID)).isEmpty();
+                assertThat(store.farmVisible(listScope, FARM_ID)).isTrue();
+                assertThat(store.farmVisible(listScope, UNASSIGNED_FARM_ID)).isFalse();
                 assertThat(store.liveParentsAvailable(
                         farmScope, FARM_ID, Optional.of(EMPLOYEE_ID))).isTrue();
 

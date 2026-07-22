@@ -44,6 +44,7 @@ class SeasonMutationServiceTest {
                 .thenReturn(LIST_SCOPE);
         when(permissions.requireDomain(Permission.SEASON_MANAGE, ScopeContext.Type.FARM, FARM_ID))
                 .thenReturn(FARM_SCOPE);
+        when(store.farmVisible(FARM_SCOPE, FARM_ID)).thenReturn(true);
         service = new SeasonService(permissions, store, auditPublisher);
     }
 

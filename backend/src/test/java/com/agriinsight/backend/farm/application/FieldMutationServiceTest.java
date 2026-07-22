@@ -43,6 +43,7 @@ class FieldMutationServiceTest {
                 .thenReturn(LIST_SCOPE);
         when(permissions.requireDomain(Permission.FARM_MANAGE, ScopeContext.Type.FARM, FARM_ID))
                 .thenReturn(FARM_SCOPE);
+        when(store.farmVisible(FARM_SCOPE, FARM_ID)).thenReturn(true);
         service = new FieldService(permissions, store, auditPublisher);
     }
 
