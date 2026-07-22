@@ -1,7 +1,9 @@
 package com.agriinsight.backend.persistence;
+
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.migrateAndSeed;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertAllocations;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertBalance;
+import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertExplicitLotSelection;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReadModels;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReconciliationDetectsDrift;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,9 +24,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,6 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+
 @Testcontainers
 class PostgresInventoryTransactionStoreIntegrationTest {
 
@@ -86,6 +89,8 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                     "EARLY", "4", "10", "2027-06-30", "2027-01-01T08:01:00Z"));
             post(harness, store, receipt(
                     "EXPIRED", "3", "30", "2026-01-31", "2025-12-01T08:02:00Z"));
+            assertExplicitLotSelection(
+                    harness, store, SCOPE, WAREHOUSE_ID, MATERIAL_ID, AUDIT);
 
             InventoryTransactionRecord issue = post(harness, store,
                     new InventoryTransactionCommands.Issue(
