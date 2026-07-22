@@ -13,6 +13,8 @@ public class TenantContextBinder {
 
     private static final String SET_TENANT_CONTEXT =
             "SELECT set_config('app.tenant_id', ?, true)";
+    private static final String SET_PROFILE_CONTEXT =
+            "SELECT set_config('app.profile_id', ?, true)";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -31,6 +33,18 @@ public class TenantContextBinder {
                 tenantId.toString());
         if (!tenantId.toString().equals(configured)) {
             throw new TenantContextRequiredException("Tenant context could not be established");
+        }
+    }
+
+    public void bind(UUID tenantId, UUID profileId) {
+        bind(tenantId);
+        Objects.requireNonNull(profileId, "profileId is required");
+        String configured = jdbcTemplate.queryForObject(
+                SET_PROFILE_CONTEXT,
+                String.class,
+                profileId.toString());
+        if (!profileId.toString().equals(configured)) {
+            throw new TenantContextRequiredException("Profile context could not be established");
         }
     }
 }

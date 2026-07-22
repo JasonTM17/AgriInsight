@@ -80,7 +80,7 @@ class TenantTransactionAspectTest {
                 ArgumentCaptor.forClass(TransactionDefinition.class);
         var order = inOrder(transactionManager, contextBinder, joinPoint);
         order.verify(transactionManager).getTransaction(definition.capture());
-        order.verify(contextBinder).bind(TENANT_ID);
+        order.verify(contextBinder).bind(TENANT_ID, PROFILE_ID);
         order.verify(joinPoint).proceed();
         order.verify(transactionManager).commit(transactionStatus);
         assertThat(definition.getValue().getPropagationBehavior())
@@ -99,7 +99,7 @@ class TenantTransactionAspectTest {
         assertThat(aspect.withinTenantTransaction(outer)).isEqualTo("nested-result");
 
         verify(transactionManager).getTransaction(any());
-        verify(contextBinder).bind(TENANT_ID);
+        verify(contextBinder).bind(TENANT_ID, PROFILE_ID);
         verify(outer).proceed();
         verify(nested).proceed();
         verify(transactionManager).commit(transactionStatus);
@@ -142,7 +142,7 @@ class TenantTransactionAspectTest {
 
         assertThat(service.execute()).isEqualTo("annotated-result");
 
-        verify(contextBinder).bind(TENANT_ID);
+        verify(contextBinder).bind(TENANT_ID, PROFILE_ID);
         verify(transactionManager).commit(transactionStatus);
     }
 

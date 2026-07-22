@@ -78,7 +78,8 @@ public final class FarmOperationsTestFixtures {
     public static void beginTenant(Connection connection) throws SQLException {
         connection.setAutoCommit(false);
         try (var statement = connection.prepareStatement(
-                "SELECT set_config('app.tenant_id', ?, true)")) {
+                "SELECT set_config('app.tenant_id', ?, true), "
+                        + "set_config('app.profile_id', '41000000-0000-0000-0000-000000000005', true)")) {
             statement.setString(1, TENANT_A.toString());
             statement.executeQuery();
         }

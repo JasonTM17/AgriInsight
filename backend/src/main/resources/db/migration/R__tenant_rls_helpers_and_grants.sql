@@ -346,6 +346,8 @@ GRANT USAGE ON SCHEMA agriinsight_security TO agriinsight_runtime;
 GRANT USAGE, CREATE ON SCHEMA agriinsight_security TO agriinsight_identity_definer;
 
 REVOKE ALL ON FUNCTION agriinsight_security.app_current_tenant_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.app_current_profile_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.inventory_warehouse_access(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID) FROM PUBLIC;
@@ -355,6 +357,10 @@ REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID)
 
 GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_tenant_id()
     TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_profile_id()
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.inventory_warehouse_access(UUID)
+    TO agriinsight_runtime, agriinsight_migrator;
 GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT)

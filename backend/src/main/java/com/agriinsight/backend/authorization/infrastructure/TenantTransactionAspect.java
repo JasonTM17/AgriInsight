@@ -84,7 +84,7 @@ public class TenantTransactionAspect {
         }
 
         try {
-            return transaction.execute(status -> invokeBound(joinPoint, principal.tenantId()));
+            return transaction.execute(status -> invokeBound(joinPoint, principal));
         } catch (TenantAuthorizationDeniedException exception) {
             recordDenied(exception);
             throw exception;
@@ -106,9 +106,9 @@ public class TenantTransactionAspect {
         }
     }
 
-    private Object invokeBound(ProceedingJoinPoint joinPoint, UUID tenantId) {
-        contextBinder.bind(tenantId);
-        contextState.bind(tenantId);
+    private Object invokeBound(ProceedingJoinPoint joinPoint, TenantPrincipal principal) {
+        contextBinder.bind(principal.tenantId(), principal.profileId());
+        contextState.bind(principal.tenantId());
         try {
             return joinPoint.proceed();
         } catch (RuntimeException | Error exception) {
