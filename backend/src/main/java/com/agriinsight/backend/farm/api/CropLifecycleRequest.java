@@ -1,0 +1,12 @@
+package com.agriinsight.backend.farm.api;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+
+public record CropLifecycleRequest(
+        @NotBlank @Pattern(regexp = "[A-Z][A-Z0-9_]{0,79}") String reasonCode) {
+
+    public CropLifecycleRequest {
+        reasonCode = CropCreateRequest.normalizeReason(reasonCode);
+    }
+}
