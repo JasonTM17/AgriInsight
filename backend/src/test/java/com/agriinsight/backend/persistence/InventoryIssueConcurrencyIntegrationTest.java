@@ -43,7 +43,8 @@ class InventoryIssueConcurrencyIntegrationTest {
             UUID.fromString("59100000-0000-0000-0000-000000000002");
     private static final UUID SUPPLIER_ID =
             UUID.fromString("59100000-0000-0000-0000-000000000003");
-    private static final ScopeContext SCOPE = ScopeContext.tenant(new TestPrincipal());
+    private static final ScopeContext SCOPE = ScopeContext.domain(
+            new TestPrincipal(), ScopeContext.Type.WAREHOUSE, Optional.of(WAREHOUSE_ID));
     private static final TenantAuditMetadata AUDIT =
             new TenantAuditMetadata(Optional.empty(), Optional.empty());
 
@@ -98,6 +99,7 @@ class InventoryIssueConcurrencyIntegrationTest {
                         INSERT INTO suppliers (id, tenant_id, code, display_name)
                         VALUES (?, ?, 'SUP-CONCURRENT', 'Concurrent Supplier')
                         """, SUPPLIER_ID, TENANT_ID);
+                insertAssignment(harness);
                 return null;
             });
             var store = new PostgresInventoryTransactionStore(harness.jdbcTemplate());
@@ -107,6 +109,15 @@ class InventoryIssueConcurrencyIntegrationTest {
                             new BigDecimal("10"), "CONCURRENT", LocalDate.parse("2028-12-31"),
                             Instant.parse("2027-01-01T00:00:00Z"), Optional.empty(), AUDIT)));
         }
+    }
+
+    private void insertAssignment(TenantTransactionTestHarness harness) {
+        harness.jdbcTemplate().update("""
+                INSERT INTO user_warehouse_assignments (
+                    id, tenant_id, user_profile_id, warehouse_id)
+                VALUES (?, ?, ?, ?)
+                """, UUID.fromString("59100000-0000-0000-0000-000000000004"),
+                TENANT_ID, PROFILE_ID, WAREHOUSE_ID);
     }
 
     private boolean issueOnce(CountDownLatch ready, CountDownLatch start) {

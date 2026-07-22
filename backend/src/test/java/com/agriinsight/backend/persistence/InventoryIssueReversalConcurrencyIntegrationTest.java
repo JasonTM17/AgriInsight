@@ -44,7 +44,8 @@ class InventoryIssueReversalConcurrencyIntegrationTest {
             UUID.fromString("59300000-0000-0000-0000-000000000002");
     private static final UUID SUPPLIER_ID =
             UUID.fromString("59300000-0000-0000-0000-000000000003");
-    private static final ScopeContext SCOPE = ScopeContext.tenant(new TestPrincipal());
+    private static final ScopeContext SCOPE = ScopeContext.domain(
+            new TestPrincipal(), ScopeContext.Type.WAREHOUSE, Optional.of(WAREHOUSE_ID));
     private static final TenantAuditMetadata AUDIT =
             new TenantAuditMetadata(Optional.empty(), Optional.empty());
 
@@ -100,6 +101,12 @@ class InventoryIssueReversalConcurrencyIntegrationTest {
                         INSERT INTO suppliers (id, tenant_id, code, display_name)
                         VALUES (?, ?, 'SUP-REV-RACE', 'Reversal Race Supplier')
                         """, SUPPLIER_ID, TENANT_ID);
+                harness.jdbcTemplate().update("""
+                        INSERT INTO user_warehouse_assignments (
+                            id, tenant_id, user_profile_id, warehouse_id)
+                        VALUES (?, ?, ?, ?)
+                        """, UUID.fromString("59300000-0000-0000-0000-000000000004"),
+                        TENANT_ID, PROFILE_ID, WAREHOUSE_ID);
                 return null;
             });
             var store = new PostgresInventoryTransactionStore(harness.jdbcTemplate());
