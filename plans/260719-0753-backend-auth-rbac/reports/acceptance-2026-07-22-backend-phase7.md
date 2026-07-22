@@ -25,7 +25,7 @@ open until those two release-boundary checks are evidenced.
 | Python/package checks | PASS | `compileall`, Node syntax check, wheel build/smoke, and SHA-256 artifact check. |
 | Compose contract | PASS | Root Compose and backend profile both pass `docker compose ... config --quiet`; backend data binds to ignored D-local storage and artifacts are not mounted writable. |
 | Image boundary | PASS | Root Python and backend Java images build locally with pinned base digests, OCI labels, non-root users, and deterministic smoke checks. |
-| Docker Hub phase publication | PASS | Python digest `sha256:3d2406de0cd2a2dbd91925526680e61deac6a2d15391fbe0c2ab36f8dfb311c9`; backend digest `sha256:d6a56b06cc16ed0aa11bce84751f487a87bfe398ca2ed5a2eda6229b89c90798`; version and `sha-d35d485` tags match. |
+| Docker Hub phase publication | PASS | Python digest `sha256:ee4090812a36c48f180ee74aaa16995c79eabfedb6821d9764319643d06ba2f6`; backend digest `sha256:b711cac635bf573bf90cfeb11dbb58c46ac98b8089e31be27a9537a6943ada82`; version and `sha-4f4daea` tags match. |
 | GHCR phase publication | PASS | The same two immutable digests are present at `ghcr.io/jasontm17/agriinsight-python` and `ghcr.io/jasontm17/agriinsight-backend`; packages were created and pull-by-digest smoke passed. |
 | Backup/restore drill | PASS | D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`; metadata reports Flyway `19`; clean target restore elapsed 11.045s, role/RLS gate PASS, runtime schema rows 20. |
 | Documentation validation | PASS | `node .claude/scripts/validate-docs.cjs docs/` exits 0; 12 internal links and 10 configuration references verified. Existing validator warnings are false positives for code/class names. |
