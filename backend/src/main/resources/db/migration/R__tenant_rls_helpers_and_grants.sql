@@ -484,6 +484,8 @@ GRANT SELECT, INSERT ON user_warehouse_assignments TO agriinsight_runtime;
 GRANT UPDATE (revoked_at, version, updated_at)
     ON user_warehouse_assignments TO agriinsight_runtime;
 GRANT SELECT, INSERT ON inventory_transactions TO agriinsight_runtime;
+GRANT UPDATE (version, updated_at)
+    ON inventory_transactions TO agriinsight_runtime;
 GRANT SELECT, INSERT ON inventory_transaction_lot_allocations TO agriinsight_runtime;
 GRANT SELECT, INSERT ON stock_lots TO agriinsight_runtime;
 GRANT UPDATE (available_quantity, version, updated_at)

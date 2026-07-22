@@ -31,7 +31,8 @@ class RuntimeGrantConvergenceIntegrationTest {
     void repeatableGrantsConvergeFromLegacyTableWideUpdate() throws Exception {
         try (var migrator = migratorConnection(POSTGRESQL, "agriinsight")) {
             execute(migrator, """
-                    GRANT UPDATE ON seasons, user_farm_assignments, activities, activity_assignees
+                    GRANT UPDATE ON seasons, user_farm_assignments, activities,
+                        activity_assignees, inventory_transactions
                     TO agriinsight_runtime
                     """);
             execute(
@@ -45,21 +46,23 @@ class RuntimeGrantConvergenceIntegrationTest {
                     SELECT count(*)
                       FROM (VALUES
                             ('seasons'), ('user_farm_assignments'),
-                            ('activities'), ('activity_assignees')) AS scoped(table_name)
+                            ('activities'), ('activity_assignees'),
+                            ('inventory_transactions')) AS scoped(table_name)
                      WHERE NOT has_table_privilege(
                             'agriinsight_runtime', 'public.' || table_name, 'UPDATE')
-                    """)).isEqualTo(4);
+                    """)).isEqualTo(5);
             assertThat(count(operator, """
                     SELECT count(*)
                       FROM (VALUES
                             ('seasons', 'status'),
                             ('user_farm_assignments', 'revoked_at'),
                             ('activities', 'title'),
-                            ('activity_assignees', 'revoked_at'))
+                            ('activity_assignees', 'revoked_at'),
+                            ('inventory_transactions', 'version'))
                            AS allowed(table_name, column_name)
                      WHERE has_column_privilege(
                             'agriinsight_runtime', 'public.' || table_name, column_name, 'UPDATE')
-                    """)).isEqualTo(4);
+                    """)).isEqualTo(5);
         }
     }
 }
