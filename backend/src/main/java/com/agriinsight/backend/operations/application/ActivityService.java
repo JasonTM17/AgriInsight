@@ -125,6 +125,11 @@ public class ActivityService {
         return scope;
     }
 
+    ScopeContext requireManagementScope() {
+        return permissions.requireDomainList(
+                Permission.ACTIVITY_MANAGE, ScopeContext.Type.ACTIVITY);
+    }
+
     ActivityRecord getForManagement(UUID activityId) {
         ScopeContext scope = permissions.requireDomainList(
                 Permission.ACTIVITY_MANAGE, ScopeContext.Type.ACTIVITY);
