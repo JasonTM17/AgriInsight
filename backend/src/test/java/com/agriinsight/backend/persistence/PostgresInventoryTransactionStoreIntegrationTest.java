@@ -89,6 +89,13 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                     "EARLY", "4", "10", "2027-06-30", "2027-01-01T08:01:00Z"));
             post(harness, store, receipt(
                     "EXPIRED", "3", "30", "2026-01-31", "2025-12-01T08:02:00Z"));
+            assertThatThrownBy(() -> post(harness, store,
+                    new InventoryTransactionCommands.Issue(
+                            WAREHOUSE_ID, MATERIAL_ID, new BigDecimal("1"), Optional.empty(),
+                            Instant.parse("2026-12-31T23:59:59Z"), "Backdated issue",
+                            Optional.empty(), AUDIT)))
+                    .isInstanceOf(ResourceStateConflictException.class)
+                    .hasMessage("Insufficient eligible stock");
             assertExplicitLotSelection(
                     harness, store, SCOPE, WAREHOUSE_ID, MATERIAL_ID, AUDIT);
 

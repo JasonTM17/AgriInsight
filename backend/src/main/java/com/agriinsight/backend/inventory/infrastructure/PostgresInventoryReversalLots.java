@@ -120,7 +120,7 @@ final class PostgresInventoryReversalLots {
                 UPDATE stock_lots AS lot
                    SET available_quantity = lot.available_quantity + ?,
                        version = lot.version + 1,
-                       updated_at = CURRENT_TIMESTAMP
+                       updated_at = GREATEST(lot.created_at, clock_timestamp())
                  WHERE lot.tenant_id = ? AND lot.id = ?
                    AND lot.available_quantity + ? BETWEEN 0 AND lot.received_quantity
                 """, delta, scope.tenantId(), lotId, delta);

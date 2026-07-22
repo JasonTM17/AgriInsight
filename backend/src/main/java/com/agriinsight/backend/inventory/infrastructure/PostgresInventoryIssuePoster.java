@@ -7,6 +7,7 @@ import com.agriinsight.backend.inventory.domain.CanonicalUnit;
 import com.agriinsight.backend.inventory.domain.InventoryTransactionKind;
 import com.agriinsight.backend.shared.application.ResourceStateConflictException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,10 +73,12 @@ final class PostgresInventoryIssuePoster {
                    AND lot.warehouse_id = ?
                    AND lot.material_id = ?
                    AND lot.available_quantity > 0
+                   AND lot.received_at <= ?
                    AND lot.expiry_date >= ?
                 """);
         List<Object> parameters = new ArrayList<>(List.of(
                 scope.tenantId(), command.warehouseId(), command.materialId(),
+                Timestamp.from(command.occurredAt()),
                 command.occurredAt().atZone(ZoneOffset.UTC).toLocalDate()));
         command.stockLotId().ifPresent(lotId -> {
             sql.append(" AND lot.id = ?");
@@ -127,7 +130,7 @@ final class PostgresInventoryIssuePoster {
                 UPDATE stock_lots AS lot
                    SET available_quantity = lot.available_quantity + ?,
                        version = lot.version + 1,
-                       updated_at = CURRENT_TIMESTAMP
+                       updated_at = GREATEST(lot.created_at, clock_timestamp())
                  WHERE lot.tenant_id = ? AND lot.id = ?
                    AND lot.available_quantity + ? >= 0
                 """, delta, scope.tenantId(), lotId, delta);
