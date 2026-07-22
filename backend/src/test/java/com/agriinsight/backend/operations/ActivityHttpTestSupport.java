@@ -8,6 +8,7 @@ import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
 import com.agriinsight.backend.operations.application.ActivityRecord;
+import com.agriinsight.backend.operations.application.ActivityAssignmentRecord;
 import com.agriinsight.backend.operations.domain.ActivityStatus;
 import com.agriinsight.backend.operations.domain.ActivityType;
 import com.agriinsight.backend.shared.application.CommandExecutionResult;
@@ -27,6 +28,8 @@ final class ActivityHttpTestSupport {
     static final UUID FIELD_ID = UUID.fromString("32000000-0000-0000-0000-000000000001");
     static final UUID SEASON_ID = UUID.fromString("35000000-0000-0000-0000-000000000001");
     static final UUID ACTIVITY_ID = UUID.fromString("36000000-0000-0000-0000-000000000001");
+    static final UUID EMPLOYEE_ID = UUID.fromString("37000000-0000-0000-0000-000000000001");
+    static final UUID ASSIGNMENT_ID = UUID.fromString("39000000-0000-0000-0000-000000000001");
     static final UUID COMMAND_ID = UUID.fromString("33000000-0000-0000-0000-000000000006");
     static final String TOKEN = "activity-api-token";
     static final String AUTHORIZATION = "Bearer " + TOKEN;
@@ -72,5 +75,22 @@ final class ActivityHttpTestSupport {
         return new CommandExecutionResult.Completed<>(
                 COMMAND_ID, false, status,
                 new CommandTarget("ACTIVITY", activity.id(), activity.version()), Optional.of(activity));
+    }
+
+    static ActivityAssignmentRecord assignment(long version, boolean active) {
+        return new ActivityAssignmentRecord(
+                ASSIGNMENT_ID, TENANT_ID, ACTIVITY_ID, EMPLOYEE_ID,
+                active ? Optional.empty() : Optional.of(Instant.parse("2027-01-01T02:00:00Z")),
+                version);
+    }
+
+    static CommandExecutionResult.Completed<ActivityAssignmentRecord> completedAssignment(
+            int status,
+            ActivityAssignmentRecord assignment) {
+        return new CommandExecutionResult.Completed<>(
+                COMMAND_ID, false, status,
+                new CommandTarget(
+                        "ACTIVITY_ASSIGNMENT", assignment.id(), assignment.version()),
+                Optional.of(assignment));
     }
 }

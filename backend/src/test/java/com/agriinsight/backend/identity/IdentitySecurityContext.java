@@ -18,6 +18,8 @@ import com.agriinsight.backend.operations.application.EmployeeCommandService;
 import com.agriinsight.backend.operations.application.EmployeeService;
 import com.agriinsight.backend.operations.application.ActivityCommandService;
 import com.agriinsight.backend.operations.application.ActivityService;
+import com.agriinsight.backend.operations.application.ActivityAssignmentCommandService;
+import com.agriinsight.backend.operations.application.ActivityAssignmentService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -70,7 +72,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         EmployeeService.class,
         EmployeeCommandService.class,
         ActivityService.class,
-        ActivityCommandService.class
+        ActivityCommandService.class,
+        ActivityAssignmentService.class,
+        ActivityAssignmentCommandService.class
 })
 public @interface IdentitySecurityContext {
 }
