@@ -24,6 +24,7 @@ import com.agriinsight.backend.authorization.application.TenantAuditPublisher;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
 import com.agriinsight.backend.farm.domain.Field;
+import com.agriinsight.backend.shared.application.ResourceNotFoundException;
 import com.agriinsight.backend.shared.application.ResourceStateConflictException;
 import com.agriinsight.backend.shared.application.VersionConflictException;
 import java.util.Optional;
@@ -62,6 +63,15 @@ class FieldMutationServiceTest {
 
         assertThat(created.active()).isTrue();
         verify(auditPublisher).publish(any(TenantAuditEvent.class));
+    }
+
+    @Test
+    void hiddenParentFarmIsNotAValidManagementScope() {
+        when(store.farmVisible(FARM_SCOPE, FARM_ID)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.requireFarmManagement(FARM_ID))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Farm");
     }
 
     @Test
