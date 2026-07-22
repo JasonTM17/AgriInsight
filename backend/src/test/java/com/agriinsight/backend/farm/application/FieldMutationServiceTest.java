@@ -52,10 +52,10 @@ class FieldMutationServiceTest {
         when(store.liveParentsAvailable(any(), any(), any())).thenReturn(true);
         when(store.create(any(), any(Field.class))).thenAnswer(invocation -> {
             Field created = invocation.getArgument(1);
-            return new FieldRecord(
+            return Optional.of(new FieldRecord(
                     created.id(), TENANT_ID, created.farmId(), created.code(), created.displayName(),
                     created.areaHectares(), created.responsibleEmployeeId(), created.coordinates(),
-                    created.soilType(), created.irrigationType(), true, 0);
+                    created.soilType(), created.irrigationType(), true, 0));
         });
 
         FieldRecord created = service.create(createCommand());

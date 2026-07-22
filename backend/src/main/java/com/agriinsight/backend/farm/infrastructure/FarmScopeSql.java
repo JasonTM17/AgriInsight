@@ -95,4 +95,32 @@ final class FarmScopeSql {
                 (result, rowNumber) -> result.getObject("id", UUID.class),
                 parameters.toArray()).isEmpty();
     }
+
+    static boolean lockWriteAuthorization(
+            JdbcTemplate jdbcTemplate,
+            ScopeContext scope,
+            UUID targetFarmId) {
+        Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+        ScopeContext writeScope = requireWriteScope(scope);
+        if (writeScope.type() == ScopeContext.Type.TENANT) {
+            return true;
+        }
+        UUID target = Objects.requireNonNull(targetFarmId, "targetFarmId is required");
+        requireWriteScope(writeScope, target);
+        List<UUID> assignments = jdbcTemplate.query("""
+                SELECT assignment.id
+                  FROM user_farm_assignments AS assignment
+                 WHERE assignment.tenant_id = ?
+                   AND assignment.user_profile_id = ?
+                   AND assignment.farm_id = ?
+                   AND assignment.revoked_at IS NULL
+                   FOR SHARE
+                """,
+                (result, rowNumber) -> result.getObject("id", UUID.class),
+                writeScope.tenantId(), writeScope.profileId(), target);
+        if (assignments.size() > 1) {
+            throw new IllegalStateException("Farm write authorization returned multiple assignments");
+        }
+        return !assignments.isEmpty();
+    }
 }

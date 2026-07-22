@@ -66,7 +66,8 @@ public class SeasonService {
                 command.plannedEndDate(),
                 command.plantedAreaHectares(),
                 command.budgetVnd());
-        SeasonRecord created = store.create(scope, season);
+        SeasonRecord created = store.create(scope, season)
+                .orElseThrow(() -> createConflict(scope, command.farmId()));
         publish(scope, TenantAuditEvent.Action.SEASON_CREATED, created, command.audit());
         return created;
     }
@@ -162,6 +163,14 @@ public class SeasonService {
         if (!store.liveParentsAvailable(scope, farmId, fieldId, cropId, area)) {
             throw new ResourceStateConflictException("Season requires active parents and available field area");
         }
+    }
+
+    private RuntimeException createConflict(ScopeContext scope, UUID farmId) {
+        if (!store.farmVisible(scope, farmId)) {
+            return new ResourceNotFoundException("Farm");
+        }
+        return new ResourceStateConflictException(
+                "Season requires active parents and available field area");
     }
 
     private SeasonRecord requiredSeason(ScopeContext scope, UUID seasonId) {

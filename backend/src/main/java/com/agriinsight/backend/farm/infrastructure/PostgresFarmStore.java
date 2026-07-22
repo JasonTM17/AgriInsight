@@ -111,6 +111,10 @@ public class PostgresFarmStore implements FarmStore {
             Optional<String> code,
             Optional<String> displayName) {
         requireVersion(expectedVersion);
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope, farmId);
+        if (!FarmScopeSql.lockWriteAuthorization(jdbcTemplate, writeScope, farmId)) {
+            return Optional.empty();
+        }
         String newCode = Objects.requireNonNull(code, "code is required").orElse(null);
         String newDisplayName = Objects.requireNonNull(displayName, "displayName is required").orElse(null);
         if (newCode == null && newDisplayName == null) {
@@ -132,14 +136,14 @@ public class PostgresFarmStore implements FarmStore {
         List<Object> parameters = new ArrayList<>(List.of(
                 optionalParameter(newCode),
                 optionalParameter(newDisplayName),
-                requireScope(scope).tenantId(),
+                writeScope.tenantId(),
                 requiredFarmId,
                 expectedVersion,
                 optionalParameter(newCode),
                 optionalParameter(newCode),
                 optionalParameter(newDisplayName),
                 optionalParameter(newDisplayName)));
-        FarmScopeSql.append(sql, parameters, scope, requiredFarmId);
+        FarmScopeSql.append(sql, parameters, writeScope, requiredFarmId);
         sql.append(" RETURNING ").append(COLUMNS);
         return exactlyOneOrEmpty(jdbcTemplate.query(sql.toString(), MAPPER, parameters.toArray()));
     }

@@ -41,6 +41,10 @@ final class PostgresFieldLifecycleStore {
         ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
         UUID requiredFieldId = Objects.requireNonNull(fieldId, "fieldId is required");
         requireVersion(expectedVersion);
+        if (!FarmScopeSql.lockWriteAuthorization(
+                jdbcTemplate, writeScope, writeScope.resourceId().orElse(null))) {
+            return Optional.empty();
+        }
         if (!lockField(writeScope, requiredFieldId)) {
             return Optional.empty();
         }

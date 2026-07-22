@@ -8,6 +8,7 @@ import com.agriinsight.backend.farm.application.SeasonRecord;
 import com.agriinsight.backend.farm.application.SeasonStore;
 import com.agriinsight.backend.farm.domain.Season;
 import java.math.BigDecimal;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlParameterValue;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -115,34 +117,35 @@ public class PostgresSeasonStore implements SeasonStore {
     }
 
     @Override
-    public SeasonRecord create(ScopeContext scope, Season season) {
+    public Optional<SeasonRecord> create(ScopeContext scope, Season season) {
         Objects.requireNonNull(season, "season is required");
-        requireFarmAccess(scope, season.farmId());
-        if (!scope.tenantId().equals(season.tenantId())) {
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope, season.farmId());
+        if (!writeScope.tenantId().equals(season.tenantId())) {
             throw new IllegalArgumentException("Season cannot switch tenants");
         }
-        return SeasonRowMapping.exactlyOneOrEmpty(jdbcTemplate.query("""
+        if (!FarmScopeSql.lockWriteAuthorization(jdbcTemplate, writeScope, season.farmId())) {
+            return Optional.empty();
+        }
+        StringBuilder sql = new StringBuilder("""
                 INSERT INTO seasons (
                     id, tenant_id, farm_id, field_id, crop_id, code, display_name,
                     variety_name, planned_start_date, planned_end_date,
                     planted_area_hectares, budget_vnd)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                RETURNING %s
-                """.formatted(SeasonRowMapping.RETURNING_COLUMNS),
-                SeasonRowMapping.MAPPER,
-                season.id(),
-                season.tenantId(),
-                season.farmId(),
-                season.fieldId(),
-                season.cropId(),
-                season.code(),
-                season.displayName(),
-                season.varietyName().orElse(null),
-                season.plannedStartDate(),
-                season.plannedEndDate(),
-                season.plantedAreaHectares(),
-                season.budgetVnd().orElse(null)))
-                .orElseThrow(() -> new IllegalStateException("Season was not created"));
+                SELECT ?, farm.tenant_id, farm.id, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                  FROM farms AS farm
+                 WHERE farm.tenant_id = ?
+                   AND farm.id = ?
+                """);
+        List<Object> parameters = new ArrayList<>(List.of(
+                season.id(), season.fieldId(), season.cropId(), season.code(),
+                season.displayName(), nullable(season.varietyName().orElse(null), Types.VARCHAR),
+                season.plannedStartDate(), season.plannedEndDate(),
+                season.plantedAreaHectares(), nullable(season.budgetVnd().orElse(null), Types.NUMERIC),
+                season.tenantId(), season.farmId()));
+        FarmScopeSql.append(sql, parameters, writeScope, season.farmId());
+        sql.append(" RETURNING ").append(SeasonRowMapping.RETURNING_COLUMNS);
+        return SeasonRowMapping.exactlyOneOrEmpty(
+                jdbcTemplate.query(sql.toString(), SeasonRowMapping.MAPPER, parameters.toArray()));
     }
 
     @Override
@@ -182,15 +185,7 @@ public class PostgresSeasonStore implements SeasonStore {
         return Objects.requireNonNull(scope, "scope is required");
     }
 
-    private void requireFarmAccess(ScopeContext scope, UUID farmId) {
-        ScopeContext required = requireScope(scope);
-        if (required.type() == ScopeContext.Type.TENANT && required.resourceId().isEmpty()) {
-            return;
-        }
-        if (required.type() != ScopeContext.Type.FARM
-                || required.resourceId().isEmpty()
-                || !required.resourceId().orElseThrow().equals(farmId)) {
-            throw new IllegalArgumentException("Season write requires target farm scope");
-        }
+    private Object nullable(Object value, int sqlType) {
+        return value == null ? new SqlParameterValue(sqlType, null) : value;
     }
 }

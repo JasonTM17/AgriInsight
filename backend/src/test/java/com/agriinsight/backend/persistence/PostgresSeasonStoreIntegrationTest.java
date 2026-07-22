@@ -78,12 +78,23 @@ class PostgresSeasonStoreIntegrationTest {
                 assertThat(store.findById(listScope, UNASSIGNED_SEASON_ID)).isEmpty();
                 assertThat(store.farmVisible(listScope, FARM_ID)).isTrue();
                 assertThat(store.farmVisible(listScope, UNASSIGNED_FARM_ID)).isFalse();
+                ScopeContext unassignedScope = ScopeContext.domain(
+                        PRINCIPAL, ScopeContext.Type.FARM, Optional.of(UNASSIGNED_FARM_ID));
+                assertThat(store.create(
+                        unassignedScope,
+                        new Season(
+                                UUID.fromString("41000000-0000-0000-0000-000000000065"),
+                                TENANT_ID, UNASSIGNED_FARM_ID, UNASSIGNED_FIELD_ID, CROP_ID,
+                                "SEASON-HIDDEN", "Hidden Season", Optional.empty(),
+                                LocalDate.parse("2031-01-01"), LocalDate.parse("2031-12-31"),
+                                new BigDecimal("1"), Optional.empty())))
+                        .isEmpty();
                 assertThat(store.liveParentsAvailable(
                         farmScope, FARM_ID, FIELD_ID, CROP_ID, new BigDecimal("12.5"))).isTrue();
                 assertThat(store.liveParentsAvailable(
                         farmScope, FARM_ID, FIELD_ID, CROP_ID, new BigDecimal("12.5001"))).isFalse();
 
-                var created = store.create(farmScope, season());
+                var created = store.create(farmScope, season()).orElseThrow();
                 assertThat(created.status()).isEqualTo(Season.Status.PLANNED);
                 assertThat(created.version()).isZero();
 

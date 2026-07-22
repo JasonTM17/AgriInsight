@@ -106,7 +106,7 @@ public class PostgresFieldStore implements FieldStore {
     }
 
     @Override
-    public FieldRecord create(ScopeContext scope, Field field) {
+    public Optional<FieldRecord> create(ScopeContext scope, Field field) {
         return creates.create(scope, field);
     }
 

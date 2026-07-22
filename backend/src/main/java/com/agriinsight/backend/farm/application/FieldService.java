@@ -55,7 +55,8 @@ public class FieldService {
                 UUID.randomUUID(), scope.tenantId(), command.farmId(), command.code(),
                 command.displayName(), command.areaHectares(), command.responsibleEmployeeId(),
                 command.coordinates(), command.soilType(), command.irrigationType());
-        FieldRecord created = store.create(scope, field);
+        FieldRecord created = store.create(scope, field)
+                .orElseThrow(() -> createConflict(scope, command.farmId()));
         publish(scope, TenantAuditEvent.Action.FIELD_CREATED, created, command.audit());
         return created;
     }
@@ -166,6 +167,14 @@ public class FieldService {
         if (!store.liveParentsAvailable(scope, farmId, responsibleEmployeeId)) {
             throw new ResourceStateConflictException("Field requires an active farm and responsible employee");
         }
+    }
+
+    private RuntimeException createConflict(ScopeContext scope, UUID farmId) {
+        if (!store.farmVisible(scope, farmId)) {
+            return new ResourceNotFoundException("Farm");
+        }
+        return new ResourceStateConflictException(
+                "Field requires an active farm and responsible employee");
     }
 
     private FieldRecord requiredField(ScopeContext scope, UUID fieldId) {

@@ -20,11 +20,14 @@ final class PostgresFieldCreateStore {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
     }
 
-    FieldRecord create(ScopeContext scope, Field field) {
+    Optional<FieldRecord> create(ScopeContext scope, Field field) {
         Objects.requireNonNull(field, "field is required");
         ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope, field.farmId());
         if (!writeScope.tenantId().equals(field.tenantId())) {
             throw new IllegalArgumentException("Field cannot switch tenants");
+        }
+        if (!FarmScopeSql.lockWriteAuthorization(jdbcTemplate, writeScope, field.farmId())) {
+            return Optional.empty();
         }
         Field.Coordinates coordinates = field.coordinates().orElse(null);
         StringBuilder sql = new StringBuilder("""
@@ -42,8 +45,7 @@ final class PostgresFieldCreateStore {
         FarmScopeSql.append(sql, parameters, writeScope, field.farmId());
         sql.append(" RETURNING ").append(FieldRowMapping.RETURNING_COLUMNS);
         return FieldRowMapping.exactlyOneOrEmpty(
-                jdbcTemplate.query(sql.toString(), FieldRowMapping.MAPPER, parameters.toArray()))
-                .orElseThrow(() -> new IllegalStateException("Field parents are not available"));
+                jdbcTemplate.query(sql.toString(), FieldRowMapping.MAPPER, parameters.toArray()));
     }
 
     private List<Object> parameters(Field field, Field.Coordinates coordinates) {

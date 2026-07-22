@@ -34,6 +34,10 @@ final class PostgresFieldMutationStore {
         }
         UUID requiredFieldId = Objects.requireNonNull(fieldId, "fieldId is required");
         ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
+        if (!FarmScopeSql.lockWriteAuthorization(
+                jdbcTemplate, writeScope, writeScope.resourceId().orElse(null))) {
+            return Optional.empty();
+        }
         if (!lockField(writeScope, requiredFieldId)) {
             return Optional.empty();
         }

@@ -33,6 +33,11 @@ final class PostgresSeasonMutationStore {
         if (columns.isEmpty()) {
             throw new IllegalArgumentException("At least one season field must be provided");
         }
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
+        if (!FarmScopeSql.lockWriteAuthorization(
+                jdbcTemplate, writeScope, writeScope.resourceId().orElse(null))) {
+            return Optional.empty();
+        }
         StringBuilder sql = new StringBuilder("UPDATE seasons AS season SET ");
         List<Object> parameters = new ArrayList<>();
         appendAssignments(sql, parameters, columns);
@@ -46,12 +51,12 @@ final class PostgresSeasonMutationStore {
                    AND season.version = ?
                    AND (
                 """);
-        parameters.add(requireScope(scope).tenantId());
+        parameters.add(writeScope.tenantId());
         parameters.add(Objects.requireNonNull(seasonId, "seasonId is required"));
         parameters.add(expectedVersion);
         appendDifferencePredicate(sql, parameters, columns);
         sql.append(')');
-        FarmScopeSql.append(sql, parameters, scope, scope.resourceId().orElse(null));
+        FarmScopeSql.append(sql, parameters, writeScope, writeScope.resourceId().orElse(null));
         sql.append(" RETURNING ").append(SeasonRowMapping.SELECT_COLUMNS);
         return SeasonRowMapping.exactlyOneOrEmpty(
                 jdbcTemplate.query(sql.toString(), SeasonRowMapping.MAPPER, parameters.toArray()));
@@ -69,6 +74,11 @@ final class PostgresSeasonMutationStore {
         Season.Status target = Objects.requireNonNull(targetStatus, "targetStatus is required");
         if (!source.canTransitionTo(target)) {
             throw new IllegalArgumentException("Season transition is not allowed");
+        }
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
+        if (!FarmScopeSql.lockWriteAuthorization(
+                jdbcTemplate, writeScope, writeScope.resourceId().orElse(null))) {
+            return Optional.empty();
         }
         String dateAssignments = target == Season.Status.ACTIVE
                 ? "started_on = ?, ended_on = NULL"
@@ -88,11 +98,11 @@ final class PostgresSeasonMutationStore {
         List<Object> parameters = new ArrayList<>(List.of(
                 target.name(),
                 Objects.requireNonNull(effectiveDate, "effectiveDate is required"),
-                requireScope(scope).tenantId(),
+                writeScope.tenantId(),
                 Objects.requireNonNull(seasonId, "seasonId is required"),
                 expectedVersion,
                 source.name()));
-        FarmScopeSql.append(sql, parameters, scope, scope.resourceId().orElse(null));
+        FarmScopeSql.append(sql, parameters, writeScope, writeScope.resourceId().orElse(null));
         sql.append(" RETURNING ").append(SeasonRowMapping.SELECT_COLUMNS);
         return SeasonRowMapping.exactlyOneOrEmpty(
                 jdbcTemplate.query(sql.toString(), SeasonRowMapping.MAPPER, parameters.toArray()));
@@ -142,10 +152,6 @@ final class PostgresSeasonMutationStore {
 
     private Object nullable(Object value, int sqlType) {
         return value == null ? new SqlParameterValue(sqlType, null) : value;
-    }
-
-    private ScopeContext requireScope(ScopeContext scope) {
-        return Objects.requireNonNull(scope, "scope is required");
     }
 
     private void requireVersion(long expectedVersion) {

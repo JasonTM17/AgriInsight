@@ -53,11 +53,11 @@ class SeasonMutationServiceTest {
         when(store.liveParentsAvailable(any(), any(), any(), any(), any())).thenReturn(true);
         when(store.create(any(), any(Season.class))).thenAnswer(invocation -> {
             Season created = invocation.getArgument(1);
-            return new SeasonRecord(
+            return Optional.of(new SeasonRecord(
                     created.id(), TENANT_ID, created.farmId(), created.fieldId(), created.cropId(),
                     created.code(), created.displayName(), created.varietyName(),
                     created.plannedStartDate(), created.plannedEndDate(), Optional.empty(), Optional.empty(),
-                    created.plantedAreaHectares(), created.budgetVnd(), Season.Status.PLANNED, 0);
+                    created.plantedAreaHectares(), created.budgetVnd(), Season.Status.PLANNED, 0));
         });
 
         SeasonRecord created = service.create(createCommand());

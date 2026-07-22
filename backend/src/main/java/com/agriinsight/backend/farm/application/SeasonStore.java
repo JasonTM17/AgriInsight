@@ -22,7 +22,7 @@ public interface SeasonStore {
             UUID cropId,
             BigDecimal plantedAreaHectares);
 
-    SeasonRecord create(ScopeContext scope, Season season);
+    Optional<SeasonRecord> create(ScopeContext scope, Season season);
 
     Optional<SeasonRecord> update(
             ScopeContext scope,

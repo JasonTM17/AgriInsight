@@ -18,7 +18,7 @@ public interface FieldStore {
             UUID farmId,
             Optional<UUID> responsibleEmployeeId);
 
-    FieldRecord create(ScopeContext scope, Field field);
+    Optional<FieldRecord> create(ScopeContext scope, Field field);
 
     Optional<FieldRecord> update(
             ScopeContext scope,

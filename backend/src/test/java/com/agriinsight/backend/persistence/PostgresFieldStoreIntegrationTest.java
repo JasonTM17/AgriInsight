@@ -76,10 +76,20 @@ class PostgresFieldStoreIntegrationTest {
                 assertThat(store.findById(listScope, UNASSIGNED_FIELD_ID)).isEmpty();
                 assertThat(store.farmVisible(listScope, FARM_ID)).isTrue();
                 assertThat(store.farmVisible(listScope, UNASSIGNED_FARM_ID)).isFalse();
+                ScopeContext unassignedScope = ScopeContext.domain(
+                        PRINCIPAL, ScopeContext.Type.FARM, Optional.of(UNASSIGNED_FARM_ID));
+                assertThat(store.create(
+                        unassignedScope,
+                        new Field(
+                                UUID.fromString("41000000-0000-0000-0000-000000000075"),
+                                TENANT_ID, UNASSIGNED_FARM_ID, "FIELD-HIDDEN", "Hidden Field",
+                                new BigDecimal("1"), Optional.empty(), Optional.empty(),
+                                Optional.empty(), Optional.empty())))
+                        .isEmpty();
                 assertThat(store.liveParentsAvailable(
                         farmScope, FARM_ID, Optional.of(EMPLOYEE_ID))).isTrue();
 
-                var created = store.create(farmScope, field());
+                var created = store.create(farmScope, field()).orElseThrow();
                 assertThat(created.coordinates()).isPresent();
                 assertThat(created.active()).isTrue();
 
@@ -104,7 +114,7 @@ class PostgresFieldStoreIntegrationTest {
 
                 ScopeContext tenantScope = ScopeContext.tenant(PRINCIPAL);
                 var tenantCreated = store.create(
-                        tenantScope, field(TENANT_FIELD_ID, "FIELD-TENANT"));
+                        tenantScope, field(TENANT_FIELD_ID, "FIELD-TENANT")).orElseThrow();
                 var tenantUpdate = new FieldCommands.Update(
                         Optional.empty(), Optional.of("Tenant Managed Field"),
                         Optional.empty(), Optional.empty(), Optional.empty(),
