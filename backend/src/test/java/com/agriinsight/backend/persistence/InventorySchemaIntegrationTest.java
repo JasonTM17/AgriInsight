@@ -166,6 +166,13 @@ class InventorySchemaIntegrationTest {
                     """)).anyMatch(line -> line.contains(
                             "ix_inventory_transactions_tenant_warehouse_occurred"));
             assertThat(explain(operator, """
+                    SELECT id FROM inventory_transactions
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                     ORDER BY occurred_at DESC, id DESC
+                     LIMIT 51
+                    """)).anyMatch(line -> line.contains(
+                            "ix_inventory_transactions_tenant_occurred"));
+            assertThat(explain(operator, """
                     SELECT id FROM stock_lots
                      WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
                        AND warehouse_id = '51000000-0000-0000-0000-000000000001'
@@ -174,6 +181,11 @@ class InventorySchemaIntegrationTest {
                      ORDER BY expiry_date, received_at, id
                     """)).anyMatch(line -> line.contains(
                             "ix_stock_lots_tenant_warehouse_material_fefo"));
+            assertThat(explain(operator, """
+                    SELECT id FROM stock_lots
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                     ORDER BY expiry_date, received_at, id
+                    """)).anyMatch(line -> line.contains("ix_stock_lots_tenant_fefo_all"));
         }
     }
 
