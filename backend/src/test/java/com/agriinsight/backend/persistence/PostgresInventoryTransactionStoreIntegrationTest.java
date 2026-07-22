@@ -3,6 +3,7 @@ import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixt
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertAllocations;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertBalance;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReadModels;
+import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReconciliationDetectsDrift;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
@@ -125,6 +126,8 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                     .isInstanceOf(ResourceStateConflictException.class)
                     .hasMessage("Reversal quantity exceeds remaining original quantity");
             assertThat(late.version()).isZero();
+            assertReconciliationDetectsDrift(
+                    harness, SCOPE, TENANT_ID, WAREHOUSE_ID, MATERIAL_ID);
         }
     }
 

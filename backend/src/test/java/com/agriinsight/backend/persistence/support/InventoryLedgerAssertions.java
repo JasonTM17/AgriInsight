@@ -8,6 +8,7 @@ import com.agriinsight.backend.inventory.application.StockBalanceQuery;
 import com.agriinsight.backend.inventory.application.StockLotQuery;
 import com.agriinsight.backend.inventory.domain.InventoryTransactionKind;
 import com.agriinsight.backend.inventory.infrastructure.PostgresInventoryReadStore;
+import com.agriinsight.backend.inventory.infrastructure.PostgresInventoryReconciliationStore;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -94,6 +95,38 @@ public final class InventoryLedgerAssertions {
                     Optional.of(LocalDate.parse("2026-02-01")), false));
             assertThat(expired.items()).extracting(item -> item.batchCode())
                     .containsExactly("EXPIRED");
+            return null;
+        });
+    }
+
+    public static void assertReconciliationDetectsDrift(
+            TenantTransactionTestHarness harness,
+            ScopeContext scope,
+            UUID tenantId,
+            UUID warehouseId,
+            UUID materialId) throws Throwable {
+        harness.withinTenant(() -> {
+            var store = new PostgresInventoryReconciliationStore(harness.jdbcTemplate());
+            var report = store.reconcile(scope);
+            assertThat(report.consistent()).isTrue();
+            assertThat(report.checkedLotCount()).isEqualTo(3);
+            assertThat(report.checkedBalanceCount()).isEqualTo(1);
+            return null;
+        });
+        harness.withinTenant(() -> {
+            harness.jdbcTemplate().update("""
+                    UPDATE stock_balances SET quantity_on_hand = 999
+                     WHERE tenant_id = ? AND warehouse_id = ? AND material_id = ?
+                    """, tenantId, warehouseId, materialId);
+            harness.jdbcTemplate().update("""
+                    UPDATE stock_lots SET available_quantity = available_quantity - 1
+                     WHERE tenant_id = ? AND warehouse_id = ? AND material_id = ?
+                       AND batch_code = 'EARLY'
+                    """, tenantId, warehouseId, materialId);
+            var report = new PostgresInventoryReconciliationStore(
+                    harness.jdbcTemplate()).reconcile(scope);
+            assertThat(report.lotDriftCount()).isEqualTo(1);
+            assertThat(report.balanceDriftCount()).isEqualTo(1);
             return null;
         });
     }
