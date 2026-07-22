@@ -39,6 +39,8 @@ class FarmLifecycleConcurrencyIntegrationTest {
     private static final UUID PROFILE_ID = UUID.fromString("41000000-0000-0000-0000-000000000005");
     private static final UUID FARM_ID = UUID.fromString("41000000-0000-0000-0000-000000000031");
     private static final UUID FIELD_ID = UUID.fromString("41000000-0000-0000-0000-000000000032");
+    private static final UUID PARENT_FIRST_FARM_ID = UUID.fromString("41000000-0000-0000-0000-000000000033");
+    private static final UUID PARENT_FIRST_FIELD_ID = UUID.fromString("41000000-0000-0000-0000-000000000034");
     private static final TenantPrincipal PRINCIPAL = new TestPrincipal();
     private static final ScopeContext TENANT_SCOPE = ScopeContext.tenant(PRINCIPAL);
 
@@ -91,6 +93,54 @@ class FarmLifecycleConcurrencyIntegrationTest {
         }
     }
 
+    @Test
+    void farmDeactivationFirstRejectsAWaitingLiveFieldInsert() throws Throwable {
+        try (TenantTransactionTestHarness setup = runtimeHarness()) {
+            authenticate();
+            setup.withinTenant(() -> {
+                new PostgresFarmStore(setup.jdbcTemplate()).create(
+                        TENANT_SCOPE,
+                        new Farm(PARENT_FIRST_FARM_ID, TENANT_ID, "RACE-PARENT-FIRST", "Parent First Farm"));
+                return null;
+            });
+        }
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (Connection deactivator = tenantRuntimeConnection(POSTGRESQL)) {
+            deactivateWithoutCommit(deactivator, PARENT_FIRST_FARM_ID);
+            CountDownLatch started = new CountDownLatch(1);
+            Future<Throwable> insert = executor.submit(() -> {
+                started.countDown();
+                try (Connection child = tenantRuntimeConnection(POSTGRESQL)) {
+                    try (var statement = child.prepareStatement("""
+                            INSERT INTO fields (
+                                id, tenant_id, farm_id, code, display_name, area_hectares)
+                            VALUES (?, ?, ?, 'RACE-PARENT-FIRST-FIELD', 'Parent First Field', 1.0000)
+                            """)) {
+                        statement.setObject(1, PARENT_FIRST_FIELD_ID);
+                        statement.setObject(2, TENANT_ID);
+                        statement.setObject(3, PARENT_FIRST_FARM_ID);
+                        statement.executeUpdate();
+                    }
+                    child.commit();
+                    return null;
+                } catch (Throwable exception) {
+                    return exception;
+                }
+            });
+            assertThat(started.await(2, TimeUnit.SECONDS)).isTrue();
+            assertThatThrownBy(() -> insert.get(500, TimeUnit.MILLISECONDS))
+                    .isInstanceOf(TimeoutException.class);
+
+            deactivator.commit();
+            Throwable failure = insert.get(10, TimeUnit.SECONDS);
+            assertThat(failure).isNotNull();
+            assertThat(failure).isInstanceOf(java.sql.SQLException.class);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
     private Optional<FarmRecord> deactivate(
             TenantTransactionTestHarness harness,
             CountDownLatch started) {
@@ -115,6 +165,17 @@ class FarmLifecycleConcurrencyIntegrationTest {
             statement.setObject(1, FIELD_ID);
             statement.setObject(2, TENANT_ID);
             statement.setObject(3, FARM_ID);
+            assertThat(statement.executeUpdate()).isEqualTo(1);
+        }
+    }
+
+    private void deactivateWithoutCommit(Connection connection, UUID farmId) throws Exception {
+        try (var statement = connection.prepareStatement("""
+                UPDATE farms
+                   SET active = FALSE, version = version + 1, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?
+                """)) {
+            statement.setObject(1, farmId);
             assertThat(statement.executeUpdate()).isEqualTo(1);
         }
     }
