@@ -97,6 +97,21 @@ public final class SqlTestResources {
         });
     }
 
+    public static Path copyMigrationsThroughV10() throws IOException {
+        return copyMigrations("phase-four-assignment-migrations-", new String[] {
+                "V1__create_tenant_anchor.sql",
+                "V2__create_identity_tables.sql",
+                "V3__seed_permissions_and_roles.sql",
+                "V4__add_tenant_security_and_idempotency.sql",
+                "V5__create_farm_and_operations_tables.sql",
+                "V6__add_farm_and_operations_rls_policies.sql",
+                "V7__serialize_farm_lifecycle_dependencies.sql",
+                "V8__serialize_field_crop_and_season_lifecycle.sql",
+                "V9__serialize_employee_lifecycle_dependencies.sql",
+                "V10__serialize_farm_assignment_profile_lifecycle.sql"
+        });
+    }
+
     private static Path copyMigrations(String prefix, String[] migrationFiles) throws IOException {
         Path root = projectRoot();
         Path target = Files.createTempDirectory(root.resolve("artifacts/_tmp"), prefix);
