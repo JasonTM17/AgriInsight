@@ -9,6 +9,7 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.runtimeConnection;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -142,5 +143,48 @@ class InventorySchemaIntegrationTest {
                         '10000000-0000-0000-0000-000000000041',
                         'not-canonical', 'Kho sai mã')
                 """);
+    }
+
+    @Test
+    void representativeInventoryQueriesUseTenantLeadingIndexes() throws Exception {
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            execute(operator, "SET enable_seqscan = off");
+            assertThat(explain(operator, """
+                    SELECT id FROM stock_balances
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND warehouse_id = '51000000-0000-0000-0000-000000000001'
+                       AND material_id = '52000000-0000-0000-0000-000000000001'
+                    """)).anyMatch(line -> line.contains(
+                            "Index Scan using ix_stock_balances_tenant_"));
+            assertThat(explain(operator, """
+                    SELECT id FROM inventory_transactions
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND warehouse_id = '51000000-0000-0000-0000-000000000001'
+                       AND occurred_at >= TIMESTAMPTZ '2027-01-01T00:00:00Z'
+                     ORDER BY occurred_at DESC, id
+                     LIMIT 51
+                    """)).anyMatch(line -> line.contains(
+                            "ix_inventory_transactions_tenant_warehouse_occurred"));
+            assertThat(explain(operator, """
+                    SELECT id FROM stock_lots
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND warehouse_id = '51000000-0000-0000-0000-000000000001'
+                       AND material_id = '52000000-0000-0000-0000-000000000001'
+                       AND available_quantity > 0
+                     ORDER BY expiry_date, received_at, id
+                    """)).anyMatch(line -> line.contains(
+                            "ix_stock_lots_tenant_warehouse_material_fefo"));
+        }
+    }
+
+    private List<String> explain(java.sql.Connection connection, String query) throws Exception {
+        List<String> plan = new ArrayList<>();
+        try (var statement = connection.createStatement();
+                var rows = statement.executeQuery("EXPLAIN (COSTS OFF) " + query)) {
+            while (rows.next()) {
+                plan.add(rows.getString(1));
+            }
+        }
+        return plan;
     }
 }
