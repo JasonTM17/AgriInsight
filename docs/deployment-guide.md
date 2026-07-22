@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide documents the verified local/runtime contracts through Backend Phase 3. It is not yet a production deployment runbook: domain phases 4-6 and Phase 7 release hardening remain required.
+This guide documents the verified local/runtime contracts through Backend Phase 4. It is not yet a production deployment runbook: domain phases 5-6 and Phase 7 release hardening remain required.
 
 ## Supported execution boundaries
 
@@ -40,7 +40,7 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current schema is Flyway V1-V7 plus repeatable least-privilege helpers/grants; application readiness expects schema version `7`. V7 audits all existing V6 farm dependencies before installing lifecycle triggers. Inconsistent live-child data aborts the migration, and transaction rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on every affected table.
+The current schema is Flyway V1-V11 plus repeatable least-privilege helpers/grants; application readiness expects schema version `11`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables.
 
 Required deployment inputs:
 
@@ -138,7 +138,6 @@ No registry push is authorized by a successful local build. Phase 7 must run pro
 
 ## Production blockers
 
-- Remaining Phase 4 activity/log/harvest APIs and worker/activity scopes; farm/field/crop/season, Employee, and farm-assignment routes are verified
 - Phase 5 inventory/procurement APIs and warehouse scopes
 - Phase 6 operating-cost ledger/reporting boundary
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership

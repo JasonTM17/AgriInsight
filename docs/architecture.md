@@ -133,7 +133,7 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Phase 1-3 đã được nghiệm thu bằng unit/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
+Phase 1-4 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
@@ -145,7 +145,8 @@ Phase 1-3 đã được nghiệm thu bằng unit/security/module test, PostgreSQ
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway V1-V4 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, 19 permissions và 7 fixed roles,
+- Flyway V1-V11 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest schema và lifecycle guards,
+- activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 
 | Plane | Storage owner | Không được ghi |
@@ -153,7 +154,7 @@ Phase 1-3 đã được nghiệm thu bằng unit/security/module test, PostgreSQ
 | Analytics | `artifacts/`, Gold CSV, SQLite warehouse | PostgreSQL operational state |
 | Backend | PostgreSQL + Flyway | `artifacts/`, manifest, Gold CSV, SQLite warehouse |
 
-Phase 3 đã đóng tenant authorization foundation và tenant-administration boundary, nhưng chưa phải production release của toàn sản phẩm. Business CRUD thuộc Phase 4-6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+Phase 4 đã đóng farm/season/workforce/activity/log/harvest boundary, nhưng chưa phải production release của toàn sản phẩm. Inventory và cost CRUD thuộc Phase 5-6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 
 ## Đường mở rộng
 

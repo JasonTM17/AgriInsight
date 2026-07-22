@@ -10,7 +10,7 @@ This roadmap reflects the current state of the repository, not an assumed releas
 | Backend phase 1 | Completed and regression-verified | Java 21 foundation, PostgreSQL/Flyway, probes, non-root image smoke |
 | Backend phase 2 | Completed and regression-verified | OIDC identity/security boundary, exact bootstrap, route inventory, local image smoke |
 | Backend phase 3 | Completed and regression-verified | Restricted roles, tenant RBAC/context, provisioning, FORCE RLS, idempotency, tenant administration |
-| Backend phase 4 | In progress | Farm/field/crop/season, Employee, and farm-assignment slices verified; activity, log, harvest, and worker-scope boundaries remain |
+| Backend phase 4 | Completed and regression-verified | Farm/season/workforce/activity/log/harvest APIs accepted 2026-07-22 |
 
 ## Next backend phases
 
@@ -19,14 +19,14 @@ This roadmap reflects the current state of the repository, not an assumed releas
 | Phase 1 | Backend foundation and contracts | Accepted 2026-07-19 |
 | Phase 2 | OIDC identity and security boundary | Accepted 2026-07-20 |
 | Phase 3 | Tenant RBAC and PostgreSQL RLS | Accepted 2026-07-20 |
-| Phase 4 | Farm, season, workforce, and activity APIs | In progress; masters plus farm assignments verified, activity/log/harvest open |
-| Phase 5 | Inventory and procurement APIs | Dependency unblocked; sequentially follows Phase 4 |
+| Phase 4 | Farm, season, workforce, and activity APIs | Accepted 2026-07-22 |
+| Phase 5 | Inventory and procurement APIs | Next backend implementation phase |
 | Phase 6 | Cost management and reporting boundary | Phases 4-5 accepted |
 | Phase 7 | Outbox operations and release hardening | Phases 4-6 accepted |
 
 ## Follow-on frontend
 
-The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, Work, Cost Analysis, and Inventory prototypes are ready for detailed planning. Backend phases 1-3 now stabilize the identity, tenant authorization, and tenant-administration OpenAPI boundary, so the CK FE planning/design track may proceed. Production screens that depend on farms, work, inventory, or cost mutations still wait for their Phase 4-6 APIs. See [design guidelines](./design-guidelines.md).
+The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, Work, Cost Analysis, and Inventory prototypes are ready for detailed planning. Backend phases 1-4 now stabilize identity, tenant authorization, farm/workforce operations, activity evidence, and harvest contracts. Inventory and cost mutation screens still wait for Phase 5-6 APIs. See [design guidelines](./design-guidelines.md).
 
 ## Deferred until later
 

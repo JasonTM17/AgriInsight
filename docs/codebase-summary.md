@@ -32,8 +32,8 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `identity.infrastructure` | OIDC validation, exact route registry, bounded PostgreSQL user/identity/principal stores |
 | `authorization` | Fixed roles/permissions, scope evaluation, tenant transaction aspect, role lifecycle, audit publishers |
 | `farm` | Scoped farm/field/crop/season reads/commands plus tenant-admin farm-assignment history and lifecycle |
-| `operations` | Tenant employee master lifecycle, redacted assignment picker, audit-backed HTTP commands, PostgreSQL persistence |
-| `db/migration` | V1-V4 foundation/identity/authorization; V5-V8 farm master data; V9 employee and V10 farm-assignment lifecycle serialization; repeatable least-privilege helpers/grants |
+| `operations` | Employee master/picker, scoped activities and assignments, immutable task logs/corrections, harvest reads/posts/corrections |
+| `db/migration` | V1-V4 foundation/identity/authorization; V5-V10 farm/workforce lifecycle; V11 activity-season serialization; repeatable least-privilege helpers/grants |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted legacy ownership adoption, operator first-admin provisioning |
 
 Phase 2 validates external JWT signature/algorithm, issuer, API audience, expiration/not-before, subject, and access-token discriminator. Phase 3 resolves exact `(issuer, subject)`, loads the active internal profile plus database roles/permissions under tenant context, and discards the raw JWT. JWT roles and tenant claims remain ignored for authorization.
@@ -52,6 +52,8 @@ Phase 2 validates external JWT signature/algorithm, issuer, API audience, expira
 - Season routes: `GET/POST /api/v1/seasons`, `GET/PATCH /api/v1/seasons/{id}`, and `POST /api/v1/seasons/{id}/transition`
 - Employee routes: bounded full master reads, redacted active picker, create/update, and deactivate/reactivate below `/api/v1/employees`
 - Farm assignments: tenant-admin `POST /api/v1/farm-assignments` and versioned `POST /api/v1/farm-assignments/{id}/revoke`
+- Activities: bounded list/detail, create/update/transition, assignment grant/revoke, and immutable log/correction routes below `/api/v1/activities`
+- Harvests: bounded list/detail plus normalized append/correction routes below `/api/v1/harvests`
 - Development-only when explicitly enabled: OpenAPI/Swagger metadata
 - All unregistered routes: denied
 
@@ -59,20 +61,21 @@ Phase 2 validates external JWT signature/algorithm, issuer, API audience, expira
 
 ## Verification snapshot
 
-- Backend: latest full pre-workforce `mvn verify` baseline PASS on 2026-07-22; the current employee/farm-assignment combined gate adds 53 unit/HTTP and 20 integration cases with zero failures/errors/skips. Full current regression rerun remains required before Phase 4 acceptance.
-- Migrations: V1-V10 plus repeatable grants apply/validate on fresh and allowlisted upgrade databases; inconsistent V8/V9 lifecycle upgrades fail closed.
+- Backend: full guarded `mvn verify` PASS on 2026-07-22: 353 unit/HTTP/security/module tests plus 77 PostgreSQL integration tests, 430 total with zero failures/errors/skips.
+- Migrations: V1-V11 plus repeatable grants apply/validate on fresh and allowlisted upgrade databases; inconsistent lifecycle upgrades fail closed.
 - Isolation: missing/invalid tenant, cross-tenant read/write, `WITH CHECK`, pooled-connection reset, role attributes, function grants, and policy catalog PASS.
 - Commands: same-key concurrency, rollback retry, response-loss replay, changed path/`If-Match` conflict, actor binding, and no sensitive snapshot PASS.
 - Administration: user/identity/role lifecycle, exact routes, bounded query counts, last-admin invariant, durable success/conflict/denial audit PASS.
 - Farm master data: assignment-aware reads/updates, tenant-wide Field create/lifecycle, Crop/Season tenant scope, HTTP/ETag/idempotency contracts, schema-length validation, scoped-write locking, and READ_COMMITTED parent/child lifecycle serialization PASS.
 - Workforce and farm assignment: full employee master versus redacted picker separation, V9 responsibility guards, append-preserved farm grants, V10 profile guards, exact routes, idempotent replay, and both concurrency orders PASS.
+- Activities and harvests: manager/worker scope resolution, task lifecycle, append-preserved assignment history, immutable evidence/corrections, normalized harvest facts, exact route permissions, bounded pagination, and assignment revocation effects PASS.
 - Local image: non-root UID/GID `10001`, liveness/readiness/fail-closed smoke PASS.
 - Analytics: 65 tests PASS, 3 expected optional-PDF skips; compileall, Node syntax, Compose config, and wheel PASS.
 - Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; heavy work requires both PASS.
 
 ## Next boundary
 
-Phase 3 is accepted. Phase 4 is in progress: farm/field/crop/season, Employee, and tenant-admin farm-assignment boundaries are verified. Activities, activity assignments, immutable logs/corrections, harvest APIs, and worker/activity scope resolution remain open. Phase 5 is dependency-unblocked but remains after Phase 4 by default. Release CI, scans, SBOM/provenance, GitHub packages, and Docker Hub publication remain Phase 7.
+Phases 1-4 are accepted. Phase 5 inventory/procurement is the next backend boundary, followed by Phase 6 cost management. Release CI, scans, SBOM/provenance, GitHub Packages, and Docker Hub publication remain Phase 7.
 
 ## Unresolved Questions
 

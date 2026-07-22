@@ -43,7 +43,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V10 migrations, including serialized Field/Crop/Season, Employee, and farm-assignment lifecycle guards
+- liveness/readiness split and Flyway V1-V11 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, and activity-season lifecycle guards
 
 ```mermaid
 flowchart LR
@@ -69,6 +69,8 @@ The farm/field/crop/season master-data slice uses the same boundary for assignme
 
 Employee full-master access is tenant-wide, while `WORKFORCE_PICKER_READ` returns a redacted active-only projection. V9 locks active employee parents for live field/activity responsibility and blocks deactivation until dependencies close. Farm grants are append-preserved rows: revoke increments the version and never deletes/reactivates history; re-grant creates a new row. V10 locks the active profile during grant and rejects profile deactivation while an active farm assignment exists, covering both concurrency orders.
 
+Activities use tenant, assigned-farm manager, or assigned-worker scope before paging. Task transitions and metadata updates are versioned; assignment revoke preserves history. Activity evidence is append-only, accepts bounded URI metadata without fetching it, and represents corrections as linked rows. V11 serializes live activity and season transitions. Harvest facts are also append-only, normalize KG/TONNE to kg at the API boundary, and keep correction lineage without introducing Phase 6 operating costs.
+
 ## Boundaries
 
 | Plane | Owns | Does not own |
@@ -84,9 +86,9 @@ Employee full-master access is tenant-wide, while `WORKFORCE_PICKER_READ` return
 | Backend phase 1 foundation | Accepted 2026-07-19 |
 | Backend phase 2 OIDC identity | Accepted 2026-07-20 |
 | Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; current backend regression gate remains green |
-| Tenant administration | Exact user/role/farm-assignment mutation routes verified; activity administration remains Phase 4 |
-| Farm and workforce masters | Farm/field/crop/season plus Employee and farm-assignment boundaries verified; activity/log/harvest remain open |
+| Tenant administration | Exact user/role/farm-assignment mutation routes verified |
+| Backend phase 4 operations | Accepted 2026-07-22; farm/season/workforce/activity/log/harvest gates green |
 | Docker Hub publication | Not yet claimed |
 | Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
 
-The right way to read the repo is: analytics is live today; backend identity, tenant authorization, farm master data, Employee, and farm-assignment commands are locally verified; remaining activity/log/harvest work, inventory, cost, outbox, and release publication remain sequential gates. Phase 3 acceptance and partial Phase 4 progress are not a full production-release claim.
+The right way to read the repo is: analytics and backend phases 1-4 are locally verified. Inventory, cost, outbox, production identity operations, and release publication remain sequential gates, so Phase 4 acceptance is not a full production-release claim.

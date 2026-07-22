@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Farm season workforce and activity APIs"
-status: in-progress
+status: completed
 priority: P1
 effort: "2-3d"
 dependencies: [3]
@@ -13,9 +13,9 @@ dependencies: [3]
 
 Add the operational farm hierarchy and field-work records: farms, fields, crops, seasons, employees, activities, assignments, and harvests. Every command uses the phase-3 scope/transaction boundary and has no analytics-file side effects.
 
-Current progress (2026-07-22): the operations schema through V10, FORCE RLS, permission-aware farm core, versioned farm/field/crop/season masters, Employee lifecycle/redacted picker, and tenant-admin farm-assignment grant/revoke are implemented and verified. Assignment locking, idempotent replay, parent visibility-before-claim, tenant-wide Field writes, schema-aligned validation, and parent/child/profile/employee lifecycle serialization are covered by focused tests. This phase remains in progress until activity, activity-assignment, log, harvest, and worker-scope boundaries meet every success criterion below.
+Completed 2026-07-22. Farm/field/crop/season, Employee, farm/activity assignments, task lifecycle, immutable activity logs/corrections, harvest reads/posts/corrections, manager/worker scope, FORCE RLS, idempotency, audit, and lifecycle serialization are implemented and regression-verified.
 
-Gate evidence: [Phase 4 master-data production review](./reports/reviewer-2026-07-22-phase4-master-data.md) and [workforce/assignment production review](./reports/reviewer-2026-07-22-phase4-workforce-assignments.md).
+Gate evidence: [master-data review](./reports/reviewer-2026-07-22-phase4-master-data.md), [workforce/assignment review](./reports/reviewer-2026-07-22-phase4-workforce-assignments.md), [operations review](./reports/reviewer-2026-07-22-phase4-operations.md), and [Phase 4 acceptance](./reports/acceptance-2026-07-22-backend-phase4.md).
 
 ## Requirements
 
@@ -80,20 +80,15 @@ Implemented and verified in the current master-data slice:
 - `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmLifecycleHttpContractTest.java`
 - `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\FarmLifecycleConcurrencyIntegrationTest.java`
 
-Remaining planned Phase 4 boundaries:
+Implemented activity and harvest boundaries:
 
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityLogController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\HarvestController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityLogService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\HarvestService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityAssignment.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityStatus.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\domain\ActivityLog.java`
-- Create focused field/crop/season HTTP contract tests under `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\`.
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\ActivityAuthorizationTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\operations\OperationDatabaseTests.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityRoutes.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityLogController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\HarvestRoutes.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityLogService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\HarvestService.java`
+- PostgreSQL stores and focused domain/application/HTTP/integration tests under the matching `operations` and `persistence` packages.
 
 ## Implementation Steps (TDD: red -> green -> refactor)
 
@@ -127,22 +122,22 @@ Remaining planned Phase 4 boundaries:
 
 ## Success Criteria
 
-- [ ] Farm/field/crop/season/employee/activity/log/harvest APIs are versioned and documented; a worker can only append logs to an assigned task.
-- [ ] Manager is limited to assigned farms, worker to assigned activities, executive/analyst to permitted tenant data, supplier to no finance.
-- [ ] Parent/child tenant and date/status invariants hold at API and DB layers.
-- [ ] Farm/activity assignments have real tenant-safe FKs; grant/revoke is admin-only and immediately changes scoped queries.
-- [ ] Optimistic locking and correction/reversal prevent silent fact loss.
-- [ ] Optional season budget is nonnegative and available to phase-6 variance queries without becoming an operating-cost fact.
-- [ ] Pagination/query plans are bounded and no N+1 appears in focused tests.
-- [ ] Every new table has tenant RLS, indexes, and migration tests.
-- [ ] Backend tests never write existing analytics artifacts.
+- [x] Farm/field/crop/season/employee/activity/log/harvest APIs are versioned and documented; a worker can only append logs to an assigned task.
+- [x] Manager is limited to assigned farms, worker to assigned activities, executive/analyst to permitted tenant data, supplier to no finance.
+- [x] Parent/child tenant and date/status invariants hold at API and DB layers.
+- [x] Farm/activity assignments have real tenant-safe FKs; grant/revoke is admin-only and immediately changes scoped queries.
+- [x] Optimistic locking and correction/reversal prevent silent fact loss.
+- [x] Optional season budget is nonnegative and available to phase-6 variance queries without becoming an operating-cost fact.
+- [x] Pagination/query plans are bounded and no N+1 appears in focused tests.
+- [x] Every new table has tenant RLS, indexes, and migration tests.
+- [x] Backend tests never write existing analytics artifacts.
 
 ### Verified in the current slice
 
 - [x] Farm/field/crop/season master routes use versioned HTTP contracts, idempotency, ETag/If-Match, bounded reads, and safe ProblemDetail errors.
 - [x] Field/Crop/Season parent and tenant invariants are enforced by both application predicates and V5–V8 PostgreSQL constraints/triggers.
 - [x] FARM-scoped writes lock active assignments through commit; tenant-wide administrator writes remain supported where the permission matrix allows them.
-- [x] Current master-data, Employee, and farm-assignment unit/HTTP/migration/persistence/RLS/concurrency gates pass; activity/log/harvest and worker-scope criteria remain open.
+- [x] Master-data, workforce, activity/log, harvest, RLS, concurrency, module, and full regression gates pass.
 - [x] Employee full-master and redacted-picker contracts, active-responsibility lifecycle guards, and V9 upgrade safety pass.
 - [x] Tenant-admin farm grant/revoke is tenant-safe, append-preserved, idempotent, versioned, and serialized with profile/farm lifecycle through V10.
 
