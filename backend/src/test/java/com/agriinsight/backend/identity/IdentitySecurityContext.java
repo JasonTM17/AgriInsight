@@ -32,6 +32,8 @@ import com.agriinsight.backend.inventory.application.SupplierCommandService;
 import com.agriinsight.backend.inventory.application.SupplierService;
 import com.agriinsight.backend.inventory.application.WarehouseAssignmentCommandService;
 import com.agriinsight.backend.inventory.application.WarehouseAssignmentService;
+import com.agriinsight.backend.inventory.application.InventoryReadService;
+import com.agriinsight.backend.inventory.application.InventoryTransactionCommandService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -98,7 +100,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         SupplierService.class,
         SupplierCommandService.class,
         WarehouseAssignmentService.class,
-        WarehouseAssignmentCommandService.class
+        WarehouseAssignmentCommandService.class,
+        InventoryReadService.class,
+        InventoryTransactionCommandService.class
 })
 public @interface IdentitySecurityContext {
 }
