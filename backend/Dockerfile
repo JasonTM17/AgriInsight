@@ -14,7 +14,7 @@ RUN chmod +x mvnw \
 COPY src/ src/
 RUN ./mvnw -Dmaven.repo.local=/tmp/m2-repository -DskipTests package
 
-FROM eclipse-temurin:21-jre-ubi9-minimal@sha256:8f0256344f5334fb7e01cef4e1f2592fa9acfaf29d4da5b5389ef01bd586a0b2
+FROM eclipse-temurin:21-jre-noble@sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64
 
 ARG OCI_SOURCE="https://github.com/JasonTM17/AgriInsight"
 ARG OCI_REVISION="unknown"
