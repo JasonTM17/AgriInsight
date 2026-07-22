@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AgriInsight - Tổng quan hệ thống</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#005323",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#00210a",
+                        "on-secondary-container": "#734400",
+                        "inverse-on-surface": "#e0f6e3",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#d3ffd5",
+                        "secondary-container": "#ffb157",
+                        "surface-dim": "#cae0cd",
+                        "primary-fixed-dim": "#79db8d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#3f493f",
+                        "primary-fixed": "#95f8a7",
+                        "tertiary-fixed": "#b1f2be",
+                        "primary-container": "#15803d",
+                        "secondary-fixed": "#ffdcbc",
+                        "secondary-fixed-dim": "#ffb86a",
+                        "tertiary-fixed-dim": "#96d5a3",
+                        "primary": "#00652c",
+                        "on-tertiary-fixed-variant": "#12512c",
+                        "outline": "#6f7a6e",
+                        "background": "#e9ffec",
+                        "surface-tint": "#006d30",
+                        "tertiary-container": "#3f7b51",
+                        "on-tertiary-container": "#d0ffd7",
+                        "inverse-surface": "#223428",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#becabc",
+                        "on-surface": "#0d1f14",
+                        "surface-bright": "#e9ffec",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#25623a",
+                        "surface-container-high": "#d8eedb",
+                        "surface-variant": "#d2e8d5",
+                        "on-secondary-fixed-variant": "#683d00",
+                        "inverse-primary": "#79db8d",
+                        "error": "#ba1a1a",
+                        "surface-container": "#ddf4e0",
+                        "on-background": "#0d1f14",
+                        "on-secondary-fixed": "#2c1700",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#895200",
+                        "surface-container-highest": "#d2e8d5",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#00210d",
+                        "surface": "#e9ffec",
+                        "surface-container-low": "#e3f9e6",
+                        "ledger-border": "#DCE7DF",
+                        "ledger-bg": "#F7FAF8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "8px",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "density-sm": "8px",
+                        "density-md": "12px",
+                        "unit": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "headline-md": ["Be Vietnam Pro"],
+                        "data-mono": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "label-caps": ["Be Vietnam Pro"],
+                        "headline-sm": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "data-mono": ["14px", {"lineHeight": "22px", "fontWeight": "500"}],
+                        "headline-lg": ["30px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #F7FAF8;
+            color: #0d1f14;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .topographic-bg {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 100 Q 25 75 50 100 T 100 100' fill='none' stroke='%23DCE7DF' stroke-width='0.5'/%3E%3Cpath d='M0 80 Q 25 55 50 80 T 100 80' fill='none' stroke='%23DCE7DF' stroke-width='0.5'/%3E%3Cpath d='M0 60 Q 25 35 50 60 T 100 60' fill='none' stroke='%23DCE7DF' stroke-width='0.5'/%3E%3C/svg%3E");
+            background-size: 400px;
+        }
+        .ledger-line {
+            position: relative;
+        }
+        .ledger-line::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #DCE7DF;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+<!-- Shell Layout -->
+<div class="flex h-screen w-full">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface flex flex-col border-r border-outline-variant z-50">
+<div class="p-6 ledger-line">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">agriculture</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">AgriInsight</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Hệ thống Vận hành</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto py-4 hide-scrollbar">
+<div class="px-4 py-2 text-label-caps font-label-caps text-on-surface-variant opacity-50">DANH MỤC CHÍNH</div>
+<a class="flex items-center gap-3 px-4 py-3 border-l-4 border-primary text-primary font-bold bg-primary-container/10 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md">Tổng quan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">agriculture</span>
+<span class="font-body-md text-body-md">Nông trại</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Công việc</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-md text-body-md">Tồn kho</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-body-md text-body-md">Chi phí</span>
+</a>
+<div class="mt-4 px-4 py-2 text-label-caps font-label-caps text-on-surface-variant opacity-50">PHÂN TÍCH &amp; DỮ LIỆU</div>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-body-md text-body-md">Sức khỏe cây trồng</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="font-body-md text-body-md">Chất lượng dữ liệu</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Quản trị</span>
+</a>
+</nav>
+<div class="p-4 border-t border-outline-variant bg-surface-container-low">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged Vietnamese agricultural analyst in a clean office setting, looking friendly and authoritative. The lighting is soft and natural, emphasizing a high-end corporate aesthetic with a subtle green-tinted color palette to match the AgriInsight brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4TQ3WAencJwpHr8J8Av7Q-50BSbvj_O4TG2Z9hby45NtztE0cgwFGxp25jzieiS5RtcAHJ77cpPNYs1K0i3tDrFILFIggv1SJyZkuCIY0ZUTpUyv6ZpeKEx31MinAvty6wFGj5YnvWsUIUkaDJ0gVWrMbWuC0q-EO_r6wSkrxWWmZbKs74-TV46Ea9CAzMB5Uqll4psTuk6vBYg4njqpb7KI-VDX-A-i6el8XG3epAx8jRQYdj0CM6qvdKuGRqRqaPvdvSFsdtcY"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-md text-body-md font-bold truncate">Lê Minh Quân</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Quản trị hệ thống</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Workspace -->
+<main class="ml-[280px] flex-1 flex flex-col min-w-0 bg-background topographic-bg">
+<!-- TopAppBar -->
+<header class="h-16 flex justify-between items-center px-8 bg-surface/80 backdrop-blur-md border-b border-outline-variant sticky top-0 z-40">
+<div class="flex items-center gap-6">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Tổng quan hệ thống</h2>
+<div class="flex items-center gap-2 px-3 py-1 bg-primary-container/10 rounded-full">
+<span class="material-symbols-outlined text-[18px] text-primary">calendar_today</span>
+<span class="font-body-sm text-body-sm font-bold text-primary">Vụ cà phê 2026</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">sync</span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-on-surface-variant">LỰC LƯỢNG TRỰC: 24/7</span>
+<div class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></div>
+</div>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-8 space-y-6">
+<!-- KPI Header Grid -->
+<div class="grid grid-cols-5 gap-0 bg-white border border-ledger-border rounded-lg overflow-hidden shadow-sm divide-x divide-ledger-border">
+<div class="p-6">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">TỔNG DOANH THU</p>
+<div class="flex items-baseline gap-1">
+<span class="font-data-mono text-headline-md font-bold tabular-nums">2,37</span>
+<span class="font-body-md text-body-md text-on-surface-variant">tỷ VND</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="font-body-sm text-body-sm font-bold">+12.4%</span>
+</div>
+</div>
+<div class="p-6">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">CHI PHÍ VẬN HÀNH</p>
+<div class="flex items-baseline gap-1">
+<span class="font-data-mono text-headline-md font-bold tabular-nums">1,12</span>
+<span class="font-body-md text-body-md text-on-surface-variant">tỷ VND</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-on-surface-variant">
+<span class="font-body-sm text-body-sm">47% ngân sách</span>
+</div>
+</div>
+<div class="p-6">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">LỢI NHUẬN RÒNG</p>
+<div class="flex items-baseline gap-1">
+<span class="font-data-mono text-headline-md font-bold tabular-nums">1,25</span>
+<span class="font-body-md text-body-md text-on-surface-variant">tỷ VND</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]">payments</span>
+<span class="font-body-sm text-body-sm font-bold">52.7% Margin</span>
+</div>
+</div>
+<div class="p-6">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">TỔNG SẢN LƯỢNG</p>
+<div class="flex items-baseline gap-1">
+<span class="font-data-mono text-headline-md font-bold tabular-nums">18.742</span>
+<span class="font-body-md text-body-md text-on-surface-variant">tấn</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[16px]">coffee</span>
+<span class="font-body-sm text-body-sm font-bold">Cà phê Arabica</span>
+</div>
+</div>
+<div class="p-6 bg-error-container/10">
+<p class="font-label-caps text-label-caps text-error mb-1">RỦI RO VẬN HÀNH</p>
+<div class="flex items-baseline gap-1">
+<span class="font-data-mono text-headline-md font-bold text-error tabular-nums">04</span>
+<span class="font-body-md text-body-md text-error">cảnh báo</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-error">
+<span class="material-symbols-outlined text-[16px]">report_problem</span>
+<span class="font-body-sm text-body-sm font-bold">Mức độ: Trung bình</span>
+</div>
+</div>
+</div>
+<!-- Seasonal Trend Section -->
+<div class="grid grid-cols-12 gap-6 h-[400px]">
+<!-- Main Chart -->
+<div class="col-span-8 bg-white border border-ledger-border rounded-lg p-6 flex flex-col">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold">Xu hướng mùa vụ 2026</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Tiến độ thu hoạch và dự báo sản lượng theo tháng</p>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container rounded font-label-caps text-[10px] flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span> THỰC TẾ
+                                </span>
+<span class="px-2 py-1 bg-surface-container rounded font-label-caps text-[10px] flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-outline"></span> DỰ BÁO
+                                </span>
+</div>
+</div>
+<div class="flex-1 relative w-full border-l border-b border-ledger-border">
+<!-- Visual placeholder for chart lines -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0 80 L10 75 L20 85 L30 65 L40 55 L50 45 L60 35 L70 30" fill="none" stroke="#15803D" stroke-width="2"></path>
+<path d="M70 30 L80 25 L90 28 L100 20" fill="none" stroke="#15803D" stroke-dasharray="4" stroke-width="2"></path>
+<path d="M0 90 L20 88 L40 82 L60 78 L80 75 L100 70" fill="none" stroke="#6f7a6e" stroke-dasharray="2" stroke-width="1"></path>
+</svg>
+<div class="absolute bottom-0 left-0 w-full flex justify-between px-2 pt-2 translate-y-full">
+<span class="text-[10px] font-label-caps opacity-50">T1</span>
+<span class="text-[10px] font-label-caps opacity-50">T2</span>
+<span class="text-[10px] font-label-caps opacity-50">T3</span>
+<span class="text-[10px] font-label-caps opacity-50">T4</span>
+<span class="text-[10px] font-label-caps opacity-50">T5</span>
+<span class="text-[10px] font-label-caps opacity-50">T6</span>
+<span class="text-[10px] font-label-caps opacity-50">T7</span>
+<span class="text-[10px] font-label-caps opacity-50">T8</span>
+</div>
+</div>
+</div>
+<!-- Narrative Summary -->
+<div class="col-span-4 bg-primary text-on-primary rounded-lg p-6 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold mb-4">Báo cáo tóm lược</h3>
+<div class="space-y-4">
+<div class="pb-4 border-b border-on-primary/20">
+<p class="font-body-md text-body-md leading-relaxed">
+                                        Tiến độ thu hoạch đạt <span class="font-bold underline text-primary-fixed">65%</span>, cao hơn <span class="font-bold">5%</span> so với cùng kỳ năm ngoái nhờ thời tiết thuận lợi tại khu vực Tây Nguyên.
+                                    </p>
+</div>
+<div>
+<p class="font-body-md text-body-md leading-relaxed">
+                                        Chỉ số sức khỏe cây trồng (NDVI) trung bình đạt <span class="font-bold">0.78</span>. Các lô phía Bắc đang cho tín hiệu chín sớm hơn dự kiến 12 ngày.
+                                    </p>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary-fixed text-on-primary-fixed font-bold rounded-lg hover:bg-primary-fixed-dim transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">description</span>
+<span>Xem báo cáo chi tiết</span>
+</button>
+</div>
+</div>
+<!-- Middle Row: Farm Ranking & Profit Bridge -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Farm Ranking -->
+<div class="col-span-7 bg-white border border-ledger-border rounded-lg p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-caps text-label-caps font-bold">XẾP HẠNG HIỆU SUẤT NÔNG TRẠI</h3>
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+</div>
+<div class="space-y-5">
+<div class="space-y-1">
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-bold">Nông trại Đắk Lắk (Trung tâm)</span>
+<span class="tabular-nums font-data-mono">8,452 tấn</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%] rounded-full"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-bold">Lô A-12 (Ea H'leo)</span>
+<span class="tabular-nums font-data-mono">4,120 tấn</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[62%] rounded-full"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-bold">Lô B-04 (Gia Lai)</span>
+<span class="tabular-nums font-data-mono">3,890 tấn</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[58%] rounded-full"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="font-bold">Khu vực Nam Buôn Ma Thuột</span>
+<span class="tabular-nums font-data-mono">2,280 tấn</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[34%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Profit Bridge Chart Area -->
+<div class="col-span-5 bg-white border border-ledger-border rounded-lg p-6">
+<h3 class="font-label-caps text-label-caps font-bold mb-6">BIẾN ĐỘNG LỢI NHUẬN (PROFIT BRIDGE)</h3>
+<div class="h-[180px] flex items-end justify-between gap-2 border-b border-ledger-border pb-2">
+<div class="w-12 bg-primary/20 h-[120px] relative group" title="Doanh thu">
+<div class="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold">+2.37</div>
+</div>
+<div class="w-12 bg-error/40 h-[60px] relative" title="Giá vốn">
+<div class="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold">-0.82</div>
+</div>
+<div class="w-12 bg-error/40 h-[20px] relative" title="Vận chuyển">
+<div class="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold">-0.15</div>
+</div>
+<div class="w-12 bg-error/40 h-[15px] relative" title="Khác">
+<div class="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold">-0.15</div>
+</div>
+<div class="w-12 bg-primary h-[80px] relative" title="Lợi nhuận ròng">
+<div class="absolute -top-6 left-0 right-0 text-center text-[10px] font-bold text-primary">1.25</div>
+</div>
+</div>
+<div class="mt-4 grid grid-cols-5 gap-1 text-[9px] font-label-caps text-center opacity-70">
+<span>DOANH THU</span>
+<span>GIÁ VỐN</span>
+<span>VẬN TẢI</span>
+<span>KHÁC</span>
+<span>RÒNG</span>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Evidence-backed Insight Queue -->
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                            Gợi ý hành động thông minh
+                        </h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant italic">Cập nhật lúc 09:45 hôm nay</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Insight 1 -->
+<div class="bg-white border-l-4 border-l-error border border-ledger-border rounded-lg p-5 flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-error-container/20 rounded flex items-center justify-center text-error flex-shrink-0">
+<span class="material-symbols-outlined text-[32px]">bug_report</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-body-lg text-body-lg font-bold">Phát hiện sâu bệnh tại Lô B-3</h4>
+<span class="px-2 py-0.5 bg-error text-on-error rounded font-label-caps text-[10px]">KHẨN CẤP</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">
+                                    Hệ thống AI nhận diện dấu hiệu của rệp sáp trên 15% diện tích cây trồng. Cần triển khai phun thuốc cục bộ trong 24h tới để tránh lây lan.
+                                </p>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-primary text-on-primary rounded font-bold text-body-sm hover:bg-primary-container transition-colors">Triển khai đội kỹ thuật</button>
+<button class="px-4 py-2 border border-ledger-border rounded font-bold text-body-sm hover:bg-surface-container-low transition-colors">Xem ảnh vệ tinh</button>
+</div>
+</div>
+</div>
+<!-- Insight 2 -->
+<div class="bg-white border-l-4 border-l-secondary border border-ledger-border rounded-lg p-5 flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-secondary-container/20 rounded flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[32px]">science</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-body-lg text-body-lg font-bold">Cần bổ sung phân bón khu vực phía Nam</h4>
+<span class="px-2 py-0.5 bg-secondary text-on-secondary rounded font-label-caps text-[10px]">ĐỀ XUẤT</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">
+                                    Phân tích cảm biến đất cho thấy hàm lượng Nitơ đang ở mức thấp (2.1%). Đề xuất bổ sung NPK tỷ lệ 16-16-8 để đảm bảo năng suất cuối vụ.
+                                </p>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-primary text-on-primary rounded font-bold text-body-sm hover:bg-primary-container transition-colors">Tạo lệnh mua vật tư</button>
+<button class="px-4 py-2 border border-ledger-border rounded font-bold text-body-sm hover:bg-surface-container-low transition-colors">Chi tiết báo cáo đất</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Simple hover effect for table rows/cards
+            const cards = document.querySelectorAll('.bg-white');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.borderColor = '#15803D';
+                    card.style.transition = 'border-color 0.3s ease';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.borderColor = '#DCE7DF';
+                });
+            });
+
+            // Tabular data animation simulation
+            const animateNumbers = () => {
+                const numbers = document.querySelectorAll('.font-data-mono');
+                numbers.forEach(num => {
+                    num.classList.add('transition-opacity', 'duration-500');
+                    // In a real app, we would update values here
+                });
+            };
+            setInterval(animateNumbers, 30000); // Pulse effect every 30s
+        });
+    </script>
+</body></html>
