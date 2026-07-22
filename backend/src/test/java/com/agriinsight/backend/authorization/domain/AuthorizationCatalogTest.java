@@ -18,6 +18,12 @@ class AuthorizationCatalogTest {
         assertThat(Role.DATA_ANALYST.grants(Permission.FARM_MANAGE)).isFalse();
         assertThat(Role.FARM_MANAGER.tenantWide()).isFalse();
         assertThat(Role.FARM_MANAGER.grants(Permission.FARM_MANAGE)).isTrue();
+        assertThat(Role.FARM_MANAGER.grants(Permission.COST_READ)).isTrue();
+        assertThat(Role.FARM_MANAGER.grants(Permission.COST_MANAGE)).isFalse();
+        assertThat(Role.EXECUTIVE.grants(Permission.COST_READ)).isTrue();
+        assertThat(Role.DATA_ANALYST.grants(Permission.COST_READ)).isTrue();
+        assertThat(Role.INVENTORY_MANAGER.grants(Permission.COST_READ)).isFalse();
+        assertThat(Role.INVENTORY_MANAGER.grants(Permission.COST_MANAGE)).isFalse();
         assertThat(Role.SUPPLIER.permissions()).isEmpty();
     }
 }
