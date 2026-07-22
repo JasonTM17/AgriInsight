@@ -7,9 +7,9 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.execute;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.operatorConnection;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.runtimeConnection;
+import static com.agriinsight.backend.persistence.support.InventoryQueryPlanTestSupport.explain;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -206,16 +206,5 @@ class InventorySchemaIntegrationTest {
                      ORDER BY expiry_date, received_at, id
                     """)).anyMatch(line -> line.contains("ix_stock_lots_tenant_fefo_all"));
         }
-    }
-
-    private List<String> explain(java.sql.Connection connection, String query) throws Exception {
-        List<String> plan = new ArrayList<>();
-        try (var statement = connection.createStatement();
-                var rows = statement.executeQuery("EXPLAIN (COSTS OFF) " + query)) {
-            while (rows.next()) {
-                plan.add(rows.getString(1));
-            }
-        }
-        return plan;
     }
 }

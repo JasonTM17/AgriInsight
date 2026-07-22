@@ -6,6 +6,8 @@ import static com.agriinsight.backend.persistence.support.InventoryLedgerAsserti
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertExplicitLotSelection;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReadModels;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReconciliationDetectsDrift;
+import static com.agriinsight.backend.persistence.support.InventoryTransactionTestFixtures.createCatalog;
+import static com.agriinsight.backend.persistence.support.InventoryTransactionTestFixtures.setWarehouseActive;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
@@ -82,7 +84,8 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                 POSTGRESQL, "agriinsight")) {
             PostgresInventoryTransactionStore store =
                     new PostgresInventoryTransactionStore(harness.jdbcTemplate());
-            createCatalog(harness);
+            createCatalog(
+                    harness, TENANT_ID, PROFILE_ID, WAREHOUSE_ID, MATERIAL_ID, SUPPLIER_ID);
 
             InventoryTransactionRecord late = post(harness, store, receipt(
                     "LATE", "5", "20", "2027-12-31", "2027-01-01T08:00:00Z"));
@@ -152,66 +155,17 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                      WHERE tenant_id = ? AND (id = ? OR reversal_of = ?)
                     """, BigDecimal.class, TENANT_ID, roundingReceipt.id(), roundingReceipt.id())))
                     .isEqualByComparingTo("0.00");
-            harness.withinTenant(() -> {
-                harness.jdbcTemplate().update("""
-                        UPDATE user_warehouse_assignments
-                           SET revoked_at = clock_timestamp(), version = version + 1,
-                               updated_at = clock_timestamp()
-                         WHERE tenant_id = ? AND warehouse_id = ? AND revoked_at IS NULL
-                        """, TENANT_ID, WAREHOUSE_ID);
-                harness.jdbcTemplate().update("""
-                        UPDATE warehouses SET active = FALSE, version = version + 1
-                         WHERE tenant_id = ? AND id = ?
-                        """, TENANT_ID, WAREHOUSE_ID);
-                return null;
-            });
+            setWarehouseActive(harness, TENANT_ID, WAREHOUSE_ID, false);
             assertThatThrownBy(() -> harness.withinTenant(() -> store.reverse(
                     ScopeContext.tenant(new TestPrincipal()), roundingReceipt.id(), UUID.randomUUID(),
                     new InventoryTransactionCommands.Reversal(
                             new BigDecimal("0.1"), "Inactive warehouse", 2, AUDIT))))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("Inventory transaction was not found");
-            harness.withinTenant(() -> {
-                harness.jdbcTemplate().update("""
-                        UPDATE warehouses SET active = TRUE, version = version + 1
-                         WHERE tenant_id = ? AND id = ?
-                        """, TENANT_ID, WAREHOUSE_ID);
-                harness.jdbcTemplate().update("""
-                        UPDATE user_warehouse_assignments
-                           SET revoked_at = NULL, version = version + 1,
-                               updated_at = clock_timestamp()
-                         WHERE tenant_id = ? AND warehouse_id = ?
-                        """, TENANT_ID, WAREHOUSE_ID);
-                return null;
-            });
+            setWarehouseActive(harness, TENANT_ID, WAREHOUSE_ID, true);
             assertReconciliationDetectsDrift(
                     harness, SCOPE, TENANT_ID, WAREHOUSE_ID, MATERIAL_ID);
         }
-    }
-
-    private void createCatalog(TenantTransactionTestHarness harness) throws Throwable {
-        harness.withinTenant(() -> {
-            harness.jdbcTemplate().update("""
-                    INSERT INTO warehouses (id, tenant_id, code, display_name)
-                    VALUES (?, ?, 'WH-LEDGER', 'Ledger Warehouse')
-                    """, WAREHOUSE_ID, TENANT_ID);
-            harness.jdbcTemplate().update("""
-                    INSERT INTO materials (
-                        id, tenant_id, code, display_name, base_unit, minimum_stock_quantity)
-                    VALUES (?, ?, 'FERT-LEDGER', 'Ledger Fertilizer', 'KG', 10)
-                    """, MATERIAL_ID, TENANT_ID);
-            harness.jdbcTemplate().update("""
-                    INSERT INTO suppliers (id, tenant_id, code, display_name)
-                    VALUES (?, ?, 'SUP-LEDGER', 'Ledger Supplier')
-                    """, SUPPLIER_ID, TENANT_ID);
-            harness.jdbcTemplate().update("""
-                    INSERT INTO user_warehouse_assignments (
-                        id, tenant_id, user_profile_id, warehouse_id)
-                    VALUES (?, ?, ?, ?)
-                    """, UUID.fromString("59000000-0000-0000-0000-000000000004"),
-                    TENANT_ID, PROFILE_ID, WAREHOUSE_ID);
-            return null;
-        });
     }
 
     private InventoryTransactionCommands.Receipt receipt(

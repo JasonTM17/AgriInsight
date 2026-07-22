@@ -1,5 +1,6 @@
 package com.agriinsight.backend.persistence.support;
 
+import static com.agriinsight.backend.persistence.support.InventoryTransactionTestFixtures.lotId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -200,19 +201,5 @@ public final class InventoryLedgerAssertions {
                         Optional.empty(), audit))))
                 .isInstanceOf(ResourceStateConflictException.class)
                 .hasMessage("Insufficient eligible stock");
-    }
-
-    private static UUID lotId(
-            TenantTransactionTestHarness harness,
-            UUID tenantId,
-            UUID warehouseId,
-            UUID materialId,
-            String batch)
-            throws Throwable {
-        return harness.withinTenant(() -> harness.jdbcTemplate().queryForObject("""
-                SELECT id FROM stock_lots
-                 WHERE tenant_id = ? AND warehouse_id = ? AND material_id = ?
-                   AND batch_code = ?
-                """, UUID.class, tenantId, warehouseId, materialId, batch));
     }
 }
