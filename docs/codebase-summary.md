@@ -50,7 +50,8 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `inventory/application` | Canonical commands, services, pages/queries, stores, reconciliation report |
 | `inventory/domain` | Base units, quantity/money precision, transaction and projection records |
 | `inventory/infrastructure` | PostgreSQL ledger/projections, deterministic locks/FEFO, reconciliation, warehouse scope SQL |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; repeatable least-privilege helpers/grants |
+| `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; repeatable least-privilege helpers/grants |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal
@@ -90,16 +91,23 @@ subject to PostgreSQL ENABLE/FORCE RLS.
   `/api/v1/inventory/transactions` and `/{id}`.
 - Inventory writes: `POST /api/v1/inventory/transactions` and
   `POST /api/v1/inventory/transactions/{id}/reversals`.
+- Operating-cost writes: `POST /api/v1/cost-entries` and
+  `POST /api/v1/cost-entries/{id}/corrections`.
+- Operating-cost reads: `GET /api/v1/cost-entries`,
+  `GET /api/v1/cost-entries/{id}`, and `GET /api/v1/cost-summaries`.
+- Cost summaries identify the `OPERATING_COST` lens and never merge
+  procurement spend or inventory value.
 - OpenAPI/Swagger is disabled by default and only exposed in an explicit
   development profile or authenticated non-development configuration.
 - All unregistered business mappings are denied.
 
 ## Verification snapshot
 
-- Backend guarded `mvn verify`: 487 Surefire + 92 Failsafe; zero failures,
+- Backend guarded `mvn verify`: 442 Surefire + 96 Failsafe; zero failures,
   errors, and skips.
-- Inventory focused suite: 32/32; fresh PostgreSQL 18 containers validate
-  V1-V15, RLS, assignment lifecycle, concurrency, projections, and indexes.
+- Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
+  RLS, correction concurrency, query plans, and bounded projections. The
+  inventory focused suite remains 32/32.
 - OpenAPI contract: `/v3/api-docs` operation summaries and request examples
   verified by `InventoryOpenApiContractTest`.
 - Analytics: Python 75 passed, 3 expected optional-PDF skips; compileall and
@@ -111,8 +119,9 @@ subject to PostgreSQL ENABLE/FORCE RLS.
 
 ## Next boundary
 
-Phase 5 inventory/procurement is accepted. Phase 6 owns operating-cost and
-reporting separation (planned V16-V17); Phase 7 owns outbox, CI, image scanning,
+Phase 5 inventory/procurement and Phase 6 operating-cost/reporting separation
+are accepted. Phase 6 closes V16-V17 with no Python adapter or Gold writer;
+Phase 7 owns outbox, CI, image scanning,
 SBOM/provenance, Docker Hub/GitHub Packages publication, backup/restore, and
 release metadata (planned V18-V19). No production-release claim is made while
 those gates and production OIDC/MFA/audit/backup decisions remain open.

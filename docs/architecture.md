@@ -145,7 +145,7 @@ Phase 1-5 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway V1-V15 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory schema và lifecycle guards,
+- Flyway V1-V17 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema và lifecycle guards,
 - activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 
@@ -164,7 +164,7 @@ are linked, bounded, and service-generated. V15 binds tenant and profile context
 transaction-locally and separates read/write RLS by role and assignment. This
 plane does not mutate the Python Gold inventory contract or write `artifacts/`.
 
-Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Backend inventory vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Cost thuộc Phase 6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger V16-V17, correction lineage, bounded summaries và role/farm-aware RLS. Backend inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 
 ## Đường mở rộng
 

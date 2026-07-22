@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide documents the verified local/runtime contracts through Backend Phase 5. It is not yet a production deployment runbook: Phase 6 cost/reporting and Phase 7 release hardening remain required.
+This guide documents the verified local/runtime contracts through Backend Phase 6. It is not yet a production deployment runbook: Phase 7 release hardening remains required.
 
 ## Supported execution boundaries
 
@@ -63,7 +63,7 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current schema is Flyway V1-V15 plus repeatable least-privilege helpers/grants; application readiness expects schema version `15`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables.
+The current schema is Flyway V1-V17 plus repeatable least-privilege helpers/grants; application readiness expects schema version `17`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. V16 creates the append-only operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables.
 
 Required deployment inputs:
 
@@ -152,6 +152,12 @@ reversals. `InventoryOpenApiContractTest` verifies the receipt/issue and
 reversal operation descriptions and base-unit examples. Do not expose the docs
 endpoint publicly in a production profile.
 
+The cost contract is also included when API docs are enabled: bounded
+`/api/v1/cost-entries` list/detail, correction, and `/api/v1/cost-summaries`.
+Cost responses use the explicit operating-cost lens. A cost correction appends
+one reversal and one replacement; there is no delete route and no implicit
+inventory/procurement allocation.
+
 ## Health and logs
 
 - Liveness measures process state only.
@@ -167,7 +173,6 @@ No registry push is authorized by a successful local build. Phase 7 must run pro
 
 ## Production blockers
 
-- Phase 6 operating-cost ledger/reporting boundary
 - Phase 7 outbox, protected CI, image supply-chain, backup/restore, and release gates
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership
 - Protected Java 21 CI, dependency/image scan, SBOM/provenance, immutable registry publication, and pulled-digest smoke test

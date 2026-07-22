@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.6
+Version: 0.7
 Updated: 2026-07-22
-Status: backend Phases 1-5 plus local scale/visual checkpoint accepted; product release not yet claimed
+Status: backend Phases 1-6 plus local scale/visual checkpoint accepted; product release not yet claimed
 
 ## Product goal
 
@@ -47,7 +47,11 @@ and [architecture](./architecture.md) for the normative boundaries.
 - Provide bounded, versioned REST APIs under `/api/v1` for identity, tenants,
   farms, fields, crops, seasons, workforce, activities, harvests, warehouses,
   materials, suppliers, warehouse assignments, balances, lots, movements, and
-  linked inventory reversals.
+  linked inventory reversals, operating-cost entries, corrections, and
+  hierarchy-derived summaries.
+- Keep operating cost, procurement spend, and inventory value as separate
+  labeled lenses; operating-cost corrections append a reversal and replacement
+  instead of deleting a financial fact.
 - Require provider-neutral OIDC authentication, database-enriched roles,
   deny-by-default routes, tenant/profile context, PostgreSQL FORCE RLS, and
   safe 403/404 behavior.
@@ -71,7 +75,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 3 | Tenant RBAC/PostgreSQL RLS | Accepted |
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
-| 6 | Operating-cost ledger/reporting boundary, V16-V17 | Planned |
+| 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
 | 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Planned |
 
 Phase 5 acceptance evidence is recorded in
@@ -82,6 +86,12 @@ guards PASS. The later
 [`visual-data-scale` checkpoint](../plans/260722-visual-data-scale/plan.md)
 records the current Python 75 passed/3 skipped result and a verified
 1,050,000-row big-data warehouse sensor fact.
+
+Phase 6 acceptance evidence is recorded in
+[`acceptance-2026-07-22-backend-phase6.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md):
+26 focused cost tests, guarded backend `442 Surefire + 96 Failsafe` with zero
+failures/errors/skips, fresh PostgreSQL V17/RLS/concurrency/query-plan checks,
+and Python `75 passed, 3 skipped` unchanged.
 
 ## Non-functional requirements
 
@@ -121,8 +131,8 @@ identity/MFA/backup policy are also deferred until Phase 7.
 
 - Keep PostgreSQL inventory/procurement facts separate from current Gold until a
   versioned ETL/outbox contract is accepted.
-- Build Phase 6 cost reporting without merging operating cost, procurement
-  spend, or inventory value.
+- Build Phase 7 outbox and release hardening without merging operating cost,
+  procurement spend, or inventory value.
 - Use CK FE/Stitch design artifacts as the frontend source of truth, then build
   role-aware screens only after API contracts are frozen.
 - Complete Phase 7 before claiming production readiness or pushing first-party

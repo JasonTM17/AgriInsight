@@ -43,7 +43,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V15 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, and inventory-assignment lifecycle guards
+- liveness/readiness split and Flyway V1-V17 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, and operating-cost lifecycle guards
 
 ```mermaid
 flowchart LR
@@ -99,6 +99,26 @@ only when API docs are explicitly enabled in a development profile (or behind
 authenticated non-development access); inventory summaries and examples are
 verified by `InventoryOpenApiContractTest`.
 
+## Operating-cost and reporting plane
+
+Phase 6 adds an operational finance lens without changing the Python Gold
+contract. `operating_cost_entries` is the single append-only source for manual
+operating postings and service-generated reversals. Each row accepts one
+canonical target and derives its farm/season ancestors through the parent
+chain; an activity does not duplicate a season or farm total.
+
+The API exposes bounded entry list/detail, correction, and summary routes. The
+summary response labels `OPERATING_COST`, includes posting/reversal/net values,
+and reports season budget variance only when grouping by season. Tenant Admin
+can write; Executive/Data Analyst can read tenant-wide; assigned Farm Manager
+can read assigned farms. Inventory Manager and Supplier have no cost
+permission. V17 applies separate forced-RLS read/insert policies and
+`operating_cost_access` resolves farm scope from the canonical target.
+
+Operating cost, procurement spend, and inventory value are three independent
+lenses. Java does not read/write SQLite, Gold, manifests, or report files, and
+Phase 7's transactional outbox is the next machine-integration boundary.
+
 ## Boundaries
 
 | Plane | Owns | Does not own |
@@ -117,10 +137,11 @@ verified by `InventoryOpenApiContractTest`.
 | Tenant administration | Exact user/role/farm-assignment mutation routes verified |
 | Backend phase 4 operations | Accepted 2026-07-22; farm/season/workforce/activity/log/harvest gates green |
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
+| Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Docker Hub publication | Not yet claimed |
 | Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
 
-The right way to read the repo is: analytics and backend phases 1-5 are locally
-verified. Cost, outbox, production identity operations, and release publication
-remain sequential gates, so Phase 5 acceptance is not a full production-release
-claim.
+The right way to read the repo is: analytics and backend phases 1-6 are locally
+verified. Outbox, production identity operations, and release publication
+remain sequential gates, so Phase 6 acceptance is not a full
+production-release claim.

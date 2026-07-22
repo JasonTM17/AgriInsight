@@ -102,6 +102,32 @@ foreign keys, assignment lifecycle guards, role-aware policies, and
 tenant-leading indexes. `InventoryOpenApiContractTest` verifies operation
 summaries and request examples in `/v3/api-docs`.
 
+## Backend operating-cost contract
+
+Phase 6 adds a PostgreSQL operating-cost lens that is intentionally separate
+from the Gold Cost Analysis frames and the inventory/procurement ledger.
+
+| Method | Path | Permission | Contract chính |
+|---|---|---|---|
+| **GET** | `/api/v1/cost-entries` | `COST_READ` | bounded date-window/page list; stable `occurredAt DESC, id DESC` order |
+| **GET** | `/api/v1/cost-entries/{id}` | `COST_READ` | safe detail representation; farm scope is derived from the canonical target |
+| **GET** | `/api/v1/cost-summaries` | `COST_READ` | bounded month/farm/season/category summaries with explicit `OPERATING_COST` lens |
+| **POST** | `/api/v1/cost-entries` | `COST_MANAGE` | one target, positive VND amount, category, UTC timestamp, idempotency key |
+| **POST** | `/api/v1/cost-entries/{id}/corrections` | `COST_MANAGE` | one exact reversal plus one replacement; no delete and no double reversal |
+
+The accepted categories are `LABOR`, `MATERIAL`, `MACHINERY`, `TRANSPORT`,
+`UTILITY`, and `OTHER`. A request sends exactly one of `TENANT`, `FARM`,
+`FIELD`, `SEASON`, or `ACTIVITY` target IDs; ancestor farm/season dimensions
+are resolved server-side. Amounts use positive `NUMERIC(19,2)` VND and timestamps
+use UTC. Summary net is posting minus reversal; season budget variance is
+reported only for season grouping. Operating cost is never inferred from an
+inventory `IN`, stock value, procurement spend, or an unallocated `OUT`.
+
+Tenant Admin can manage tenant costs; Executive/Data Analyst read tenant-wide;
+assigned Farm Manager reads assigned farms; Inventory Manager and Supplier have
+no cost permission. Java does not write Gold, manifests, SQLite, or report
+artifacts; Phase 7's versioned outbox is the future integration boundary.
+
 ## Operational identifiers
 
 - `tenants.id` là UUID ổn định cho operational API.

@@ -22,11 +22,11 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-5 đã được nghiệm thu đến ngày 2026-07-22. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs và inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
 
 Bằng chứng hiện tại:
 
-- Disk guard PASS trước các tác vụ nặng; guarded Maven `verify` đạt 487 Surefire + 92 Failsafe test trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway V1-V15 apply/validate, fresh install, RLS, assignment lifecycle, concurrency và reconciliation.
+- Disk guard PASS trước các tác vụ nặng; guarded Maven `verify` đạt 442 Surefire + 96 Failsafe test trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway V1-V17 apply/validate, fresh install, RLS, assignment lifecycle, cost correction concurrency, query plans và reconciliation.
 - OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
 - Public route chỉ gồm health allowlist. `/api/v1/me` và các route quản trị user/external identity/role dùng exact method/template + permission; mapping chưa đăng ký bị deny. Security response/log không chứa raw token hoặc provider diagnostics.
 - Runtime database role không phải owner/superuser/`BYPASSRLS`; tenant context chỉ tồn tại trong transaction. Direct-SQL tests chứng minh thiếu/sai context, cross-tenant read/write, `WITH CHECK` và pooled-connection reuse đều fail closed.
@@ -40,11 +40,11 @@ Bằng chứng hiện tại:
 
 Các cổng còn mở thuộc phase sau:
 
-- Phase 5 đã đóng inventory/procurement boundary. Cost CRUD/reporting thuộc Phase 6; outbox, CI, scans, SBOM/provenance và image publication thuộc Phase 7. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+- Phase 6 đã đóng operating-cost/reporting boundary; outbox, CI, scans, SBOM/provenance và image publication thuộc Phase 7. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 - Protected Java 21 CI, image scan, SBOM/provenance và publication immutable lên Docker Hub thuộc Phase 7. Image backend hiện chỉ có local tag kiểm thử; chưa push registry.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
-Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md) và [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md).
+Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md) và [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md).
 
 Lệnh kiểm thử backend chuẩn từ repository root:
 
