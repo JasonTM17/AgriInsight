@@ -76,7 +76,7 @@ public class MaterialService {
             publish(scope, TenantAuditEvent.Action.MATERIAL_UPDATED, material, command.audit());
             return material;
         }
-        return failedMutation(scope, target, command.expectedVersion());
+        return failedMutation(scope, target, command);
     }
 
     public MaterialRecord deactivate(UUID materialId, MaterialCommands.Lifecycle command) {
@@ -137,10 +137,15 @@ public class MaterialService {
     private MaterialRecord failedMutation(
             ScopeContext scope,
             UUID materialId,
-            long expectedVersion) {
+            MaterialCommands.Update command) {
         MaterialRecord current = requiredMaterial(scope, materialId);
-        if (current.version() != expectedVersion) {
-            throw new VersionConflictException(expectedVersion, current.version());
+        if (current.version() != command.expectedVersion()) {
+            throw new VersionConflictException(command.expectedVersion(), current.version());
+        }
+        if (command.baseUnit().filter(unit -> unit != current.baseUnit()).isPresent()
+                && store.hasReferences(scope, materialId)) {
+            throw new ResourceStateConflictException(
+                    "Material base unit is immutable after inventory use");
         }
         throw new ResourceStateConflictException("Material update does not change state");
     }
