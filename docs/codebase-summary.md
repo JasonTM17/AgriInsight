@@ -7,18 +7,24 @@ Verified snapshot: 2026-07-22
 | Path | Responsibility |
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
-| `dashboard/` | Streamlit composition and six analytics dashboard domains |
+| `dashboard/` | Streamlit analytics dashboard composition |
 | `tests/` | Python pipeline, KPI, dashboard, export, security-boundary, and disk-guard tests |
-| `backend/` | Java 21 Spring Boot operational backend |
+| `backend/` | Java 21 Spring Boot operational backend and PostgreSQL migrations |
 | `scripts/` | C/D disk guard and guarded backend verification |
 | `plans/` | CK phase plans, design contracts, reports, and acceptance evidence |
-| `docs/` | Evergreen architecture, operations, standards, and roadmap |
+| `docs/` | Evergreen architecture, operations, standards, contracts, and roadmap |
 
 ## Analytics plane
 
-The validated MVP generates synthetic operational sources, preserves Bronze, normalizes/quarantines into Silver, atomically loads a SQLite star schema, materializes Gold KPI/alert contracts, and renders Executive, Farm Performance, Inventory, Cost Analysis, Crop Health, and Data Quality views. Controlled CSV/PDF and capability-gated XLSX exports use validated Gold data and deterministic lineage.
+The validated MVP generates synthetic operational sources, preserves Bronze,
+normalizes/quarantines into Silver, atomically loads a SQLite star schema,
+materializes Gold KPI/alert contracts, and renders Executive, Farm Performance,
+Inventory, Cost Analysis, Crop Health, and Data Quality views. Controlled
+CSV/PDF and capability-gated XLSX exports use validated Gold data and
+deterministic lineage.
 
-The analytics plane owns `artifacts/`, its manifest, Gold CSVs, and SQLite warehouse. It does not write PostgreSQL operational state.
+The analytics plane owns `artifacts/`, its manifest, Gold CSVs, and SQLite
+warehouse. It does not write PostgreSQL operational state.
 
 ## Operational backend
 
@@ -26,59 +32,82 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 
 | Module | Current responsibility |
 |---|---|
-| `shared` | API/error contracts, correlation, canonical command hashing, durable idempotency, tenant context, health/readiness |
-| `identity.api` | Current user plus exact tenant-user and external-identity HTTP contracts |
-| `identity.application` | Exact identity bootstrap, DB-enriched principal, tenant-user lifecycle and command orchestration |
-| `identity.infrastructure` | OIDC validation, exact route registry, bounded PostgreSQL user/identity/principal stores |
+| `shared` | API/error contracts, correlation, canonical command hashing, durable idempotency, tenant/profile context, health/readiness |
+| `identity` | OIDC validation, exact identity bootstrap, tenant-user lifecycle, external identities, route registry |
 | `authorization` | Fixed roles/permissions, scope evaluation, tenant transaction aspect, role lifecycle, audit publishers |
-| `farm` | Scoped farm/field/crop/season reads/commands plus tenant-admin farm-assignment history and lifecycle |
-| `operations` | Employee master/picker, scoped activities and assignments, immutable task logs/corrections, harvest reads/posts/corrections |
-| `db/migration` | V1-V4 foundation/identity/authorization; V5-V10 farm/workforce lifecycle; V11 activity-season serialization; repeatable least-privilege helpers/grants |
-| `backend/ops/postgres` | Idempotent role gate, allowlisted legacy ownership adoption, operator first-admin provisioning |
+| `farm` | Scoped farm/field/crop/season reads/commands and assignment history |
+| `operations` | Employee master/picker, scoped activities/assignments, immutable logs/corrections, harvest facts |
+| `inventory/api` | Warehouse, material, supplier, assignment, balance, lot, movement, and reversal HTTP contracts |
+| `inventory/application` | Canonical commands, services, pages/queries, stores, reconciliation report |
+| `inventory/domain` | Base units, quantity/money precision, transaction and projection records |
+| `inventory/infrastructure` | PostgreSQL ledger/projections, deterministic locks/FEFO, reconciliation, warehouse scope SQL |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; repeatable least-privilege helpers/grants |
+| `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
-Phase 2 validates external JWT signature/algorithm, issuer, API audience, expiration/not-before, subject, and access-token discriminator. Phase 3 resolves exact `(issuer, subject)`, loads the active internal profile plus database roles/permissions under tenant context, and discards the raw JWT. JWT roles and tenant claims remain ignored for authorization.
+The backend resolves exact `(issuer, subject)`, loads the active internal
+profile and database permissions, then binds `app.tenant_id` and
+`app.profile_id` transaction-locally. JWT roles and tenant claims are not
+trusted for authorization. Runtime roles are restricted, non-owner, and
+subject to PostgreSQL ENABLE/FORCE RLS.
+
+## Inventory contract summary
+
+- `RECEIPT` requires active warehouse/material/supplier, base quantity, VND unit
+  cost, batch, and expiry; the server derives finance fields.
+- `ISSUE` requires a reason and uses an explicit lot or deterministic FEFO over
+  eligible, non-expired lots. It cannot make a lot or balance negative.
+- Reversals are immutable linked rows, bounded by the original remaining
+  quantity and allocation/lot provenance. Receipt reversal money uses cumulative
+  two-decimal rounding so the final total exactly cancels the source.
+- `inventory_transactions` is the source ledger; allocations, lots, and
+  balances are projections reconciled in a read-only drift report.
+- V15 RLS is role-aware: Tenant Admin writes tenant inventory; assigned
+  Inventory Manager reads/writes; Executive/Data Analyst read tenant-wide;
+  assigned Farm Manager reads; Supplier has no inventory permission.
+- All list routes are bounded and stable; mutation routes require idempotency,
+  and versioned mutation/reversal routes require strong `If-Match`.
 
 ## Current public contracts
 
-- Public: `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`
-- Authenticated when identity enabled: `GET /api/v1/me`
-- User management: `GET/POST /api/v1/users`, `GET /api/v1/users/{id}`
-- User lifecycle: `POST /api/v1/users/{id}/deactivate|reactivate`
-- External identities: link and exact identity unlink routes below `/api/v1/users/{id}/external-identities`
-- Role lifecycle: grant and revoke routes below `/api/v1/users/{id}/roles`
-- Farm routes: `GET/POST /api/v1/farms`, `GET/PATCH /api/v1/farms/{id}`, and POST deactivate/reactivate lifecycle routes
-- Field routes: `GET /api/v1/fields`, `GET/PATCH /api/v1/fields/{id}`, `POST /api/v1/farms/{farmId}/fields`, and POST deactivate/reactivate lifecycle routes
-- Crop routes: `GET/POST /api/v1/crops`, `GET/PATCH /api/v1/crops/{id}`, and POST deactivate/reactivate lifecycle routes
-- Season routes: `GET/POST /api/v1/seasons`, `GET/PATCH /api/v1/seasons/{id}`, and `POST /api/v1/seasons/{id}/transition`
-- Employee routes: bounded full master reads, redacted active picker, create/update, and deactivate/reactivate below `/api/v1/employees`
-- Farm assignments: tenant-admin `POST /api/v1/farm-assignments` and versioned `POST /api/v1/farm-assignments/{id}/revoke`
-- Activities: bounded list/detail, create/update/transition, assignment grant/revoke, and immutable log/correction routes below `/api/v1/activities`
-- Harvests: bounded list/detail plus normalized append/correction routes below `/api/v1/harvests`
-- Development-only when explicitly enabled: OpenAPI/Swagger metadata
-- All unregistered routes: denied
-
-`/api/v1/me` returns the enriched internal profile, tenant code, fixed roles, and effective permissions without issuer, subject, raw claims/token, or database diagnostics. Tenant-administration responses expose only bounded internal/public fields and optimistic versions.
+- Public health: `GET /actuator/health`, `/actuator/health/liveness`,
+  `/actuator/health/readiness`.
+- Authenticated `GET /api/v1/me` when identity is enabled.
+- Tenant/user/identity/role routes under `/api/v1/users`.
+- Farm, field, crop, season, employee, assignment, activity, log, and harvest
+  routes under `/api/v1`.
+- Inventory masters: `/api/v1/warehouses`, `/api/v1/materials`,
+  `/api/v1/suppliers`, `/api/v1/warehouse-assignments`.
+- Inventory reads: `/api/v1/inventory/balances`, `/api/v1/inventory/lots`,
+  `/api/v1/inventory/transactions` and `/{id}`.
+- Inventory writes: `POST /api/v1/inventory/transactions` and
+  `POST /api/v1/inventory/transactions/{id}/reversals`.
+- OpenAPI/Swagger is disabled by default and only exposed in an explicit
+  development profile or authenticated non-development configuration.
+- All unregistered business mappings are denied.
 
 ## Verification snapshot
 
-- Backend: full guarded `mvn verify` PASS on 2026-07-22: 353 unit/HTTP/security/module tests plus 77 PostgreSQL integration tests, 430 total with zero failures/errors/skips.
-- Migrations: V1-V11 plus repeatable grants apply/validate on fresh and allowlisted upgrade databases; inconsistent lifecycle upgrades fail closed.
-- Isolation: missing/invalid tenant, cross-tenant read/write, `WITH CHECK`, pooled-connection reset, role attributes, function grants, and policy catalog PASS.
-- Commands: same-key concurrency, rollback retry, response-loss replay, changed path/`If-Match` conflict, actor binding, and no sensitive snapshot PASS.
-- Administration: user/identity/role lifecycle, exact routes, bounded query counts, last-admin invariant, durable success/conflict/denial audit PASS.
-- Farm master data: assignment-aware reads/updates, tenant-wide Field create/lifecycle, Crop/Season tenant scope, HTTP/ETag/idempotency contracts, schema-length validation, scoped-write locking, and READ_COMMITTED parent/child lifecycle serialization PASS.
-- Workforce and farm assignment: full employee master versus redacted picker separation, V9 responsibility guards, append-preserved farm grants, V10 profile guards, exact routes, idempotent replay, and both concurrency orders PASS.
-- Activities and harvests: manager/worker scope resolution, task lifecycle, append-preserved assignment history, immutable evidence/corrections, normalized harvest facts, exact route permissions, bounded pagination, and assignment revocation effects PASS.
-- Local image: non-root UID/GID `10001`, liveness/readiness/fail-closed smoke PASS.
-- Analytics: 65 tests PASS, 3 expected optional-PDF skips; compileall, Node syntax, Compose config, and wheel PASS.
-- Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; heavy work requires both PASS.
+- Backend guarded `mvn verify`: 487 Surefire + 92 Failsafe; zero failures,
+  errors, and skips.
+- Inventory focused suite: 32/32; fresh PostgreSQL 18 containers validate
+  V1-V15, RLS, assignment lifecycle, concurrency, projections, and indexes.
+- OpenAPI contract: `/v3/api-docs` operation summaries and request examples
+  verified by `InventoryOpenApiContractTest`.
+- Analytics: Python 65 passed, 3 expected optional-PDF skips; compileall and
+  existing export/dashboard checks pass.
+- Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; the
+  last guarded backend gate finished at C 10.925 GB and D 25.823 GB.
 
 ## Next boundary
 
-Phases 1-4 are accepted. Phase 5 inventory/procurement is the next backend boundary, followed by Phase 6 cost management. Release CI, scans, SBOM/provenance, GitHub Packages, and Docker Hub publication remain Phase 7.
+Phase 5 inventory/procurement is accepted. Phase 6 owns operating-cost and
+reporting separation (planned V16-V17); Phase 7 owns outbox, CI, image scanning,
+SBOM/provenance, Docker Hub/GitHub Packages publication, backup/restore, and
+release metadata (planned V18-V19). No production-release claim is made while
+those gates and production OIDC/MFA/audit/backup decisions remain open.
 
-## Unresolved Questions
+## Unresolved questions
 
-- Production IdP/token fixtures and MFA policy
-- Production audit retention and backup objectives
-- Docker Hub namespace/release credentials
+- Production IdP/token fixtures and MFA policy.
+- Production audit retention and backup/restore objectives.
+- Docker Hub namespace and least-privilege release credentials.

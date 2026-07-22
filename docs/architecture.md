@@ -133,7 +133,7 @@ không measure nào trong ba nhóm được nhập chung thành một “total c
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Phase 1-4 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
+Phase 1-5 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
@@ -145,7 +145,7 @@ Phase 1-4 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway V1-V11 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest schema và lifecycle guards,
+- Flyway V1-V15 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory schema và lifecycle guards,
 - activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 
@@ -154,7 +154,17 @@ Phase 1-4 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 | Analytics | `artifacts/`, Gold CSV, SQLite warehouse | PostgreSQL operational state |
 | Backend | PostgreSQL + Flyway | `artifacts/`, manifest, Gold CSV, SQLite warehouse |
 
-Phase 4 đã đóng farm/season/workforce/activity/log/harvest boundary, nhưng chưa phải production release của toàn sản phẩm. Inventory và cost CRUD thuộc Phase 5-6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+### Inventory operational lens
+
+Phase 5 keeps the operational inventory ledger in PostgreSQL: warehouses,
+materials, suppliers, and profile-to-warehouse assignments feed immutable
+transactions; receipts create lots, issues allocate lots by deterministic FEFO,
+and balances are projections reconciled from signed ledger effects. Reversals
+are linked, bounded, and service-generated. V15 binds tenant and profile context
+transaction-locally and separates read/write RLS by role and assignment. This
+plane does not mutate the Python Gold inventory contract or write `artifacts/`.
+
+Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Backend inventory vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Cost thuộc Phase 6; protected CI, scan/SBOM/provenance và Docker Hub release thuộc Phase 7. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 
 ## Đường mở rộng
 

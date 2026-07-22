@@ -1,41 +1,48 @@
 # Project Roadmap
 
-This roadmap reflects the current state of the repository, not an assumed release plan.
+This roadmap reflects verified repository state, not an assumed production
+release. Each backend phase is accepted only after its focused tests, guarded
+full gate, documentation, and rollback boundary are recorded in `plans/`.
 
-## Now
+## Current state
 
-| Track | Status | Notes |
+| Track | Status | Evidence |
 |---|---|---|
-| Analytics MVP | Active and regression-verified | Bronze/Silver/Gold pipeline, reporting, dashboard |
-| Backend phase 1 | Completed and regression-verified | Java 21 foundation, PostgreSQL/Flyway, probes, non-root image smoke |
-| Backend phase 2 | Completed and regression-verified | OIDC identity/security boundary, exact bootstrap, route inventory, local image smoke |
-| Backend phase 3 | Completed and regression-verified | Restricted roles, tenant RBAC/context, provisioning, FORCE RLS, idempotency, tenant administration |
-| Backend phase 4 | Completed and regression-verified | Farm/season/workforce/activity/log/harvest APIs accepted 2026-07-22 |
+| Analytics MVP | Active and regression-verified | Bronze/Silver/Gold, reporting, dashboard, exports; Python 65 passed and 3 optional PDF skips |
+| Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
+| Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
+| Frontend | Design/prototype ready; implementation gated | CK FE/Stitch artifacts exist; production UI follows stable contracts and Phase 6 priorities |
 
 ## Next backend phases
 
-| Phase | Goal | Dependency |
+| Phase | Goal | Dependency/status |
 |---|---|---|
-| Phase 1 | Backend foundation and contracts | Accepted 2026-07-19 |
-| Phase 2 | OIDC identity and security boundary | Accepted 2026-07-20 |
-| Phase 3 | Tenant RBAC and PostgreSQL RLS | Accepted 2026-07-20 |
-| Phase 4 | Farm, season, workforce, and activity APIs | Accepted 2026-07-22 |
-| Phase 5 | Inventory and procurement APIs | Next backend implementation phase |
-| Phase 6 | Cost management and reporting boundary | Phases 4-5 accepted |
-| Phase 7 | Outbox operations and release hardening | Phases 4-6 accepted |
+| Phase 6 | Cost management and reporting boundary | Phase 5 accepted; plan migrations are reserved as V16-V17 |
+| Phase 7 | Outbox operations, verified images, CI/release hardening | Phase 6 accepted; plan migrations are reserved as V18-V19 |
+| Frontend follow-up | Role-aware dashboard and operational workflows | Backend API/OpenAPI stable; use `frontend-follow-up-brief.md` and design system |
 
-## Follow-on frontend
+## Phase 5 boundary
 
-The frontend follow-up brief, persisted CK FE master/page overrides, and reviewed Overview, Farms, Work, Cost Analysis, and Inventory prototypes are ready for detailed planning. Backend phases 1-4 now stabilize identity, tenant authorization, farm/workforce operations, activity evidence, and harvest contracts. Inventory and cost mutation screens still wait for Phase 5-6 APIs. See [design guidelines](./design-guidelines.md).
+Backend PostgreSQL inventory facts are operational source data, separate from
+the Python SQLite/Gold `fact_inventory_transaction` contract. Inventory API
+quantities use canonical material base units (`KG`, `LITER`, `PIECE`); a future
+import adapter must convert tonnes and unit price together. Procurement spend,
+inventory value, and operating cost are deliberately separate measures.
 
-## Deferred until later
+## Release and platform backlog
 
-- Docker Hub namespace and image publication details
-- Backend CI enforcement
-- Registry digest verification, image scanning, and SBOM/provenance checks
-- Public web application deployment
-- Any claim that Phase 3 alone makes the full product production-ready
+- Add protected CI, dependency/image scanning, SBOM/provenance, and digest smoke
+  tests in Phase 7.
+- Publish first-party Python/backend images only after a disk-guarded build and
+  an approved Docker Hub namespace/token; the future web image is frontend-owned.
+- Set the GitHub default branch after the first `main` push (the remote is empty
+  until then). About metadata, topics, Discussions, security scanning,
+  Dependabot, templates, CODEOWNERS, and repository labels are configured.
+- Define production OIDC/MFA, audit retention, backup/restore RPO/RTO, and
+  off-host encryption before calling the system production-ready.
 
 ## Roadmap rule
 
-When status changes, update the roadmap and the relevant phase plan together. Do not mark a phase complete in docs if the integration gates still say otherwise.
+When status changes, update this roadmap, the relevant phase plan, acceptance
+report, and deployment guidance together. Do not mark a phase complete when an
+integration gate or unresolved security decision remains.

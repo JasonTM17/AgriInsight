@@ -38,12 +38,12 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - exact `(issuer, subject)` bootstrap to active profile and tenant
 - database-backed role/permission enrichment before route authorization
 - exact route registry and tenant-administration APIs for users, external identities, role assignments, and farms
-- one `@TenantScoped` business transaction that binds `app.tenant_id` before repository access
+- one `@TenantScoped` business transaction that binds `app.tenant_id` and, for warehouse-scoped work, `app.profile_id` before repository access
 - restricted runtime/migration/identity-definer PostgreSQL roles and `ENABLE/FORCE ROW LEVEL SECURITY`
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V11 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, and activity-season lifecycle guards
+- liveness/readiness split and Flyway V1-V15 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, and inventory-assignment lifecycle guards
 
 ```mermaid
 flowchart LR
@@ -52,14 +52,14 @@ flowchart LR
     I --> E["Tenant transaction: roles + permissions"]
     E --> R["Exact route registry"]
     R --> B["TenantScoped business transaction"]
-    B --> C["set_config(app.tenant_id, true)"]
+    B --> C["set_config(app.tenant_id + app.profile_id, true)"]
     C --> P["Application predicates + FORCE RLS"]
     R --> D["Unregistered route: deny + audit"]
 ```
 
 The request never accepts tenant scope from a header, path, or JWT tenant claim. The exact identity bootstrap is the only pre-tenant database operation. `TenantPrincipalLoader` then opens a short transaction, binds the database-verified tenant, loads the active profile plus fixed roles/permissions, closes that transaction, and only then lets Spring evaluate the exact route registry.
 
-Every operational service entry point owns a separate `@TenantScoped` transaction. Its outer aspect binds the same tenant with transaction-local `set_config` before any repository query. Missing or mismatched context fails closed, and the restricted runtime role remains subject to both application predicates and PostgreSQL FORCE RLS.
+Every operational service entry point owns a separate `@TenantScoped` transaction. Its outer aspect binds the same tenant and authenticated profile with transaction-local `set_config` before any repository query. Missing or mismatched context fails closed, and the restricted runtime role remains subject to both application predicates and PostgreSQL FORCE RLS.
 
 Authorization denial audit follows a deliberate ordering invariant: the rejected business transaction rolls back and releases its connection first; only then may an independent audit transaction bind the tenant and persist the denial. This prevents pool exhaustion/deadlock when the pool has one connection. Audit persistence failure keeps the client response at a generic 403 and emits only a redacted operational error type.
 
@@ -70,6 +70,34 @@ The farm/field/crop/season master-data slice uses the same boundary for assignme
 Employee full-master access is tenant-wide, while `WORKFORCE_PICKER_READ` returns a redacted active-only projection. V9 locks active employee parents for live field/activity responsibility and blocks deactivation until dependencies close. Farm grants are append-preserved rows: revoke increments the version and never deletes/reactivates history; re-grant creates a new row. V10 locks the active profile during grant and rejects profile deactivation while an active farm assignment exists, covering both concurrency orders.
 
 Activities use tenant, assigned-farm manager, or assigned-worker scope before paging. Task transitions and metadata updates are versioned; assignment revoke preserves history. Activity evidence is append-only, accepts bounded URI metadata without fetching it, and represents corrections as linked rows. V11 serializes live activity and season transitions. Harvest facts are also append-only, normalize KG/TONNE to kg at the API boundary, and keep correction lineage without introducing Phase 6 operating costs.
+
+## Inventory and procurement plane
+
+Phase 5 adds a PostgreSQL operational inventory lens without changing Python
+Gold. Warehouses, materials, suppliers, and explicit profile-to-warehouse
+assignments feed an append-only `inventory_transactions` ledger. Receipt rows
+create `stock_lots`; issue rows allocate eligible lots deterministically by
+FEFO; `stock_balances` is the warehouse/material aggregate projection. Linked
+reversals restore the original direction and allocation lineage, with bounded
+quantity and cumulative VND rounding rules. Reconciliation compares signed
+ledger effects, allocations, lots, and balances and reports drift without
+repairing source facts.
+
+V12 creates the inventory tables, V13 adds tenant RLS, V14 serializes active
+profile/warehouse assignment lifecycle, and V15 adds profile-aware,
+role-aware `inventory_warehouse_access(warehouse_id, write)` policies plus
+tenant-leading indexes. Reads and writes are separate policy paths: Tenant
+Admin can write tenant inventory; assigned Inventory Manager can read/write;
+Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read;
+Supplier has no inventory permission. The API registry covers warehouse,
+material, supplier, assignment, balance, lot, movement, and reversal routes;
+mutations require idempotency keys and strong `If-Match` where a version is
+changed.
+
+Springdoc is disabled by default. `/v3/api-docs` and Swagger UI are exposed
+only when API docs are explicitly enabled in a development profile (or behind
+authenticated non-development access); inventory summaries and examples are
+verified by `InventoryOpenApiContractTest`.
 
 ## Boundaries
 
@@ -88,7 +116,11 @@ Activities use tenant, assigned-farm manager, or assigned-worker scope before pa
 | Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; current backend regression gate remains green |
 | Tenant administration | Exact user/role/farm-assignment mutation routes verified |
 | Backend phase 4 operations | Accepted 2026-07-22; farm/season/workforce/activity/log/harvest gates green |
+| Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Docker Hub publication | Not yet claimed |
 | Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
 
-The right way to read the repo is: analytics and backend phases 1-4 are locally verified. Inventory, cost, outbox, production identity operations, and release publication remain sequential gates, so Phase 4 acceptance is not a full production-release claim.
+The right way to read the repo is: analytics and backend phases 1-5 are locally
+verified. Cost, outbox, production identity operations, and release publication
+remain sequential gates, so Phase 5 acceptance is not a full production-release
+claim.

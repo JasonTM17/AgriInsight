@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: Inventory and procurement APIs
-status: in-progress
+status: completed
 priority: P1
 effort: 3-4d
 dependencies:
@@ -34,30 +34,12 @@ supplier  ------------^ for RECEIPT only
 
 ## Related Code Files
 
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\api\WarehouseController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\api\MaterialController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\api\SupplierController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\api\InventoryTransactionController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\api\WarehouseAssignmentController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\api\InventoryRouteAuthorization.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\WarehouseService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\MaterialService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\SupplierService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\WarehouseAssignmentService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\InventoryTransactionService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\InventoryReversalService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\application\StockBalanceService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\InventoryTransaction.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\StockBalance.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\StockLot.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\InventoryLotAllocation.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\WarehouseAssignment.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\inventory\domain\CanonicalUnit.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V12__create_inventory_tables.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V13__add_inventory_rls_policies.sql`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\inventory\InventoryApiTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\inventory\InventoryConcurrencyTests.java`
-- Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\inventory\InventoryReconciliationTests.java`
+- API: `backend/src/main/java/com/agriinsight/backend/inventory/api/`
+- Application commands, services, and ports: `backend/src/main/java/com/agriinsight/backend/inventory/application/`
+- Domain precision and transaction types: `backend/src/main/java/com/agriinsight/backend/inventory/domain/`
+- PostgreSQL stores, locking, projections, reconciliation, and scope SQL: `backend/src/main/java/com/agriinsight/backend/inventory/infrastructure/`
+- Migrations: `backend/src/main/resources/db/migration/V12__create_inventory_tables.sql` through `V15__harden_inventory_scope_and_indexes.sql` plus the tenant RLS repeatable migration
+- HTTP, service, concurrency, RLS, migration, and reconciliation tests: `backend/src/test/java/com/agriinsight/backend/inventory/` and `backend/src/test/java/com/agriinsight/backend/persistence/`
 
 ## Implementation Steps (TDD: red → green → refactor)
 
@@ -76,7 +58,7 @@ supplier  ------------^ for RECEIPT only
 
 - Routes and methods are the exact entries in `authorization-matrix.md`, covering `/api/v1/warehouses`, `/api/v1/materials`, `/api/v1/suppliers`, `/api/v1/warehouse-assignments`, `/api/v1/inventory/balances`, `/api/v1/inventory/lots`, `/api/v1/inventory/transactions`, and `/api/v1/inventory/transactions/{id}/reversals`.
 - `RECEIPT`: supplier, batch code, expiry date, base quantity, unit cost, and command key required. `ISSUE`: reason/reference and command key required; it either identifies one batch/lot or requests FEFO allocation across eligible lots, and quantity cannot exceed the locked eligible total. Supplier is never accepted from the issue body. API compatibility names may display `IN`/`OUT`, but persistence and OpenAPI define the unambiguous kinds.
-- The `unit` submitted by a caller is normalized to the material's base unit. If a source tonne is accepted in a later import path, convert quantity and unit price together as the existing Python contract requires.
+- The inventory API accepts `quantityBase` in the material's canonical base unit (`KG`, `LITER`, or `PIECE`); it does not silently accept source units. If a later import path accepts tonnes, convert quantity and unit price together as the existing Python contract requires.
 - Money uses VND `BigDecimal`/`NUMERIC(18,2)` (or a documented scale); quantity uses a scale suitable for kg/liter/piece and is rounded only at an explicit boundary.
 - Net procurement spend is `SUM(procurement_effect_vnd)` over receipts and their service-generated reversals; issues have zero procurement effect. Inventory value is a separate balance valuation; neither is included in the operating-cost ledger or a combined “total cost.”
 - Movement responses expose public UUIDs, business codes, unit, quantity, amount, dates, and audit metadata—not internal SQL or another tenant's rows.
@@ -84,23 +66,30 @@ supplier  ------------^ for RECEIPT only
 ## Focused validation
 
 - `powershell -ExecutionPolicy Bypass -File scripts/check-workspace-disk.ps1`
-- `backend\mvnw.cmd -Dmaven.repo.local=..\artifacts\_tmp\m2-repository -Dtest='*Inventory*Test' test`
+- `backend\mvnw.cmd -Dmaven.repo.local=..\artifacts\_tmp\m2-repository -Dtest='*Inventory*Test' test` (32/32)
+- `powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify` (487 Surefire + 92 Failsafe; zero failures/errors/skips)
 - Testcontainers PostgreSQL for row locks, RLS, Flyway, and ledger/balance reconciliation.
 - Explain representative balance/movement queries and assert indexes begin with tenant/warehouse/material where appropriate.
-- Rerun Python suite and `git diff --check`.
+- `python -m pytest` (65 passed, 3 skipped), `python -m compileall -q src dashboard tests`, and `git diff --check`.
 
 ## Success Criteria
 
-- [ ] Valid receipt/issue/reversal commands atomically update ledger, allocations, lots, and aggregate balance; invalid commands leave no partial state.
-- [ ] Concurrent outbound commands cannot create a negative lot/aggregate balance or lost update; explicit-lot and FEFO behavior are deterministic.
-- [ ] Concurrent first receipts safely create/lock one aggregate and the intended lot rows; no absent-row locking assumption remains.
-- [ ] Receipt/issue reversals are linked, bounded, immutable, allocation-aware, and produce correct net procurement without client-supplied inverse finance fields.
-- [ ] Duplicate command key creates one domain result and only the contract-declared eventual event candidate set.
-- [ ] Inventory manager scope is enforced at application and RLS layers; supplier cannot view finance.
-- [ ] Warehouse assignments have real tenant-safe FKs; grant/revoke is admin-only and immediately changes scoped queries.
-- [ ] Unit/amount precision and tonne/kg conversion rules are explicit and tested.
-- [ ] Reconciliation detects drift without silently mutating source records.
-- [ ] Existing Gold inventory/procurement contracts remain unchanged until a versioned ETL phase consumes backend data.
+- [x] Valid receipt/issue/reversal commands atomically update ledger, allocations, lots, and aggregate balance; invalid commands leave no partial state.
+- [x] Concurrent outbound commands cannot create a negative lot/aggregate balance or lost update; explicit-lot and FEFO behavior are deterministic.
+- [x] Concurrent first receipts safely create/lock one aggregate and the intended lot rows; no absent-row locking assumption remains.
+- [x] Receipt/issue reversals are linked, bounded, immutable, allocation-aware, and produce correct net procurement without client-supplied inverse finance fields.
+- [x] Duplicate command key creates one domain result and only the contract-declared eventual event candidate set.
+- [x] Inventory manager scope is enforced at application and RLS layers; supplier cannot view finance.
+- [x] Warehouse assignments have real tenant-safe FKs; grant/revoke is admin-only and immediately changes scoped queries.
+- [x] Unit/amount precision and base-unit conversion rules are explicit and tested; tonne conversion remains an import-boundary contract.
+- [x] Reconciliation detects drift without silently mutating source records.
+- [x] Existing Gold inventory/procurement contracts remain unchanged until a versioned ETL phase consumes backend data.
+
+## Acceptance evidence
+
+- Accepted 2026-07-22 after full guarded verification, focused inventory suite, Python regression, OpenAPI contract inspection, direct RLS/security review, and disk guards.
+- Schema is at Flyway V15. Inventory RLS separates read/write policy paths and role capability: Tenant Admin write, assigned Inventory Manager write, Executive/Data Analyst read-only tenant-wide, assigned Farm Manager read-only, Supplier denied.
+- Reviewer subagent automation was unavailable because of the external usage quota; the lead applied the base/API and adversarial code-review checklists manually and recorded no unresolved blocker.
 
 ## Risk Assessment
 

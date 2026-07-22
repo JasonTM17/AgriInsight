@@ -94,11 +94,11 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 | 2 | [OIDC identity and security boundary](./phase-02-oidc-identity-and-security-boundary.md) | Completed |
 | 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Completed |
 | 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Completed |
-| 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | In Progress |
+| 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | Completed |
 | 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Pending |
 | 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
 
-Phases 1-3 were accepted through 2026-07-20, and Phase 4 was accepted on 2026-07-22 with farm, field, crop, season, workforce, assignment, activity, immutable activity-log, and immutable harvest contracts verified. Phase 5 is now the active sequential boundary for inventory and procurement. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md), and [Phase 4 acceptance report](./reports/acceptance-2026-07-22-backend-phase4.md).
+Phases 1-4 were accepted through 2026-07-22, and Phase 5 was accepted on 2026-07-22 with inventory masters, warehouse assignments, immutable ledger/projections, reversal/reconciliation rules, role-aware RLS, and OpenAPI contracts verified. Phase 6 cost management is now the active sequential boundary; Phase 7 remains the release/container boundary. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md), [Phase 4 acceptance report](./reports/acceptance-2026-07-22-backend-phase4.md), and [Phase 5 acceptance report](./reports/acceptance-2026-07-22-backend-phase5.md).
 
 ## Dependencies
 
@@ -131,7 +131,7 @@ Default execution is sequential. Parallel work is allowed only for phase-owned t
 
 ### Serialized ownership transitions
 
-Intentional cross-phase edits are explicit locks, not parallel ownership: `backend/pom.xml` moves through phases 1, 2, 3, and 6; `application.yml`/`application-test.yml` through phases 1-3; phase-2 identity bootstrap/security/`/me` files are enriched under tenant context in phase 3; `UserProfile.java` gains its employee link in phase 4; phase 7 revisits only the named domain command services to attach the outbox writer, hardens phase 1's `backend/Dockerfile`, and extends phase 3's role template with the non-login integration role. Phase 4 owns farm/activity assignment tables only after farm/activity parents exist; phase 5 owns warehouse assignments only after warehouse parents exist. No phase may create an unconstrained polymorphic assignment merely to bypass Flyway ordering.
+Intentional cross-phase edits are explicit locks, not parallel ownership: `backend/pom.xml` moves through phases 1, 2, 3, and 6; `application.yml`/`application-test.yml` through phases 1-5; phase-2 identity bootstrap/security/`/me` files are enriched under tenant context in phase 3; `UserProfile.java` gains its employee link in phase 4; phase 7 revisits only the named domain command services to attach the outbox writer, hardens phase 1's `backend/Dockerfile`, and extends phase 3's role template with the non-login integration role. Phase 4 owns farm/activity assignment tables only after farm/activity parents exist; phase 5 owns warehouse assignments only after warehouse parents exist. No phase may create an unconstrained polymorphic assignment merely to bypass Flyway ordering.
 
 ## Requirements coverage
 

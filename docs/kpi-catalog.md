@@ -31,7 +31,10 @@ ABC dùng tỷ trọng giá trị tồn kho toàn doanh nghiệp:
 - B: phần tiếp theo đến khoảng 95%.
 - C: phần giá trị còn lại.
 
-Expiry alert hiện dùng ngày hết hạn gần nhất của inbound batch còn trong lịch sử. Batch-level FIFO/FEFO depletion sẽ được bổ sung khi backend inventory có allocation ledger.
+Expiry alert trong Gold vẫn dùng ngày hết hạn gần nhất của inbound batch còn
+trong lịch sử. Backend Phase 5 now owns batch-level FEFO depletion, allocation,
+and reversal truth in PostgreSQL; a future versioned ETL may consume it without
+changing the current Gold contract.
 
 ## Cost Analysis
 

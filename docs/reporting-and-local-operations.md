@@ -63,7 +63,8 @@ Thiếu hoặc không đọc được drive là FAIL. Script chỉ quan sát và
 không xóa file, cache hoặc artifact. Khi WARN, dừng build/cài đặt nặng và giữ
 temp/cache trong `artifacts/_tmp` trên D.
 
-Evidence sau backend gate gần nhất: C còn 20.463 GB và D còn 28.008 GB, cả hai PASS.
+Evidence sau Phase 5 backend gate gần nhất: C còn 10.925 GB và D còn 25.823 GB,
+cả hai PASS. Vì C gần ngưỡng cảnh báo, mọi Maven/temp/cache nặng phải giữ trên D.
 
 ## Backend verification
 
@@ -80,11 +81,11 @@ Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTim
 
 | Backend gate | Trạng thái hiện tại |
 |---|---|
-| Fresh Maven verification | PASS: 161 unit/security/module + 41 integration = 202 test |
+| Fresh Maven verification | PASS: 487 Surefire + 92 Failsafe; zero failures/errors/skips |
 | Docker daemon | Available during guarded verification |
 | Testcontainers + Flyway PostgreSQL | PASS; không còn container test treo sau gate |
 | Java 21 CI | Chưa verify |
-| Compose + backend image build | Phase 2 local smoke đã verify; chưa rebuild image chứa Phase 4 slice |
+| Compose + backend image build | Local non-root smoke đã verify; Phase 7 sẽ rebuild/scan image sau Phase 6 |
 | Docker Hub publish + image verification | Chưa claim |
 
 Không đổi blocked gate thành PASS bằng cách skip integration test. Chỉ push image first-party của AgriInsight sau khi test, review và release hardening đạt; không republish PostgreSQL hoặc image upstream.

@@ -41,7 +41,7 @@
 ## Backlog của goal cấp dự án
 
 - [ ] Custom Report Builder tự cấu hình ngoài ba format Cost Analysis đã kiểm soát.
-- [ ] Hoàn tất backend nghiệp vụ Phase 5-7; authentication/RLS và Phase 4 operations đã nghiệm thu.
+- [ ] Hoàn tất toàn bộ backend Phase 6-7; authentication/RLS, Phase 4 operations, và Phase 5 inventory/procurement đã nghiệm thu riêng.
 - [ ] PostgreSQL/ClickHouse, Flyway/dbt và incremental ETL bằng Airflow.
 - [ ] Realtime Kafka, cảnh báo đa kênh và mobile field application.
 - [ ] ML forecasting, anomaly detection, what-if analysis và model monitoring.
@@ -51,6 +51,6 @@ Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm
 
 ## Backend hiện trạng
 
-- [x] Backend Phase 1-4 đã nghiệm thu.
-- [x] Phase 4 farm/field/crop/season/workforce/activity/log/harvest/assignment đã qua 430-test backend gate và review không còn blocker.
+- [x] Backend Phase 1-5 đã nghiệm thu theo từng boundary.
+- [x] Phase 5 warehouse/material/supplier/assignment/inventory ledger/reversal/reconciliation/RLS/OpenAPI đã qua 32 focused tests và full guarded backend gate (487 Surefire + 92 Failsafe; zero failures/errors/skips).
 - [ ] Protected Java 21 CI, scan/SBOM/provenance và Docker Hub pulled-digest release gate.

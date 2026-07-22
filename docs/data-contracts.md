@@ -6,7 +6,7 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `11` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest schema và lifecycle guards |
+| Flyway schema history | `15` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, and role-aware inventory RLS |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
@@ -64,6 +64,43 @@ FarmCreateRequest yêu cầu `code`, `displayName`; `reasonCode` optional. FarmU
 FarmResponse chỉ gồm `id`, `code`, `displayName`, `active`, `version`; không trả `tenantId`. Page response gồm `items`, `limit`, `offset`, `hasMore`. Không có hard-delete route.
 
 Deactivate bị chặn khi farm còn field active, season PLANNED/ACTIVE, activity PLANNED/STARTED, hoặc assignment chưa revoked. Application transaction dùng explicit READ_COMMITTED; V7 khóa farm cha từ cả parent-deactivation và live-child write để serialize hai thứ tự cạnh tranh. V8 áp dụng cùng nguyên tắc cho field/crop/season. V9 khóa Employee khi gán trách nhiệm/hoạt động và chặn deactivate khi quan hệ còn sống. V10 khóa profile cho farm assignment và serialize cả grant-first lẫn profile-deactivation-first. V11 serialize live activity với season transition. Các migration fail closed trên dữ liệu nâng cấp bất nhất và giữ ENABLE/FORCE RLS khi rollback. FARM-scoped write khóa active assignment tới commit để revoke không chen giữa authorization và mutation.
+
+## Backend inventory/procurement HTTP contract
+
+Phase 5 is accepted and keeps the PostgreSQL operational lens separate from the
+Python SQLite/Gold analytics contract.
+
+| Method | Path | Permission | Contract chính |
+|---|---|---|---|
+| **GET/POST** | `/api/v1/warehouses` | `INVENTORY_READ/MANAGE` | bounded list; create/update/lifecycle commands use idempotency and strong versioning |
+| **GET/PATCH** | `/api/v1/warehouses/{id}` | `INVENTORY_READ/MANAGE` | assignment-aware visibility; no hard delete; code remains reserved |
+| **GET/POST** | `/api/v1/materials` | `INVENTORY_READ/MANAGE` | canonical base unit and bounded master filters |
+| **GET/PATCH** | `/api/v1/materials/{id}` | `INVENTORY_READ/MANAGE` | active/reference lifecycle guards and optimistic locking |
+| **GET/POST** | `/api/v1/suppliers` | `INVENTORY_READ/MANAGE` | active supplier master; no Supplier-role financial access |
+| **GET/PATCH** | `/api/v1/suppliers/{id}` | `INVENTORY_READ/MANAGE` | stable tenant code and lifecycle guards |
+| **POST** | `/api/v1/warehouse-assignments` | `INVENTORY_ASSIGNMENT_MANAGE` | tenant-admin grant to active profile + warehouse; append-preserved history |
+| **POST** | `/api/v1/warehouse-assignments/{id}/revoke` | `INVENTORY_ASSIGNMENT_MANAGE` | one-way audited revoke with strong `If-Match` |
+| **GET** | `/api/v1/inventory/balances` | `INVENTORY_READ` | bounded warehouse/material filters, stable order, low-stock flag |
+| **GET** | `/api/v1/inventory/lots` | `INVENTORY_READ` | bounded expiry/availability filters, assignment-aware rows |
+| **GET** | `/api/v1/inventory/transactions`, `/{id}` | `INVENTORY_READ` | bounded movement history and safe public representation |
+| **POST** | `/api/v1/inventory/transactions` | `INVENTORY_MANAGE` | `RECEIPT` or `ISSUE`, base quantity, idempotency key |
+| **POST** | `/api/v1/inventory/transactions/{id}/reversals` | `INVENTORY_MANAGE` | linked bounded reversal, reason, idempotency key, strong `If-Match` |
+
+`RECEIPT` requires active supplier, batch, expiry, base quantity, and VND unit
+cost. `ISSUE` requires a reason and optional explicit lot; it cannot submit
+supplier or finance fields and uses deterministic FEFO across eligible lots.
+The API accepts `quantityBase` in `KG`, `LITER`, or `PIECE`; tonnes are converted
+only at a future import boundary, together with unit price. Reversals derive
+direction, supplier/batch, and finance from the original transaction and never
+accept client-supplied inverse finance fields.
+
+Inventory RLS binds tenant and profile context transaction-locally. Tenant
+Admin can write tenant inventory; assigned Inventory Manager can read/write;
+Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read;
+Supplier has no inventory permission. V12-V15 create the tables, tenant-safe
+foreign keys, assignment lifecycle guards, role-aware policies, and
+tenant-leading indexes. `InventoryOpenApiContractTest` verifies operation
+summaries and request examples in `/v3/api-docs`.
 
 ## Operational identifiers
 

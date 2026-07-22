@@ -22,11 +22,11 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-4 đã được nghiệm thu đến ngày 2026-07-22. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit và API vận hành farm-to-harvest.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-5 đã được nghiệm thu đến ngày 2026-07-22. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs và inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts.
 
 Bằng chứng hiện tại:
 
-- Disk guard PASS trước các tác vụ nặng; Maven `verify` đạt 353 unit/HTTP/security/module test và 77 Testcontainers integration test trên PostgreSQL 18 sạch (430 tổng), gồm Flyway V1-V11 apply/validate, fresh install và allowlisted upgrade.
+- Disk guard PASS trước các tác vụ nặng; guarded Maven `verify` đạt 487 Surefire + 92 Failsafe test trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway V1-V15 apply/validate, fresh install, RLS, assignment lifecycle, concurrency và reconciliation.
 - OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
 - Public route chỉ gồm health allowlist. `/api/v1/me` và các route quản trị user/external identity/role dùng exact method/template + permission; mapping chưa đăng ký bị deny. Security response/log không chứa raw token hoặc provider diagnostics.
 - Runtime database role không phải owner/superuser/`BYPASSRLS`; tenant context chỉ tồn tại trong transaction. Direct-SQL tests chứng minh thiếu/sai context, cross-tenant read/write, `WITH CHECK` và pooled-connection reuse đều fail closed.
@@ -40,11 +40,11 @@ Bằng chứng hiện tại:
 
 Các cổng còn mở thuộc phase sau:
 
-- Phase 4 đã đóng farm/season/workforce/activity/log/harvest boundary. Inventory/procurement và cost CRUD vẫn thuộc Phase 5-6; release hardening thuộc Phase 7. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+- Phase 5 đã đóng inventory/procurement boundary. Cost CRUD/reporting thuộc Phase 6; outbox, CI, scans, SBOM/provenance và image publication thuộc Phase 7. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 - Protected Java 21 CI, image scan, SBOM/provenance và publication immutable lên Docker Hub thuộc Phase 7. Image backend hiện chỉ có local tag kiểm thử; chưa push registry.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
-Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md) và [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md).
+Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md) và [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md).
 
 Lệnh kiểm thử backend chuẩn từ repository root:
 
@@ -76,7 +76,7 @@ Dashboard mặc định mở tại `http://localhost:8501`. Navigation bên trá
 
 Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Form vận hành lọc theo nông trại/cây trồng/mùa vụ/hoạt động/tháng; form mua hàng lọc theo nông trại/nhà cung cấp/tháng. Chỉ khi submit form, service mới tạo các nút CSV/PDF và capability-gated XLSX từ request đã chuẩn hóa. PDF cục bộ cần `reports` extra như lệnh cài đặt trên. XLSX chỉ khả dụng khi provision explicit `AGRIINSIGHT_NODE_EXECUTABLE` và `AGRIINSIGHT_NODE_MODULES`.
 
-Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production và không cho phép receipt, issue, reversal hoặc mutation trước backend Phase 5. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
+Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Frontend production có thể lập kế hoạch trên read/mutation contracts Phase 5 nhưng vẫn phải giữ warehouse scope, idempotency, ETag và Phase 6 dependency. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
 
 Dashboard hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
 
@@ -129,6 +129,7 @@ artifacts/
 
 ## Tài liệu
 
+- [Project overview và PDR](docs/project-overview-pdr.md)
 - [Kiến trúc MVP](docs/architecture.md)
 - [System architecture](docs/system-architecture.md)
 - [Codebase summary](docs/codebase-summary.md)
