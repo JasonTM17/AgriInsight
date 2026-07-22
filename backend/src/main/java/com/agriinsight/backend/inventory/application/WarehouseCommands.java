@@ -28,7 +28,7 @@ public final class WarehouseCommands {
     public record Update(
             Optional<String> code,
             Optional<String> displayName,
-            Optional<String> locationText,
+            Optional<Optional<String>> locationText,
             long expectedVersion,
             TenantAuditMetadata audit) {
 
@@ -37,7 +37,7 @@ public final class WarehouseCommands {
             displayName = Objects.requireNonNull(displayName, "displayName is required")
                     .map(Warehouse::canonicalDisplayName);
             locationText = Objects.requireNonNull(locationText, "locationText is required")
-                    .map(Warehouse::canonicalLocation);
+                    .map(value -> value.map(Warehouse::canonicalLocation));
             if (code.isEmpty() && displayName.isEmpty() && locationText.isEmpty()) {
                 throw new IllegalArgumentException("at least one warehouse field must be provided");
             }

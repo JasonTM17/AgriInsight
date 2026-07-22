@@ -19,7 +19,7 @@ public interface WarehouseStore {
             long expectedVersion,
             Optional<String> code,
             Optional<String> displayName,
-            Optional<String> locationText);
+            Optional<Optional<String>> locationText);
 
     Optional<WarehouseRecord> updateActive(
             ScopeContext scope,
