@@ -1,10 +1,11 @@
 ---
 phase: 4
-title: "Farm season workforce and activity APIs"
+title: Farm season workforce and activity APIs
 status: completed
 priority: P1
-effort: "2-3d"
-dependencies: [3]
+effort: 2-3d
+dependencies:
+  - 3
 ---
 
 # Phase 4: Farm season workforce and activity APIs

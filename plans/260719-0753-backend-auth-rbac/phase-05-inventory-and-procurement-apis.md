@@ -1,10 +1,11 @@
 ---
 phase: 5
-title: "Inventory and procurement APIs"
-status: pending
+title: Inventory and procurement APIs
+status: in-progress
 priority: P1
-effort: "3-4d"
-dependencies: [3]
+effort: 3-4d
+dependencies:
+  - 3
 ---
 
 # Phase 5: Inventory and procurement APIs

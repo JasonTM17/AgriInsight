@@ -1,15 +1,24 @@
 ---
-title: "Backend Application, Authentication and Row-Scoped Authorization"
-description: "Add a Java 21 Spring modular monolith for operational APIs with provider-neutral OIDC, deny-by-default RBAC, PostgreSQL tenant RLS, and a versioned outbox boundary to the Python analytics pipeline."
+title: 'Backend Application, Authentication and Row-Scoped Authorization'
+description: >-
+  Add a Java 21 Spring modular monolith for operational APIs with
+  provider-neutral OIDC, deny-by-default RBAC, PostgreSQL tenant RLS, and a
+  versioned outbox boundary to the Python analytics pipeline.
 status: in-progress
 priority: P1
-effort: "17-23d"
-branch: "main"
-tags: [feature, backend, database, api, auth, critical]
+effort: 17-23d
+branch: main
+tags:
+  - feature
+  - backend
+  - database
+  - api
+  - auth
+  - critical
 blockedBy: []
 blocks: []
-created: "2026-07-19T00:54:26.232Z"
-createdBy: "ck:plan"
+created: '2026-07-19T00:54:26.232Z'
+createdBy: 'ck:plan'
 source: skill
 ---
 
@@ -84,12 +93,12 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 | 1 | [Backend foundation and contracts](./phase-01-backend-foundation-and-contracts.md) | Completed |
 | 2 | [OIDC identity and security boundary](./phase-02-oidc-identity-and-security-boundary.md) | Completed |
 | 3 | [Tenant RBAC and PostgreSQL RLS](./phase-03-tenant-rbac-and-postgresql-rls.md) | Completed |
-| 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | In progress |
-| 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | Pending |
+| 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Completed |
+| 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | In Progress |
 | 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Pending |
 | 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
 
-Phases 1-3 were accepted through 2026-07-20. Phase 4 is the active sequential implementation boundary: its operations schema through V10, FORCE RLS, scoped farm core, versioned farm/field/crop/season master-data HTTP, Employee, and tenant-admin farm-assignment slices are implemented and verified; activity, activity-assignment, log, harvest, and worker-scope APIs remain open. Phase 5 is dependency-unblocked but remains ordered after Phase 4. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), and [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md).
+Phases 1-3 were accepted through 2026-07-20, and Phase 4 was accepted on 2026-07-22 with farm, field, crop, season, workforce, assignment, activity, immutable activity-log, and immutable harvest contracts verified. Phase 5 is now the active sequential boundary for inventory and procurement. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md), and [Phase 4 acceptance report](./reports/acceptance-2026-07-22-backend-phase4.md).
 
 ## Dependencies
 
