@@ -1,6 +1,7 @@
 package com.agriinsight.backend.farm.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -94,6 +95,18 @@ class FarmAssignmentServiceTest {
 
         verify(store, never()).create(any(), any());
         verifyNoInteractions(auditPublisher);
+    }
+
+    @Test
+    void preclaimValidationAllowsExecutorToReplayAnExistingGrant() {
+        when(store.findActive(SCOPE, PROFILE_ID, FARM_ID))
+                .thenReturn(Optional.of(assignment(true, 0)));
+
+        assertThatCode(() -> service.requireGrantTargets(grant(0)))
+                .doesNotThrowAnyException();
+
+        verify(store, never()).findActive(any(), any(), any());
+        verify(store, never()).create(any(), any());
     }
 
     @Test

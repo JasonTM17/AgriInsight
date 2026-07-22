@@ -41,6 +41,9 @@ public class FarmAssignmentService {
         Objects.requireNonNull(command, "command is required");
         ScopeContext scope = requireManagement();
         requireGrantTargets(scope, command);
+        if (store.findActive(scope, command.userProfileId(), command.farmId()).isPresent()) {
+            throw new ResourceStateConflictException("Farm assignment is already active");
+        }
         FarmAssignmentRecord assignment = store.create(scope, new FarmAssignment(
                 UUID.randomUUID(), scope.tenantId(), command.userProfileId(), command.farmId()));
         publish(scope, TenantAuditEvent.Action.FARM_ASSIGNMENT_GRANTED, assignment, command.audit());
@@ -90,9 +93,6 @@ public class FarmAssignmentService {
         }
         if (!store.activeFarmExists(scope, command.farmId())) {
             throw new ResourceNotFoundException("Active farm");
-        }
-        if (store.findActive(scope, command.userProfileId(), command.farmId()).isPresent()) {
-            throw new ResourceStateConflictException("Farm assignment is already active");
         }
     }
 
