@@ -33,8 +33,8 @@ final class PostgresFieldMutationStore {
             throw new IllegalArgumentException("At least one field value must be provided");
         }
         UUID requiredFieldId = Objects.requireNonNull(fieldId, "fieldId is required");
-        ScopeContext farmScope = requireFarmScope(scope);
-        if (!lockField(farmScope, requiredFieldId)) {
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
+        if (!lockField(writeScope, requiredFieldId)) {
             return Optional.empty();
         }
         StringBuilder sql = new StringBuilder("UPDATE fields AS field SET ");
@@ -50,12 +50,12 @@ final class PostgresFieldMutationStore {
                    AND field.version = ?
                    AND (
                 """);
-        parameters.add(farmScope.tenantId());
+        parameters.add(writeScope.tenantId());
         parameters.add(requiredFieldId);
         parameters.add(expectedVersion);
         appendDifferencePredicate(sql, parameters, columns);
         sql.append(')');
-        FarmScopeSql.append(sql, parameters, farmScope, farmScope.resourceId().orElseThrow());
+        FarmScopeSql.append(sql, parameters, writeScope, writeScope.resourceId().orElse(null));
         sql.append(" RETURNING ").append(FieldRowMapping.SELECT_COLUMNS);
         return FieldRowMapping.exactlyOneOrEmpty(
                 jdbcTemplate.query(sql.toString(), FieldRowMapping.MAPPER, parameters.toArray()));
@@ -95,7 +95,7 @@ final class PostgresFieldMutationStore {
                  WHERE field.tenant_id = ? AND field.id = ?
                 """);
         List<Object> parameters = new ArrayList<>(List.of(scope.tenantId(), fieldId));
-        FarmScopeSql.append(sql, parameters, scope, scope.resourceId().orElseThrow());
+        FarmScopeSql.append(sql, parameters, scope, scope.resourceId().orElse(null));
         sql.append(" FOR UPDATE OF field");
         return FieldRowMapping.exactlyOneOrEmpty(jdbcTemplate.query(
                 sql.toString(),
@@ -133,14 +133,6 @@ final class PostgresFieldMutationStore {
 
     private Object nullable(Object value, int type) {
         return value == null ? new SqlParameterValue(type, null) : value;
-    }
-
-    private ScopeContext requireFarmScope(ScopeContext scope) {
-        ScopeContext required = Objects.requireNonNull(scope, "scope is required");
-        if (required.type() != ScopeContext.Type.FARM || required.resourceId().isEmpty()) {
-            throw new IllegalArgumentException("Field mutation requires target farm scope");
-        }
-        return required;
     }
 
     private void requireVersion(long expectedVersion) {

@@ -10,6 +10,28 @@ final class FarmScopeSql {
     private FarmScopeSql() {
     }
 
+    static ScopeContext requireWriteScope(ScopeContext scope) {
+        ScopeContext required = Objects.requireNonNull(scope, "scope is required");
+        boolean tenantWide = required.type() == ScopeContext.Type.TENANT
+                && required.resourceId().isEmpty();
+        boolean targetedFarm = required.type() == ScopeContext.Type.FARM
+                && required.resourceId().isPresent();
+        if (!tenantWide && !targetedFarm) {
+            throw new IllegalArgumentException("Farm write requires tenant-wide or target farm scope");
+        }
+        return required;
+    }
+
+    static ScopeContext requireWriteScope(ScopeContext scope, UUID targetFarmId) {
+        ScopeContext required = requireWriteScope(scope);
+        UUID target = Objects.requireNonNull(targetFarmId, "targetFarmId is required");
+        if (required.type() == ScopeContext.Type.FARM
+                && !required.resourceId().orElseThrow().equals(target)) {
+            throw new IllegalArgumentException("Farm scope cannot target another farm");
+        }
+        return required;
+    }
+
     static void append(
             StringBuilder sql,
             List<Object> parameters,

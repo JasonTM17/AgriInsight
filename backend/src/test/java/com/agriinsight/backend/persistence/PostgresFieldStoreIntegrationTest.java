@@ -37,6 +37,7 @@ class PostgresFieldStoreIntegrationTest {
     private static final UUID UNASSIGNED_FARM_ID = UUID.fromString("41000000-0000-0000-0000-000000000071");
     private static final UUID UNASSIGNED_FIELD_ID = UUID.fromString("41000000-0000-0000-0000-000000000072");
     private static final UUID NEW_FIELD_ID = UUID.fromString("41000000-0000-0000-0000-000000000073");
+    private static final UUID TENANT_FIELD_ID = UUID.fromString("41000000-0000-0000-0000-000000000074");
     private static final TenantPrincipal PRINCIPAL = new TestPrincipal();
     private static final TenantAuditMetadata AUDIT = new TenantAuditMetadata(
             Optional.of("FIELD_CHANGE"), Optional.of("request-store-2"));
@@ -98,6 +99,21 @@ class PostgresFieldStoreIntegrationTest {
                 assertThat(active.active()).isTrue();
                 assertThat(store.hasDeactivationBlockers(farmScope, EXISTING_FIELD_ID)).isTrue();
                 assertThat(store.updateActive(farmScope, EXISTING_FIELD_ID, 0, false)).isEmpty();
+
+                ScopeContext tenantScope = ScopeContext.tenant(PRINCIPAL);
+                var tenantCreated = store.create(
+                        tenantScope, field(TENANT_FIELD_ID, "FIELD-TENANT"));
+                var tenantUpdate = new FieldCommands.Update(
+                        Optional.empty(), Optional.of("Tenant Managed Field"),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), 0, AUDIT);
+                var tenantUpdated = store.update(
+                        tenantScope, tenantCreated.id(), 0, tenantUpdate).orElseThrow();
+                var tenantInactive = store.updateActive(
+                        tenantScope, tenantUpdated.id(), 1, false).orElseThrow();
+                assertThat(tenantUpdated.displayName()).isEqualTo("Tenant Managed Field");
+                assertThat(tenantInactive.active()).isFalse();
+                assertThat(tenantInactive.version()).isEqualTo(2);
                 return null;
             });
         }
@@ -115,8 +131,12 @@ class PostgresFieldStoreIntegrationTest {
     }
 
     private Field field() {
+        return field(NEW_FIELD_ID, "FIELD-NEW");
+    }
+
+    private Field field(UUID fieldId, String code) {
         return new Field(
-                NEW_FIELD_ID, TENANT_ID, FARM_ID, "FIELD-NEW", "New Field",
+                fieldId, TENANT_ID, FARM_ID, code, "New Field",
                 new BigDecimal("8.5"), Optional.of(EMPLOYEE_ID),
                 Optional.of(new Field.Coordinates(
                         new BigDecimal("10.1234"), new BigDecimal("106.5678"))),

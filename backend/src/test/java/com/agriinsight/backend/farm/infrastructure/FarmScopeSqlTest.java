@@ -56,6 +56,24 @@ class FarmScopeSqlTest {
         assertThat(parameters).containsExactly(PROFILE_ID);
     }
 
+    @Test
+    void writesAcceptTenantOrTargetedFarmScopeButRejectListScope() {
+        ScopeContext tenantScope = ScopeContext.tenant(PRINCIPAL);
+        ScopeContext targetScope = ScopeContext.domain(
+                PRINCIPAL, ScopeContext.Type.FARM, Optional.of(FARM_ID));
+        ScopeContext listScope = ScopeContext.domain(
+                PRINCIPAL, ScopeContext.Type.FARM, Optional.empty());
+
+        assertThat(FarmScopeSql.requireWriteScope(tenantScope, FARM_ID)).isSameAs(tenantScope);
+        assertThat(FarmScopeSql.requireWriteScope(targetScope, FARM_ID)).isSameAs(targetScope);
+        assertThatThrownBy(() -> FarmScopeSql.requireWriteScope(listScope))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("target farm scope");
+        assertThatThrownBy(() -> FarmScopeSql.requireWriteScope(targetScope, OTHER_FARM_ID))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("another farm");
+    }
+
     private record TestPrincipal() implements TenantPrincipal {
         @Override public UUID profileId() { return PROFILE_ID; }
         @Override public UUID tenantId() { return TENANT_ID; }

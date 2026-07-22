@@ -38,10 +38,10 @@ final class PostgresFieldLifecycleStore {
             UUID fieldId,
             long expectedVersion,
             boolean active) {
-        ScopeContext farmScope = requireFarmScope(scope);
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
         UUID requiredFieldId = Objects.requireNonNull(fieldId, "fieldId is required");
         requireVersion(expectedVersion);
-        if (!lockField(farmScope, requiredFieldId)) {
+        if (!lockField(writeScope, requiredFieldId)) {
             return Optional.empty();
         }
         StringBuilder sql = new StringBuilder("""
@@ -57,7 +57,7 @@ final class PostgresFieldLifecycleStore {
                    AND field.active <> ?
                 """);
         List<Object> parameters = new ArrayList<>(List.of(
-                active, farmScope.tenantId(), requiredFieldId, expectedVersion, active));
+                active, writeScope.tenantId(), requiredFieldId, expectedVersion, active));
         if (active) {
             sql.append("""
                      AND farm.active
@@ -70,14 +70,14 @@ final class PostgresFieldLifecycleStore {
         } else {
             sql.append(" AND NOT (").append(LIVE_DEPENDENT_PREDICATE).append(')');
         }
-        FarmScopeSql.append(sql, parameters, farmScope, farmScope.resourceId().orElseThrow());
+        FarmScopeSql.append(sql, parameters, writeScope, writeScope.resourceId().orElse(null));
         sql.append(" RETURNING ").append(FieldRowMapping.SELECT_COLUMNS);
         return FieldRowMapping.exactlyOneOrEmpty(
                 jdbcTemplate.query(sql.toString(), FieldRowMapping.MAPPER, parameters.toArray()));
     }
 
     boolean hasDeactivationBlockers(ScopeContext scope, UUID fieldId) {
-        ScopeContext farmScope = requireFarmScope(scope);
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope);
         UUID requiredFieldId = Objects.requireNonNull(fieldId, "fieldId is required");
         StringBuilder sql = new StringBuilder("SELECT (")
                 .append(LIVE_DEPENDENT_PREDICATE)
@@ -88,8 +88,8 @@ final class PostgresFieldLifecycleStore {
                             ON farm.tenant_id = field.tenant_id AND farm.id = field.farm_id
                          WHERE field.tenant_id = ? AND field.id = ?
                         """);
-        List<Object> parameters = new ArrayList<>(List.of(farmScope.tenantId(), requiredFieldId));
-        FarmScopeSql.append(sql, parameters, farmScope, farmScope.resourceId().orElseThrow());
+        List<Object> parameters = new ArrayList<>(List.of(writeScope.tenantId(), requiredFieldId));
+        FarmScopeSql.append(sql, parameters, writeScope, writeScope.resourceId().orElse(null));
         return FieldRowMapping.exactlyOneOrEmpty(jdbcTemplate.query(
                 sql.toString(),
                 (result, rowNumber) -> result.getBoolean("blocked"),
@@ -105,20 +105,12 @@ final class PostgresFieldLifecycleStore {
                  WHERE field.tenant_id = ? AND field.id = ?
                 """);
         List<Object> parameters = new ArrayList<>(List.of(scope.tenantId(), fieldId));
-        FarmScopeSql.append(sql, parameters, scope, scope.resourceId().orElseThrow());
+        FarmScopeSql.append(sql, parameters, scope, scope.resourceId().orElse(null));
         sql.append(" FOR UPDATE OF field");
         return FieldRowMapping.exactlyOneOrEmpty(jdbcTemplate.query(
                 sql.toString(),
                 (result, rowNumber) -> result.getObject("id", UUID.class),
                 parameters.toArray())).isPresent();
-    }
-
-    private ScopeContext requireFarmScope(ScopeContext scope) {
-        ScopeContext required = Objects.requireNonNull(scope, "scope is required");
-        if (required.type() != ScopeContext.Type.FARM || required.resourceId().isEmpty()) {
-            throw new IllegalArgumentException("Field lifecycle requires target farm scope");
-        }
-        return required;
     }
 
     private void requireVersion(long expectedVersion) {

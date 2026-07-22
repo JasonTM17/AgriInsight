@@ -22,8 +22,8 @@ final class PostgresFieldCreateStore {
 
     FieldRecord create(ScopeContext scope, Field field) {
         Objects.requireNonNull(field, "field is required");
-        requireFarmAccess(scope, field.farmId());
-        if (!scope.tenantId().equals(field.tenantId())) {
+        ScopeContext writeScope = FarmScopeSql.requireWriteScope(scope, field.farmId());
+        if (!writeScope.tenantId().equals(field.tenantId())) {
             throw new IllegalArgumentException("Field cannot switch tenants");
         }
         Field.Coordinates coordinates = field.coordinates().orElse(null);
@@ -39,7 +39,7 @@ final class PostgresFieldCreateStore {
                 """);
         List<Object> parameters = parameters(field, coordinates);
         appendResponsibleEmployeeGuard(sql, parameters, field.responsibleEmployeeId());
-        FarmScopeSql.append(sql, parameters, scope, field.farmId());
+        FarmScopeSql.append(sql, parameters, writeScope, field.farmId());
         sql.append(" RETURNING ").append(FieldRowMapping.RETURNING_COLUMNS);
         return FieldRowMapping.exactlyOneOrEmpty(
                 jdbcTemplate.query(sql.toString(), FieldRowMapping.MAPPER, parameters.toArray()))
@@ -74,14 +74,5 @@ final class PostgresFieldCreateStore {
 
     private Object nullable(Object value, int type) {
         return value == null ? new SqlParameterValue(type, null) : value;
-    }
-
-    private void requireFarmAccess(ScopeContext scope, UUID farmId) {
-        ScopeContext required = Objects.requireNonNull(scope, "scope is required");
-        if (required.type() != ScopeContext.Type.FARM
-                || required.resourceId().isEmpty()
-                || !required.resourceId().orElseThrow().equals(farmId)) {
-            throw new IllegalArgumentException("Field write requires target farm scope");
-        }
     }
 }
