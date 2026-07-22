@@ -123,6 +123,16 @@ public final class InventoryLedgerAssertions {
             return null;
         });
         harness.withinTenant(() -> {
+            InventoryReconciliationDriftFixtures.insertMisallocatedIssueReversal(
+                    harness, tenantId, warehouseId, materialId, scope.profileId());
+            var report = new PostgresInventoryReconciliationStore(
+                    harness.jdbcTemplate()).reconcile(scope);
+            assertThat(report.transactionDriftCount()).isEqualTo(1);
+            assertThat(report.lotDriftCount()).isZero();
+            assertThat(report.balanceDriftCount()).isZero();
+            return null;
+        });
+        harness.withinTenant(() -> {
             harness.jdbcTemplate().update("""
                     UPDATE stock_balances SET quantity_on_hand = 999
                      WHERE tenant_id = ? AND warehouse_id = ? AND material_id = ?
@@ -144,7 +154,7 @@ public final class InventoryLedgerAssertions {
                     scope.profileId());
             var report = new PostgresInventoryReconciliationStore(
                     harness.jdbcTemplate()).reconcile(scope);
-            assertThat(report.transactionDriftCount()).isEqualTo(1);
+            assertThat(report.transactionDriftCount()).isEqualTo(2);
             assertThat(report.lotDriftCount()).isEqualTo(1);
             assertThat(report.balanceDriftCount()).isEqualTo(1);
             return null;

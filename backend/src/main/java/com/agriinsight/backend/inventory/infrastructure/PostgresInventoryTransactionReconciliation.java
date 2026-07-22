@@ -22,6 +22,21 @@ final class PostgresInventoryTransactionReconciliation {
                       FROM inventory_transaction_lot_allocations AS allocation
                      WHERE allocation.tenant_id = ?
                      GROUP BY allocation.transaction_id
+                ), allocation_by_lot AS (
+                    SELECT allocation.transaction_id, allocation.stock_lot_id,
+                           SUM(allocation.quantity_base) AS quantity
+                      FROM inventory_transaction_lot_allocations AS allocation
+                     WHERE allocation.tenant_id = ?
+                     GROUP BY allocation.transaction_id, allocation.stock_lot_id
+                ), issue_reversal_lot_totals AS (
+                    SELECT reversal.reversal_of, allocation.stock_lot_id,
+                           SUM(allocation.quantity_base) AS quantity
+                      FROM inventory_transactions AS reversal
+                      JOIN inventory_transaction_lot_allocations AS allocation
+                        ON allocation.tenant_id = reversal.tenant_id
+                       AND allocation.transaction_id = reversal.id
+                     WHERE reversal.tenant_id = ? AND reversal.kind = 'REVERSAL'
+                     GROUP BY reversal.reversal_of, allocation.stock_lot_id
                 ), receipt_lot_counts AS (
                     SELECT lot.original_receipt_id, COUNT(*) AS lot_count
                       FROM stock_lots AS lot
@@ -87,6 +102,19 @@ final class PostgresInventoryTransactionReconciliation {
                                       OR transaction.supplier_id IS NOT NULL
                                       OR transaction.batch_code IS NOT NULL
                                       OR transaction.expiry_date IS NOT NULL
+                                      OR EXISTS (
+                                          SELECT 1
+                                            FROM allocation_by_lot AS restored
+                                            LEFT JOIN allocation_by_lot AS issued
+                                              ON issued.transaction_id = original.id
+                                             AND issued.stock_lot_id = restored.stock_lot_id
+                                            LEFT JOIN issue_reversal_lot_totals AS cumulative
+                                              ON cumulative.reversal_of = original.id
+                                             AND cumulative.stock_lot_id = restored.stock_lot_id
+                                           WHERE restored.transaction_id = transaction.id
+                                             AND (issued.stock_lot_id IS NULL
+                                               OR cumulative.quantity > issued.quantity)
+                                      )
                                   END
                            END AS drifted
                       FROM inventory_transactions AS transaction
@@ -105,7 +133,8 @@ final class PostgresInventoryTransactionReconciliation {
                      WHERE transaction.tenant_id = ?
                 """);
         List<Object> parameters = new ArrayList<>(List.of(
-                scope.tenantId(), scope.tenantId(), scope.tenantId(), scope.tenantId()));
+                scope.tenantId(), scope.tenantId(), scope.tenantId(),
+                scope.tenantId(), scope.tenantId(), scope.tenantId()));
         WarehouseScopeSql.append(sql, parameters, scope, null);
         sql.append("""
                 )
