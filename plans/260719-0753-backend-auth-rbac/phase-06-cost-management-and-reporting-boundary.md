@@ -40,8 +40,8 @@ stock balance ---------> inventory value lens (separate)
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\domain\OperatingCostEntry.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\domain\CostCategory.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\cost\infrastructure\CostProjectionRepository.java`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V13__create_operating_cost_ledger.sql`
-- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V14__add_cost_rls_policies.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V14__create_operating_cost_ledger.sql`
+- Create: `D:\AgriInsight\backend\src\main\resources\db\migration\V15__add_cost_rls_policies.sql`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\cost\OperatingCostApiTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\cost\CostAuthorizationTests.java`
 - Create: `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\cost\CostInvariantTests.java`
