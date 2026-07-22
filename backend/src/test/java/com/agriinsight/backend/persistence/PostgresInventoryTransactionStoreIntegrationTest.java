@@ -16,6 +16,7 @@ import com.agriinsight.backend.inventory.application.InventoryTransactionRecord;
 import com.agriinsight.backend.inventory.domain.InventoryTransactionKind;
 import com.agriinsight.backend.inventory.infrastructure.PostgresInventoryTransactionStore;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
+import com.agriinsight.backend.shared.application.ResourceNotFoundException;
 import com.agriinsight.backend.shared.application.ResourceStateConflictException;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.math.BigDecimal;
@@ -151,6 +152,38 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                      WHERE tenant_id = ? AND (id = ? OR reversal_of = ?)
                     """, BigDecimal.class, TENANT_ID, roundingReceipt.id(), roundingReceipt.id())))
                     .isEqualByComparingTo("0.00");
+            harness.withinTenant(() -> {
+                harness.jdbcTemplate().update("""
+                        UPDATE user_warehouse_assignments
+                           SET revoked_at = clock_timestamp(), version = version + 1,
+                               updated_at = clock_timestamp()
+                         WHERE tenant_id = ? AND warehouse_id = ? AND revoked_at IS NULL
+                        """, TENANT_ID, WAREHOUSE_ID);
+                harness.jdbcTemplate().update("""
+                        UPDATE warehouses SET active = FALSE, version = version + 1
+                         WHERE tenant_id = ? AND id = ?
+                        """, TENANT_ID, WAREHOUSE_ID);
+                return null;
+            });
+            assertThatThrownBy(() -> harness.withinTenant(() -> store.reverse(
+                    ScopeContext.tenant(new TestPrincipal()), roundingReceipt.id(), UUID.randomUUID(),
+                    new InventoryTransactionCommands.Reversal(
+                            new BigDecimal("0.1"), "Inactive warehouse", 2, AUDIT))))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessage("Inventory transaction was not found");
+            harness.withinTenant(() -> {
+                harness.jdbcTemplate().update("""
+                        UPDATE warehouses SET active = TRUE, version = version + 1
+                         WHERE tenant_id = ? AND id = ?
+                        """, TENANT_ID, WAREHOUSE_ID);
+                harness.jdbcTemplate().update("""
+                        UPDATE user_warehouse_assignments
+                           SET revoked_at = NULL, version = version + 1,
+                               updated_at = clock_timestamp()
+                         WHERE tenant_id = ? AND warehouse_id = ?
+                        """, TENANT_ID, WAREHOUSE_ID);
+                return null;
+            });
             assertReconciliationDetectsDrift(
                     harness, SCOPE, TENANT_ID, WAREHOUSE_ID, MATERIAL_ID);
         }

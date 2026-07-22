@@ -25,7 +25,10 @@ final class PostgresWarehouseLifecycleStore {
                 SELECT 1 FROM stock_lots AS lot
                  WHERE lot.tenant_id = warehouse.tenant_id
                    AND lot.warehouse_id = warehouse.id
-                   AND lot.available_quantity > 0
+            ) OR EXISTS (
+                SELECT 1 FROM inventory_transactions AS transaction
+                 WHERE transaction.tenant_id = warehouse.tenant_id
+                   AND transaction.warehouse_id = warehouse.id
             )
             """;
 

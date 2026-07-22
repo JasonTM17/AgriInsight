@@ -44,7 +44,7 @@ final class InventoryPostingTargetLocks {
         List<UUID> rows = jdbcTemplate.query("""
                 SELECT warehouse.id
                   FROM warehouses AS warehouse
-                 WHERE warehouse.tenant_id = ? AND warehouse.id = ?
+                 WHERE warehouse.tenant_id = ? AND warehouse.id = ? AND warehouse.active
                  FOR SHARE
                 """,
                 (result, rowNumber) -> result.getObject("id", UUID.class),
