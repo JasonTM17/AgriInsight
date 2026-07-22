@@ -388,6 +388,14 @@ REVOKE ALL ON activities FROM PUBLIC;
 REVOKE ALL ON activity_assignees FROM PUBLIC;
 REVOKE ALL ON activity_logs FROM PUBLIC;
 REVOKE ALL ON harvests FROM PUBLIC;
+REVOKE ALL ON warehouses FROM PUBLIC;
+REVOKE ALL ON materials FROM PUBLIC;
+REVOKE ALL ON suppliers FROM PUBLIC;
+REVOKE ALL ON user_warehouse_assignments FROM PUBLIC;
+REVOKE ALL ON inventory_transactions FROM PUBLIC;
+REVOKE ALL ON inventory_transaction_lot_allocations FROM PUBLIC;
+REVOKE ALL ON stock_lots FROM PUBLIC;
+REVOKE ALL ON stock_balances FROM PUBLIC;
 REVOKE ALL ON flyway_schema_history FROM PUBLIC;
 
 REVOKE ALL ON tenants FROM agriinsight_runtime;
@@ -410,6 +418,14 @@ REVOKE ALL ON activities FROM agriinsight_runtime;
 REVOKE ALL ON activity_assignees FROM agriinsight_runtime;
 REVOKE ALL ON activity_logs FROM agriinsight_runtime;
 REVOKE ALL ON harvests FROM agriinsight_runtime;
+REVOKE ALL ON warehouses FROM agriinsight_runtime;
+REVOKE ALL ON materials FROM agriinsight_runtime;
+REVOKE ALL ON suppliers FROM agriinsight_runtime;
+REVOKE ALL ON user_warehouse_assignments FROM agriinsight_runtime;
+REVOKE ALL ON inventory_transactions FROM agriinsight_runtime;
+REVOKE ALL ON inventory_transaction_lot_allocations FROM agriinsight_runtime;
+REVOKE ALL ON stock_lots FROM agriinsight_runtime;
+REVOKE ALL ON stock_balances FROM agriinsight_runtime;
 REVOKE ALL ON flyway_schema_history FROM agriinsight_runtime;
 
 GRANT SELECT ON tenants TO agriinsight_runtime;
@@ -455,6 +471,26 @@ GRANT UPDATE (revoked_at, version, updated_at)
     ON activity_assignees TO agriinsight_runtime;
 GRANT SELECT, INSERT ON activity_logs TO agriinsight_runtime;
 GRANT SELECT, INSERT ON harvests TO agriinsight_runtime;
+GRANT SELECT, INSERT ON warehouses TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, location_text, active, version, updated_at)
+    ON warehouses TO agriinsight_runtime;
+GRANT SELECT, INSERT ON materials TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, base_unit, minimum_stock_quantity, active, version, updated_at)
+    ON materials TO agriinsight_runtime;
+GRANT SELECT, INSERT ON suppliers TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, active, version, updated_at)
+    ON suppliers TO agriinsight_runtime;
+GRANT SELECT, INSERT ON user_warehouse_assignments TO agriinsight_runtime;
+GRANT UPDATE (revoked_at, version, updated_at)
+    ON user_warehouse_assignments TO agriinsight_runtime;
+GRANT SELECT, INSERT ON inventory_transactions TO agriinsight_runtime;
+GRANT SELECT, INSERT ON inventory_transaction_lot_allocations TO agriinsight_runtime;
+GRANT SELECT, INSERT ON stock_lots TO agriinsight_runtime;
+GRANT UPDATE (available_quantity, version, updated_at)
+    ON stock_lots TO agriinsight_runtime;
+GRANT SELECT, INSERT ON stock_balances TO agriinsight_runtime;
+GRANT UPDATE (quantity_on_hand, inventory_value_vnd, version, updated_at)
+    ON stock_balances TO agriinsight_runtime;
 GRANT SELECT ON flyway_schema_history TO agriinsight_runtime;
 
 GRANT SELECT (id, tenant_id, user_profile_id, issuer, subject, active)
