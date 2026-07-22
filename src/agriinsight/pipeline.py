@@ -97,17 +97,10 @@ def run_pipeline(output_root: Path, config: GenerationConfig) -> dict[str, Any]:
 
     manifest = {
         "pipeline": "agriinsight-bronze-silver-gold-v1",
-        "run_id": f"synthetic-{config.as_of_date.isoformat()}-{config.seed}",
+        "run_id": config.run_id,
         "as_of_date": config.as_of_date.isoformat(),
         "seed": config.seed,
-        "configuration": {
-            "farm_count": config.farm_count,
-            "fields_per_farm": config.fields_per_farm,
-            "activities_per_season": config.activities_per_season,
-            "material_count": config.material_count,
-            "sensor_history_days": config.sensor_history_days,
-            "sensor_readings_per_day": config.sensor_readings_per_day,
-        },
+        "configuration": config.manifest_configuration(),
         "quality_status": quality_report["status"],
         "row_counts": {
             "bronze": {name: len(frame) for name, frame in raw.items()},

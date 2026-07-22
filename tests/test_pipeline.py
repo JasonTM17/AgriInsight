@@ -33,6 +33,8 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     root = tmp_path / "artifacts"
 
     assert manifest["quality_status"] == "passed"
+    assert manifest["configuration"]["scale_profile"] == "standard"
+    assert manifest["configuration"]["nominal_sensor_readings"] == 56
     assert (root / "warehouse" / "agriinsight.db").exists()
     assert (root / "gold" / "executive_summary.csv").exists()
     assert (root / "gold" / "cost_summary.csv").exists()
