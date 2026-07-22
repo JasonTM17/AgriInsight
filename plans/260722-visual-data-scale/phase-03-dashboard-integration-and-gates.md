@@ -1,5 +1,7 @@
 # Phase 03 — Dashboard integration and gates
 
+Status: completed 2026-07-22
+
 ## Goal
 
 Integrate visuals as contextual evidence, not decorative clutter, while keeping
@@ -38,3 +40,11 @@ the dashboard testable and the future React boundary explicit.
 The future Next.js app should use responsive `srcset`, native lazy loading,
 descriptive `alt`, and image optimization. This Streamlit integration does not
 authorize browser token storage or client-side KPI recomputation.
+
+## Evidence
+
+- Focused visual/dashboard suite: 13 passed; full Python regression: 75 passed,
+  3 intentional skips; compileall passed.
+- Live browser gate with the big-data artifacts rendered Executive and Crop
+  Health; the Crop Health warning and page visual were visible.
+- Theme config is covered by TOML assertions and uses the Field Ledger tokens.

@@ -10,6 +10,9 @@
 - [x] Silver đạt 100% các quality gate bắt buộc trước khi load.
 - [x] Warehouse dùng star schema và không vi phạm khóa ngoại.
 - [x] Pipeline idempotent, reproducible và có manifest/checksum.
+- [x] Named `big-data` profile reproducibly generates a nominal 1,051,200
+  sensor plan and a verified 1,050,000-row warehouse fact after quality
+  fixtures; resolved configuration fingerprints the manifest run ID.
 
 ## Analytics và dashboard
 
@@ -23,6 +26,9 @@
 - [x] Cost Analysis lọc farm/crop/season/activity/month, hiển thị cost/budget/cost per unit, activity drivers và procurement lens riêng.
 - [x] Insight và khuyến nghị có bằng chứng định lượng.
 - [x] Dashboard render/navigation, form-submit, stale bundle, missing/empty Gold và export error được kiểm thử tự động.
+- [x] Executive, Farm Performance, Inventory, Crop Health, Data Quality, and
+  Cost Analysis render contextual first-party visuals; missing assets fail soft,
+  and Crop Health labels AI-generated demo evidence.
 
 ## Export service
 
@@ -34,9 +40,13 @@
 - [x] Có test suite end-to-end và CI workflow.
 - [x] Có Dockerfile, Compose và hướng dẫn chạy.
 - [x] Package wheel chứa SQL schema và CLI entrypoint.
-- [x] Dataset mặc định hoàn thành trong thời gian phù hợp cho local demo/CI.
+- [x] Dataset mặc định hoàn thành trong thời gian phù hợp cho local demo/CI;
+  guarded big-data runner keeps heavy temp/cache on D and verifies C/D twice.
 - [x] Disk guard C/D chỉ đọc, có ngưỡng pass/warn/fail và test boundary/missing-drive.
 - [x] Cost Analysis đã được browser QA ở desktop và narrow viewport, không có console/runtime error.
+- [x] Browser smoke of the big-data dashboard verified Executive and Crop Health
+  visual layout, caption, and evidence warning; Streamlit theme uses the Field
+  Ledger tokens.
 
 ## Backlog của goal cấp dự án
 

@@ -22,6 +22,29 @@ powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify
 
 `verify` requires Docker and runs the mandatory PostgreSQL 18 integration gate. Maven repository, temp, and user-home paths must resolve to D. Do not pass test-skip/fail-masking flags.
 
+## Big-data local demonstration
+
+The default analytics run is intentionally small for CI. To demonstrate a
+production-like workload, run the guarded profile from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-big-data-demo.ps1
+```
+
+The runner sets Python temp/cache to D, checks C/D before and after execution,
+and writes only to `artifacts/big-data`. The verified profile produced
+1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse sensor facts, a
+passed quality report, 74 checksums, and a 388.2 MB artifact set. Generated
+artifacts are local demo state and must not be committed or exposed as a public
+download.
+
+The dashboard's six generated WebP visuals are first-party application assets,
+not Docker images and not real customer evidence. Their provenance, hashes,
+alt descriptions, and Crop Health disclaimer are maintained in
+`dashboard/assets/generated/README.md`. The social-preview source is kept under
+`docs/assets/`; uploading it to GitHub Settings is a separate account-level
+action.
+
 ## Backend database settings
 
 | Environment variable | Purpose | Checked-in default |

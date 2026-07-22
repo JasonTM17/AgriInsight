@@ -1,5 +1,7 @@
 # Phase 01 — Big-data profile
 
+Status: completed 2026-07-22
+
 ## Goal
 
 Add an explicit scale profile without changing the deterministic standard run
@@ -40,3 +42,13 @@ consumers rely on resolved values, never the profile name alone.
 - The normal test suite must not generate the large profile.
 - Rollback is limited to the profile resolver/runner; existing CLI flags remain
   compatible.
+
+## Evidence
+
+- Focused profile/pipeline tests: 9 passed.
+- Real `scripts/run-big-data-demo.ps1`: quality `passed`, 1,050,003 Bronze
+  sensor rows, 1,050,000 Silver/warehouse sensor facts, 74 checksums, no
+  checksum mismatch, and 388.2 MB on D.
+- Configuration-fingerprinted run ID:
+  `synthetic-2026-07-18-20260718-big-data-628b12344e35`.
+- C/D guards were PASS before and after the run.

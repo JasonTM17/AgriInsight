@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.5
+Version: 0.6
 Updated: 2026-07-22
-Status: backend Phases 1-5 accepted locally; product release not yet claimed
+Status: backend Phases 1-5 plus local scale/visual checkpoint accepted; product release not yet claimed
 
 ## Product goal
 
@@ -56,6 +56,11 @@ and [architecture](./architecture.md) for the normative boundaries.
   correction lineage.
 - Expose OpenAPI examples only under an explicit development or authenticated
   configuration; never make Swagger a production data bypass.
+- Provide a named, deterministic `big-data` profile for demonstrations and
+  local performance exploration without changing the fast standard profile.
+- Use contextual first-party visuals with provenance/alt descriptions; label
+  generated Crop Health imagery as demo evidence and never treat it as a source
+  observation.
 
 ## Phase acceptance status
 
@@ -73,7 +78,10 @@ Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
 32/32 focused inventory tests, guarded backend 487 Surefire + 92 Failsafe
 tests with zero failures/errors/skips, Python 65 passed/3 skipped, and disk
-guards PASS at the end of the gate.
+guards PASS. The later
+[`visual-data-scale` checkpoint](../plans/260722-visual-data-scale/plan.md)
+records the current Python 75 passed/3 skipped result and a verified
+1,050,000-row big-data warehouse sensor fact.
 
 ## Non-functional requirements
 

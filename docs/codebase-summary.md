@@ -7,10 +7,10 @@ Verified snapshot: 2026-07-22
 | Path | Responsibility |
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
-| `dashboard/` | Streamlit analytics dashboard composition |
-| `tests/` | Python pipeline, KPI, dashboard, export, security-boundary, and disk-guard tests |
+| `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
+| `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
 | `backend/` | Java 21 Spring Boot operational backend and PostgreSQL migrations |
-| `scripts/` | C/D disk guard and guarded backend verification |
+| `scripts/` | C/D disk guard, guarded backend verification, and big-data demo runner |
 | `plans/` | CK phase plans, design contracts, reports, and acceptance evidence |
 | `docs/` | Evergreen architecture, operations, standards, contracts, and roadmap |
 
@@ -24,7 +24,16 @@ CSV/PDF and capability-gated XLSX exports use validated Gold data and
 deterministic lineage.
 
 The analytics plane owns `artifacts/`, its manifest, Gold CSVs, and SQLite
-warehouse. It does not write PostgreSQL operational state.
+warehouse. It does not write PostgreSQL operational state. The CLI keeps a
+fast `standard` profile and a guarded `big-data` profile (10 farms, 120 fields,
+365 days, 24 readings/day); the manifest stores resolved dimensions and a
+configuration-fingerprinted run identity.
+
+The dashboard uses six generated WebP visuals in
+`dashboard/assets/generated/`. They are contextual UI assets rather than source
+facts; Crop Health marks its image as AI-generated demo evidence and never
+assigns it an observation ID. The local Streamlit theme follows the Field
+Ledger palette from the CK FE design system.
 
 ## Operational backend
 
@@ -93,10 +102,12 @@ subject to PostgreSQL ENABLE/FORCE RLS.
   V1-V15, RLS, assignment lifecycle, concurrency, projections, and indexes.
 - OpenAPI contract: `/v3/api-docs` operation summaries and request examples
   verified by `InventoryOpenApiContractTest`.
-- Analytics: Python 65 passed, 3 expected optional-PDF skips; compileall and
-  existing export/dashboard checks pass.
+- Analytics: Python 75 passed, 3 expected optional-PDF skips; compileall and
+  visual/export/dashboard checks pass.
+- Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
+  quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
 - Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; the
-  last guarded backend gate finished at C 10.925 GB and D 25.823 GB.
+  last Python/UI gate finished at C 10.274 GB and D 25.364 GB.
 
 ## Next boundary
 

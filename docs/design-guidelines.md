@@ -15,4 +15,10 @@ The queued web application follows the CK FE **Field Ledger** direction: a preci
 - p75 budgets: LCP ≤2.5s, INP ≤200ms, CLS ≤0.1; lists over 50 visible rows are paged or virtualized.
 - No browser token storage, no client-side canonical KPI recomputation, no hidden authorization in navigation, and no unproven image publication.
 
-Production UI implementation starts only after the frontend entry gate in the follow-up brief is satisfied. The repository currently contains reviewed design artifacts and prototypes, not a production web application; image release also remains gated.
+The local Streamlit dashboard now consumes the generated visual catalog under
+`dashboard/assets/generated/` with contextual captions, a soft missing-file
+fallback, and an explicit AI-generated demo-evidence boundary. Production web
+implementation still starts only after the frontend entry gate in the
+follow-up brief is satisfied. The repository contains reviewed design artifacts
+and prototypes, not a production web application; registry image release also
+remains gated.

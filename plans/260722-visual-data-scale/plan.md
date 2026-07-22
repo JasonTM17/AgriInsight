@@ -1,6 +1,6 @@
 ---
 title: Production-like data scale and visual evidence
-status: in_progress
+status: completed
 created: 2026-07-22
 updated: 2026-07-22
 ---
@@ -19,9 +19,9 @@ field evidence or bypass the future authenticated React application.
 
 | Phase | Status | Deliverable |
 |---|---|---|
-| [01](./phase-01-big-data-profile.md) | In progress | Reproducible `big-data` CLI profile, guarded runner, manifest evidence |
-| [02](./phase-02-generated-visual-assets.md) | In progress | Optimized image set, provenance catalog, social preview |
-| [03](./phase-03-dashboard-integration-and-gates.md) | Pending | Page integration, visual/data tests, documentation, review |
+| [01](./phase-01-big-data-profile.md) | Completed | Reproducible `big-data` CLI profile, guarded runner, manifest evidence |
+| [02](./phase-02-generated-visual-assets.md) | Completed | Optimized image set, provenance catalog, social preview source |
+| [03](./phase-03-dashboard-integration-and-gates.md) | Completed | Page integration, visual/data tests, documentation, browser review |
 
 ## Dependencies
 
@@ -51,3 +51,22 @@ field evidence or bypass the future authenticated React application.
 
 The image files are repository/application assets. Docker image publication,
 SBOM/provenance, registry signatures, and immutable tags remain Phase 7 work.
+
+## Verified evidence
+
+Full evidence: [`reports/acceptance-2026-07-22-visual-data-scale.md`](./reports/acceptance-2026-07-22-visual-data-scale.md).
+
+- Big-data runner: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse
+  sensor facts, quality `passed`, 74 checksums, 388.2 MB artifacts.
+- Python regression: 75 passed, 3 intentional optional-PDF skips; compileall
+  passed; focused visual/dashboard gate 13/13.
+- Browser gate: live big-data Streamlit Executive and Crop Health routes
+  rendered visuals; Crop Health warning displayed as specified.
+- Disk guard: latest post-gate C 10.274 GB and D 25.364 GB, both PASS.
+
+## Deferred account/release action
+
+The GitHub social-preview source is committed, but the authenticated browser
+file chooser rejected upload in this environment. A repository owner can upload
+`docs/assets/agriinsight-social-preview.jpg` once in GitHub Settings; no token
+or cookie was copied into the repository.

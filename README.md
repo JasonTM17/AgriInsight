@@ -35,7 +35,7 @@ Bằng chứng hiện tại:
 - Farm deactivation fail closed khi còn field, season, activity hoặc assignment đang hoạt động. Giao dịch chạy explicit READ_COMMITTED; Flyway V7 dùng trigger ở cả farm cha và live child để serialize hai thứ tự cạnh tranh, đồng thời kiểm tra dữ liệu V6→V7 trước nâng cấp mà không làm yếu ENABLE/FORCE RLS khi rollback.
 - Phase 4 cung cấp field/crop/season, Employee, farm/activity assignment, task lifecycle, log công việc bất biến và harvest ledger. Manager bị giới hạn theo farm assignment; worker chỉ thấy task được giao và chỉ append/correct log của chính mình; harvest chuẩn hóa KG/TONNE về kg và sửa sai bằng bản ghi correction thay vì ghi đè.
 - Local JDK mới hơn biên dịch bằng `--release 21`; multi-stage image dùng Temurin 21, chạy non-root `10001:10001`, chỉ chứa `/app/app.jar` và đã qua smoke test liveness/readiness/fail-closed OIDC.
-- Regression analytics đạt 65 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
+- Regression analytics đạt 75 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
 - Không để lại smoke/Testcontainers PostgreSQL container; các container dự án khác không bị dọn. Upstream `postgres:18.0-alpine` vẫn chỉ là dependency kiểm thử.
 
 Các cổng còn mở thuộc phase sau:
@@ -141,3 +141,27 @@ artifacts/
 - [KPI catalog](docs/kpi-catalog.md)
 - [Tiêu chí nghiệm thu](docs/mvp-acceptance.md)
 - [Reporting và vận hành local](docs/reporting-and-local-operations.md)
+
+## Big-data demo và visual assets
+
+The standard profile remains the fast local/CI run. For a production-like
+demonstration, the named `big-data` profile resolves to 10 farms, 120 fields,
+365 sensor days, and 24 readings/day:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-big-data-demo.ps1
+```
+
+The guarded run writes to `artifacts/big-data` on drive D, records the resolved
+configuration and configuration-fingerprinted `run_id`, and produces 1,050,000
+validated sensor facts after intentional Bronze quality fixtures. The latest
+verified run passed quality/checksum/warehouse gates with a 388.2 MB artifact
+set. Do not commit generated artifacts.
+
+The dashboard now includes six optimized WebP visuals under
+[`dashboard/assets/generated/`](dashboard/assets/generated/), with captions and
+an explicit **AI-generated demo evidence** warning on Crop Health. The catalog
+records dimensions, SHA-256, prompt intent, accessible descriptions, and the
+evidence boundary. A 1280 × 640 social-preview source is available at
+[`docs/assets/agriinsight-social-preview.jpg`](docs/assets/agriinsight-social-preview.jpg);
+GitHub account settings may still require a one-time manual upload.

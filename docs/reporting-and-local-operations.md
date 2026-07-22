@@ -31,6 +31,22 @@ Thiếu hoặc sai một biến làm nút XLSX disabled với thông báo capabi
 CSV/PDF vẫn hoạt động. Chi tiết runtime chỉ ghi vào server log, không đưa path hay
 stderr lên UI. Không commit runtime path máy cá nhân hoặc secret vào `.env`.
 
+### Big-data profile and visual assets
+
+The regular command is the quick local/CI dataset. Use the guarded runner for
+the larger demonstration:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-big-data-demo.ps1
+```
+
+It writes `artifacts/big-data` on D, keeps C/D PASS, and records a resolved
+configuration fingerprint in `manifest.json`. The verified run passed with
+1,050,000 warehouse sensor facts and a 388.2 MB artifact set. The dashboard
+visual catalog lives in `dashboard/assets/generated/`; it is application UI
+content, not a Gold fact or a registry image. Crop Health imagery is explicitly
+AI-generated demo evidence and cannot support a real agronomic diagnosis.
+
 ## Luồng export
 
 1. Mở `Cost Analysis`.
@@ -63,8 +79,9 @@ Thiếu hoặc không đọc được drive là FAIL. Script chỉ quan sát và
 không xóa file, cache hoặc artifact. Khi WARN, dừng build/cài đặt nặng và giữ
 temp/cache trong `artifacts/_tmp` trên D.
 
-Evidence sau Phase 5 backend gate gần nhất: C còn 10.925 GB và D còn 25.823 GB,
-cả hai PASS. Vì C gần ngưỡng cảnh báo, mọi Maven/temp/cache nặng phải giữ trên D.
+Evidence sau big-data/Python UI gates gần nhất: C còn 10.274 GB và D còn
+25.364 GB, cả hai PASS. Vì C gần ngưỡng cảnh báo, mọi Maven/temp/cache nặng
+phải giữ trên D.
 
 ## Backend verification
 

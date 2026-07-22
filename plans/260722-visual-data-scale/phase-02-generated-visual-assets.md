@@ -1,5 +1,7 @@
 # Phase 02 — Generated visual assets
 
+Status: completed 2026-07-22
+
 ## Goal
 
 Create a coherent, locally owned image set for the dashboard and repository
@@ -37,3 +39,11 @@ without stock-photo licensing ambiguity or deceptive field-evidence claims.
 - Confirm catalog paths exist and hashes match.
 - Review representative optimized images visually.
 - Keep the social preview under 1 MiB at 1280 × 640.
+
+## Evidence
+
+- Six WebP assets decode successfully, remain below 350 KiB each, and have
+  cataloged SHA-256 hashes; social preview is 1280 × 640 and 168 KiB.
+- Representative overview and Crop Health outputs were visually inspected.
+- Crop Health disclaimer is rendered in the dashboard; source assets are not
+  observation data and are not Docker images.
