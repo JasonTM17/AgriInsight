@@ -15,6 +15,7 @@ import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -90,6 +91,27 @@ class CommandExecutionServiceTest {
         verify(contextState).requireBound(TENANT_ID);
         verify(store).complete(any(ApiCommandRecord.class));
         verify(conflictPublisher, never()).publish(any());
+    }
+
+    @Test
+    void claimedCommandCanBindAnAppendOnlyLedgerToItsInternalCommandId() {
+        when(store.claim(any())).thenAnswer(invocation ->
+                ApiCommandRecordStore.Claim.claimed(invocation.getArgument(0)));
+        when(store.complete(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        AtomicReference<UUID> referencedCommand = new AtomicReference<>();
+
+        CommandExecutionResult<UserView> result = service.executeWithCommandId(
+                request(FINGERPRINT),
+                commandId -> {
+                    referencedCommand.set(commandId);
+                    return CommandCompletion.withRepresentation(
+                            201, "USER_PROFILE", RESOURCE_ID, 0, new UserView("Created"));
+                },
+                target -> Optional.of(new UserView("Replay")));
+
+        CommandExecutionResult.Completed<UserView> completed =
+                (CommandExecutionResult.Completed<UserView>) result;
+        assertThat(referencedCommand.get()).isEqualTo(completed.commandId());
     }
 
     @Test

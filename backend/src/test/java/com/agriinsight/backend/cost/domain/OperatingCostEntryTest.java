@@ -82,7 +82,7 @@ class OperatingCostEntryTest {
                 Optional.of("Seasonal workers"),
                 Optional.of("PAYROLL-2027-09"),
                 reversalOf,
-                "a".repeat(64),
+                UUID.fromString("64000000-0000-0000-0000-000000000001"),
                 PROFILE_ID);
     }
 }

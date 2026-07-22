@@ -36,6 +36,23 @@ public class CommandExecutionService {
             CommandExecutionRequest request,
             Supplier<CommandCompletion<T>> mutation,
             Function<CommandTarget, Optional<T>> replayLoader) {
+        Objects.requireNonNull(mutation, "mutation is required");
+        return executeInternal(request, ignored -> mutation.get(), replayLoader);
+    }
+
+    public <T> CommandExecutionResult<T> executeWithCommandId(
+            CommandExecutionRequest request,
+            Function<UUID, CommandCompletion<T>> mutation,
+            Function<CommandTarget, Optional<T>> replayLoader) {
+        Objects.requireNonNull(mutation, "mutation is required");
+        return executeInternal(
+                request, record -> mutation.apply(record.commandId()), replayLoader);
+    }
+
+    private <T> CommandExecutionResult<T> executeInternal(
+            CommandExecutionRequest request,
+            Function<ApiCommandRecord, CommandCompletion<T>> mutation,
+            Function<CommandTarget, Optional<T>> replayLoader) {
         Objects.requireNonNull(request, "request is required");
         Objects.requireNonNull(mutation, "mutation is required");
         Objects.requireNonNull(replayLoader, "replayLoader is required");
@@ -46,7 +63,8 @@ public class CommandExecutionService {
         ApiCommandRecordStore.Claim claim = store.claim(reservation);
         requireBinding(claim.record(), request);
         if (claim.claimed()) {
-            return applyMutation(claim.record(), mutation);
+            return applyMutation(
+                    claim.record(), () -> mutation.apply(claim.record()));
         }
         if (!claim.record().matches(
                 request.fingerprint().schemaVersion(),

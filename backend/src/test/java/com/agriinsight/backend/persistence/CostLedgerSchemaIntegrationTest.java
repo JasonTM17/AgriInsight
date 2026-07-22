@@ -175,6 +175,13 @@ class CostLedgerSchemaIntegrationTest {
             String seasonId, String activityId, String category, String amount,
             String kind, String reversalOf, String commandSeed) {
         return """
+                INSERT INTO api_command_records (
+                    id, tenant_id, principal_id, http_method, route_template,
+                    idempotency_key_digest, canonical_schema_version, command_hash, state)
+                VALUES ('%s', '10000000-0000-0000-0000-000000000041',
+                        '41000000-0000-0000-0000-000000000005', 'POST',
+                        '/api/v1/cost-entries', repeat(%s, 64), 1, repeat(%s, 64),
+                        'IN_PROGRESS');
                 INSERT INTO operating_cost_entries (
                     id, tenant_id, target_type, farm_id, field_id, season_id, activity_id,
                     category_code, amount_vnd, entry_kind, occurred_at, reversal_of,
@@ -182,10 +189,11 @@ class CostLedgerSchemaIntegrationTest {
                 VALUES ('%s', '10000000-0000-0000-0000-000000000041', '%s',
                         %s, %s, %s, %s, '%s', %s, '%s',
                         TIMESTAMPTZ '2027-09-01T02:00:00Z', %s,
-                        repeat(%s, 64), '41000000-0000-0000-0000-000000000005');
+                        '%s', '41000000-0000-0000-0000-000000000005');
                 """.formatted(
+                id, commandSeed, commandSeed,
                 id, targetType, farmId, fieldId, seasonId, activityId,
-                category, amount, kind, reversalOf, commandSeed);
+                category, amount, kind, reversalOf, id);
     }
 
     private static void assertRejected(java.sql.Connection connection, String sql) {

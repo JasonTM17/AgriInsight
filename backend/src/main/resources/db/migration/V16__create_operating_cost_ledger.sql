@@ -17,6 +17,9 @@ VALUES
     ('UTILITY', 'Utility'),
     ('OTHER', 'Other');
 
+ALTER TABLE api_command_records
+    ADD CONSTRAINT ux_api_command_records_tenant_id UNIQUE (tenant_id, id);
+
 CREATE TABLE operating_cost_entries (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
@@ -32,7 +35,7 @@ CREATE TABLE operating_cost_entries (
     description VARCHAR(1000),
     source_reference VARCHAR(200),
     reversal_of UUID,
-    command_reference CHAR(64) NOT NULL,
+    command_reference UUID NOT NULL,
     recorded_by_profile_id UUID NOT NULL,
     version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -51,6 +54,9 @@ CREATE TABLE operating_cost_entries (
     CONSTRAINT fk_operating_cost_entries_profile
         FOREIGN KEY (tenant_id, recorded_by_profile_id)
         REFERENCES user_profiles (tenant_id, id),
+    CONSTRAINT fk_operating_cost_entries_command
+        FOREIGN KEY (tenant_id, command_reference)
+        REFERENCES api_command_records (tenant_id, id),
     CONSTRAINT fk_operating_cost_entries_reversal
         FOREIGN KEY (tenant_id, reversal_of)
         REFERENCES operating_cost_entries (tenant_id, id),
@@ -89,8 +95,6 @@ CREATE TABLE operating_cost_entries (
         CHECK (description IS NULL OR btrim(description) <> ''),
     CONSTRAINT operating_cost_entries_source_nonblank
         CHECK (source_reference IS NULL OR btrim(source_reference) <> ''),
-    CONSTRAINT operating_cost_entries_command_reference
-        CHECK (command_reference ~ '^[0-9a-f]{64}$'),
     CONSTRAINT operating_cost_entries_not_self_reversal
         CHECK (reversal_of IS NULL OR reversal_of <> id),
     CONSTRAINT operating_cost_entries_version_zero CHECK (version = 0)
@@ -130,8 +134,7 @@ BEGIN
       INTO original
       FROM public.operating_cost_entries AS entry
      WHERE entry.tenant_id = NEW.tenant_id
-       AND entry.id = NEW.reversal_of
-     FOR KEY SHARE;
+       AND entry.id = NEW.reversal_of;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Operating cost reversal target is unavailable'

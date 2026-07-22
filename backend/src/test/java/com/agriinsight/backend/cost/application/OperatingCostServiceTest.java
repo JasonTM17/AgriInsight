@@ -37,7 +37,8 @@ class OperatingCostServiceTest {
             "63000000-0000-0000-0000-000000000001");
     private static final UUID FARM_ID = UUID.fromString(
             "41000000-0000-0000-0000-000000000001");
-    private static final String COMMAND_REFERENCE = "a".repeat(64);
+    private static final UUID COMMAND_REFERENCE = UUID.fromString(
+            "63000000-0000-0000-0000-000000000010");
     private static final ScopeContext SCOPE = new ScopeContext(
             TENANT_ID, PROFILE_ID, ScopeContext.Type.TENANT, Optional.empty());
     private static final TenantAuditMetadata AUDIT = new TenantAuditMetadata(
@@ -89,7 +90,8 @@ class OperatingCostServiceTest {
                 ORIGINAL_ID, TENANT_ID, originalTarget, CostCategory.LABOR,
                 new BigDecimal("500000"), CostEntryKind.POSTING,
                 Instant.parse("2027-08-01T00:00:00Z"), Optional.of("Original"),
-                Optional.of("PAYROLL-08"), Optional.empty(), "b".repeat(64), PROFILE_ID));
+                Optional.of("PAYROLL-08"), Optional.empty(),
+                UUID.fromString("63000000-0000-0000-0000-000000000011"), PROFILE_ID));
         CostTarget correctedTarget = CostTarget.domain(
                 CostTarget.Type.FIELD,
                 UUID.fromString("41000000-0000-0000-0000-000000000003"));

@@ -30,9 +30,9 @@ public class OperatingCostCommandService {
     public CommandExecutionResult<OperatingCostRecord> post(
             CommandExecutionRequest request, CostCommands.Post command) {
         costs.requirePostTarget(command);
-        return commands.execute(
+        return commands.executeWithCommandId(
                 request,
-                () -> completion(costs.post(command, request.idempotencyKey().digest())),
+                commandId -> completion(costs.post(command, commandId)),
                 target -> Optional.of(costs.getForManagement(target.resourceId())));
     }
 
@@ -43,10 +43,9 @@ public class OperatingCostCommandService {
         UUID originalId = Objects.requireNonNull(
                 originalEntryId, "originalEntryId is required");
         costs.requireCorrectionAccess(originalId, command);
-        return commands.execute(
+        return commands.executeWithCommandId(
                 request,
-                () -> completion(costs.correct(
-                        originalId, command, request.idempotencyKey().digest())),
+                commandId -> completion(costs.correct(originalId, command, commandId)),
                 target -> Optional.of(costs.getCorrectionForReplay(target.resourceId())));
     }
 

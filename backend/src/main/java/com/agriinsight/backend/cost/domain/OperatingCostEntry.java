@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 public record OperatingCostEntry(
         UUID id,
@@ -18,12 +17,11 @@ public record OperatingCostEntry(
         Optional<String> description,
         Optional<String> sourceReference,
         Optional<UUID> reversalOf,
-        String commandReference,
+        UUID commandReference,
         UUID recordedByProfileId) {
 
     public static final int DESCRIPTION_MAX_LENGTH = 1000;
     public static final int SOURCE_REFERENCE_MAX_LENGTH = 200;
-    private static final Pattern SHA_256 = Pattern.compile("[0-9a-f]{64}");
 
     public OperatingCostEntry {
         Objects.requireNonNull(id, "id is required");
@@ -44,7 +42,7 @@ public record OperatingCostEntry(
         if (reversalOf.filter(id::equals).isPresent()) {
             throw new IllegalArgumentException("An operating cost entry cannot reverse itself");
         }
-        commandReference = requireCommandReference(commandReference);
+        Objects.requireNonNull(commandReference, "commandReference is required");
         Objects.requireNonNull(recordedByProfileId, "recordedByProfileId is required");
     }
 
@@ -78,11 +76,4 @@ public record OperatingCostEntry(
         });
     }
 
-    private static String requireCommandReference(String value) {
-        String required = Objects.requireNonNull(value, "commandReference is required");
-        if (!SHA_256.matcher(required).matches()) {
-            throw new IllegalArgumentException("commandReference must be a SHA-256 digest");
-        }
-        return required;
-    }
 }

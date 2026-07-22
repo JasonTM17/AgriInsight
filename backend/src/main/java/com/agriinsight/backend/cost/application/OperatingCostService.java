@@ -38,7 +38,7 @@ public class OperatingCostService {
                 auditPublisher, "auditPublisher is required");
     }
 
-    public OperatingCostRecord post(CostCommands.Post command, String commandReference) {
+    public OperatingCostRecord post(CostCommands.Post command, UUID commandReference) {
         ScopeContext scope = requirePostTarget(command);
         OperatingCostEntry entry = posting(
                 UUID.randomUUID(), scope, command, commandReference);
@@ -54,7 +54,7 @@ public class OperatingCostService {
     public CostCorrectionRecord correct(
             UUID originalEntryId,
             CostCommands.Correct command,
-            String commandReference) {
+            UUID commandReference) {
         Objects.requireNonNull(command, "command is required");
         OperatingCostRecord original = getForManagement(originalEntryId);
         if (original.kind() != CostEntryKind.POSTING) {
@@ -109,7 +109,7 @@ public class OperatingCostService {
     }
 
     private OperatingCostEntry posting(
-            UUID id, ScopeContext scope, CostCommands.Post command, String commandReference) {
+            UUID id, ScopeContext scope, CostCommands.Post command, UUID commandReference) {
         return new OperatingCostEntry(
                 id, scope.tenantId(), command.target(), command.category(), command.amountVnd(),
                 CostEntryKind.POSTING, command.occurredAt(), command.description(),
@@ -117,7 +117,7 @@ public class OperatingCostService {
     }
 
     private OperatingCostEntry posting(
-            UUID id, ScopeContext scope, CostCommands.Correct command, String commandReference) {
+            UUID id, ScopeContext scope, CostCommands.Correct command, UUID commandReference) {
         return new OperatingCostEntry(
                 id, scope.tenantId(), command.target(), command.category(), command.amountVnd(),
                 CostEntryKind.POSTING, command.occurredAt(), command.description(),
@@ -129,7 +129,7 @@ public class OperatingCostService {
             ScopeContext scope,
             OperatingCostRecord original,
             CostCommands.Correct command,
-            String commandReference) {
+            UUID commandReference) {
         return new OperatingCostEntry(
                 id, scope.tenantId(), original.target(), original.category(), original.amountVnd(),
                 CostEntryKind.REVERSAL, original.occurredAt(),

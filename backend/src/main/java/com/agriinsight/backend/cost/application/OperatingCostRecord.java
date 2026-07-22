@@ -20,7 +20,7 @@ public record OperatingCostRecord(
         Optional<String> description,
         Optional<String> sourceReference,
         Optional<UUID> reversalOf,
-        String commandReference,
+        UUID commandReference,
         UUID recordedByProfileId,
         long version) {
 
