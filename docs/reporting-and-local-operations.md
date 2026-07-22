@@ -101,9 +101,9 @@ Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTim
 | Fresh Maven verification | PASS: 622 tests (98 Failsafe integration); zero failures/errors/skips |
 | Docker daemon | Available during guarded verification |
 | Testcontainers + Flyway PostgreSQL | PASS; không còn container test treo sau gate |
-| Java 21 CI | Chưa verify |
-| Compose + backend image build | Local non-root smoke đã verify; Phase 7 sẽ rebuild/scan image sau Phase 6 |
-| Docker Hub publish + image verification | Chưa claim |
+| Java 21 CI | PASS: GitHub Actions run `29932250984` passed 5/5 jobs; protected production release remains open |
+| Compose + backend image build | Temurin 21.0.11 JRE Noble, UID/GID 10001, Trivy 0.70.0 zero HIGH/CRITICAL |
+| Registry image verification | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` match digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
 
 Không đổi blocked gate thành PASS bằng cách skip integration test. Chỉ push image first-party của AgriInsight sau khi test, review và release hardening đạt; không republish PostgreSQL hoặc image upstream.
 

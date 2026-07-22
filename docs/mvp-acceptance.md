@@ -10,9 +10,7 @@
 - [x] Silver đạt 100% các quality gate bắt buộc trước khi load.
 - [x] Warehouse dùng star schema và không vi phạm khóa ngoại.
 - [x] Pipeline idempotent, reproducible và có manifest/checksum.
-- [x] Named `big-data` profile reproducibly generates a nominal 1,051,200
-  sensor plan and a verified 1,050,000-row warehouse fact after quality
-  fixtures; resolved configuration fingerprints the manifest run ID.
+- [x] Named `big-data` profile reproducibly generates a nominal 1,051,200 sensor plan and a verified 1,050,000-row warehouse fact after quality fixtures; resolved configuration fingerprints the manifest run ID.
 
 ## Analytics và dashboard
 
@@ -26,9 +24,7 @@
 - [x] Cost Analysis lọc farm/crop/season/activity/month, hiển thị cost/budget/cost per unit, activity drivers và procurement lens riêng.
 - [x] Insight và khuyến nghị có bằng chứng định lượng.
 - [x] Dashboard render/navigation, form-submit, stale bundle, missing/empty Gold và export error được kiểm thử tự động.
-- [x] Executive, Farm Performance, Inventory, Crop Health, Data Quality, and
-  Cost Analysis render contextual first-party visuals; missing assets fail soft,
-  and Crop Health labels AI-generated demo evidence.
+- [x] Executive, Farm Performance, Inventory, Crop Health, Data Quality, and Cost Analysis render contextual first-party visuals; missing assets fail soft, and Crop Health labels AI-generated demo evidence.
 
 ## Export service
 
@@ -40,18 +36,16 @@
 - [x] Có test suite end-to-end và CI workflow.
 - [x] Có Dockerfile, Compose và hướng dẫn chạy.
 - [x] Package wheel chứa SQL schema và CLI entrypoint.
-- [x] Dataset mặc định hoàn thành trong thời gian phù hợp cho local demo/CI;
-  guarded big-data runner keeps heavy temp/cache on D and verifies C/D twice.
+- [x] Dataset mặc định hoàn thành trong thời gian phù hợp cho local demo/CI; guarded big-data runner keeps heavy temp/cache on D and verifies C/D twice.
 - [x] Disk guard C/D chỉ đọc, có ngưỡng pass/warn/fail và test boundary/missing-drive.
 - [x] Cost Analysis đã được browser QA ở desktop và narrow viewport, không có console/runtime error.
-- [x] Browser smoke of the big-data dashboard verified Executive and Crop Health
-  visual layout, caption, and evidence warning; Streamlit theme uses the Field
-  Ledger tokens.
+- [x] Browser smoke of the big-data dashboard verified Executive and Crop Health visual layout, caption, and evidence warning; Streamlit theme uses the Field Ledger tokens.
 
 ## Backlog của goal cấp dự án
 
 - [ ] Custom Report Builder tự cấu hình ngoài ba format Cost Analysis đã kiểm soát.
-- [ ] Hoàn tất toàn bộ backend Phase 7; authentication/RLS, Phase 4 operations, Phase 5 inventory/procurement, và Phase 6 operating-cost đã nghiệm thu riêng.
+- [ ] Hoàn tất protected production release/recovery approvals của backend Phase 7; technical, CI, registry và restore evidence đã có, còn authentication/RLS, Phase 4 operations, Phase 5 inventory/procurement và Phase 6 operating-cost đã nghiệm thu riêng.
+- [ ] Xây production frontend role-aware theo CK FE/Stitch design system và versioned OpenAPI contracts.
 - [ ] PostgreSQL/ClickHouse, Flyway/dbt và incremental ETL bằng Airflow.
 - [ ] Realtime Kafka, cảnh báo đa kênh và mobile field application.
 - [ ] ML forecasting, anomaly detection, what-if analysis và model monitoring.
@@ -63,12 +57,15 @@ Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm
 
 - [x] Backend Phase 1-6 đã nghiệm thu theo từng boundary.
 - [x] Phase 5 warehouse/material/supplier/assignment/inventory ledger/reversal/reconciliation/RLS/OpenAPI đã qua 32 focused tests và full guarded backend gate (487 Surefire + 92 Failsafe; zero failures/errors/skips).
-- [ ] Protected Java 21 CI, scan/SBOM/provenance và Docker Hub pulled-digest release gate.
+- [x] Hosted Java 21 CI, scan/SBOM/provenance, image scan/smoke, và backend/Python digest evidence đã pass 5/5 trên GitHub Actions run `29932250984`.
 
-## Backend Phase 7 release-hardening status
+## Backend Phase 7 technical verification
 
 - [x] Transactional outbox V18-V19, typed schema v1, dedicated NOLOGIN integration role và RLS/grant boundary.
 - [x] Lease/retry/ack fencing bằng owner + token + generation, predecessor ordering và bounded dead-letter; có Testcontainers atomicity/lease/RLS tests.
-- [x] Pinned non-root Python/backend images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR workflow.
-- [x] D-local checksum/metadata backup và empty-target restore wrappers; production RPO/RTO/off-host encryption/owner approval còn bắt buộc trước production.
-- [ ] Full guarded Phase 7 acceptance, registry publish evidence và timed backup/restore drill.
+- [x] Pinned non-root Python/backend images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR workflow contract; manual phase tags đã pull-by-digest smoke ở cả hai registry.
+- [x] D-local checksum/metadata backup và timed clean-target restore drill 11.045s; production RPO/RTO/off-host encryption/owner approval còn bắt buộc trước production.
+
+## Backend Phase 7 production release gate
+
+- [ ] Protected tag-triggered production publish bằng environment secrets/reviewers và phê duyệt RPO/RTO/retention/encrypted off-host storage/restore owner.

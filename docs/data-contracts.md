@@ -6,7 +6,7 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `15` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, and role-aware inventory RLS |
+| Flyway schema history | `19` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, and transactional outbox |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
@@ -126,7 +126,21 @@ inventory `IN`, stock value, procurement spend, or an unallocated `OUT`.
 Tenant Admin can manage tenant costs; Executive/Data Analyst read tenant-wide;
 assigned Farm Manager reads assigned farms; Inventory Manager and Supplier have
 no cost permission. Java does not write Gold, manifests, SQLite, or report
-artifacts; Phase 7's versioned outbox is the future integration boundary.
+artifacts; Phase 7's versioned outbox is the integration boundary.
+
+## Transactional outbox contract
+
+Phase 7 adds a PostgreSQL transactional outbox that is intentionally separate
+from the Python analytics plane.
+
+| Method | Path | Permission | Contract |
+|---|---|---|---|
+| **INSERT** | `outbox_events` | runtime writer only | same-transaction persistence with the domain command |
+| **SELECT/UPDATE** | `outbox_events` | `agriinsight_integration` NOLOGIN role | claim, acknowledge, retry, and dead-letter fencing |
+
+The contract is versioned by `backend/src/main/resources/contracts/agriinsight-operational-events-v1.schema.json`. Each row carries `tenant_id`, `command_id`, `event_ordinal`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `event_type`, `schema_version`, `occurred_at`, payload JSON, and lease/status metadata. `(tenant_id, command_id, event_ordinal)` and `(tenant_id, aggregate_type, aggregate_id, aggregate_version)` are the stable ordering and deduplication keys.
+
+The outbox is at-least-once and does not imply a broker, scheduler, public route, or exact-once delivery. Runtime code may insert events in the domain transaction; the integration role may only read/lease the fenced columns that the drain service needs. A dead-lettered predecessor blocks later versions for the same aggregate.
 
 ## Operational identifiers
 
@@ -222,4 +236,4 @@ giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm p
 
 Analytics contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đổi breaking phải tạo version mới, migration warehouse tương ứng và regression test cho Gold consumers.
 
-Backend operational API dùng `/api/v1`; Flyway migration number là backend schema history. Hai giá trị này không đổi analytics version.
+Backend operational API dùng `/api/v1`; Flyway migration number là backend schema history. Current schema history is V19, with V18 creating outbox tables and V19 adding outbox RLS/index policies. Hai giá trị này không đổi analytics version.

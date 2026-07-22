@@ -2,7 +2,7 @@
 
 Version: 0.7
 Updated: 2026-07-22
-Status: backend Phases 1-6 plus local scale/visual checkpoint accepted; product release not yet claimed
+Status: backend Phases 1-6 accepted; Phase 7 core verified; protected production release/recovery approvals remain open
 
 ## Product goal
 
@@ -33,8 +33,8 @@ hiding them in dashboards.
    tenant/profile authorization, PostgreSQL source facts, inventory ledgers,
    assignments, audit/idempotency, and health/readiness.
 3. **Integration boundary** — No direct Gold mutation or shared mutable storage.
-   A later versioned ETL/outbox contract may consume operational facts after
-   Phase 7 hardening.
+   Phase 7 provides the versioned transactional outbox and fenced drain boundary;
+   a real consumer/Kafka/Gold ingestion adapter remains future work.
 
 See [system architecture](./system-architecture.md), [data contracts](./data-contracts.md),
 and [architecture](./architecture.md) for the normative boundaries.
@@ -76,7 +76,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
-| 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Planned |
+| 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Core verified; production release gated |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
@@ -92,8 +92,9 @@ Phase 6 acceptance evidence is recorded in
 26 focused cost tests, guarded backend `442 Surefire + 96 Failsafe` with zero
 failures/errors/skips, fresh PostgreSQL V17/RLS/concurrency/query-plan checks,
 and Python `75 passed, 3 skipped` unchanged at that checkpoint. Phase 7
-acceptance updates the current gate to 622 backend tests (98 Failsafe) and
-Python `76 passed, 3 skipped`.
+evidence now includes 622 backend tests (98 Failsafe), hosted CI run
+`29932250984` passing 5/5, and published backend/Python digests used as
+non-production evidence; protected release and recovery approvals remain open.
 
 ## Non-functional requirements
 
@@ -117,8 +118,8 @@ Python `76 passed, 3 skipped`.
 
 Kafka/realtime alerts, ClickHouse/dbt/Airflow, mobile, ML forecasting,
 what-if analysis, AI Text-to-SQL, browser BFF/session handling, and direct Gold
-writes are deferred. Docker Hub/GitHub Packages publication and production
-identity/MFA/backup policy are also deferred until Phase 7.
+writes are deferred. Immutable phase images now have Docker Hub/GHCR evidence;
+the protected production release, identity/MFA and backup policy remain deferred.
 
 ## Success metrics
 
@@ -133,12 +134,13 @@ identity/MFA/backup policy are also deferred until Phase 7.
 
 - Keep PostgreSQL inventory/procurement facts separate from current Gold until a
   versioned ETL/outbox contract is accepted.
-- Build Phase 7 outbox and release hardening without merging operating cost,
-  procurement spend, or inventory value.
+- Close Phase 7 protected production release and recovery-policy approvals
+  without merging operating cost, procurement spend, or inventory value.
 - Use CK FE/Stitch design artifacts as the frontend source of truth, then build
   role-aware screens only after API contracts are frozen.
-- Complete Phase 7 before claiming production readiness or pushing first-party
-  images to Docker Hub.
+- Complete Phase 7 approvals before claiming production readiness; the current
+  first-party phase tags remain non-production evidence.
 
 Open decisions: production IdP/MFA, audit retention, backup RPO/RTO/off-host
-encryption, Docker Hub namespace/token, and GitHub branch-protection policy.
+encryption/restore ownership, protected release secrets/reviewers, credential
+rotation ownership, and GitHub branch-protection policy.

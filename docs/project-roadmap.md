@@ -19,7 +19,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Phase | Goal | Dependency/status |
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
-| Phase 7 | Outbox operations, verified images, CI/release hardening | Phase 6 accepted; plan migrations are reserved as V18-V19 |
+| Phase 7 | Outbox operations, verified images, CI/release hardening | Core verified 2026-07-22; V18-V19 outbox, image, and recovery evidence is in place, but protected release approval remains open |
 | Frontend follow-up | Role-aware dashboard and operational workflows | Backend API/OpenAPI stable; use `frontend-follow-up-brief.md` and design system |
 
 ## Phase 5 boundary
@@ -42,15 +42,25 @@ implicitly converted into operating cost.
 
 ## Release and platform backlog
 
-- Add protected CI, dependency/image scanning, SBOM/provenance, and digest smoke
-  tests in Phase 7.
-- Publish first-party Python/backend images only after a disk-guarded build and
-  an approved Docker Hub namespace/token; the future web image is frontend-owned.
+- Phase 7 already has hosted CI, dependency/image scanning, SBOM/provenance,
+  digest smoke, and identical Docker Hub/GHCR phase-image evidence. Keep the
+  protected production release environment and reviewer gates open until the
+  release owner approves them.
+- Do not promote the manual `0.1.0-phase7`/commit tags as a production release;
+  the future web image remains frontend-owned and unbuilt.
 - GitHub `main` is now the default branch. About description/topics, Discussions,
   security scanning, Dependabot, templates, CODEOWNERS, and repository labels
   are configured; social-preview upload remains a one-time web-settings action.
-- Define production OIDC/MFA, audit retention, backup/restore RPO/RTO, and
-  off-host encryption before calling the system production-ready.
+- Define production OIDC/MFA, audit retention, backup/restore RPO/RTO, off-host
+  encryption, and restore ownership before calling the system production-ready.
+
+## Future product tracks
+
+- Role-aware production frontend and browser security boundary.
+- Outbox consumer, realtime Kafka analytics, alerts, and mobile field workflows.
+- Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,
+  and model monitoring.
+- Guardrailed AI Assistant/Text-to-SQL with scoped metadata and auditable queries.
 
 ## Roadmap rule
 
@@ -64,4 +74,4 @@ The reproducible `big-data` profile and dashboard visual catalog are accepted
 for local demonstration. Evidence and rollback notes live in
 [`plans/260722-visual-data-scale/plan.md`](../plans/260722-visual-data-scale/plan.md).
 This does not claim production evidence capture, ML training data, authenticated
-web UI, or registry image publication.
+web UI, or protected production registry publication.

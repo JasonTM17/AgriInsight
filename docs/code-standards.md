@@ -42,6 +42,7 @@ This repository contains a Python analytics plane and a Java operational backend
 - Let a rejected business transaction roll back and release its connection before opening an independent authorization-denial audit transaction. Never nest that audit while the outer transaction owns the only pooled connection.
 - Pass `ScopeContext` into tenant repositories or keep repositories package-private behind a scoped service. Unknown domain scope resolvers fail closed until their FK-backed module is installed.
 - Run the application as the restricted non-owner runtime role. Migration owner, operator, and identity-definer privileges are separate; runtime must never be superuser, table owner, `CREATEROLE`, or `BYPASSRLS`.
+- Keep transactional outbox persistence and drain fencing in the `integration` module. Do not add a broker, public drain route, or scheduler in code that still runs inside the Phase 7 handoff boundary.
 - Tenant tables require `tenant_id`, composite tenant-aware relationships where applicable, `ENABLE/FORCE ROW LEVEL SECURITY`, one reviewed permissive tenant policy per command, matching `USING`/`WITH CHECK`, and direct SQL isolation tests.
 - State-changing routes require a bounded idempotency key and canonical validated fingerprint bound to tenant, principal, method, route, path/query/body, and semantics-bearing headers. Store only the key digest and fixed-size replay metadata, never raw keys, credentials, request bodies, or response snapshots.
 - Authorization must run before an idempotency key is claimed. Replay may return only a currently authorized representation.
@@ -54,10 +55,10 @@ This repository contains a Python analytics plane and a Java operational backend
 
 ## Inventory and migration standards
 
-- Treat V12-V15 as immutable applied history: V12 inventory tables, V13 tenant
-  RLS, V14 active profile/warehouse assignment lifecycle, and V15 role-aware
-  inventory read/write policies plus indexes. Future cost migrations start at
-  V16; future outbox migrations start at V18.
+- Treat V12-V19 as immutable applied history: V12 inventory tables, V13 tenant
+  RLS, V14 active profile/warehouse assignment lifecycle, V15 role-aware
+  inventory read/write policies plus indexes, V16 operating-cost ledger, V17
+  cost RLS and indexes, V18 outbox tables, and V19 outbox RLS/index policies.
 - Inventory tables use tenant-aware composite foreign keys, active warehouse and
   material/supplier checks, and PostgreSQL ENABLE/FORCE RLS. Warehouse-scoped
   queries must carry both tenant and profile context and evaluate active

@@ -20,5 +20,6 @@ The local Streamlit dashboard now consumes the generated visual catalog under
 fallback, and an explicit AI-generated demo-evidence boundary. Production web
 implementation still starts only after the frontend entry gate in the
 follow-up brief is satisfied. The repository contains reviewed design artifacts
-and prototypes, not a production web application; registry image release also
-remains gated.
+and prototypes, not a production web application. Python/backend phase images
+have verified Docker Hub/GHCR evidence, while the web image remains unbuilt and
+production deployment approval remains gated.

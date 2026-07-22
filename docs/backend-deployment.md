@@ -1,6 +1,6 @@
 # Backend deployment and recovery
 
-Phase 7 supplies a local/staging delivery contract. It is not a production approval: production still needs an OIDC issuer/audience decision, approved RPO/RTO, retention, encrypted off-host backup, and a named restore owner.
+Phase 7 supplies a local/staging delivery contract. It is not a production approval: production still needs an OIDC issuer/audience decision, approved RPO/RTO, retention, encrypted off-host backup, a named restore owner, and the protected release/recovery environment.
 
 ## Optional local Compose profile
 
@@ -19,7 +19,7 @@ Compose role passwords are environment inputs only. Do not put real values in `.
 
 ## First-party images
 
-The root Python image is `agriinsight-python`; the backend image is `agriinsight-backend`. Both Dockerfiles pin base-image manifest digests, use allowlisted build contexts, add OCI source/revision/version labels and expose deterministic smoke checks. PostgreSQL is consumed upstream and is never republished.
+The root Python image is `agriinsight-python`; the backend image is `agriinsight-backend`. Both Dockerfiles pin base-image manifest digests, use allowlisted build contexts, add OCI source/revision/version labels and expose deterministic smoke checks. The backend runtime is Temurin 21.0.11 JRE Noble at `sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64` and runs as UID/GID 10001. PostgreSQL is consumed upstream and is never republished.
 
 Pull-request CI builds both images without registry login or push. The protected `release-images` workflow runs only for a semantic-version tag (`vMAJOR.MINOR.PATCH`) and requires:
 
@@ -36,7 +36,9 @@ ghcr.io/<github-owner>/agriinsight-python
 ghcr.io/<github-owner>/agriinsight-backend
 ```
 
-There is intentionally no automatic `latest`. BuildKit emits SBOM/provenance; Trivy scans the exact returned digest; both registry tags are resolved back to that digest; and a non-root smoke command runs against the digest. A failed post-publish evidence step fails the release and requires an audited new tag/republish rather than tag mutation.
+There is intentionally no automatic `latest`. BuildKit emits SBOM/provenance; Trivy scans the exact returned digest; both registry tags are resolved back to that digest; and a non-root smoke command runs against the digest. A failed post-publish evidence step fails the release and requires an audited new tag/republish rather than tag mutation. The published phase digests are evidence only until the protected production release environment is approved.
+
+Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This is reproducible non-production evidence, not approval to bypass the protected workflow above.
 
 ## Backup
 

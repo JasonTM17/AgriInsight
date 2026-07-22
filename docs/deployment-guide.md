@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide documents the verified local/runtime contracts through Backend Phase 7 core. It is not a production deployment approval: protected registry release, environment review, and a scheduled recovery drill remain required before production.
+This guide documents the verified local/runtime contracts through Backend Phase 7 core. It is not a production deployment approval: protected registry release, environment review, a scheduled recovery drill, and production release/recovery approvals remain required before production.
 
 ## Supported execution boundaries
 
@@ -63,7 +63,7 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current schema is Flyway V1-V17 plus repeatable least-privilege helpers/grants; application readiness expects schema version `17`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. V16 creates the append-only operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables.
+The current schema is Flyway V1-V19 plus repeatable least-privilege helpers/grants; application readiness expects schema version `19`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. V16 creates the append-only operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. V18 creates the outbox tables and V19 adds outbox RLS/index policies. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables.
 
 Required deployment inputs:
 
@@ -169,16 +169,16 @@ inventory/procurement allocation.
 
 ## Docker Hub release policy
 
-No registry push is authorized by a successful local build. Phase 7 must run protected Java 21 CI, dependency/image scan, SBOM/provenance, immutable semantic-version and Git-SHA tags, and smoke the exact pulled digest. Do not mutate `latest` automatically. Do not mirror PostgreSQL or other third-party images.
+No production registry push is authorized by a successful local build. Hosted run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5 at commit `8d8463f`; the Temurin 21.0.11 JRE Noble backend image passed Trivy 0.70.0 with zero HIGH/CRITICAL and pull-by-digest smoke. Docker Hub/GHCR phase tags `0.1.0-phase7` and `sha-8d8463f` resolve to `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. These tags are evidence only: production must still use protected CI, immutable semantic-version/Git-SHA tags, SBOM/provenance, exact-digest scan/smoke, and no automatic `latest`. Do not mirror PostgreSQL or other third-party images.
 
 ## Production blockers
 
-- Phase 7 outbox, protected CI, image supply-chain, backup/restore, and release gates
+- Protected tag-triggered production release environment, secrets, reviewers, and promotion approval
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership
-- Protected Java 21 CI, dependency/image scan, SBOM/provenance, immutable registry publication, and pulled-digest smoke test
+- Encrypted off-host backup destination, retention/key owner, and approved recurring restore-drill schedule
 
 ## Unresolved Questions
 
 - Production OIDC provider and exact access-token contract
 - Audit retention/alerting owner
-- Docker Hub namespace, visibility, and least-privilege release token
+- Production Docker Hub namespace/visibility plus least-privilege release-token rotation owner

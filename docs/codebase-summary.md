@@ -9,7 +9,7 @@ Verified snapshot: 2026-07-22
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
 | `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
 | `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
-| `backend/` | Java 21 Spring Boot operational backend and PostgreSQL migrations |
+| `backend/` | Java 21 Spring Boot operational backend, PostgreSQL migrations, and transactional outbox |
 | `scripts/` | C/D disk guard, guarded backend verification, and big-data demo runner |
 | `plans/` | CK phase plans, design contracts, reports, and acceptance evidence |
 | `docs/` | Evergreen architecture, operations, standards, contracts, and roadmap |
@@ -23,17 +23,17 @@ Inventory, Cost Analysis, Crop Health, and Data Quality views. Controlled
 CSV/PDF and capability-gated XLSX exports use validated Gold data and
 deterministic lineage.
 
-The analytics plane owns `artifacts/`, its manifest, Gold CSVs, and SQLite
-warehouse. It does not write PostgreSQL operational state. The CLI keeps a
-fast `standard` profile and a guarded `big-data` profile (10 farms, 120 fields,
+The analytics plane owns `artifacts/`, its manifest, Gold CSVs, and the SQLite
+warehouse. It does not write PostgreSQL operational state. The CLI keeps a fast
+`standard` profile and a guarded `big-data` profile (10 farms, 120 fields,
 365 days, 24 readings/day); the manifest stores resolved dimensions and a
 configuration-fingerprinted run identity.
 
-The dashboard uses six generated WebP visuals in
-`dashboard/assets/generated/`. They are contextual UI assets rather than source
-facts; Crop Health marks its image as AI-generated demo evidence and never
-assigns it an observation ID. The local Streamlit theme follows the Field
-Ledger palette from the CK FE design system.
+The dashboard uses six generated WebP visuals in `dashboard/assets/generated/`.
+They are contextual UI assets rather than source facts; Crop Health marks its
+image as AI-generated demo evidence and never assigns it an observation ID.
+The local Streamlit theme follows the Field Ledger palette from the CK FE
+design system.
 
 ## Operational backend
 
@@ -51,7 +51,8 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `inventory/domain` | Base units, quantity/money precision, transaction and projection records |
 | `inventory/infrastructure` | PostgreSQL ledger/projections, deterministic locks/FEFO, reconciliation, warehouse scope SQL |
 | `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; repeatable least-privilege helpers/grants |
+| `integration` | Transactional outbox event model, writer port, drain service, and PostgreSQL outbox store |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox and release boundary |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal
@@ -104,8 +105,13 @@ subject to PostgreSQL ENABLE/FORCE RLS.
 ## Verification snapshot
 
 - Backend guarded `mvn verify` (2026-07-22): 622 tests, including 98 Failsafe
-  integration tests; zero failures,
-  errors, and skips.
+  integration tests; zero failures, errors, and skips.
+- Hosted GitHub Actions run `29932250984` passed 5/5 jobs for commit
+  `8d8463f9fe576aa98498125ae3dc845d9b432d82`. That run covered Java, Python,
+  dependency/configuration/secret scan, and image scan/smoke gates.
+- Phase 7 manual registry digests were published for evidence only: backend
+  `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`
+  and Python `sha256:ee4090812a36c48f180ee74aaa16995c79eabfedb6821d9764319643d06ba2f6`.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
@@ -117,18 +123,21 @@ subject to PostgreSQL ENABLE/FORCE RLS.
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
 - Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; the
   last Python/UI gate finished at C 10.274 GB and D 25.364 GB.
+- Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
+  Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
+  smoke passed.
 
 ## Next boundary
 
 Phase 5 inventory/procurement and Phase 6 operating-cost/reporting separation
-are accepted. Phase 6 closes V16-V17 with no Python adapter or Gold writer;
-Phase 7 owns outbox, CI, image scanning,
-SBOM/provenance, Docker Hub/GitHub Packages publication, backup/restore, and
-release metadata (planned V18-V19). No production-release claim is made while
-those gates and production OIDC/MFA/audit/backup decisions remain open.
+are accepted. Phase 7 now has V18-V19 outbox, CI, image scanning,
+SBOM/provenance, Docker Hub/GHCR phase publication, backup/restore, and release
+metadata evidence. The next integration boundary is a separately authorized
+outbox consumer/realtime path; no production-release claim is made while
+protected release/recovery approvals remain open.
 
 ## Unresolved questions
 
 - Production IdP/token fixtures and MFA policy.
 - Production audit retention and backup/restore objectives.
-- Docker Hub namespace and least-privilege release credentials.
+- Protected release environment secrets/reviewers and release-token rotation owner.

@@ -6,6 +6,9 @@ AgriInsight is split into two planes.
 
 - [Analytics plane](#analytics-plane) - current Bronze/Silver/Gold pipeline, artifacts, and dashboard.
 - [Operational backend](#operational-backend) - separate Java Spring boundary for operational state.
+- [Inventory and procurement plane](#inventory-and-procurement-plane) - PostgreSQL operational ledger and RLS.
+- [Operating-cost and reporting plane](#operating-cost-and-reporting-plane) - separate finance lens and summaries.
+- [Transactional outbox](#transactional-outbox) - machine-integration handoff used by the backend only.
 - [Boundaries](#boundaries) - what each plane owns and what it must not touch.
 - [Current status](#current-status) - what is verified today and what is still blocked.
 
@@ -43,7 +46,8 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V17 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, and operating-cost lifecycle guards
+- liveness/readiness split and Flyway V1-V19 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, and transactional outbox lifecycle guards
+- `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 
 ```mermaid
 flowchart LR
@@ -73,51 +77,29 @@ Activities use tenant, assigned-farm manager, or assigned-worker scope before pa
 
 ## Inventory and procurement plane
 
-Phase 5 adds a PostgreSQL operational inventory lens without changing Python
-Gold. Warehouses, materials, suppliers, and explicit profile-to-warehouse
-assignments feed an append-only `inventory_transactions` ledger. Receipt rows
-create `stock_lots`; issue rows allocate eligible lots deterministically by
-FEFO; `stock_balances` is the warehouse/material aggregate projection. Linked
-reversals restore the original direction and allocation lineage, with bounded
-quantity and cumulative VND rounding rules. Reconciliation compares signed
-ledger effects, allocations, lots, and balances and reports drift without
-repairing source facts.
+Phase 5 adds a PostgreSQL operational inventory lens without changing Python Gold. Warehouses, materials, suppliers, and explicit profile-to-warehouse assignments feed an append-only `inventory_transactions` ledger. Receipt rows create `stock_lots`; issue rows allocate eligible lots deterministically by FEFO; `stock_balances` is the warehouse/material aggregate projection. Linked reversals restore the original direction and allocation lineage, with bounded quantity and cumulative VND rounding rules. Reconciliation compares signed ledger effects, allocations, lots, and balances and reports drift without repairing source facts.
 
-V12 creates the inventory tables, V13 adds tenant RLS, V14 serializes active
-profile/warehouse assignment lifecycle, and V15 adds profile-aware,
-role-aware `inventory_warehouse_access(warehouse_id, write)` policies plus
-tenant-leading indexes. Reads and writes are separate policy paths: Tenant
-Admin can write tenant inventory; assigned Inventory Manager can read/write;
-Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read;
-Supplier has no inventory permission. The API registry covers warehouse,
-material, supplier, assignment, balance, lot, movement, and reversal routes;
-mutations require idempotency keys and strong `If-Match` where a version is
-changed.
+V12 creates the inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignment lifecycle, and V15 adds profile-aware, role-aware `inventory_warehouse_access(warehouse_id, write)` policies plus tenant-leading indexes. Reads and writes are separate policy paths: Tenant Admin can write tenant inventory; assigned Inventory Manager can read/write; Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read; Supplier has no inventory permission. The API registry covers warehouse, material, supplier, assignment, balance, lot, movement, and reversal routes; mutations require idempotency keys and strong `If-Match` where a version is changed.
 
-Springdoc is disabled by default. `/v3/api-docs` and Swagger UI are exposed
-only when API docs are explicitly enabled in a development profile (or behind
-authenticated non-development access); inventory summaries and examples are
-verified by `InventoryOpenApiContractTest`.
+Springdoc is disabled by default. `/v3/api-docs` and Swagger UI are exposed only when API docs are explicitly enabled in a development profile (or behind authenticated non-development access); inventory summaries and examples are verified by `InventoryOpenApiContractTest`.
 
 ## Operating-cost and reporting plane
 
-Phase 6 adds an operational finance lens without changing the Python Gold
-contract. `operating_cost_entries` is the single append-only source for manual
-operating postings and service-generated reversals. Each row accepts one
-canonical target and derives its farm/season ancestors through the parent
-chain; an activity does not duplicate a season or farm total.
+Phase 6 adds an operational finance lens without changing the Python Gold contract. `operating_cost_entries` is the single append-only source for manual operating postings and service-generated reversals. Each row accepts one canonical target and derives its farm/season ancestors through the parent chain; an activity does not duplicate a season or farm total.
 
-The API exposes bounded entry list/detail, correction, and summary routes. The
-summary response labels `OPERATING_COST`, includes posting/reversal/net values,
-and reports season budget variance only when grouping by season. Tenant Admin
-can write; Executive/Data Analyst can read tenant-wide; assigned Farm Manager
-can read assigned farms. Inventory Manager and Supplier have no cost
-permission. V17 applies separate forced-RLS read/insert policies and
-`operating_cost_access` resolves farm scope from the canonical target.
+The API exposes bounded entry list/detail, correction, and summary routes. The summary response labels `OPERATING_COST`, includes posting/reversal/net values, and reports season budget variance only when grouping by season. Tenant Admin can write; Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read assigned farms. Inventory Manager and Supplier have no cost permission. V17 applies separate forced-RLS read/insert policies and `operating_cost_access` resolves farm scope from the canonical target.
 
-Operating cost, procurement spend, and inventory value are three independent
-lenses. Java does not read/write SQLite, Gold, manifests, or report files, and
-Phase 7's transactional outbox is the next machine-integration boundary.
+Operating cost, procurement spend, and inventory value are three independent lenses. Java does not read/write SQLite, Gold, manifests, or report files.
+
+## Transactional outbox
+
+Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration, not a broker or consumer implementation.
+
+- `outbox_events` is committed in the same transaction as the domain command.
+- `agriinsight_integration` is a NOLOGIN role used for claim/read/update fencing.
+- The outbox uses at-least-once delivery, bounded leases, and dead-lettering for stale or failed work.
+- Claim/ack/retry ordering is keyed by aggregate version and guarded by `(tenant_id, command_id, event_ordinal)` plus `(tenant_id, aggregate_type, aggregate_id, aggregate_version)`.
+- The schema contract is versioned by `backend/src/main/resources/contracts/agriinsight-operational-events-v1.schema.json`.
 
 ## Boundaries
 
@@ -138,11 +120,9 @@ Phase 7's transactional outbox is the next machine-integration boundary.
 | Backend phase 4 operations | Accepted 2026-07-22; farm/season/workforce/activity/log/harvest gates green |
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
-| Backend phase 7 release boundary | Core verified 2026-07-22; V18-V19 outbox, fenced drain, images, CI, recovery wrappers; protected release/recovery approval remains |
-| Docker Hub publication | Not yet claimed |
-| Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
+| Backend phase 7 release boundary | Core verified 2026-07-22; V18-V19 outbox, fenced drain, images, CI, recovery wrappers; protected release/recovery approval remains open |
+| Hosted CI | Run `29932250984` passed Java, Python, secret/dependency, and both image scan/smoke gates 5/5 at commit `8d8463f` |
+| Phase image publication | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
+| Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
-The right way to read the repo is: analytics and backend phases 1-6 are locally
-verified. Outbox, production identity operations, and release publication
-remain sequential gates, so Phase 6 acceptance is not a full
-production-release claim.
+The right way to read the repo is: analytics and backend phases 1-6 are accepted, while Phase 7's outbox, hosted CI, image and recovery evidence is verified. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.
