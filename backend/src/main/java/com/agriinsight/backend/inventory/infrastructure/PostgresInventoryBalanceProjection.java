@@ -47,7 +47,7 @@ final class PostgresInventoryBalanceProjection {
                    SET quantity_on_hand = projection.quantity_on_hand,
                        inventory_value_vnd = projection.inventory_value_vnd,
                        version = balance.version + 1,
-                       updated_at = CURRENT_TIMESTAMP
+                       updated_at = GREATEST(balance.created_at, clock_timestamp())
                   FROM (
                         SELECT COALESCE(SUM(lot.available_quantity), 0)::NUMERIC(20, 4)
                                    AS quantity_on_hand,
