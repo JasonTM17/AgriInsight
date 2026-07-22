@@ -3,6 +3,7 @@ package com.agriinsight.backend.inventory.api;
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import com.agriinsight.backend.inventory.application.InventoryTransactionCommands;
 import com.agriinsight.backend.inventory.domain.InventoryNumbers;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -17,19 +18,41 @@ import java.util.Optional;
 import java.util.UUID;
 
 public record InventoryTransactionPostRequest(
+        @Schema(description = "Inventory movement type", allowableValues = {"RECEIPT", "ISSUE"},
+                example = "RECEIPT")
         @NotBlank @Pattern(regexp = "RECEIPT|ISSUE") String kind,
+        @Schema(description = "Warehouse receiving or issuing stock",
+                example = "5a000000-0000-0000-0000-000000000001")
         @NotNull UUID warehouseId,
+        @Schema(description = "Material moved by this transaction",
+                example = "5a000000-0000-0000-0000-000000000003")
         @NotNull UUID materialId,
+        @Schema(description = "Required for receipts and omitted for issues",
+                example = "5a000000-0000-0000-0000-000000000004")
         UUID supplierId,
+        @Schema(description = "Positive quantity in the material base unit",
+                example = "250.0000")
         @NotNull @DecimalMin(value = "0", inclusive = false)
         @Digits(integer = 16, fraction = 4) BigDecimal quantityBase,
+        @Schema(description = "Receipt unit cost in VND; omitted for issues",
+                example = "12500.00")
         @DecimalMin("0") @Digits(integer = 16, fraction = 2) BigDecimal unitCostVnd,
+        @Schema(description = "Supplier batch code required for receipts", example = "FERT-2027-001")
         @Size(max = 64) String batchCode,
+        @Schema(description = "Lot expiry date required for receipts", example = "2028-12-31")
         LocalDate expiryDate,
+        @Schema(description = "Optional source lot for a targeted issue",
+                example = "5a000000-0000-0000-0000-000000000006")
         UUID stockLotId,
+        @Schema(description = "Business-effective time in UTC",
+                example = "2027-01-01T08:00:00Z")
         @NotNull Instant occurredAt,
+        @Schema(description = "Required business reason for issues", example = "Applied to field F-12")
         @Size(max = 500) String reason,
+        @Schema(description = "Optional source document or purchase-order reference",
+                example = "PO-2027-00042")
         @Size(max = 128) String referenceCode,
+        @Schema(description = "Optional audit reason code", example = "PLANNED_APPLICATION")
         @Pattern(regexp = "[A-Z][A-Z0-9_]{0,79}") String reasonCode) {
 
     public InventoryTransactionPostRequest {

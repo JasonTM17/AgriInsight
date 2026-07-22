@@ -9,6 +9,8 @@ import com.agriinsight.backend.shared.api.IfMatchVersion;
 import com.agriinsight.backend.shared.api.RequestCorrelation;
 import com.agriinsight.backend.shared.domain.CanonicalCommandBody;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -44,9 +46,17 @@ public class InventoryTransactionMutationController {
         this.fingerprints = fingerprints;
     }
 
+    @Operation(
+            summary = "Post an inventory receipt or issue",
+            description = "Posts an atomic ledger transaction and updates lot, balance, and "
+                    + "procurement projections. Quantities use the material base unit.")
     @PostMapping
     ResponseEntity<InventoryTransactionResponse> post(
             @Valid @RequestBody InventoryTransactionPostRequest body,
+            @Parameter(
+                    description = "Unique replay key for this authenticated tenant command",
+                    example = "inventory-receipt-2027-00042",
+                    required = true)
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @AuthenticationPrincipal TenantPrincipal principal,
             HttpServletRequest request) {
@@ -66,11 +76,23 @@ public class InventoryTransactionMutationController {
                 .body(response);
     }
 
+    @Operation(
+            summary = "Reverse an inventory transaction",
+            description = "Creates a linked reversal without mutating ledger history. Partial "
+                    + "reversals cannot exceed the source transaction's remaining quantity.")
     @PostMapping("/{id}/reversals")
     ResponseEntity<InventoryTransactionResponse> reverse(
+            @Parameter(description = "Source inventory transaction identifier",
+                    example = "5a000000-0000-0000-0000-000000000007")
             @PathVariable("id") UUID transactionId,
             @Valid @RequestBody InventoryReversalRequest body,
+            @Parameter(
+                    description = "Unique replay key for this authenticated tenant command",
+                    example = "inventory-reversal-2027-00007",
+                    required = true)
             @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @Parameter(description = "Strong ETag version of the source transaction",
+                    example = "\"7\"", required = true)
             @RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
             @AuthenticationPrincipal TenantPrincipal principal,
             HttpServletRequest request) {
