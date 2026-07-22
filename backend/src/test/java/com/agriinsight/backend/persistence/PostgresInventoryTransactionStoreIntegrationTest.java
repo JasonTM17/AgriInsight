@@ -2,6 +2,7 @@ package com.agriinsight.backend.persistence;
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.migrateAndSeed;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertAllocations;
 import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertBalance;
+import static com.agriinsight.backend.persistence.support.InventoryLedgerAssertions.assertReadModels;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
@@ -83,7 +84,7 @@ class PostgresInventoryTransactionStoreIntegrationTest {
             InventoryTransactionRecord early = post(harness, store, receipt(
                     "EARLY", "4", "10", "2027-06-30", "2027-01-01T08:01:00Z"));
             post(harness, store, receipt(
-                    "EXPIRED", "3", "30", "2027-01-31", "2027-01-01T08:02:00Z"));
+                    "EXPIRED", "3", "30", "2026-01-31", "2025-12-01T08:02:00Z"));
 
             InventoryTransactionRecord issue = post(harness, store,
                     new InventoryTransactionCommands.Issue(
@@ -94,6 +95,7 @@ class PostgresInventoryTransactionStoreIntegrationTest {
             assertThat(issue.kind()).isEqualTo(InventoryTransactionKind.ISSUE);
             assertAllocations(harness, TENANT_ID, issue.id());
             assertBalance(harness, TENANT_ID, WAREHOUSE_ID, MATERIAL_ID, "6.0000", "150.00");
+            assertReadModels(harness, SCOPE, WAREHOUSE_ID, MATERIAL_ID, issue.id());
 
             assertThatThrownBy(() -> post(harness, store,
                     new InventoryTransactionCommands.Issue(
@@ -133,8 +135,9 @@ class PostgresInventoryTransactionStoreIntegrationTest {
                     VALUES (?, ?, 'WH-LEDGER', 'Ledger Warehouse')
                     """, WAREHOUSE_ID, TENANT_ID);
             harness.jdbcTemplate().update("""
-                    INSERT INTO materials (id, tenant_id, code, display_name, base_unit)
-                    VALUES (?, ?, 'FERT-LEDGER', 'Ledger Fertilizer', 'KG')
+                    INSERT INTO materials (
+                        id, tenant_id, code, display_name, base_unit, minimum_stock_quantity)
+                    VALUES (?, ?, 'FERT-LEDGER', 'Ledger Fertilizer', 'KG', 10)
                     """, MATERIAL_ID, TENANT_ID);
             harness.jdbcTemplate().update("""
                     INSERT INTO suppliers (id, tenant_id, code, display_name)

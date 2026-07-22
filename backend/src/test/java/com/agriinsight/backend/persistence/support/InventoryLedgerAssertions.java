@@ -2,8 +2,16 @@ package com.agriinsight.backend.persistence.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.inventory.application.InventoryTransactionQuery;
+import com.agriinsight.backend.inventory.application.StockBalanceQuery;
+import com.agriinsight.backend.inventory.application.StockLotQuery;
+import com.agriinsight.backend.inventory.domain.InventoryTransactionKind;
+import com.agriinsight.backend.inventory.infrastructure.PostgresInventoryReadStore;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class InventoryLedgerAssertions {
@@ -45,6 +53,47 @@ public final class InventoryLedgerAssertions {
                     .isEqualByComparingTo(quantity);
             assertThat((BigDecimal) values.get("inventory_value_vnd"))
                     .isEqualByComparingTo(value);
+            return null;
+        });
+    }
+
+    public static void assertReadModels(
+            TenantTransactionTestHarness harness,
+            ScopeContext scope,
+            UUID warehouseId,
+            UUID materialId,
+            UUID issueId) throws Throwable {
+        harness.withinTenant(() -> {
+            var reads = new PostgresInventoryReadStore(harness.jdbcTemplate());
+            var transactions = reads.findTransactions(scope, new InventoryTransactionQuery(
+                    10, 0, Optional.of(warehouseId), Optional.of(materialId),
+                    Optional.of(InventoryTransactionKind.ISSUE),
+                    Optional.empty(), Optional.empty()));
+            assertThat(transactions.items()).singleElement()
+                    .extracting(item -> item.id()).isEqualTo(issueId);
+            assertThat(reads.findTransaction(scope, issueId)).isPresent();
+
+            var balances = reads.findBalances(scope, new StockBalanceQuery(
+                    10, 0, Optional.of(warehouseId), Optional.of(materialId),
+                    Optional.of(true)));
+            assertThat(balances.items()).singleElement().satisfies(balance -> {
+                assertThat(balance.quantityOnHand()).isEqualByComparingTo("6.0000");
+                assertThat(balance.inventoryValueVnd()).isEqualByComparingTo("150.00");
+                assertThat(balance.lowStock()).isTrue();
+            });
+
+            var lots = reads.findLots(scope, new StockLotQuery(
+                    10, 0, Optional.of(warehouseId), Optional.of(materialId),
+                    Optional.empty(), false));
+            assertThat(lots.items()).extracting(item -> item.batchCode())
+                    .containsExactly("EXPIRED", "LATE");
+            assertThat(lots.items()).filteredOn(item -> item.expired())
+                    .extracting(item -> item.batchCode()).containsExactly("EXPIRED");
+            var expired = reads.findLots(scope, new StockLotQuery(
+                    10, 0, Optional.empty(), Optional.empty(),
+                    Optional.of(LocalDate.parse("2026-02-01")), false));
+            assertThat(expired.items()).extracting(item -> item.batchCode())
+                    .containsExactly("EXPIRED");
             return null;
         });
     }
