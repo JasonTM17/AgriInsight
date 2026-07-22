@@ -91,9 +91,18 @@ $env:PGPASSWORD = $operatorPassword
 try {
     $serverVersion = Invoke-ScalarQuery -Sql "SHOW server_version;"
     $schemaVersion = Invoke-ScalarQuery -Sql @"
-SELECT COALESCE(max(version), 'missing')
-FROM flyway_schema_history
-WHERE success = TRUE;
+SELECT COALESCE(
+    (
+        SELECT version
+        FROM flyway_schema_history
+        WHERE success = TRUE
+          AND version IS NOT NULL
+          AND version <> ''
+        ORDER BY installed_rank DESC
+        LIMIT 1
+    ),
+    'missing'
+);
 "@
 
     & $pgDump.Source `

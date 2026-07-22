@@ -25,6 +25,9 @@ open until those two release-boundary checks are evidenced.
 | Python/package checks | PASS | `compileall`, Node syntax check, wheel build/smoke, and SHA-256 artifact check. |
 | Compose contract | PASS | Root Compose and backend profile both pass `docker compose ... config --quiet`; backend data binds to ignored D-local storage and artifacts are not mounted writable. |
 | Image boundary | PASS | Root Python and backend Java images build locally with pinned base digests, OCI labels, non-root users, and deterministic smoke checks. |
+| Docker Hub phase publication | PASS | Python digest `sha256:3d2406de0cd2a2dbd91925526680e61deac6a2d15391fbe0c2ab36f8dfb311c9`; backend digest `sha256:d6a56b06cc16ed0aa11bce84751f487a87bfe398ca2ed5a2eda6229b89c90798`; version and `sha-d35d485` tags match. |
+| GHCR phase publication | PASS | The same two immutable digests are present at `ghcr.io/jasontm17/agriinsight-python` and `ghcr.io/jasontm17/agriinsight-backend`; packages were created and pull-by-digest smoke passed. |
+| Backup/restore drill | PASS | D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`; metadata reports Flyway `19`; clean target restore elapsed 11.045s, role/RLS gate PASS, runtime schema rows 20. |
 | Documentation validation | PASS | `node .claude/scripts/validate-docs.cjs docs/` exits 0; 12 internal links and 10 configuration references verified. Existing validator warnings are false positives for code/class names. |
 
 ## Phase 7 implementation covered
@@ -41,18 +44,17 @@ open until those two release-boundary checks are evidenced.
 - Disk-guarded custom-format PostgreSQL backup/restore wrappers and recovery
   documentation.
 
-## Remaining acceptance gates
+## Remaining production gates
 
-1. Push non-production phase tags to Docker Hub and GHCR, then record the
-   returned immutable digests and exact-digest smoke checks. Production release
-   still requires the protected workflow, reviewer approval, and configured
-   `DOCKERHUB_NAMESPACE`/environment secrets.
-2. Run the D-local backup -> clean target database -> role bootstrap -> restore
-   -> Flyway/RLS/runtime smoke drill and record measured restore time.
-3. After both gates pass, mark this phase complete and update the roadmap and
-   plan status. No `latest` tag or PostgreSQL republish is allowed.
+1. Run the protected tag-triggered release workflow after configuring
+   `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` and reviewer protection. The manual
+   phase tags above are non-production evidence only.
+2. Approve production RPO/RTO, retention, encrypted off-host backup storage,
+   and restore ownership. No `latest` tag or PostgreSQL republish is allowed.
 
 ## Unresolved questions
 
 - Production owner must approve RPO, RTO, retention, encrypted off-host backup
   storage, and the restore operator before any production deployment claim.
+- GitHub Actions still needs the protected release environment secrets and
+  reviewers; local Docker credentials are intentionally not copied into GitHub.
