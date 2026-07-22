@@ -24,6 +24,8 @@ import com.agriinsight.backend.operations.application.ActivityLogCommandService;
 import com.agriinsight.backend.operations.application.ActivityLogService;
 import com.agriinsight.backend.operations.application.HarvestCommandService;
 import com.agriinsight.backend.operations.application.HarvestService;
+import com.agriinsight.backend.inventory.application.WarehouseCommandService;
+import com.agriinsight.backend.inventory.application.WarehouseService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -82,7 +84,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         ActivityLogService.class,
         ActivityLogCommandService.class,
         HarvestService.class,
-        HarvestCommandService.class
+        HarvestCommandService.class,
+        WarehouseService.class,
+        WarehouseCommandService.class
 })
 public @interface IdentitySecurityContext {
 }
