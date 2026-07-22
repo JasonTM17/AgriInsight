@@ -27,6 +27,7 @@
         <spring-modulith.version>2.1.0</spring-modulith.version>
         <springdoc-openapi.version>3.0.3</springdoc-openapi.version>
         <testcontainers.version>2.0.5</testcontainers.version>
+        <postgresql.version>42.7.12</postgresql.version>
     </properties>
 
     <dependencyManagement>
