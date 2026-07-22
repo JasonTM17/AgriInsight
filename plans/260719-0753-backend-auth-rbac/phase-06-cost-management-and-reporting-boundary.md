@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Cost management and reporting boundary"
-status: pending
+status: in-progress
 priority: P1
 effort: "1-2d"
 dependencies: [4, 5]
