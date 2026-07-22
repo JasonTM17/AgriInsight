@@ -28,6 +28,8 @@ import com.agriinsight.backend.inventory.application.WarehouseCommandService;
 import com.agriinsight.backend.inventory.application.WarehouseService;
 import com.agriinsight.backend.inventory.application.MaterialCommandService;
 import com.agriinsight.backend.inventory.application.MaterialService;
+import com.agriinsight.backend.inventory.application.SupplierCommandService;
+import com.agriinsight.backend.inventory.application.SupplierService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -90,7 +92,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         WarehouseService.class,
         WarehouseCommandService.class,
         MaterialService.class,
-        MaterialCommandService.class
+        MaterialCommandService.class,
+        SupplierService.class,
+        SupplierCommandService.class
 })
 public @interface IdentitySecurityContext {
 }
