@@ -20,6 +20,8 @@ public record Season(
         BigDecimal plantedAreaHectares,
         Optional<BigDecimal> budgetVnd) {
 
+    public static final int VARIETY_NAME_MAX_LENGTH = 160;
+
     public Season {
         Objects.requireNonNull(id, "id is required");
         Objects.requireNonNull(tenantId, "tenantId is required");
@@ -28,7 +30,7 @@ public record Season(
         Objects.requireNonNull(cropId, "cropId is required");
         code = canonicalCode(code);
         displayName = canonicalDisplayName(displayName);
-        varietyName = optionalText(varietyName, "varietyName", 200);
+        varietyName = optionalText(varietyName, "varietyName", VARIETY_NAME_MAX_LENGTH);
         requireDateRange(plannedStartDate, plannedEndDate);
         plantedAreaHectares = positiveDecimal(plantedAreaHectares, "plantedAreaHectares", 10, 4);
         budgetVnd = optionalNonnegativeDecimal(budgetVnd, "budgetVnd", 17, 2);

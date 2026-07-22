@@ -33,7 +33,8 @@ public record SeasonRecord(
         Objects.requireNonNull(cropId, "cropId is required");
         code = Season.canonicalCode(code);
         displayName = Season.canonicalDisplayName(displayName);
-        varietyName = Season.optionalText(varietyName, "varietyName", 200);
+        varietyName = Season.optionalText(
+                varietyName, "varietyName", Season.VARIETY_NAME_MAX_LENGTH);
         Season.requireDateRange(plannedStartDate, plannedEndDate);
         startedOn = Objects.requireNonNull(startedOn, "startedOn is required");
         endedOn = Objects.requireNonNull(endedOn, "endedOn is required");

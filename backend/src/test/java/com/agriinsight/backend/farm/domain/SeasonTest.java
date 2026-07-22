@@ -44,6 +44,12 @@ class SeasonTest {
         assertThatThrownBy(() -> season("S-1", BigDecimal.ONE, Optional.of(new BigDecimal("-0.01"))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("budgetVnd");
+        assertThatThrownBy(() -> new Season(
+                SEASON_ID, TENANT_ID, FARM_ID, FIELD_ID, CROP_ID, "S-1", "Season",
+                Optional.of("V".repeat(161)), LocalDate.parse("2027-01-01"),
+                LocalDate.parse("2027-12-31"), BigDecimal.ONE, Optional.empty()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("varietyName");
     }
 
     @Test

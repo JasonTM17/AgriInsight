@@ -32,7 +32,8 @@ public final class SeasonCommands {
             Objects.requireNonNull(cropId, "cropId is required");
             code = Season.canonicalCode(code);
             displayName = Season.canonicalDisplayName(displayName);
-            varietyName = Season.optionalText(varietyName, "varietyName", 200);
+            varietyName = Season.optionalText(
+                    varietyName, "varietyName", Season.VARIETY_NAME_MAX_LENGTH);
             Season.requireDateRange(plannedStartDate, plannedEndDate);
             plantedAreaHectares = Season.positiveArea(plantedAreaHectares);
             budgetVnd = Season.optionalBudget(budgetVnd);
@@ -73,7 +74,8 @@ public final class SeasonCommands {
         private static Optional<Optional<String>> normalizeOptionalTextPatch(
                 Optional<Optional<String>> patch) {
             return Objects.requireNonNull(patch, "varietyName is required")
-                    .map(value -> Season.optionalText(value, "varietyName", 200));
+                    .map(value -> Season.optionalText(
+                            value, "varietyName", Season.VARIETY_NAME_MAX_LENGTH));
         }
 
         private static Optional<Optional<BigDecimal>> normalizeBudgetPatch(

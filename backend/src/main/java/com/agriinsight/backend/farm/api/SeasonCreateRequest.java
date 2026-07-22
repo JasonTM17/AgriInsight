@@ -21,7 +21,7 @@ public record SeasonCreateRequest(
         @NotBlank @Size(max = 64)
         @Pattern(regexp = "[A-Z0-9][A-Z0-9._-]{0,63}") String code,
         @NotBlank @Size(max = 200) String displayName,
-        @Size(max = 200) String varietyName,
+        @Size(max = Season.VARIETY_NAME_MAX_LENGTH) String varietyName,
         @NotNull LocalDate plannedStartDate,
         @NotNull LocalDate plannedEndDate,
         @NotNull @Positive @Digits(integer = 10, fraction = 4) BigDecimal plantedAreaHectares,
@@ -44,7 +44,8 @@ public record SeasonCreateRequest(
 
     private static String normalizeOptionalText(String value) {
         return value == null ? null
-                : Season.optionalText(Optional.of(value), "varietyName", 200).orElseThrow();
+                : Season.optionalText(
+                        Optional.of(value), "varietyName", Season.VARIETY_NAME_MAX_LENGTH).orElseThrow();
     }
 
     private static String normalizeReason(String value) {

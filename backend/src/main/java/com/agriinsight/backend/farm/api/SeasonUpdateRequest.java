@@ -15,7 +15,7 @@ public record SeasonUpdateRequest(
         @Size(max = 64)
         @Pattern(regexp = "[A-Z0-9][A-Z0-9._-]{0,63}") String code,
         @Size(max = 200) String displayName,
-        @Size(max = 200) String varietyName,
+        @Size(max = Season.VARIETY_NAME_MAX_LENGTH) String varietyName,
         Boolean clearVarietyName,
         LocalDate plannedStartDate,
         LocalDate plannedEndDate,
@@ -50,7 +50,8 @@ public record SeasonUpdateRequest(
 
     private static String normalizeOptionalText(String value) {
         return value == null ? null
-                : Season.optionalText(Optional.of(value), "varietyName", 200).orElseThrow();
+                : Season.optionalText(
+                        Optional.of(value), "varietyName", Season.VARIETY_NAME_MAX_LENGTH).orElseThrow();
     }
 
     private static String normalizeReason(String value) {
