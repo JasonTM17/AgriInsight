@@ -361,6 +361,9 @@ GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_profile_id()
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.inventory_warehouse_access(UUID, BOOLEAN)
     TO agriinsight_runtime, agriinsight_migrator;
+GRANT EXECUTE ON FUNCTION agriinsight_security.operating_cost_access(
+    TEXT, UUID, UUID, UUID, UUID, BOOLEAN)
+    TO agriinsight_runtime, agriinsight_migrator;
 GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT)
@@ -402,6 +405,8 @@ REVOKE ALL ON inventory_transactions FROM PUBLIC;
 REVOKE ALL ON inventory_transaction_lot_allocations FROM PUBLIC;
 REVOKE ALL ON stock_lots FROM PUBLIC;
 REVOKE ALL ON stock_balances FROM PUBLIC;
+REVOKE ALL ON cost_categories FROM PUBLIC;
+REVOKE ALL ON operating_cost_entries FROM PUBLIC;
 REVOKE ALL ON flyway_schema_history FROM PUBLIC;
 
 REVOKE ALL ON tenants FROM agriinsight_runtime;
@@ -432,6 +437,8 @@ REVOKE ALL ON inventory_transactions FROM agriinsight_runtime;
 REVOKE ALL ON inventory_transaction_lot_allocations FROM agriinsight_runtime;
 REVOKE ALL ON stock_lots FROM agriinsight_runtime;
 REVOKE ALL ON stock_balances FROM agriinsight_runtime;
+REVOKE ALL ON cost_categories FROM agriinsight_runtime;
+REVOKE ALL ON operating_cost_entries FROM agriinsight_runtime;
 REVOKE ALL ON flyway_schema_history FROM agriinsight_runtime;
 
 GRANT SELECT ON tenants TO agriinsight_runtime;
@@ -499,6 +506,8 @@ GRANT UPDATE (available_quantity, version, updated_at)
 GRANT SELECT, INSERT ON stock_balances TO agriinsight_runtime;
 GRANT UPDATE (quantity_on_hand, inventory_value_vnd, version, updated_at)
     ON stock_balances TO agriinsight_runtime;
+GRANT SELECT ON cost_categories TO agriinsight_runtime;
+GRANT SELECT, INSERT ON operating_cost_entries TO agriinsight_runtime;
 GRANT SELECT ON flyway_schema_history TO agriinsight_runtime;
 
 GRANT SELECT (id, tenant_id, user_profile_id, issuer, subject, active)

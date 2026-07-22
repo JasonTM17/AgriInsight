@@ -72,7 +72,7 @@ agriinsight:
     assurance-claim: ${AGRIINSIGHT_OIDC_ASSURANCE_CLAIM:acr}
     cors-allowed-origins: ${AGRIINSIGHT_CORS_ALLOWED_ORIGINS:}
   schema:
-    expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:15}
+    expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:17}
 
 springdoc:
   api-docs:
