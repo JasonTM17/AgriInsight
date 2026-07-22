@@ -55,15 +55,34 @@ class InventorySchemaIntegrationTest {
                        AND relation.relforcerowsecurity
                     """)).isEqualTo(INVENTORY_TABLES.size());
             assertThat(count(operator, """
-                    SELECT count(*)
-                      FROM pg_policies
+                    SELECT count(*) FROM pg_policies
                      WHERE schemaname = 'public'
-                       AND tablename IN (
+                       AND tablename = ANY (ARRAY[
                             'warehouses', 'materials', 'suppliers',
                             'user_warehouse_assignments', 'inventory_transactions',
-                            'inventory_transaction_lot_allocations', 'stock_lots', 'stock_balances')
-                       AND policyname IN ('runtime_tenant_isolation', 'migration_tenant_isolation')
-                    """)).isEqualTo(INVENTORY_TABLES.size() * 2L);
+                            'inventory_transaction_lot_allocations', 'stock_lots', 'stock_balances'])
+                       AND policyname = 'migration_tenant_isolation'
+                    """)).isEqualTo(INVENTORY_TABLES.size());
+            assertThat(count(operator, """
+                    SELECT count(*) FROM pg_policies
+                     WHERE schemaname = 'public'
+                       AND tablename = ANY (ARRAY[
+                            'warehouses', 'materials', 'suppliers',
+                            'user_warehouse_assignments'])
+                       AND policyname = 'runtime_tenant_isolation'
+                    """)).isEqualTo(4);
+            assertThat(count(operator, """
+                    SELECT count(*) FROM pg_policies
+                     WHERE schemaname = 'public'
+                       AND tablename = ANY (ARRAY[
+                            'inventory_transactions',
+                            'inventory_transaction_lot_allocations',
+                            'stock_lots', 'stock_balances'])
+                       AND policyname IN (
+                            'runtime_inventory_read',
+                            'runtime_inventory_insert',
+                            'runtime_inventory_update')
+                    """)).isEqualTo(11);
             assertThat(count(operator, """
                     SELECT count(DISTINCT tablename)
                       FROM pg_indexes
