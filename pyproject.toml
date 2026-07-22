@@ -19,7 +19,7 @@ dashboard = [
   "streamlit>=1.58,<2",
 ]
 reports = [
-  "reportlab>=4.4,<5",
+  "reportlab>=4.4,<6",
 ]
 dev = [
   "pypdf>=6,<7",
