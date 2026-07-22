@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agriinsight.example/contracts/agriinsight-operational-events-v1.schema.json",
+  "title": "AgriInsight operational committed event v1",
+  "description": "Stable at-least-once handoff envelope persisted by the transactional outbox.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "tenant_id",
+    "command_id",
+    "event_ordinal",
+    "aggregate",
+    "aggregate_id",
+    "aggregate_version",
+    "business_code",
+    "event_type",
+    "schema_version",
+    "occurred_at",
+    "payload"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "command_id": { "type": "string", "format": "uuid" },
+    "event_ordinal": { "type": "integer", "minimum": 0 },
+    "aggregate": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "aggregate_id": { "type": "string", "format": "uuid" },
+    "aggregate_version": { "type": "integer", "minimum": 0 },
+    "business_code": { "type": ["string", "null"], "maxLength": 128 },
+    "event_type": {
+      "type": "string",
+      "pattern": "^AGRIINSIGHT\\.OPERATIONAL\\.[A-Z0-9_]+\\.COMMITTED$"
+    },
+    "schema_version": { "type": "integer", "const": 1 },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "payload": { "type": "object", "additionalProperties": true }
+  }
+}

@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,14 +24,25 @@ public class CommandExecutionService {
     private final ApiCommandRecordStore store;
     private final TenantContextState contextState;
     private final IdempotencyConflictPublisher conflictPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CommandExecutionService(
             ApiCommandRecordStore store,
             TenantContextState contextState,
             IdempotencyConflictPublisher conflictPublisher) {
+        this(store, contextState, conflictPublisher, event -> { });
+    }
+
+    @Autowired
+    public CommandExecutionService(
+            ApiCommandRecordStore store,
+            TenantContextState contextState,
+            IdempotencyConflictPublisher conflictPublisher,
+            ApplicationEventPublisher eventPublisher) {
         this.store = Objects.requireNonNull(store, "store is required");
         this.contextState = Objects.requireNonNull(contextState, "contextState is required");
         this.conflictPublisher = Objects.requireNonNull(conflictPublisher, "conflictPublisher is required");
+        this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher is required");
     }
 
     public <T> CommandExecutionResult<T> execute(
@@ -64,7 +77,7 @@ public class CommandExecutionService {
         requireBinding(claim.record(), request);
         if (claim.claimed()) {
             return applyMutation(
-                    claim.record(), () -> mutation.apply(claim.record()));
+                    claim.record(), request, () -> mutation.apply(claim.record()));
         }
         if (!claim.record().matches(
                 request.fingerprint().schemaVersion(),
@@ -89,6 +102,7 @@ public class CommandExecutionService {
 
     private <T> CommandExecutionResult<T> applyMutation(
             ApiCommandRecord reservation,
+            CommandExecutionRequest request,
             Supplier<CommandCompletion<T>> mutation) {
         CommandCompletion<T> completion = Objects.requireNonNull(
                 mutation.get(),
@@ -102,6 +116,15 @@ public class CommandExecutionService {
         if (!persisted.equals(completed)) {
             throw new IllegalStateException("Command completion store returned unexpected metadata");
         }
+        eventPublisher.publishEvent(new CommandCommittedEvent(
+                reservation.tenantId(),
+                reservation.principalId(),
+                reservation.commandId(),
+                request.fingerprint().routeTemplate(),
+                completion.target(),
+                request.correlationId(),
+                java.time.Instant.now(),
+                0));
         return new CommandExecutionResult.Completed<>(
                 persisted.commandId(),
                 false,

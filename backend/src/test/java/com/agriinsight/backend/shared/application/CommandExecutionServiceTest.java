@@ -20,6 +20,8 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -39,6 +41,7 @@ class CommandExecutionServiceTest {
     private ApiCommandRecordStore store;
     private TenantContextState contextState;
     private IdempotencyConflictPublisher conflictPublisher;
+    private ApplicationEventPublisher eventPublisher;
     private CommandExecutionService service;
 
     @BeforeEach
@@ -46,7 +49,8 @@ class CommandExecutionServiceTest {
         store = mock(ApiCommandRecordStore.class);
         contextState = mock(TenantContextState.class);
         conflictPublisher = mock(IdempotencyConflictPublisher.class);
-        service = new CommandExecutionService(store, contextState, conflictPublisher);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        service = new CommandExecutionService(store, contextState, conflictPublisher, eventPublisher);
         TenantPrincipal principal = mock(TenantPrincipal.class);
         when(principal.tenantId()).thenReturn(TENANT_ID);
         when(principal.profileId()).thenReturn(PRINCIPAL_ID);
@@ -91,6 +95,11 @@ class CommandExecutionServiceTest {
         verify(contextState).requireBound(TENANT_ID);
         verify(store).complete(any(ApiCommandRecord.class));
         verify(conflictPublisher, never()).publish(any());
+        ArgumentCaptor<CommandCommittedEvent> event = ArgumentCaptor.forClass(CommandCommittedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().commandId()).isEqualTo(completed.commandId());
+        assertThat(event.getValue().target()).isEqualTo(completed.target());
+        assertThat(event.getValue().eventOrdinal()).isZero();
     }
 
     @Test
@@ -132,6 +141,7 @@ class CommandExecutionServiceTest {
         assertThat(replayed.representation()).contains(new UserView("Fresh authorized view"));
         assertThat(mutations).hasValue(0);
         verify(store, never()).complete(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
