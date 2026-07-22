@@ -407,6 +407,7 @@ REVOKE ALL ON stock_lots FROM PUBLIC;
 REVOKE ALL ON stock_balances FROM PUBLIC;
 REVOKE ALL ON cost_categories FROM PUBLIC;
 REVOKE ALL ON operating_cost_entries FROM PUBLIC;
+REVOKE ALL ON outbox_events FROM PUBLIC;
 REVOKE ALL ON flyway_schema_history FROM PUBLIC;
 
 REVOKE ALL ON tenants FROM agriinsight_runtime;
@@ -439,6 +440,7 @@ REVOKE ALL ON stock_lots FROM agriinsight_runtime;
 REVOKE ALL ON stock_balances FROM agriinsight_runtime;
 REVOKE ALL ON cost_categories FROM agriinsight_runtime;
 REVOKE ALL ON operating_cost_entries FROM agriinsight_runtime;
+REVOKE ALL ON outbox_events FROM agriinsight_runtime;
 REVOKE ALL ON flyway_schema_history FROM agriinsight_runtime;
 
 GRANT SELECT ON tenants TO agriinsight_runtime;
@@ -509,6 +511,17 @@ GRANT UPDATE (quantity_on_hand, inventory_value_vnd, version, updated_at)
 GRANT SELECT ON cost_categories TO agriinsight_runtime;
 GRANT SELECT, INSERT ON operating_cost_entries TO agriinsight_runtime;
 GRANT SELECT ON flyway_schema_history TO agriinsight_runtime;
+
+GRANT INSERT (
+    id, tenant_id, command_id, event_ordinal, aggregate_type, aggregate_id,
+    aggregate_version, event_type, schema_version, occurred_at, payload)
+    ON outbox_events TO agriinsight_runtime;
+
+GRANT SELECT ON outbox_events TO agriinsight_integration;
+GRANT UPDATE (
+    status, attempts, available_at, leased_until, published_at, dead_lettered_at,
+    lease_owner, lease_token, lease_generation, last_error)
+    ON outbox_events TO agriinsight_integration;
 
 GRANT SELECT (id, tenant_id, user_profile_id, issuer, subject, active)
     ON external_identities TO agriinsight_identity_definer;
