@@ -77,6 +77,9 @@ public record TenantAuditEvent(
         SEASON_CREATED,
         SEASON_UPDATED,
         SEASON_TRANSITIONED,
+        ACTIVITY_CREATED,
+        ACTIVITY_UPDATED,
+        ACTIVITY_TRANSITIONED,
         EMPLOYEE_CREATED,
         EMPLOYEE_UPDATED,
         EMPLOYEE_DEACTIVATED,
@@ -95,6 +98,7 @@ public record TenantAuditEvent(
         FIELD,
         CROP,
         SEASON,
+        ACTIVITY,
         EMPLOYEE,
         FARM_ASSIGNMENT,
         API_COMMAND
