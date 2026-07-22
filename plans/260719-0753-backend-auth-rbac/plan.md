@@ -96,7 +96,7 @@ Canonical business codes are reserved for the lifetime of a tenant. Deactivation
 | 4 | [Farm season workforce and activity APIs](./phase-04-farm-season-workforce-and-activity-apis.md) | Completed |
 | 5 | [Inventory and procurement APIs](./phase-05-inventory-and-procurement-apis.md) | Completed |
 | 6 | [Cost management and reporting boundary](./phase-06-cost-management-and-reporting-boundary.md) | Completed |
-| 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | Pending |
+| 7 | [Outbox operations, verified images, and release hardening](./phase-07-outbox-operations-and-release-hardening.md) | In progress |
 
 Phases 1-6 were accepted through 2026-07-22. Phase 6 closes the operating-cost ledger and bounded reporting boundary; Phase 7 remains the release/container boundary. See the [Phase 1 acceptance report](./reports/acceptance-2026-07-19-backend-phase1.md), [Phase 2 acceptance report](./reports/acceptance-2026-07-20-backend-phase2.md), [Phase 3 acceptance report](./reports/acceptance-2026-07-20-backend-phase3.md), [Phase 4 acceptance report](./reports/acceptance-2026-07-22-backend-phase4.md), [Phase 5 acceptance report](./reports/acceptance-2026-07-22-backend-phase5.md), and [Phase 6 acceptance report](./reports/acceptance-2026-07-22-backend-phase6.md).
 

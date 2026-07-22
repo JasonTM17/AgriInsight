@@ -1,7 +1,7 @@
 ---
 phase: 7
 title: "Outbox operations, verified images, and release hardening"
-status: pending
+status: in-progress
 priority: P1
 effort: "4-5d"
 dependencies: [4, 5, 6]
