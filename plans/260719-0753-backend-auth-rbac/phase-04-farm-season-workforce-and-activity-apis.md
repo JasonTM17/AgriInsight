@@ -13,7 +13,9 @@ dependencies: [3]
 
 Add the operational farm hierarchy and field-work records: farms, fields, crops, seasons, employees, activities, assignments, and harvests. Every command uses the phase-3 scope/transaction boundary and has no analytics-file side effects.
 
-Current progress (2026-07-21): the operations schema, FORCE RLS, permission-aware farm core, and versioned farm read/create/update/deactivate/reactivate HTTP slice are implemented and verified. This phase remains in progress until the field, crop, season, workforce, activity, log, harvest, and assignment boundaries meet every success criterion below.
+Current progress (2026-07-22): the operations schema through V8, FORCE RLS, permission-aware farm core, and versioned farm/field/crop/season read-create-update-lifecycle HTTP slices are implemented and verified. Assignment locking, parent visibility-before-claim, tenant-wide Field writes, schema-aligned season validation, and parent/child lifecycle serialization are covered by focused tests. This phase remains in progress until workforce, activity, log, harvest, and assignment boundaries meet every success criterion below.
+
+Gate evidence: [Phase 4 master-data production review](./reports/reviewer-2026-07-22-phase4-master-data.md).
 
 ## Requirements
 
@@ -35,7 +37,7 @@ Seasons belong to fields for this MVP and carry farm/tenant columns for indexed 
 
 ## Related Code Files
 
-Implemented in the current farm slice:
+Implemented and verified in the current master-data slice:
 
 - `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmReadController.java`
 - `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmMutationController.java`
@@ -48,6 +50,24 @@ Implemented in the current farm slice:
 - `D:\AgriInsight\backend\src\main\resources\db\migration\V5__create_farm_and_operations_tables.sql`
 - `D:\AgriInsight\backend\src\main\resources\db\migration\V6__add_farm_and_operations_rls_policies.sql`
 - `D:\AgriInsight\backend\src\main\resources\db\migration\V7__serialize_farm_lifecycle_dependencies.sql`
+- `D:\AgriInsight\backend\src\main\resources\db\migration\V8__serialize_field_crop_and_season_lifecycle.sql`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldCreateController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldReadController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldUpdateController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldLifecycleController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\CropCreateController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\CropReadController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\CropUpdateController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\CropLifecycleController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\SeasonCreateController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\SeasonReadController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\SeasonUpdateController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\SeasonTransitionController.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FieldService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\CropService.java`
+- `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\SeasonService.java`
+- `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\FieldCropLifecycleConcurrencyIntegrationTest.java`
+- `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\infrastructure\FarmScopedWriteAuthorizationIntegrationTest.java`
 - `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmReadHttpContractTest.java`
 - `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmMutationHttpContractTest.java`
 - `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\farm\FarmLifecycleHttpContractTest.java`
@@ -55,17 +75,11 @@ Implemented in the current farm slice:
 
 Remaining planned Phase 4 boundaries:
 
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FieldController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\CropController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\SeasonController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\ActivityLogController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\HarvestController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\api\EmployeeController.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\api\FarmAssignmentController.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\FieldService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\CropService.java`
-- Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\farm\application\SeasonService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\ActivityLogService.java`
 - Create: `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\operations\application\EmployeeService.java`
@@ -120,6 +134,13 @@ Remaining planned Phase 4 boundaries:
 - [ ] Pagination/query plans are bounded and no N+1 appears in focused tests.
 - [ ] Every new table has tenant RLS, indexes, and migration tests.
 - [ ] Backend tests never write existing analytics artifacts.
+
+### Verified in the current slice
+
+- [x] Farm/field/crop/season master routes use versioned HTTP contracts, idempotency, ETag/If-Match, bounded reads, and safe ProblemDetail errors.
+- [x] Field/Crop/Season parent and tenant invariants are enforced by both application predicates and V5–V8 PostgreSQL constraints/triggers.
+- [x] FARM-scoped writes lock active assignments through commit; tenant-wide administrator writes remain supported where the permission matrix allows them.
+- [x] Current master-data unit, HTTP, migration, persistence, RLS, and concurrency tests pass; workforce/activity/log/harvest/assignment criteria remain open.
 
 ## Risk Assessment
 

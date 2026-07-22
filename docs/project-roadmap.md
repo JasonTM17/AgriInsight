@@ -10,7 +10,7 @@ This roadmap reflects the current state of the repository, not an assumed releas
 | Backend phase 1 | Completed and regression-verified | Java 21 foundation, PostgreSQL/Flyway, probes, non-root image smoke |
 | Backend phase 2 | Completed and regression-verified | OIDC identity/security boundary, exact bootstrap, route inventory, local image smoke |
 | Backend phase 3 | Completed and regression-verified | Restricted roles, tenant RBAC/context, provisioning, FORCE RLS, idempotency, tenant administration |
-| Backend phase 4 | In progress | Farm slice verified; field, crop, season, workforce, activity, log, harvest, and assignment boundaries remain |
+| Backend phase 4 | In progress | Farm/field/crop/season master-data slices verified; workforce, activity, log, harvest, and assignment boundaries remain |
 
 ## Next backend phases
 
@@ -19,7 +19,7 @@ This roadmap reflects the current state of the repository, not an assumed releas
 | Phase 1 | Backend foundation and contracts | Accepted 2026-07-19 |
 | Phase 2 | OIDC identity and security boundary | Accepted 2026-07-20 |
 | Phase 3 | Tenant RBAC and PostgreSQL RLS | Accepted 2026-07-20 |
-| Phase 4 | Farm, season, workforce, and activity APIs | In progress; farm slice verified |
+| Phase 4 | Farm, season, workforce, and activity APIs | In progress; farm/field/crop/season master-data verified |
 | Phase 5 | Inventory and procurement APIs | Dependency unblocked; sequentially follows Phase 4 |
 | Phase 6 | Cost management and reporting boundary | Phases 4-5 accepted |
 | Phase 7 | Outbox operations and release hardening | Phases 4-6 accepted |

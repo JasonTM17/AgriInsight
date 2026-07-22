@@ -6,13 +6,13 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `7` | Tenant anchor, identity/RBAC và farm operations của backend |
+| Flyway schema history | `8` | Tenant anchor, identity/RBAC và farm master data của backend |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
-## Backend farm HTTP contract
+## Backend farm/master-data HTTP contract
 
-Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại chỉ bao phủ farm:
+Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại bao phủ farm, field, crop và season:
 
 | Method | Path | Permission | Contract chính |
 |---|---|---|---|
@@ -23,11 +23,24 @@ Phase 4 vẫn đang triển khai; contract đã xác thực hiện tại chỉ b
 | **POST** | `/api/v1/farms/{id}/deactivate` | FARM_MANAGE | tenant-wide scope, reason, idempotency and optimistic version |
 | **POST** | `/api/v1/farms/{id}/reactivate` | FARM_MANAGE | tenant-wide scope, reason, idempotency and optimistic version |
 
+| Method | Path | Permission | Contract chính |
+|---|---|---|---|
+| **GET** | `/api/v1/fields`, `/api/v1/fields/{id}` | FARM_READ | bounded filters, assignment-aware visibility, strong `ETag` cho detail |
+| **POST** | `/api/v1/farms/{farmId}/fields` | FARM_MANAGE | parent farm phải visible/active; `Idempotency-Key`; `201` + Location |
+| **PATCH** | `/api/v1/fields/{id}` | FARM_MANAGE | FARM-scoped hoặc tenant-wide; strong `If-Match` |
+| **POST** | `/api/v1/fields/{id}/deactivate|reactivate` | FARM_MANAGE | idempotent lifecycle; live season chặn deactivate |
+| **GET** | `/api/v1/crops`, `/api/v1/crops/{id}` | FARM_READ | tenant catalog, bounded filters, strong `ETag` cho detail |
+| **POST/PATCH** | `/api/v1/crops`, `/api/v1/crops/{id}` | FARM_MANAGE | tenant-wide catalog command; idempotency + optimistic locking |
+| **POST** | `/api/v1/crops/{id}/deactivate|reactivate` | FARM_MANAGE | idempotent lifecycle; live season chặn deactivate |
+| **GET** | `/api/v1/seasons`, `/api/v1/seasons/{id}` | SEASON_READ | bounded farm/field/crop/status filters, farm-assignment visibility |
+| **POST/PATCH** | `/api/v1/seasons`, `/api/v1/seasons/{id}` | SEASON_MANAGE | visible active parents; idempotency + strong `If-Match` |
+| **POST** | `/api/v1/seasons/{id}/transition` | SEASON_MANAGE | explicit state transition, reason, idempotency + optimistic locking |
+
 FarmCreateRequest yêu cầu `code`, `displayName`; `reasonCode` optional. FarmUpdateRequest yêu cầu ít nhất một trong `code` hoặc `displayName`. Lifecycle yêu cầu `reasonCode`. Code/reason được canonical hóa trước validation và fingerprint; unknown JSON fields bị từ chối.
 
 FarmResponse chỉ gồm `id`, `code`, `displayName`, `active`, `version`; không trả `tenantId`. Page response gồm `items`, `limit`, `offset`, `hasMore`. Không có hard-delete route.
 
-Deactivate bị chặn khi farm còn field active, season PLANNED/ACTIVE, activity PLANNED/STARTED, hoặc assignment chưa revoked. Application transaction dùng explicit READ_COMMITTED; V7 khóa farm cha từ cả parent-deactivation và live-child write để serialize hai thứ tự cạnh tranh. Upgrade preflight fail closed trên dữ liệu V6 bất nhất và rollback giữ nguyên ENABLE/FORCE RLS.
+Deactivate bị chặn khi farm còn field active, season PLANNED/ACTIVE, activity PLANNED/STARTED, hoặc assignment chưa revoked. Application transaction dùng explicit READ_COMMITTED; V7 khóa farm cha từ cả parent-deactivation và live-child write để serialize hai thứ tự cạnh tranh. V8 áp dụng cùng nguyên tắc cho field/crop/season, fail closed khi upgrade gặp dữ liệu lifecycle bất nhất, và giữ nguyên ENABLE/FORCE RLS khi rollback. FARM-scoped write khóa active assignment tới lúc commit để revoke không thể chen giữa authorization và mutation.
 
 ## Operational identifiers
 

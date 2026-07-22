@@ -43,7 +43,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V7 migrations
+- liveness/readiness split and Flyway V1-V8 migrations, including serialized Field/Crop/Season lifecycle guards
 
 ```mermaid
 flowchart LR
@@ -65,7 +65,7 @@ Authorization denial audit follows a deliberate ordering invariant: the rejected
 
 Mutation routes authorize before claiming an idempotency key. The command store binds a SHA-256 key digest and canonical request hash to tenant, principal, method, and route template. It stores no request body, raw key, token, or response snapshot; committed replay reconstructs a currently authorized representation.
 
-The farm slice uses the same boundary for assignment-aware reads and mutations. Lifecycle transactions explicitly use READ_COMMITTED; parent deactivation and live-child inserts/updates lock the farm row in a consistent order. V7 preflight fails closed on inconsistent upgrade data, and rollback preserves ENABLE/FORCE RLS.
+The farm/field/crop/season master-data slice uses the same boundary for assignment-aware reads and mutations. FARM-scoped writes lock active assignments until commit; tenant-wide administrator writes remain available where the permission matrix allows them. Lifecycle transactions explicitly use READ_COMMITTED; parent deactivation and live-child inserts/updates lock the farm row in a consistent order. V7/V8 preflight fails closed on inconsistent upgrade data, and rollback preserves ENABLE/FORCE RLS.
 
 ## Boundaries
 
@@ -81,10 +81,10 @@ The farm slice uses the same boundary for assignment-aware reads and mutations. 
 | Analytics MVP | Verified by its existing regression suite |
 | Backend phase 1 foundation | Accepted 2026-07-19 |
 | Backend phase 2 OIDC identity | Accepted 2026-07-20 |
-| Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; current backend regression gate has 202 tests green |
-| Tenant administration | Exact read/mutation routes verified; broader farm/work APIs remain Phase 4 |
-| Farm slice | List/get/create/update/deactivate/reactivate verified; remaining Phase 4 domains stay open |
+| Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; current backend regression gate remains green |
+| Tenant administration | Exact read/mutation routes verified; workforce/activity APIs remain Phase 4 |
+| Farm master data | Farm/field/crop/season list/get/create/update/lifecycle routes verified; workforce/activity/log/harvest/assignment domains stay open |
 | Docker Hub publication | Not yet claimed |
 | Local backend image verification | Phase 2 non-root build/smoke verified; no registry provenance |
 
-The right way to read the repo is: analytics is live today; backend identity, tenant authorization, and the first farm slice are locally verified; remaining field/crop/season/workforce/activity/log/harvest work, inventory, cost, outbox, and release publication remain sequential gates. Phase 3 acceptance and partial Phase 4 progress are not a full production-release claim.
+The right way to read the repo is: analytics is live today; backend identity, tenant authorization, and farm master data are locally verified; remaining workforce/activity/log/harvest work, inventory, cost, outbox, and release publication remain sequential gates. Phase 3 acceptance and partial Phase 4 progress are not a full production-release claim.
