@@ -88,6 +88,8 @@ public record TenantAuditEvent(
         FARM_ASSIGNMENT_REVOKED,
         ACTIVITY_ASSIGNMENT_GRANTED,
         ACTIVITY_ASSIGNMENT_REVOKED,
+        ACTIVITY_LOG_APPENDED,
+        ACTIVITY_LOG_CORRECTED,
         AUTHORIZATION_DENIED,
         IDEMPOTENCY_CONFLICT
     }
@@ -104,6 +106,7 @@ public record TenantAuditEvent(
         EMPLOYEE,
         FARM_ASSIGNMENT,
         ACTIVITY_ASSIGNMENT,
+        ACTIVITY_LOG,
         API_COMMAND
     }
 
