@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.farm.application.FarmRecord;
+import com.agriinsight.backend.farm.application.FarmAssignmentRecord;
 import com.agriinsight.backend.identity.application.AgriInsightPrincipal;
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
 import com.agriinsight.backend.shared.application.CommandExecutionResult;
@@ -22,6 +23,8 @@ final class FarmHttpTestSupport {
     static final UUID TENANT_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");
     static final UUID ACTOR_ID = UUID.fromString("20000000-0000-0000-0000-000000000001");
     static final UUID FARM_ID = UUID.fromString("31000000-0000-0000-0000-000000000001");
+    static final UUID TARGET_PROFILE_ID = UUID.fromString("21000000-0000-0000-0000-000000000002");
+    static final UUID FARM_ASSIGNMENT_ID = UUID.fromString("38000000-0000-0000-0000-000000000001");
     static final UUID COMMAND_ID = UUID.fromString("33000000-0000-0000-0000-000000000001");
     static final String TOKEN = "farm-api-token";
     static final String AUTHORIZATION = "Bearer " + TOKEN;
@@ -62,6 +65,27 @@ final class FarmHttpTestSupport {
                 status,
                 new CommandTarget("FARM", farm.id(), farm.version()),
                 Optional.of(farm));
+    }
+
+    static FarmAssignmentRecord assignment(long version, boolean active) {
+        return new FarmAssignmentRecord(
+                FARM_ASSIGNMENT_ID,
+                TENANT_ID,
+                TARGET_PROFILE_ID,
+                FARM_ID,
+                active ? Optional.empty() : Optional.of(Instant.EPOCH),
+                version);
+    }
+
+    static CommandExecutionResult.Completed<FarmAssignmentRecord> completedAssignment(
+            int status,
+            FarmAssignmentRecord assignment) {
+        return new CommandExecutionResult.Completed<>(
+                COMMAND_ID,
+                false,
+                status,
+                new CommandTarget("FARM_ASSIGNMENT", assignment.id(), assignment.version()),
+                Optional.of(assignment));
     }
 
     private static Jwt jwt() {
