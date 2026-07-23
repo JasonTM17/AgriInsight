@@ -145,4 +145,5 @@ public class PostgresActivityLogStore implements ActivityLogStore {
     private Object nullable(Object value, int type) {
         return value == null ? new SqlParameterValue(type, null) : value;
     }
+
 }

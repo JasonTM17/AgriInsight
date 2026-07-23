@@ -4,7 +4,9 @@ import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixt
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.operations.application.ActivityReadPageQuery;
 import com.agriinsight.backend.operations.domain.ActivityAssignment;
+import com.agriinsight.backend.operations.infrastructure.PostgresActivityAssignmentReadStore;
 import com.agriinsight.backend.operations.infrastructure.PostgresActivityAssignmentStore;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
@@ -28,6 +30,8 @@ class PostgresActivityAssignmentStoreIntegrationTest {
     private static final UUID FARM_ID = UUID.fromString("41000000-0000-0000-0000-000000000001");
     private static final UUID OTHER_FARM_ID = UUID.fromString("42000000-0000-0000-0000-000000000001");
     private static final UUID ACTIVITY_ID = UUID.fromString("41000000-0000-0000-0000-000000000007");
+    private static final UUID OTHER_ACTIVITY_ID =
+            UUID.fromString("42000000-0000-0000-0000-000000000007");
     private static final UUID EMPLOYEE_ID = UUID.fromString("41000000-0000-0000-0000-000000000004");
     private static final UUID ASSIGNMENT_ID = UUID.fromString("41000000-0000-0000-0000-000000000009");
     private static final UUID NEW_ASSIGNMENT_ID = UUID.fromString("55000000-0000-0000-0000-000000000001");
@@ -55,6 +59,8 @@ class PostgresActivityAssignmentStoreIntegrationTest {
                 POSTGRESQL, "agriinsight")) {
             PostgresActivityAssignmentStore store =
                     new PostgresActivityAssignmentStore(harness.jdbcTemplate());
+            PostgresActivityAssignmentReadStore reads =
+                    new PostgresActivityAssignmentReadStore(harness.jdbcTemplate());
             ScopeContext farmScope = ScopeContext.domain(
                     principal, ScopeContext.Type.FARM, Optional.of(FARM_ID));
             ScopeContext wrongFarmScope = ScopeContext.domain(
@@ -75,6 +81,25 @@ class PostgresActivityAssignmentStoreIntegrationTest {
                 assertThat(regranted.active()).isTrue();
                 assertThat(store.findActive(farmScope, ACTIVITY_ID, EMPLOYEE_ID))
                         .contains(regranted);
+                var page = reads.findAll(
+                        ScopeContext.domain(
+                                principal,
+                                ScopeContext.Type.ACTIVITY,
+                                Optional.of(ACTIVITY_ID)),
+                        ACTIVITY_ID,
+                        Optional.of(EMPLOYEE_ID),
+                        new ActivityReadPageQuery(1, 0));
+                assertThat(page.items()).extracting(item -> item.id())
+                        .containsExactly(NEW_ASSIGNMENT_ID);
+                assertThat(page.hasMore()).isTrue();
+                assertThat(reads.findAll(
+                        ScopeContext.domain(
+                                principal,
+                                ScopeContext.Type.ACTIVITY,
+                                Optional.of(OTHER_ACTIVITY_ID)),
+                        OTHER_ACTIVITY_ID,
+                        Optional.empty(),
+                        new ActivityReadPageQuery(100, 0)).items()).isEmpty();
                 assertThat(harness.jdbcTemplate().queryForObject("""
                         SELECT count(*) FROM activity_assignees
                          WHERE tenant_id = ? AND activity_id = ? AND employee_id = ?

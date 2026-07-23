@@ -20,6 +20,9 @@ public class ActivityRoutes implements SecuredRouteRegistry.Contributor {
         return List.of(
                 permission(HttpMethod.GET, ACTIVITIES, Permission.ACTIVITY_READ),
                 permission(HttpMethod.GET, ACTIVITIES + "/{id}", Permission.ACTIVITY_READ),
+                permission(HttpMethod.GET, ACTIVITIES + "/{id}/assignments", Permission.ACTIVITY_READ),
+                permission(HttpMethod.GET, ACTIVITIES + "/{id}/logs", Permission.ACTIVITY_READ),
+                permission(HttpMethod.GET, ACTIVITIES + "/{id}/logs/{logId}/history", Permission.ACTIVITY_READ),
                 permission(HttpMethod.POST, ACTIVITIES, Permission.ACTIVITY_MANAGE),
                 permission(HttpMethod.PATCH, ACTIVITIES + "/{id}", Permission.ACTIVITY_MANAGE),
                 permission(HttpMethod.POST, ACTIVITIES + "/{id}/transition", Permission.ACTIVITY_MANAGE),

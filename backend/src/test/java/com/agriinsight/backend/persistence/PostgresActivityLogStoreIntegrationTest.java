@@ -4,10 +4,12 @@ import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixt
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.operations.application.ActivityReadPageQuery;
 import com.agriinsight.backend.operations.domain.ActivityLog;
 import com.agriinsight.backend.operations.domain.ActivityLogCorrectionKind;
 import com.agriinsight.backend.operations.domain.ActivityLogUnit;
 import com.agriinsight.backend.operations.infrastructure.PostgresActivityLogStore;
+import com.agriinsight.backend.operations.infrastructure.PostgresActivityLogReadStore;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
 import java.math.BigDecimal;
@@ -31,6 +33,8 @@ class PostgresActivityLogStoreIntegrationTest {
     private static final UUID PROFILE_ID = UUID.fromString("41000000-0000-0000-0000-000000000005");
     private static final UUID FARM_ID = UUID.fromString("41000000-0000-0000-0000-000000000001");
     private static final UUID ACTIVITY_ID = UUID.fromString("41000000-0000-0000-0000-000000000007");
+    private static final UUID OTHER_ACTIVITY_ID =
+            UUID.fromString("42000000-0000-0000-0000-000000000007");
     private static final UUID EMPLOYEE_ID = UUID.fromString("41000000-0000-0000-0000-000000000004");
     private static final UUID ASSIGNMENT_ID = UUID.fromString("41000000-0000-0000-0000-000000000009");
     private static final UUID LOG_ID = UUID.fromString("63000000-0000-0000-0000-000000000001");
@@ -58,6 +62,8 @@ class PostgresActivityLogStoreIntegrationTest {
         try (TenantTransactionTestHarness harness = TenantTransactionTestHarness.runtime(
                 POSTGRESQL, "agriinsight")) {
             PostgresActivityLogStore store = new PostgresActivityLogStore(harness.jdbcTemplate());
+            PostgresActivityLogReadStore reads =
+                    new PostgresActivityLogReadStore(harness.jdbcTemplate());
             ScopeContext activityScope = ScopeContext.domain(
                     principal, ScopeContext.Type.ACTIVITY, Optional.of(ACTIVITY_ID));
 
@@ -82,6 +88,19 @@ class PostgresActivityLogStoreIntegrationTest {
                         .contains(ActivityLogCorrectionKind.REPLACE);
                 assertThat(store.append(activityScope, correction(COMPETING_ID))).isEmpty();
 
+                var page = reads.findAll(
+                        activityScope, ACTIVITY_ID, access, new ActivityReadPageQuery(1, 0));
+                assertThat(page.items()).hasSize(1);
+                assertThat(page.hasMore()).isTrue();
+                var history = reads.findHistory(
+                        activityScope,
+                        ACTIVITY_ID,
+                        LOG_ID,
+                        access,
+                        new ActivityReadPageQuery(10, 0));
+                assertThat(history.items()).extracting(item -> item.id())
+                        .containsExactly(LOG_ID, CORRECTION_ID);
+
                 harness.jdbcTemplate().update("""
                         UPDATE activity_assignees
                            SET revoked_at = CURRENT_TIMESTAMP,
@@ -95,6 +114,28 @@ class PostgresActivityLogStoreIntegrationTest {
                         Instant.parse("2027-09-01T02:30:00Z"), Optional.of("Late log"),
                         Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty(), Optional.empty()))).isEmpty();
+
+                harness.jdbcTemplate().update("""
+                        INSERT INTO user_roles (id, tenant_id, user_profile_id, role_code)
+                        VALUES ('63000000-0000-0000-0000-000000000011', ?, ?, 'FARM_MANAGER')
+                        """, TENANT_ID, PROFILE_ID);
+                var managerAccess = store.resolveAccess(activityScope, ACTIVITY_ID).orElseThrow();
+                assertThat(managerAccess.manager()).isTrue();
+                assertThat(reads.findAll(
+                        activityScope,
+                        ACTIVITY_ID,
+                        managerAccess,
+                        new ActivityReadPageQuery(100, 0)).items())
+                        .allMatch(item -> item.tenantId().equals(TENANT_ID));
+                ScopeContext otherActivityScope = ScopeContext.domain(
+                        principal,
+                        ScopeContext.Type.ACTIVITY,
+                        Optional.of(OTHER_ACTIVITY_ID));
+                assertThat(reads.findAll(
+                        otherActivityScope,
+                        OTHER_ACTIVITY_ID,
+                        managerAccess,
+                        new ActivityReadPageQuery(100, 0)).items()).isEmpty();
                 return null;
             });
         }
