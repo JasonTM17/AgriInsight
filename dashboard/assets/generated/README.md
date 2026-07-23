@@ -15,6 +15,8 @@ photographs from a customer farm and not ground-truth training data.
 | `crop-health-evidence.webp` | 1200 × 900 | Crop Health | Close field view of a few rice leaves with localized brown lesions beside a compact sensor after rain. | `abb6da1a4315537e121ffa6a2f4f25db860bb9afe8d02db48f63c61c04d29f8e` |
 | `data-quality-sensors.webp` | 1440 × 810 | Data Quality | Field technician validates a weather station and soil-sensor installation beside cultivated rows. | `5adb169fc0b4814171676b5b203fadc5b8c1011a7abf8a8428d0e4df2db5ff5b` |
 | `cost-procurement.webp` | 1440 × 810 | Cost Analysis | Operations lead and supplier check harvested produce quantities beside crates, a platform scale, and a pallet trolley. | `44675bb309251d9f8dd70d98b100613cea4c24a39f446323fde95c4bf25dbaf7` |
+| `work-operations.webp` | 1440 × 810 | Work | Field operations team records and coordinates irrigation work beside rice fields and pumping equipment. | `fb588ca0449aa64f6a0e25f99c19eb270e1a288656172b90ffa9a042d5f1ca19` |
+| `tenant-administration.webp` | 1440 × 810 | Administration | Agriculture operations team reviews a field map and seasonal plan in a farm office overlooking cultivated fields. | `a7b14aaeca7d7b13ac8ee95c6d512399ecd5250a14d9a4b13d297b2ff3036c0c` |
 
 ## Final prompt set
 
@@ -35,6 +37,10 @@ watermark, UI overlay, neon treatment, or staged stock-photo pose.
   weather/soil equipment after rain.
 - **Cost Analysis:** a farm packing area where harvested produce quantities are
   checked beside a platform scale and material-handling equipment.
+- **Work:** a field team records and coordinates irrigation work beside rice
+  fields and practical pumping equipment.
+- **Administration:** an operations team reviews a field map and seasonal plan
+  in a farm office physically connected to cultivated land.
 
 ## Evidence boundary
 

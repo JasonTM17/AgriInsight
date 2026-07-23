@@ -16,6 +16,11 @@ EXPECTED_HASHES = {
     "cost-procurement.webp": "44675bb309251d9f8dd70d98b100613cea4c24a39f446323fde95c4bf25dbaf7",
 }
 
+SUPPLEMENTARY_EXPECTED_HASHES = {
+    "work-operations.webp": "fb588ca0449aa64f6a0e25f99c19eb270e1a288656172b90ffa9a042d5f1ca19",
+    "tenant-administration.webp": "a7b14aaeca7d7b13ac8ee95c6d512399ecd5250a14d9a4b13d297b2ff3036c0c",
+}
+
 
 class MissingAssetUi:
     def __init__(self) -> None:
@@ -42,7 +47,8 @@ def test_generated_assets_match_reviewed_hashes_and_budget() -> None:
     asset_root = Path(__file__).parents[1] / "dashboard" / "assets" / "generated"
 
     assert {visual.filename for visual in PAGE_VISUALS.values()} == set(EXPECTED_HASHES)
-    for filename, expected_hash in EXPECTED_HASHES.items():
+    reviewed_hashes = EXPECTED_HASHES | SUPPLEMENTARY_EXPECTED_HASHES
+    for filename, expected_hash in reviewed_hashes.items():
         content = (asset_root / filename).read_bytes()
         assert len(content) <= 350 * 1024
         assert content[:4] == b"RIFF"
