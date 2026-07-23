@@ -1,0 +1,29 @@
+name: agriinsight-demo
+
+services:
+  postgres:
+    command:
+      - postgres
+      - -c
+      - app.agriinsight_demo_database=true
+    labels:
+      com.agriinsight.environment: local-demo
+    environment:
+      POSTGRES_DB: agriinsight_demo
+    volumes:
+      - ./backend/.runtime/postgres-demo:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agriinsight_demo"]
+
+  backend-role-bootstrap:
+    environment:
+      PGDATABASE: agriinsight_demo
+
+  backend-migrate:
+    environment:
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight_demo
+      AGRIINSIGHT_FLYWAY_URL: jdbc:postgresql://postgres:5432/agriinsight_demo
+
+  backend:
+    environment:
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight_demo

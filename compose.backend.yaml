@@ -58,6 +58,7 @@ services:
         OCI_VERSION: ${AGRIINSIGHT_BACKEND_VERSION:-0.1.0-local}
     environment:
       SPRING_MAIN_WEB_APPLICATION_TYPE: none
+      AGRIINSIGHT_MIGRATION_EXIT_ON_COMPLETE: "true"
       AGRIINSIGHT_IDENTITY_ENABLED: "false"
       AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight
       AGRIINSIGHT_DB_RUNTIME_USERNAME: agriinsight_migrator

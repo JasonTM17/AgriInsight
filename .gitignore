@@ -19,6 +19,7 @@ Thumbs.db
 .env
 artifacts/*
 !artifacts/.gitkeep
+_tmp/
 
 # Local agent runtimes and generated session state
 .codex/

@@ -1,6 +1,7 @@
 package com.agriinsight.backend.shared.config;
 
 import com.agriinsight.backend.shared.api.SecurityProblemWriter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = "agriinsight.identity", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class FoundationSecurityConfig {
 

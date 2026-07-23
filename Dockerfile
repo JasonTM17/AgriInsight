@@ -22,7 +22,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 COPY dashboard ./dashboard
 
-RUN python -m pip install --no-cache-dir ".[dashboard,reports]"
+RUN python -m pip install --no-cache-dir ".[api,dashboard,reports]"
 
 RUN python -m pip check
 

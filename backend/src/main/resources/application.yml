@@ -56,6 +56,8 @@ management:
 agriinsight:
   api-docs:
     enabled: ${AGRIINSIGHT_API_DOCS_ENABLED:false}
+  migration:
+    exit-on-complete: ${AGRIINSIGHT_MIGRATION_EXIT_ON_COMPLETE:false}
   identity:
     enabled: ${AGRIINSIGHT_IDENTITY_ENABLED:false}
     issuer-uri: ${AGRIINSIGHT_OIDC_ISSUER_URI:}
