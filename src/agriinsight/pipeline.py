@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime, time, timezone
 from pathlib import Path
 from typing import Any
 
@@ -99,6 +100,11 @@ def run_pipeline(output_root: Path, config: GenerationConfig) -> dict[str, Any]:
         "pipeline": "agriinsight-bronze-silver-gold-v1",
         "run_id": config.run_id,
         "as_of_date": config.as_of_date.isoformat(),
+        "generated_at": datetime.combine(
+            config.as_of_date,
+            time.min,
+            timezone.utc,
+        ).isoformat(),
         "seed": config.seed,
         "configuration": config.manifest_configuration(),
         "quality_status": quality_report["status"],
