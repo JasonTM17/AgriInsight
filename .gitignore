@@ -38,3 +38,14 @@ web-auth-spike/test-results/
 web-auth-spike/playwright-report/
 web-auth-spike/.runtime/
 .env.auth-spike.local
+
+# Production web runtime outputs and local secrets
+web/node_modules/
+web/.next/
+web/tsconfig.tsbuildinfo
+web/coverage/
+web/test-results/
+web/playwright-report/
+web/public/visuals/
+web/.env*
+!web/.env.example
