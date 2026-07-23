@@ -2,9 +2,12 @@ package com.agriinsight.backend.inventory.infrastructure;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
 import com.agriinsight.backend.inventory.application.WarehouseAssignmentRecord;
+import com.agriinsight.backend.inventory.application.WarehouseAssignmentPage;
+import com.agriinsight.backend.inventory.application.WarehouseAssignmentQuery;
 import com.agriinsight.backend.inventory.application.WarehouseAssignmentStore;
 import com.agriinsight.backend.inventory.domain.WarehouseAssignment;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +41,31 @@ public class PostgresWarehouseAssignmentStore implements WarehouseAssignmentStor
 
     public PostgresWarehouseAssignmentStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+    }
+
+    @Override
+    public WarehouseAssignmentPage findAll(
+            ScopeContext scope, WarehouseAssignmentQuery query) {
+        ScopeContext tenantScope = tenantScope(scope);
+        Objects.requireNonNull(query, "query is required");
+        StringBuilder sql = new StringBuilder("SELECT ").append(COLUMNS)
+                .append(" FROM user_warehouse_assignments WHERE tenant_id = ?");
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(tenantScope.tenantId());
+        query.userProfileId().ifPresent(value -> addFilter(
+                sql, parameters, "user_profile_id", value));
+        query.warehouseId().ifPresent(value -> addFilter(
+                sql, parameters, "warehouse_id", value));
+        query.active().ifPresent(value -> sql.append(
+                value ? " AND revoked_at IS NULL" : " AND revoked_at IS NOT NULL"));
+        sql.append(" ORDER BY user_profile_id, warehouse_id, id LIMIT ? OFFSET ?");
+        parameters.add(query.limit() + 1);
+        parameters.add(query.offset());
+        List<WarehouseAssignmentRecord> rows = jdbcTemplate.query(
+                sql.toString(), MAPPER, parameters.toArray());
+        boolean hasMore = rows.size() > query.limit();
+        List<WarehouseAssignmentRecord> items = hasMore ? rows.subList(0, query.limit()) : rows;
+        return new WarehouseAssignmentPage(items, query.limit(), query.offset(), hasMore);
     }
 
     @Override
@@ -142,6 +170,15 @@ public class PostgresWarehouseAssignmentStore implements WarehouseAssignmentStor
     private long count(String sql, Object... parameters) {
         Long result = jdbcTemplate.queryForObject(sql, Long.class, parameters);
         return result == null ? 0 : result;
+    }
+
+    private void addFilter(
+            StringBuilder sql,
+            List<Object> parameters,
+            String column,
+            Object value) {
+        sql.append(" AND ").append(column).append(" = ?");
+        parameters.add(value);
     }
 
     private ScopeContext tenantScope(ScopeContext scope) {

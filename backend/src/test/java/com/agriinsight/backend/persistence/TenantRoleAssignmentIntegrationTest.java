@@ -12,9 +12,11 @@ import com.agriinsight.backend.authorization.application.PermissionEvaluator;
 import com.agriinsight.backend.authorization.application.ScopeResolver;
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import com.agriinsight.backend.authorization.application.TenantRoleAssignmentCommands;
+import com.agriinsight.backend.authorization.application.TenantRoleAssignmentQuery;
 import com.agriinsight.backend.authorization.application.TenantRoleAssignmentService;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
+import com.agriinsight.backend.authorization.domain.ScopeContext;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAuditPublisher;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAdministratorGuard;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantRoleAssignmentStore;
@@ -128,6 +130,20 @@ class TenantRoleAssignmentIntegrationTest {
                         new TenantRoleAssignmentCommands.Revoke(0, audit)));
                 assertThat(originalRevoked.active()).isFalse();
                 assertThat(originalRevoked.version()).isEqualTo(1);
+
+                var roleStore = new PostgresTenantRoleAssignmentStore(harness.jdbcTemplate());
+                var rolePage = harness.withinTenant(() -> roleStore.findAll(
+                        ScopeContext.tenant(new TestPrincipal(ADMIN_A, TENANT_A)),
+                        BACKUP_ADMIN,
+                        new TenantRoleAssignmentQuery(1, 0, Optional.of(true))));
+                assertThat(rolePage.items()).extracting(item -> item.role())
+                        .containsExactly(Role.DATA_ANALYST);
+                assertThat(rolePage.hasMore()).isTrue();
+                assertThat(harness.withinTenant(() -> roleStore.findAll(
+                        ScopeContext.tenant(new TestPrincipal(ADMIN_A, TENANT_A)),
+                        TENANT_B_ADMIN,
+                        new TenantRoleAssignmentQuery(100, 0, Optional.empty())).items()))
+                        .isEmpty();
 
                 assertDatabaseState();
                 assertThat(harness.contextState().currentTenantId()).isEmpty();

@@ -23,6 +23,7 @@ public class TenantUserRoutes implements SecuredRouteRegistry.Contributor {
                 permission(HttpMethod.GET, USERS + "/{id}", Permission.IDENTITY_USER_MANAGE),
                 permission(HttpMethod.POST, USERS + "/{id}/deactivate", Permission.IDENTITY_USER_MANAGE),
                 permission(HttpMethod.POST, USERS + "/{id}/reactivate", Permission.IDENTITY_USER_MANAGE),
+                permission(HttpMethod.GET, USERS + "/{id}/external-identities", Permission.IDENTITY_USER_MANAGE),
                 permission(HttpMethod.POST, USERS + "/{id}/external-identities", Permission.IDENTITY_USER_MANAGE),
                 permission(HttpMethod.POST,
                         USERS + "/{id}/external-identities/{identityId}/unlink",

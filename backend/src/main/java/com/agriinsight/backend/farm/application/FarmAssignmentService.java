@@ -50,6 +50,11 @@ public class FarmAssignmentService {
         return assignment;
     }
 
+    public FarmAssignmentPage list(FarmAssignmentQuery query) {
+        return store.findAll(
+                requireManagement(), Objects.requireNonNull(query, "query is required"));
+    }
+
     public FarmAssignmentRecord revoke(
             UUID assignmentId,
             FarmAssignmentCommands.Revoke command) {

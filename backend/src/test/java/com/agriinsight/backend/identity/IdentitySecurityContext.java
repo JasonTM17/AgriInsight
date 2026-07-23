@@ -1,8 +1,11 @@
 package com.agriinsight.backend.identity;
 
 import com.agriinsight.backend.identity.application.TenantPrincipalLoader;
+import com.agriinsight.backend.identity.application.TenantExternalIdentityReadService;
 import com.agriinsight.backend.identity.application.TenantUserCommandService;
 import com.agriinsight.backend.identity.application.TenantUserService;
+import com.agriinsight.backend.authorization.application.TenantAuditReadService;
+import com.agriinsight.backend.authorization.application.TenantRoleAssignmentService;
 import com.agriinsight.backend.authorization.application.TenantRoleCommandService;
 import com.agriinsight.backend.farm.application.FarmCommandService;
 import com.agriinsight.backend.farm.application.FarmService;
@@ -19,8 +22,10 @@ import com.agriinsight.backend.operations.application.EmployeeService;
 import com.agriinsight.backend.operations.application.ActivityCommandService;
 import com.agriinsight.backend.operations.application.ActivityService;
 import com.agriinsight.backend.operations.application.ActivityAssignmentCommandService;
+import com.agriinsight.backend.operations.application.ActivityAssignmentReadService;
 import com.agriinsight.backend.operations.application.ActivityAssignmentService;
 import com.agriinsight.backend.operations.application.ActivityLogCommandService;
+import com.agriinsight.backend.operations.application.ActivityLogReadService;
 import com.agriinsight.backend.operations.application.ActivityLogService;
 import com.agriinsight.backend.operations.application.HarvestCommandService;
 import com.agriinsight.backend.operations.application.HarvestService;
@@ -72,9 +77,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ActiveProfiles("test")
 @MockitoBean(types = {
         TenantPrincipalLoader.class,
+        TenantExternalIdentityReadService.class,
         TenantUserService.class,
         TenantUserCommandService.class,
+        TenantRoleAssignmentService.class,
         TenantRoleCommandService.class,
+        TenantAuditReadService.class,
         FarmService.class,
         FarmCommandService.class,
         FarmAssignmentService.class,
@@ -89,8 +97,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         EmployeeCommandService.class,
         ActivityService.class,
         ActivityCommandService.class,
+        ActivityAssignmentReadService.class,
         ActivityAssignmentService.class,
         ActivityAssignmentCommandService.class,
+        ActivityLogReadService.class,
         ActivityLogService.class,
         ActivityLogCommandService.class,
         HarvestService.class,

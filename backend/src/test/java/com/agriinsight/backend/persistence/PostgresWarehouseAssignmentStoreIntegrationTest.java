@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.inventory.application.WarehouseAssignmentQuery;
 import com.agriinsight.backend.inventory.domain.WarehouseAssignment;
 import com.agriinsight.backend.inventory.infrastructure.PostgresWarehouseAssignmentStore;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
@@ -79,6 +80,24 @@ class PostgresWarehouseAssignmentStoreIntegrationTest {
                 assertThat(regranted.id()).isEqualTo(REGRANT_ID);
                 assertThat(store.findById(scope, ASSIGNMENT_ID)).get()
                         .extracting(item -> item.active()).isEqualTo(false);
+
+                var firstPage = store.findAll(scope, new WarehouseAssignmentQuery(
+                        1,
+                        0,
+                        Optional.of(PROFILE_ID),
+                        Optional.of(WAREHOUSE_ID),
+                        Optional.empty()));
+                assertThat(firstPage.items()).extracting(item -> item.id())
+                        .containsExactly(ASSIGNMENT_ID);
+                assertThat(firstPage.hasMore()).isTrue();
+                assertThat(store.findAll(scope, new WarehouseAssignmentQuery(
+                        100,
+                        0,
+                        Optional.of(PROFILE_ID),
+                        Optional.of(WAREHOUSE_ID),
+                        Optional.of(true))).items())
+                        .extracting(item -> item.id())
+                        .containsExactly(REGRANT_ID);
                 return null;
             });
         }

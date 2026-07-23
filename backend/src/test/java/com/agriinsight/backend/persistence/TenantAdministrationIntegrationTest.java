@@ -10,13 +10,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agriinsight.backend.authorization.application.PermissionEvaluator;
 import com.agriinsight.backend.authorization.application.ScopeResolver;
+import com.agriinsight.backend.authorization.application.TenantAuditQuery;
 import com.agriinsight.backend.authorization.application.TenantAuditMetadata;
 import com.agriinsight.backend.authorization.domain.Permission;
 import com.agriinsight.backend.authorization.domain.Role;
+import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAuditReadStore;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAuditPublisher;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAdministratorGuard;
 import com.agriinsight.backend.authorization.infrastructure.PostgresTenantAuthorizationDeniedRecorder;
 import com.agriinsight.backend.identity.application.ProvisionedTenantUser;
+import com.agriinsight.backend.identity.application.ExternalIdentityQuery;
 import com.agriinsight.backend.identity.application.TenantUserCommands;
 import com.agriinsight.backend.identity.application.TenantUserQuery;
 import com.agriinsight.backend.identity.application.TenantUserService;
@@ -118,6 +122,37 @@ class TenantAdministrationIntegrationTest {
                         provisioned.profile().id(), secondary.id()));
                 assertThat(unlinked.active()).isFalse();
                 assertThat(unlinked.version()).isEqualTo(1);
+
+                ScopeContext scope = ScopeContext.tenant(new TestPrincipal(ADMIN_A, TENANT_A));
+                var identityStore = new PostgresTenantExternalIdentityStore(jdbcTemplate);
+                var identityPage = harness.withinTenant(() -> identityStore.findAll(
+                        scope,
+                        provisioned.profile().id(),
+                        new ExternalIdentityQuery(1, 0, Optional.empty())));
+                assertThat(identityPage.items()).hasSize(1);
+                assertThat(identityPage.hasMore()).isTrue();
+                assertThat(harness.withinTenant(() -> identityStore.findAll(
+                        scope,
+                        provisioned.profile().id(),
+                        new ExternalIdentityQuery(10, 0, Optional.of(true))).items()))
+                        .hasSize(1)
+                        .allMatch(item -> item.active() && item.issuer().equals(ISSUER));
+
+                var auditStore = new PostgresTenantAuditReadStore(jdbcTemplate);
+                var auditPage = harness.withinTenant(() -> auditStore.findAll(
+                        scope,
+                        new TenantAuditQuery(
+                                1,
+                                0,
+                                Optional.of(ADMIN_A),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty())));
+                assertThat(auditPage.items()).hasSize(1);
+                assertThat(auditPage.hasMore()).isTrue();
+                assertThat(auditPage.items()).allMatch(item ->
+                        item.actorProfileId().filter(ADMIN_A::equals).isPresent());
 
                 assertAuditTrail();
                 assertThat(jdbcTemplate.queryForObject("""

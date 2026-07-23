@@ -7,6 +7,9 @@ import java.util.UUID;
 
 public interface WarehouseAssignmentStore {
 
+    WarehouseAssignmentPage findAll(
+            ScopeContext scope, WarehouseAssignmentQuery query);
+
     Optional<WarehouseAssignmentRecord> findById(
             ScopeContext scope, UUID assignmentId);
 

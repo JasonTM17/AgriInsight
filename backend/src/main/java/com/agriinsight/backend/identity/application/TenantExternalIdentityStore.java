@@ -7,6 +7,11 @@ import java.util.UUID;
 
 public interface TenantExternalIdentityStore {
 
+    ExternalIdentityPage findAll(
+            ScopeContext scope,
+            UUID profileId,
+            ExternalIdentityQuery query);
+
     Optional<ExternalIdentityReference> findById(
             ScopeContext scope,
             UUID profileId,

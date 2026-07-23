@@ -57,6 +57,11 @@ public class WarehouseAssignmentService {
         return assignment;
     }
 
+    public WarehouseAssignmentPage list(WarehouseAssignmentQuery query) {
+        return store.findAll(
+                requireManagement(), Objects.requireNonNull(query, "query is required"));
+    }
+
     public WarehouseAssignmentRecord revoke(
             UUID assignmentId,
             WarehouseAssignmentCommands.Revoke command) {

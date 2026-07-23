@@ -19,6 +19,10 @@ public class TenantRoleRoutes implements SecuredRouteRegistry.Contributor {
     public Collection<SecuredRouteRegistry.Route> routes() {
         return List.of(
                 SecuredRouteRegistry.Route.permission(
+                        HttpMethod.GET,
+                        ROLES,
+                        Permission.IDENTITY_ROLE_MANAGE.name()),
+                SecuredRouteRegistry.Route.permission(
                         HttpMethod.POST,
                         ROLES,
                         Permission.IDENTITY_ROLE_MANAGE.name()),

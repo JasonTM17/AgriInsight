@@ -118,6 +118,16 @@ public class TenantRoleAssignmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Role assignment"));
     }
 
+    public TenantRoleAssignmentPage list(
+            UUID profileId, TenantRoleAssignmentQuery query) {
+        ScopeContext scope = requireRoleManagement();
+        UUID requiredProfileId = requireProfile(scope, profileId);
+        return store.findAll(
+                scope,
+                requiredProfileId,
+                Objects.requireNonNull(query, "query is required"));
+    }
+
     ScopeContext requireRoleManagement() {
         return permissionEvaluator.requireTenant(Permission.IDENTITY_ROLE_MANAGE);
     }

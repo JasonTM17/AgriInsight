@@ -18,6 +18,7 @@ public class FarmAssignmentRoutes implements SecuredRouteRegistry.Contributor {
     @Override
     public Collection<SecuredRouteRegistry.Route> routes() {
         return List.of(
+                permission(HttpMethod.GET, ASSIGNMENTS),
                 permission(HttpMethod.POST, ASSIGNMENTS),
                 permission(HttpMethod.POST, ASSIGNMENTS + "/{id}/revoke"));
     }

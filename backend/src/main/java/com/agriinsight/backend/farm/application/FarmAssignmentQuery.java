@@ -1,0 +1,25 @@
+package com.agriinsight.backend.farm.application;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+
+public record FarmAssignmentQuery(
+        int limit,
+        int offset,
+        Optional<UUID> userProfileId,
+        Optional<UUID> farmId,
+        Optional<Boolean> active) {
+
+    public FarmAssignmentQuery {
+        if (limit < 1 || limit > 100) {
+            throw new IllegalArgumentException("limit must be between 1 and 100");
+        }
+        if (offset < 0 || offset > 10_000) {
+            throw new IllegalArgumentException("offset must be between 0 and 10000");
+        }
+        userProfileId = Objects.requireNonNull(userProfileId, "userProfileId is required");
+        farmId = Objects.requireNonNull(farmId, "farmId is required");
+        active = Objects.requireNonNull(active, "active is required");
+    }
+}

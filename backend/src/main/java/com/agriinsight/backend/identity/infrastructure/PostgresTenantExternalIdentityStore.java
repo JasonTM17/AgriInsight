@@ -2,6 +2,8 @@ package com.agriinsight.backend.identity.infrastructure;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
 import com.agriinsight.backend.identity.application.ExternalIdentityReference;
+import com.agriinsight.backend.identity.application.ExternalIdentityPage;
+import com.agriinsight.backend.identity.application.ExternalIdentityQuery;
 import com.agriinsight.backend.identity.application.TenantExternalIdentityStore;
 import com.agriinsight.backend.identity.domain.ExternalIdentity;
 import java.util.List;
@@ -22,6 +24,33 @@ public class PostgresTenantExternalIdentityStore implements TenantExternalIdenti
 
     public PostgresTenantExternalIdentityStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+    }
+
+    @Override
+    public ExternalIdentityPage findAll(
+            ScopeContext scope,
+            UUID profileId,
+            ExternalIdentityQuery query) {
+        requireTenantScope(scope);
+        Objects.requireNonNull(profileId, "profileId is required");
+        Objects.requireNonNull(query, "query is required");
+        List<ExternalIdentityReference> rows = jdbcTemplate.query("""
+                SELECT identity_id, identity_issuer, identity_active, identity_version
+                  FROM agriinsight_security.list_external_identities(?, ?, ?, ?, ?)
+                """,
+                (result, rowNumber) -> new ExternalIdentityReference(
+                        result.getObject("identity_id", UUID.class),
+                        result.getString("identity_issuer"),
+                        result.getBoolean("identity_active"),
+                        result.getLong("identity_version")),
+                scope.tenantId(),
+                profileId,
+                query.active().orElse(null),
+                query.limit() + 1,
+                query.offset());
+        boolean hasMore = rows.size() > query.limit();
+        List<ExternalIdentityReference> items = hasMore ? rows.subList(0, query.limit()) : rows;
+        return new ExternalIdentityPage(items, query.limit(), query.offset(), hasMore);
     }
 
     @Override

@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public interface FarmAssignmentStore {
 
+    FarmAssignmentPage findAll(ScopeContext scope, FarmAssignmentQuery query);
+
     Optional<FarmAssignmentRecord> findById(ScopeContext scope, UUID assignmentId);
 
     Optional<FarmAssignmentRecord> findActive(

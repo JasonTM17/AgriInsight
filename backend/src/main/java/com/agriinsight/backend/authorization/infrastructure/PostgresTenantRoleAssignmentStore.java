@@ -1,6 +1,8 @@
 package com.agriinsight.backend.authorization.infrastructure;
 
 import com.agriinsight.backend.authorization.application.TenantRoleAssignment;
+import com.agriinsight.backend.authorization.application.TenantRoleAssignmentPage;
+import com.agriinsight.backend.authorization.application.TenantRoleAssignmentQuery;
 import com.agriinsight.backend.authorization.application.TenantRoleAssignmentStore;
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
@@ -51,6 +53,29 @@ public class PostgresTenantRoleAssignmentStore implements TenantRoleAssignmentSt
                 scope.tenantId(),
                 profileId);
         return exactlyOneOrEmpty(rows).orElse(false);
+    }
+
+    @Override
+    public TenantRoleAssignmentPage findAll(
+            ScopeContext scope,
+            UUID profileId,
+            TenantRoleAssignmentQuery query) {
+        requireTenantScope(scope);
+        Objects.requireNonNull(profileId, "profileId is required");
+        Objects.requireNonNull(query, "query is required");
+        StringBuilder sql = new StringBuilder("SELECT ").append(ASSIGNMENT_COLUMNS)
+                .append(" FROM user_roles WHERE tenant_id = ? AND user_profile_id = ?");
+        List<Object> parameters = new java.util.ArrayList<>(List.of(scope.tenantId(), profileId));
+        query.active().ifPresent(value -> sql.append(
+                value ? " AND revoked_at IS NULL" : " AND revoked_at IS NOT NULL"));
+        sql.append(" ORDER BY role_code, id LIMIT ? OFFSET ?");
+        parameters.add(query.limit() + 1);
+        parameters.add(query.offset());
+        List<TenantRoleAssignment> rows = jdbcTemplate.query(
+                sql.toString(), ASSIGNMENT_MAPPER, parameters.toArray());
+        boolean hasMore = rows.size() > query.limit();
+        List<TenantRoleAssignment> items = hasMore ? rows.subList(0, query.limit()) : rows;
+        return new TenantRoleAssignmentPage(items, query.limit(), query.offset(), hasMore);
     }
 
     @Override

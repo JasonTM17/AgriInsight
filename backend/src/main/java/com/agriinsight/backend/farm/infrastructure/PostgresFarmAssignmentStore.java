@@ -2,9 +2,12 @@ package com.agriinsight.backend.farm.infrastructure;
 
 import com.agriinsight.backend.authorization.domain.ScopeContext;
 import com.agriinsight.backend.farm.application.FarmAssignmentRecord;
+import com.agriinsight.backend.farm.application.FarmAssignmentPage;
+import com.agriinsight.backend.farm.application.FarmAssignmentQuery;
 import com.agriinsight.backend.farm.application.FarmAssignmentStore;
 import com.agriinsight.backend.farm.domain.FarmAssignment;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +41,29 @@ public class PostgresFarmAssignmentStore implements FarmAssignmentStore {
 
     public PostgresFarmAssignmentStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+    }
+
+    @Override
+    public FarmAssignmentPage findAll(ScopeContext scope, FarmAssignmentQuery query) {
+        requireTenantScope(scope);
+        Objects.requireNonNull(query, "query is required");
+        StringBuilder sql = new StringBuilder("SELECT ").append(COLUMNS)
+                .append(" FROM user_farm_assignments WHERE tenant_id = ?");
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(scope.tenantId());
+        query.userProfileId().ifPresent(value -> addFilter(
+                sql, parameters, "user_profile_id", value));
+        query.farmId().ifPresent(value -> addFilter(sql, parameters, "farm_id", value));
+        query.active().ifPresent(value -> sql.append(
+                value ? " AND revoked_at IS NULL" : " AND revoked_at IS NOT NULL"));
+        sql.append(" ORDER BY user_profile_id, farm_id, id LIMIT ? OFFSET ?");
+        parameters.add(query.limit() + 1);
+        parameters.add(query.offset());
+        List<FarmAssignmentRecord> rows = jdbcTemplate.query(
+                sql.toString(), MAPPER, parameters.toArray());
+        boolean hasMore = rows.size() > query.limit();
+        List<FarmAssignmentRecord> items = hasMore ? rows.subList(0, query.limit()) : rows;
+        return new FarmAssignmentPage(items, query.limit(), query.offset(), hasMore);
     }
 
     @Override
@@ -145,6 +171,15 @@ public class PostgresFarmAssignmentStore implements FarmAssignmentStore {
     private long count(String sql, Object... parameters) {
         Long result = jdbcTemplate.queryForObject(sql, Long.class, parameters);
         return result == null ? 0 : result;
+    }
+
+    private void addFilter(
+            StringBuilder sql,
+            List<Object> parameters,
+            String column,
+            Object value) {
+        sql.append(" AND ").append(column).append(" = ?");
+        parameters.add(value);
     }
 
     private void requireTenantScope(ScopeContext scope) {

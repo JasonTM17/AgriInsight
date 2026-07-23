@@ -9,6 +9,11 @@ public interface TenantRoleAssignmentStore {
 
     boolean profileExists(ScopeContext scope, UUID profileId);
 
+    TenantRoleAssignmentPage findAll(
+            ScopeContext scope,
+            UUID profileId,
+            TenantRoleAssignmentQuery query);
+
     Optional<TenantRoleAssignment> find(
             ScopeContext scope,
             UUID profileId,

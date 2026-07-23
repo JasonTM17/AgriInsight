@@ -262,6 +262,136 @@ BEGIN
 END
 $function$;
 
+CREATE OR REPLACE FUNCTION agriinsight_security.list_external_identities(
+    p_tenant_id UUID,
+    p_profile_id UUID,
+    p_active BOOLEAN,
+    p_limit INTEGER,
+    p_offset INTEGER
+)
+RETURNS TABLE (
+    identity_id UUID,
+    identity_issuer TEXT,
+    identity_active BOOLEAN,
+    identity_version BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL OR resolved_tenant <> p_tenant_id THEN
+        RAISE EXCEPTION 'Tenant context does not match the requested tenant'
+            USING ERRCODE = '42501';
+    END IF;
+    IF p_limit < 1 OR p_limit > 101 THEN
+        RAISE EXCEPTION 'External identity limit is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+    IF p_offset < 0 OR p_offset > 10000 THEN
+        RAISE EXCEPTION 'External identity offset is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        identity_row.id,
+        identity_row.issuer::TEXT,
+        identity_row.active,
+        identity_row.version
+      FROM public.external_identities AS identity_row
+     WHERE identity_row.tenant_id = resolved_tenant
+       AND identity_row.user_profile_id = p_profile_id
+       AND (p_active IS NULL OR identity_row.active = p_active)
+     ORDER BY identity_row.issuer, identity_row.id
+     LIMIT p_limit
+    OFFSET p_offset;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.list_tenant_audit_events(
+    p_tenant_id UUID,
+    p_actor_profile_id UUID,
+    p_action TEXT,
+    p_target_type TEXT,
+    p_target_id UUID,
+    p_outcome TEXT,
+    p_limit INTEGER,
+    p_offset INTEGER
+)
+RETURNS TABLE (
+    event_id UUID,
+    event_actor_type TEXT,
+    event_actor_profile_id UUID,
+    event_action TEXT,
+    event_target_type TEXT,
+    event_target_id UUID,
+    event_reason_code TEXT,
+    event_correlation_id TEXT,
+    event_outcome TEXT,
+    event_occurred_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL OR resolved_tenant <> p_tenant_id THEN
+        RAISE EXCEPTION 'Tenant context does not match the requested tenant'
+            USING ERRCODE = '42501';
+    END IF;
+    IF p_limit < 1 OR p_limit > 101 THEN
+        RAISE EXCEPTION 'Audit event limit is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+    IF p_offset < 0 OR p_offset > 10000 THEN
+        RAISE EXCEPTION 'Audit event offset is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        event_row.id,
+        event_row.actor_type::TEXT,
+        event_row.actor_profile_id,
+        event_row.action::TEXT,
+        event_row.target_type::TEXT,
+        event_row.target_id,
+        CASE
+            WHEN event_row.reason_code ~ '^[A-Z][A-Z0-9_]{0,79}$'
+                THEN event_row.reason_code::TEXT
+            ELSE NULL
+        END,
+        CASE
+            WHEN event_row.correlation_id ~ '^[A-Za-z0-9._:-]{1,128}$'
+                THEN event_row.correlation_id::TEXT
+            ELSE NULL
+        END,
+        event_row.outcome::TEXT,
+        event_row.occurred_at
+      FROM public.tenant_audit_events AS event_row
+     WHERE event_row.tenant_id = resolved_tenant
+       AND (p_actor_profile_id IS NULL OR event_row.actor_profile_id = p_actor_profile_id)
+       AND (p_action IS NULL OR event_row.action = p_action)
+       AND (p_target_type IS NULL OR event_row.target_type = p_target_type)
+       AND (p_target_id IS NULL OR event_row.target_id = p_target_id)
+       AND (p_outcome IS NULL OR event_row.outcome = p_outcome)
+       AND event_row.action ~ '^[A-Z][A-Z0-9_]{0,79}$'
+       AND event_row.target_type ~ '^[A-Z][A-Z0-9_]{0,63}$'
+     ORDER BY event_row.occurred_at DESC, event_row.id
+     LIMIT p_limit
+    OFFSET p_offset;
+END
+$function$;
+
 CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity(
     p_identity_id UUID,
     p_profile_id UUID,
@@ -351,6 +481,10 @@ REVOKE ALL ON FUNCTION agriinsight_security.inventory_warehouse_access(UUID, BOO
 REVOKE ALL ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.list_external_identities(
+    UUID, UUID, BOOLEAN, INTEGER, INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.list_tenant_audit_events(
+    UUID, UUID, TEXT, TEXT, UUID, TEXT, INTEGER, INTEGER) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity_versioned(UUID, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID) FROM PUBLIC;
@@ -369,6 +503,12 @@ GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, U
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.list_external_identities(
+    UUID, UUID, BOOLEAN, INTEGER, INTEGER)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.list_tenant_audit_events(
+    UUID, UUID, TEXT, TEXT, UUID, TEXT, INTEGER, INTEGER)
     TO agriinsight_runtime;
 GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT)
     TO agriinsight_runtime;

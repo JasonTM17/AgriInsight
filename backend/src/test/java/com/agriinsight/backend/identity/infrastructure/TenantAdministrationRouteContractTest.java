@@ -26,6 +26,8 @@ class TenantAdministrationRouteContractTest {
                         "GET /api/v1/me",
                         "GET /api/v1/users",
                         "GET /api/v1/users/{id}",
+                        "GET /api/v1/users/{id}/external-identities",
+                        "GET /api/v1/users/{id}/roles",
                         "POST /api/v1/users",
                         "POST /api/v1/users/{id}/deactivate",
                         "POST /api/v1/users/{id}/external-identities",
@@ -33,6 +35,16 @@ class TenantAdministrationRouteContractTest {
                         "POST /api/v1/users/{id}/reactivate",
                         "POST /api/v1/users/{id}/roles",
                         "POST /api/v1/users/{id}/roles/{roleCode}/revoke");
+        assertThat(registry.routes())
+                .filteredOn(route -> route.method() == HttpMethod.GET
+                        && route.pattern().endsWith("/external-identities"))
+                .extracting(SecuredRouteRegistry.Route::requiredAuthority)
+                .containsOnly(Optional.of(Permission.IDENTITY_USER_MANAGE.name()));
+        assertThat(registry.routes())
+                .filteredOn(route -> route.method() == HttpMethod.GET
+                        && route.pattern().endsWith("/roles"))
+                .extracting(SecuredRouteRegistry.Route::requiredAuthority)
+                .containsOnly(Optional.of(Permission.IDENTITY_ROLE_MANAGE.name()));
         assertThat(registry.routes())
                 .filteredOn(route -> route.method() == HttpMethod.POST
                         && !route.pattern().contains("/roles"))

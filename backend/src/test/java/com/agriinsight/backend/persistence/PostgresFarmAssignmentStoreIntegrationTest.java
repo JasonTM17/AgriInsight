@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agriinsight.backend.authorization.domain.Role;
 import com.agriinsight.backend.authorization.domain.ScopeContext;
+import com.agriinsight.backend.farm.application.FarmAssignmentQuery;
 import com.agriinsight.backend.farm.domain.FarmAssignment;
 import com.agriinsight.backend.farm.infrastructure.PostgresFarmAssignmentStore;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
@@ -88,6 +89,24 @@ class PostgresFarmAssignmentStoreIntegrationTest {
                 assertThat(regranted.id()).isEqualTo(REGRANT_ID);
                 assertThat(store.findById(scope, NEW_ASSIGNMENT_ID)).get()
                         .extracting(item -> item.active()).isEqualTo(false);
+
+                var firstPage = store.findAll(scope, new FarmAssignmentQuery(
+                        1,
+                        0,
+                        Optional.of(NEW_PROFILE_ID),
+                        Optional.of(FARM_ID),
+                        Optional.empty()));
+                assertThat(firstPage.items()).extracting(item -> item.id())
+                        .containsExactly(NEW_ASSIGNMENT_ID);
+                assertThat(firstPage.hasMore()).isTrue();
+                assertThat(store.findAll(scope, new FarmAssignmentQuery(
+                        100,
+                        0,
+                        Optional.of(NEW_PROFILE_ID),
+                        Optional.of(FARM_ID),
+                        Optional.of(true))).items())
+                        .extracting(item -> item.id())
+                        .containsExactly(REGRANT_ID);
                 return null;
             });
         }
@@ -105,6 +124,13 @@ class PostgresFarmAssignmentStoreIntegrationTest {
                 assertThat(store.findById(
                         scope, UUID.fromString("42000000-0000-0000-0000-000000000008")))
                         .isEmpty();
+                assertThat(store.findAll(scope, new FarmAssignmentQuery(
+                        100,
+                        0,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty())).items())
+                        .allMatch(item -> item.tenantId().equals(TENANT_ID));
                 harness.jdbcTemplate().update("""
                         INSERT INTO user_profiles (id, tenant_id, display_name, active)
                         VALUES (?, ?, 'Inactive Farm Manager', FALSE)
