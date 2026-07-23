@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from dashboard import cost_analysis_snapshot
+from agriinsight import analytics_snapshot
+from agriinsight.analytics_snapshot import (
+    ArtifactSnapshotError,
+    load_artifact_snapshot,
+)
 from dashboard.cost_analysis_snapshot import (
     CostSnapshotError,
     load_cost_analysis_snapshot,
@@ -68,10 +72,35 @@ def test_snapshot_retries_one_manifest_transition(
             return next(manifest_reads)
         return path.read_bytes()
 
-    monkeypatch.setattr(cost_analysis_snapshot, "_read_bytes", transition_read)
+    monkeypatch.setattr(analytics_snapshot, "_read_bytes", transition_read)
 
     snapshot = load_cost_analysis_snapshot(
         tmp_path, ("cost_summary", "procurement_detail")
     )
 
     assert snapshot.manifest["run_id"] == "run-b"
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    (
+        "gold/..\\secret.csv",
+        "gold/C:\\Windows\\win.ini",
+        "gold/../secret.csv",
+    ),
+)
+def test_snapshot_rejects_cross_platform_path_escape(
+    tmp_path: Path,
+    relative_path: str,
+) -> None:
+    (tmp_path / "gold").mkdir()
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"checksums": {}}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ArtifactSnapshotError, match="checksum-verified"):
+        load_artifact_snapshot(
+            tmp_path,
+            csv_datasets={"unsafe": relative_path},
+        )

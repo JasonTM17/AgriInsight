@@ -11,6 +11,25 @@ from agriinsight.pipeline import run_pipeline
 
 
 @pytest.fixture(scope="session")
+def analytics_artifact_root(tmp_path_factory: pytest.TempPathFactory):
+    root = tmp_path_factory.mktemp("analytics-api") / "artifacts"
+    run_pipeline(
+        root,
+        GenerationConfig(
+            seed=117,
+            as_of_date=date(2026, 7, 18),
+            farm_count=3,
+            fields_per_farm=2,
+            activities_per_season=6,
+            material_count=5,
+            sensor_history_days=14,
+            sensor_readings_per_day=1,
+        ),
+    )
+    return root
+
+
+@pytest.fixture(scope="session")
 def report_sources(tmp_path_factory: pytest.TempPathFactory):
     root = tmp_path_factory.mktemp("cost-report") / "artifacts"
     run_pipeline(

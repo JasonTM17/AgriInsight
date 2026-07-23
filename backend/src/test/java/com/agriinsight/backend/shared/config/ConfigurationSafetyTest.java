@@ -1,6 +1,8 @@
 package com.agriinsight.backend.shared.config;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.security.web.SecurityFilterChain;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -49,6 +51,14 @@ class ConfigurationSafetyTest {
 
         assertThat(Files.readString(Path.of("src", "main", "resources", "application.yml")))
                 .contains("expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:" + latest + "}");
+    }
+
+    @Test
+    void nonWebMigrationContextDoesNotCreateServletSecurity() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(FoundationSecurityConfig.class)
+                .withPropertyValues("agriinsight.identity.enabled=false")
+                .run(context -> assertThat(context).doesNotHaveBean(SecurityFilterChain.class));
     }
 
     private void assertSecretValuesAreEnvironmentBacked(Path file, String content) {
