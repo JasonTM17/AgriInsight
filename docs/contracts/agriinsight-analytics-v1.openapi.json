@@ -1,0 +1,3178 @@
+{
+  "components": {
+    "schemas": {
+      "AnalyticsEnvelope_CatalogPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CatalogPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[CatalogPayload]",
+        "type": "object"
+      },
+      "AnalyticsEnvelope_CostsPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CostsPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[CostsPayload]",
+        "type": "object"
+      },
+      "AnalyticsEnvelope_CropHealthPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CropHealthPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[CropHealthPayload]",
+        "type": "object"
+      },
+      "AnalyticsEnvelope_DataQualityPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/DataQualityPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[DataQualityPayload]",
+        "type": "object"
+      },
+      "AnalyticsEnvelope_FarmsPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/FarmsPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[FarmsPayload]",
+        "type": "object"
+      },
+      "AnalyticsEnvelope_InventoryPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/InventoryPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[InventoryPayload]",
+        "type": "object"
+      },
+      "AnalyticsEnvelope_OverviewPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/OverviewPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[OverviewPayload]",
+        "type": "object"
+      },
+      "CatalogFarmModel": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "displayName",
+          "id"
+        ],
+        "title": "CatalogFarmModel",
+        "type": "object"
+      },
+      "CatalogPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "allowedFarms": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogFarmModel"
+            },
+            "title": "Allowedfarms",
+            "type": "array"
+          },
+          "allowedWarehouses": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogWarehouseModel"
+            },
+            "title": "Allowedwarehouses",
+            "type": "array"
+          },
+          "locale": {
+            "const": "vi-VN",
+            "default": "vi-VN",
+            "title": "Locale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "allowedFarms",
+          "allowedWarehouses"
+        ],
+        "title": "CatalogPayload",
+        "type": "object"
+      },
+      "CatalogWarehouseModel": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "locationText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locationtext"
+          }
+        },
+        "required": [
+          "code",
+          "displayName",
+          "id"
+        ],
+        "title": "CatalogWarehouseModel",
+        "type": "object"
+      },
+      "CostBreakdownModel": {
+        "additionalProperties": false,
+        "properties": {
+          "activityType": {
+            "title": "Activitytype",
+            "type": "string"
+          },
+          "laborCostVnd": {
+            "title": "Laborcostvnd",
+            "type": "number"
+          },
+          "materialCostVnd": {
+            "title": "Materialcostvnd",
+            "type": "number"
+          },
+          "sharePct": {
+            "title": "Sharepct",
+            "type": "number"
+          },
+          "totalCostVnd": {
+            "title": "Totalcostvnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "activityType",
+          "materialCostVnd",
+          "laborCostVnd",
+          "totalCostVnd",
+          "sharePct"
+        ],
+        "title": "CostBreakdownModel",
+        "type": "object"
+      },
+      "CostCapabilitiesModel": {
+        "additionalProperties": false,
+        "properties": {
+          "activityBreakdownAvailable": {
+            "title": "Activitybreakdownavailable",
+            "type": "boolean"
+          },
+          "fileExportAvailable": {
+            "const": false,
+            "title": "Fileexportavailable",
+            "type": "boolean"
+          },
+          "monthlyBreakdownAvailable": {
+            "title": "Monthlybreakdownavailable",
+            "type": "boolean"
+          },
+          "readOnly": {
+            "const": true,
+            "title": "Readonly",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "readOnly",
+          "fileExportAvailable",
+          "monthlyBreakdownAvailable",
+          "activityBreakdownAvailable"
+        ],
+        "title": "CostCapabilitiesModel",
+        "type": "object"
+      },
+      "CostFarmModel": {
+        "additionalProperties": false,
+        "properties": {
+          "budgetOperatingCostVnd": {
+            "title": "Budgetoperatingcostvnd",
+            "type": "number"
+          },
+          "budgetVarianceVnd": {
+            "title": "Budgetvariancevnd",
+            "type": "number"
+          },
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "fieldCount": {
+            "title": "Fieldcount",
+            "type": "integer"
+          },
+          "harvestQuantityKg": {
+            "title": "Harvestquantitykg",
+            "type": "number"
+          },
+          "operatingCostPerHaVnd": {
+            "title": "Operatingcostperhavnd",
+            "type": "number"
+          },
+          "operatingCostPerKgVnd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operatingcostperkgvnd"
+          },
+          "operatingLaborCostVnd": {
+            "title": "Operatinglaborcostvnd",
+            "type": "number"
+          },
+          "operatingMaterialCostVnd": {
+            "title": "Operatingmaterialcostvnd",
+            "type": "number"
+          },
+          "operatingProfitMarginPct": {
+            "title": "Operatingprofitmarginpct",
+            "type": "number"
+          },
+          "operatingProfitVnd": {
+            "title": "Operatingprofitvnd",
+            "type": "number"
+          },
+          "operatingTotalCostVnd": {
+            "title": "Operatingtotalcostvnd",
+            "type": "number"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "revenueVnd": {
+            "title": "Revenuevnd",
+            "type": "number"
+          },
+          "seasonAreaHa": {
+            "title": "Seasonareaha",
+            "type": "number"
+          },
+          "seasonCount": {
+            "title": "Seasoncount",
+            "type": "integer"
+          },
+          "targetYieldKg": {
+            "title": "Targetyieldkg",
+            "type": "number"
+          }
+        },
+        "required": [
+          "farmCode",
+          "farmName",
+          "province",
+          "seasonCount",
+          "fieldCount",
+          "seasonAreaHa",
+          "budgetOperatingCostVnd",
+          "targetYieldKg",
+          "harvestQuantityKg",
+          "revenueVnd",
+          "operatingMaterialCostVnd",
+          "operatingLaborCostVnd",
+          "operatingTotalCostVnd",
+          "operatingProfitVnd",
+          "operatingProfitMarginPct",
+          "operatingCostPerHaVnd",
+          "operatingCostPerKgVnd",
+          "budgetVarianceVnd"
+        ],
+        "title": "CostFarmModel",
+        "type": "object"
+      },
+      "CostMonthlyModel": {
+        "additionalProperties": false,
+        "properties": {
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "operatingLaborCostVnd": {
+            "title": "Operatinglaborcostvnd",
+            "type": "number"
+          },
+          "operatingMaterialCostVnd": {
+            "title": "Operatingmaterialcostvnd",
+            "type": "number"
+          },
+          "operatingProfitMarginPct": {
+            "title": "Operatingprofitmarginpct",
+            "type": "number"
+          },
+          "operatingProfitVnd": {
+            "title": "Operatingprofitvnd",
+            "type": "number"
+          },
+          "operatingTotalCostVnd": {
+            "title": "Operatingtotalcostvnd",
+            "type": "number"
+          },
+          "revenueVnd": {
+            "title": "Revenuevnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "month",
+          "operatingMaterialCostVnd",
+          "operatingLaborCostVnd",
+          "operatingTotalCostVnd",
+          "revenueVnd",
+          "operatingProfitVnd",
+          "operatingProfitMarginPct"
+        ],
+        "title": "CostMonthlyModel",
+        "type": "object"
+      },
+      "CostSummaryModel": {
+        "additionalProperties": false,
+        "properties": {
+          "activityCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activitycount"
+          },
+          "budgetOperatingCostVnd": {
+            "title": "Budgetoperatingcostvnd",
+            "type": "number"
+          },
+          "budgetVarianceVnd": {
+            "title": "Budgetvariancevnd",
+            "type": "number"
+          },
+          "harvestQuantityKg": {
+            "title": "Harvestquantitykg",
+            "type": "number"
+          },
+          "operatingCostPerKgVnd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operatingcostperkgvnd"
+          },
+          "operatingLaborCostVnd": {
+            "title": "Operatinglaborcostvnd",
+            "type": "number"
+          },
+          "operatingMaterialCostVnd": {
+            "title": "Operatingmaterialcostvnd",
+            "type": "number"
+          },
+          "operatingProfitMarginPct": {
+            "title": "Operatingprofitmarginpct",
+            "type": "number"
+          },
+          "operatingProfitVnd": {
+            "title": "Operatingprofitvnd",
+            "type": "number"
+          },
+          "operatingTotalCostVnd": {
+            "title": "Operatingtotalcostvnd",
+            "type": "number"
+          },
+          "revenueVnd": {
+            "title": "Revenuevnd",
+            "type": "number"
+          },
+          "seasonCount": {
+            "title": "Seasoncount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seasonCount",
+          "operatingMaterialCostVnd",
+          "operatingLaborCostVnd",
+          "operatingTotalCostVnd",
+          "harvestQuantityKg",
+          "revenueVnd",
+          "operatingProfitVnd",
+          "operatingProfitMarginPct",
+          "budgetOperatingCostVnd",
+          "budgetVarianceVnd",
+          "operatingCostPerKgVnd"
+        ],
+        "title": "CostSummaryModel",
+        "type": "object"
+      },
+      "CostsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/CostBreakdownModel"
+            },
+            "title": "Breakdown",
+            "type": "array"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/CostCapabilitiesModel"
+          },
+          "farms": {
+            "items": {
+              "$ref": "#/components/schemas/CostFarmModel"
+            },
+            "title": "Farms",
+            "type": "array"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/CostMonthlyModel"
+            },
+            "title": "Monthly",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CostSummaryModel"
+          }
+        },
+        "required": [
+          "breakdown",
+          "capabilities",
+          "farms",
+          "monthly",
+          "summary"
+        ],
+        "title": "CostsPayload",
+        "type": "object"
+      },
+      "CropHealthAlertModel": {
+        "additionalProperties": false,
+        "properties": {
+          "cropName": {
+            "title": "Cropname",
+            "type": "string"
+          },
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "fieldCode": {
+            "title": "Fieldcode",
+            "type": "string"
+          },
+          "fieldName": {
+            "title": "Fieldname",
+            "type": "string"
+          },
+          "maxAffectedAreaPct": {
+            "title": "Maxaffectedareapct",
+            "type": "number"
+          },
+          "pestCases90d": {
+            "title": "Pestcases90D",
+            "type": "integer"
+          },
+          "rainfall7dMm": {
+            "title": "Rainfall7Dmm",
+            "type": "number"
+          },
+          "recommendedAction": {
+            "title": "Recommendedaction",
+            "type": "string"
+          },
+          "riskScore": {
+            "title": "Riskscore",
+            "type": "number"
+          },
+          "riskStatus": {
+            "title": "Riskstatus",
+            "type": "string"
+          },
+          "sensorAgeDays": {
+            "title": "Sensoragedays",
+            "type": "number"
+          },
+          "soilMoisturePct": {
+            "title": "Soilmoisturepct",
+            "type": "number"
+          },
+          "soilPh": {
+            "title": "Soilph",
+            "type": "number"
+          }
+        },
+        "required": [
+          "farmCode",
+          "farmName",
+          "fieldCode",
+          "fieldName",
+          "cropName",
+          "riskScore",
+          "riskStatus",
+          "soilMoisturePct",
+          "soilPh",
+          "rainfall7dMm",
+          "pestCases90d",
+          "maxAffectedAreaPct",
+          "sensorAgeDays",
+          "recommendedAction"
+        ],
+        "title": "CropHealthAlertModel",
+        "type": "object"
+      },
+      "CropHealthPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/CropHealthAlertModel"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "assessmentMethod": {
+            "const": "rule-based-heuristic",
+            "default": "rule-based-heuristic",
+            "title": "Assessmentmethod",
+            "type": "string"
+          },
+          "evidenceSignals": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSignalModel"
+            },
+            "title": "Evidencesignals",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldHealthModel"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageModel"
+          },
+          "pestIncidentsWeekly": {
+            "items": {
+              "$ref": "#/components/schemas/PestIncidentModel"
+            },
+            "title": "Pestincidentsweekly",
+            "type": "array"
+          },
+          "severity": {
+            "enum": [
+              "none",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CropHealthSummaryModel"
+          }
+        },
+        "required": [
+          "alerts",
+          "evidenceSignals",
+          "fields",
+          "page",
+          "pestIncidentsWeekly",
+          "severity",
+          "summary"
+        ],
+        "title": "CropHealthPayload",
+        "type": "object"
+      },
+      "CropHealthSummaryModel": {
+        "additionalProperties": false,
+        "properties": {
+          "averageSoilMoisturePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagesoilmoisturepct"
+          },
+          "averageSoilPh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagesoilph"
+          },
+          "averageTemperatureC": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagetemperaturec"
+          },
+          "highRiskFields": {
+            "title": "Highriskfields",
+            "type": "integer"
+          },
+          "monitoredFields": {
+            "title": "Monitoredfields",
+            "type": "integer"
+          },
+          "offlineSensors": {
+            "title": "Offlinesensors",
+            "type": "integer"
+          },
+          "pestCases90d": {
+            "title": "Pestcases90D",
+            "type": "integer"
+          },
+          "readings7d": {
+            "title": "Readings7D",
+            "type": "integer"
+          },
+          "watchFields": {
+            "title": "Watchfields",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "monitoredFields",
+          "readings7d",
+          "highRiskFields",
+          "watchFields",
+          "offlineSensors",
+          "pestCases90d"
+        ],
+        "title": "CropHealthSummaryModel",
+        "type": "object"
+      },
+      "CropProfitabilityModel": {
+        "additionalProperties": false,
+        "properties": {
+          "cropCode": {
+            "title": "Cropcode",
+            "type": "string"
+          },
+          "cropName": {
+            "title": "Cropname",
+            "type": "string"
+          },
+          "harvestQuantityKg": {
+            "title": "Harvestquantitykg",
+            "type": "number"
+          },
+          "operatedAreaHa": {
+            "title": "Operatedareaha",
+            "type": "number"
+          },
+          "profitMarginPct": {
+            "title": "Profitmarginpct",
+            "type": "number"
+          },
+          "profitVnd": {
+            "title": "Profitvnd",
+            "type": "number"
+          },
+          "totalCostVnd": {
+            "title": "Totalcostvnd",
+            "type": "number"
+          },
+          "totalRevenueVnd": {
+            "title": "Totalrevenuevnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cropCode",
+          "cropName",
+          "operatedAreaHa",
+          "harvestQuantityKg",
+          "totalRevenueVnd",
+          "totalCostVnd",
+          "profitVnd",
+          "profitMarginPct"
+        ],
+        "title": "CropProfitabilityModel",
+        "type": "object"
+      },
+      "DataQualityPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "$ref": "#/components/schemas/QualityChecksModel"
+          },
+          "evidenceSignals": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSignalModel"
+            },
+            "title": "Evidencesignals",
+            "type": "array"
+          },
+          "remediationActions": {
+            "$ref": "#/components/schemas/QualityRemediationModel"
+          },
+          "scores": {
+            "$ref": "#/components/schemas/QualityScoresModel"
+          },
+          "severity": {
+            "enum": [
+              "none",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checks",
+          "evidenceSignals",
+          "remediationActions",
+          "scores",
+          "severity",
+          "status"
+        ],
+        "title": "DataQualityPayload",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "correlationId": {
+            "title": "Correlationid",
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "correlationId",
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EvidenceSignalModel": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "EvidenceSignalModel",
+        "type": "object"
+      },
+      "ExecutiveSummaryModel": {
+        "additionalProperties": false,
+        "properties": {
+          "activeSeasons": {
+            "title": "Activeseasons",
+            "type": "integer"
+          },
+          "cropHealthRiskAlerts": {
+            "title": "Crophealthriskalerts",
+            "type": "integer"
+          },
+          "cultivatedAreaHa": {
+            "title": "Cultivatedareaha",
+            "type": "number"
+          },
+          "harvestQuantityKg": {
+            "title": "Harvestquantitykg",
+            "type": "number"
+          },
+          "inventoryRiskAlerts": {
+            "title": "Inventoryriskalerts",
+            "type": "integer"
+          },
+          "profitMarginPct": {
+            "title": "Profitmarginpct",
+            "type": "number"
+          },
+          "profitVnd": {
+            "title": "Profitvnd",
+            "type": "number"
+          },
+          "riskAlerts": {
+            "title": "Riskalerts",
+            "type": "integer"
+          },
+          "seasonRiskAlerts": {
+            "title": "Seasonriskalerts",
+            "type": "integer"
+          },
+          "totalCostVnd": {
+            "title": "Totalcostvnd",
+            "type": "number"
+          },
+          "totalRevenueVnd": {
+            "title": "Totalrevenuevnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "totalRevenueVnd",
+          "totalCostVnd",
+          "profitVnd",
+          "profitMarginPct",
+          "harvestQuantityKg",
+          "cultivatedAreaHa",
+          "activeSeasons",
+          "riskAlerts",
+          "seasonRiskAlerts",
+          "inventoryRiskAlerts",
+          "cropHealthRiskAlerts"
+        ],
+        "title": "ExecutiveSummaryModel",
+        "type": "object"
+      },
+      "FarmPerformanceModel": {
+        "additionalProperties": false,
+        "properties": {
+          "costVndPerHa": {
+            "title": "Costvndperha",
+            "type": "number"
+          },
+          "cultivatedAreaHa": {
+            "title": "Cultivatedareaha",
+            "type": "number"
+          },
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "harvestQuantityKg": {
+            "title": "Harvestquantitykg",
+            "type": "number"
+          },
+          "harvestedAreaHa": {
+            "title": "Harvestedareaha",
+            "type": "number"
+          },
+          "profitMarginPct": {
+            "title": "Profitmarginpct",
+            "type": "number"
+          },
+          "profitVnd": {
+            "title": "Profitvnd",
+            "type": "number"
+          },
+          "totalCostVnd": {
+            "title": "Totalcostvnd",
+            "type": "number"
+          },
+          "totalRevenueVnd": {
+            "title": "Totalrevenuevnd",
+            "type": "number"
+          },
+          "yieldKgPerHa": {
+            "title": "Yieldkgperha",
+            "type": "number"
+          }
+        },
+        "required": [
+          "farmCode",
+          "farmName",
+          "cultivatedAreaHa",
+          "harvestedAreaHa",
+          "harvestQuantityKg",
+          "totalRevenueVnd",
+          "totalCostVnd",
+          "profitVnd",
+          "yieldKgPerHa",
+          "costVndPerHa",
+          "profitMarginPct"
+        ],
+        "title": "FarmPerformanceModel",
+        "type": "object"
+      },
+      "FarmScopeSummaryModel": {
+        "additionalProperties": false,
+        "properties": {
+          "cultivatedAreaHa": {
+            "title": "Cultivatedareaha",
+            "type": "number"
+          },
+          "farmCount": {
+            "title": "Farmcount",
+            "type": "integer"
+          },
+          "harvestQuantityKg": {
+            "title": "Harvestquantitykg",
+            "type": "number"
+          },
+          "profitMarginPct": {
+            "title": "Profitmarginpct",
+            "type": "number"
+          },
+          "profitVnd": {
+            "title": "Profitvnd",
+            "type": "number"
+          },
+          "totalCostVnd": {
+            "title": "Totalcostvnd",
+            "type": "number"
+          },
+          "totalRevenueVnd": {
+            "title": "Totalrevenuevnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "totalRevenueVnd",
+          "totalCostVnd",
+          "profitVnd",
+          "profitMarginPct",
+          "harvestQuantityKg",
+          "cultivatedAreaHa",
+          "farmCount"
+        ],
+        "title": "FarmScopeSummaryModel",
+        "type": "object"
+      },
+      "FarmsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "cropProfitability": {
+            "items": {
+              "$ref": "#/components/schemas/CropProfitabilityModel"
+            },
+            "title": "Cropprofitability",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FarmPerformanceModel"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageModel"
+          }
+        },
+        "required": [
+          "cropProfitability",
+          "items",
+          "page"
+        ],
+        "title": "FarmsPayload",
+        "type": "object"
+      },
+      "FieldHealthModel": {
+        "additionalProperties": false,
+        "properties": {
+          "airHumidityPct": {
+            "title": "Airhumiditypct",
+            "type": "number"
+          },
+          "areaHa": {
+            "title": "Areaha",
+            "type": "number"
+          },
+          "batteryPct": {
+            "title": "Batterypct",
+            "type": "number"
+          },
+          "cropCode": {
+            "title": "Cropcode",
+            "type": "string"
+          },
+          "cropName": {
+            "title": "Cropname",
+            "type": "string"
+          },
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "fieldCode": {
+            "title": "Fieldcode",
+            "type": "string"
+          },
+          "fieldName": {
+            "title": "Fieldname",
+            "type": "string"
+          },
+          "lastReadingAt": {
+            "title": "Lastreadingat",
+            "type": "string"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "maxAffectedAreaPct": {
+            "title": "Maxaffectedareapct",
+            "type": "number"
+          },
+          "maxMortalityPct": {
+            "title": "Maxmortalitypct",
+            "type": "number"
+          },
+          "pestCases90d": {
+            "title": "Pestcases90D",
+            "type": "integer"
+          },
+          "rainfall7dMm": {
+            "title": "Rainfall7Dmm",
+            "type": "number"
+          },
+          "readingCount7d": {
+            "title": "Readingcount7D",
+            "type": "integer"
+          },
+          "recommendedAction": {
+            "title": "Recommendedaction",
+            "type": "string"
+          },
+          "riskScore": {
+            "title": "Riskscore",
+            "type": "number"
+          },
+          "riskStatus": {
+            "title": "Riskstatus",
+            "type": "string"
+          },
+          "sensorAgeDays": {
+            "title": "Sensoragedays",
+            "type": "number"
+          },
+          "soilMoisturePct": {
+            "title": "Soilmoisturepct",
+            "type": "number"
+          },
+          "soilPh": {
+            "title": "Soilph",
+            "type": "number"
+          },
+          "temperatureC": {
+            "title": "Temperaturec",
+            "type": "number"
+          }
+        },
+        "required": [
+          "farmCode",
+          "farmName",
+          "fieldCode",
+          "fieldName",
+          "areaHa",
+          "latitude",
+          "longitude",
+          "cropCode",
+          "cropName",
+          "temperatureC",
+          "airHumidityPct",
+          "soilMoisturePct",
+          "soilPh",
+          "batteryPct",
+          "readingCount7d",
+          "lastReadingAt",
+          "sensorAgeDays",
+          "pestCases90d",
+          "maxAffectedAreaPct",
+          "maxMortalityPct",
+          "rainfall7dMm",
+          "riskScore",
+          "riskStatus",
+          "recommendedAction"
+        ],
+        "title": "FieldHealthModel",
+        "type": "object"
+      },
+      "FreshnessModel": {
+        "additionalProperties": false,
+        "properties": {
+          "artifactAgeHours": {
+            "minimum": 0.0,
+            "title": "Artifactagehours",
+            "type": "number"
+          },
+          "dataStatus": {
+            "enum": [
+              "current",
+              "stale",
+              "partial",
+              "missing"
+            ],
+            "title": "Datastatus",
+            "type": "string"
+          },
+          "maxAgeHours": {
+            "minimum": 1.0,
+            "title": "Maxagehours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artifactAgeHours",
+          "dataStatus",
+          "maxAgeHours"
+        ],
+        "title": "FreshnessModel",
+        "type": "object"
+      },
+      "InsightEvidenceModel": {
+        "additionalProperties": false,
+        "properties": {
+          "activityType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activitytype"
+          },
+          "alertCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alertcount"
+          },
+          "criticalAlerts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criticalalerts"
+          },
+          "cropCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cropcode"
+          },
+          "expiring30dSkus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiring30Dskus"
+          },
+          "farmCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Farmcode"
+          },
+          "highRiskFields": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highriskfields"
+          },
+          "lowStockSkus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lowstockskus"
+          },
+          "offlineSensors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offlinesensors"
+          },
+          "overBudgetCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overbudgetcount"
+          },
+          "pestCases90d": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pestcases90D"
+          },
+          "profitMarginPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profitmarginpct"
+          },
+          "profitVnd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profitvnd"
+          },
+          "revenueVnd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenuevnd"
+          },
+          "sharePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharepct"
+          },
+          "totalCostVnd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totalcostvnd"
+          },
+          "yieldRiskCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yieldriskcount"
+          }
+        },
+        "title": "InsightEvidenceModel",
+        "type": "object"
+      },
+      "InsightModel": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/InsightEvidenceModel"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "watch",
+              "warning"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "evidence",
+          "severity",
+          "summary",
+          "title"
+        ],
+        "title": "InsightModel",
+        "type": "object"
+      },
+      "InventoryAbcModel": {
+        "additionalProperties": false,
+        "properties": {
+          "abcClass": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ],
+            "title": "Abcclass",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "cumulativeValueSharePct": {
+            "title": "Cumulativevaluesharepct",
+            "type": "number"
+          },
+          "inventoryValueVnd": {
+            "title": "Inventoryvaluevnd",
+            "type": "number"
+          },
+          "materialCode": {
+            "title": "Materialcode",
+            "type": "string"
+          },
+          "materialName": {
+            "title": "Materialname",
+            "type": "string"
+          },
+          "stockLocations": {
+            "title": "Stocklocations",
+            "type": "integer"
+          },
+          "valueSharePct": {
+            "title": "Valuesharepct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "materialCode",
+          "materialName",
+          "category",
+          "inventoryValueVnd",
+          "stockLocations",
+          "valueSharePct",
+          "cumulativeValueSharePct",
+          "abcClass"
+        ],
+        "title": "InventoryAbcModel",
+        "type": "object"
+      },
+      "InventoryAlertModel": {
+        "additionalProperties": false,
+        "properties": {
+          "abcClass": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ],
+            "title": "Abcclass",
+            "type": "string"
+          },
+          "alertType": {
+            "title": "Alerttype",
+            "type": "string"
+          },
+          "baseUnit": {
+            "title": "Baseunit",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "materialCode": {
+            "title": "Materialcode",
+            "type": "string"
+          },
+          "materialName": {
+            "title": "Materialname",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "recommendedAction": {
+            "title": "Recommendedaction",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "stockQuantity": {
+            "title": "Stockquantity",
+            "type": "number"
+          },
+          "warehouseCode": {
+            "title": "Warehousecode",
+            "type": "string"
+          },
+          "warehouseName": {
+            "title": "Warehousename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "farmName",
+          "warehouseCode",
+          "warehouseName",
+          "materialCode",
+          "materialName",
+          "category",
+          "abcClass",
+          "stockQuantity",
+          "baseUnit",
+          "alertType",
+          "severity",
+          "message",
+          "recommendedAction"
+        ],
+        "title": "InventoryAlertModel",
+        "type": "object"
+      },
+      "InventoryPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "abc": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAbcModel"
+            },
+            "title": "Abc",
+            "type": "array"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAlertModel"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryStatusModel"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageModel"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/InventorySummaryModel"
+          }
+        },
+        "required": [
+          "abc",
+          "alerts",
+          "items",
+          "page",
+          "summary"
+        ],
+        "title": "InventoryPayload",
+        "type": "object"
+      },
+      "InventoryStatusModel": {
+        "additionalProperties": false,
+        "properties": {
+          "abcClass": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ],
+            "title": "Abcclass",
+            "type": "string"
+          },
+          "averageDailyUsage": {
+            "title": "Averagedailyusage",
+            "type": "number"
+          },
+          "averageUnitCostVnd": {
+            "title": "Averageunitcostvnd",
+            "type": "number"
+          },
+          "baseUnit": {
+            "title": "Baseunit",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "daysOfSupply": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daysofsupply"
+          },
+          "daysToExpiry": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daystoexpiry"
+          },
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "inventoryValueVnd": {
+            "title": "Inventoryvaluevnd",
+            "type": "number"
+          },
+          "materialCode": {
+            "title": "Materialcode",
+            "type": "string"
+          },
+          "materialName": {
+            "title": "Materialname",
+            "type": "string"
+          },
+          "nearestExpiryDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nearestexpirydate"
+          },
+          "predicted30dNeed": {
+            "title": "Predicted30Dneed",
+            "type": "number"
+          },
+          "recommendedOrderQuantity": {
+            "title": "Recommendedorderquantity",
+            "type": "number"
+          },
+          "reorderPoint": {
+            "title": "Reorderpoint",
+            "type": "number"
+          },
+          "stockQuantity": {
+            "title": "Stockquantity",
+            "type": "number"
+          },
+          "stockStatus": {
+            "title": "Stockstatus",
+            "type": "string"
+          },
+          "targetStockLevel": {
+            "title": "Targetstocklevel",
+            "type": "number"
+          },
+          "warehouseCode": {
+            "title": "Warehousecode",
+            "type": "string"
+          },
+          "warehouseName": {
+            "title": "Warehousename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "farmCode",
+          "farmName",
+          "warehouseCode",
+          "warehouseName",
+          "materialCode",
+          "materialName",
+          "category",
+          "baseUnit",
+          "reorderPoint",
+          "targetStockLevel",
+          "stockQuantity",
+          "averageUnitCostVnd",
+          "inventoryValueVnd",
+          "averageDailyUsage",
+          "daysOfSupply",
+          "nearestExpiryDate",
+          "daysToExpiry",
+          "stockStatus",
+          "recommendedOrderQuantity",
+          "predicted30dNeed",
+          "abcClass"
+        ],
+        "title": "InventoryStatusModel",
+        "type": "object"
+      },
+      "InventorySummaryModel": {
+        "additionalProperties": false,
+        "properties": {
+          "averageDaysOfSupply": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagedaysofsupply"
+          },
+          "criticalAlerts": {
+            "title": "Criticalalerts",
+            "type": "integer"
+          },
+          "expiring30dSkus": {
+            "title": "Expiring30Dskus",
+            "type": "integer"
+          },
+          "lowStockSkus": {
+            "title": "Lowstockskus",
+            "type": "integer"
+          },
+          "materialSkus": {
+            "title": "Materialskus",
+            "type": "integer"
+          },
+          "overstockSkus": {
+            "title": "Overstockskus",
+            "type": "integer"
+          },
+          "skuLocations": {
+            "title": "Skulocations",
+            "type": "integer"
+          },
+          "stockoutSkus": {
+            "title": "Stockoutskus",
+            "type": "integer"
+          },
+          "totalInventoryValueVnd": {
+            "title": "Totalinventoryvaluevnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "totalInventoryValueVnd",
+          "materialSkus",
+          "skuLocations",
+          "lowStockSkus",
+          "stockoutSkus",
+          "overstockSkus",
+          "expiring30dSkus",
+          "averageDaysOfSupply",
+          "criticalAlerts"
+        ],
+        "title": "InventorySummaryModel",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "LineageModel": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "title": "Asof",
+            "type": "string"
+          },
+          "contractVersion": {
+            "const": "1.0.0",
+            "default": "1.0.0",
+            "title": "Contractversion",
+            "type": "string"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "title": "Generatedat",
+            "type": "string"
+          },
+          "manifestFingerprint": {
+            "title": "Manifestfingerprint",
+            "type": "string"
+          },
+          "runId": {
+            "title": "Runid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOf",
+          "generatedAt",
+          "manifestFingerprint",
+          "runId"
+        ],
+        "title": "LineageModel",
+        "type": "object"
+      },
+      "MonthlyFinancialModel": {
+        "additionalProperties": false,
+        "properties": {
+          "costVnd": {
+            "title": "Costvnd",
+            "type": "number"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "profitVnd": {
+            "title": "Profitvnd",
+            "type": "number"
+          },
+          "revenueVnd": {
+            "title": "Revenuevnd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "month",
+          "revenueVnd",
+          "costVnd",
+          "profitVnd"
+        ],
+        "title": "MonthlyFinancialModel",
+        "type": "object"
+      },
+      "OverviewPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "insights": {
+            "items": {
+              "$ref": "#/components/schemas/InsightModel"
+            },
+            "title": "Insights",
+            "type": "array"
+          },
+          "monthlyTrend": {
+            "items": {
+              "$ref": "#/components/schemas/MonthlyFinancialModel"
+            },
+            "title": "Monthlytrend",
+            "type": "array"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutiveSummaryModel"
+              },
+              {
+                "$ref": "#/components/schemas/FarmScopeSummaryModel"
+              }
+            ],
+            "title": "Summary"
+          },
+          "topRisks": {
+            "items": {
+              "$ref": "#/components/schemas/RiskAlertModel"
+            },
+            "title": "Toprisks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "insights",
+          "monthlyTrend",
+          "summary",
+          "topRisks"
+        ],
+        "title": "OverviewPayload",
+        "type": "object"
+      },
+      "PageModel": {
+        "additionalProperties": false,
+        "properties": {
+          "hasMore": {
+            "title": "Hasmore",
+            "type": "boolean"
+          },
+          "limit": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasMore",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "title": "PageModel",
+        "type": "object"
+      },
+      "PestIncidentModel": {
+        "additionalProperties": false,
+        "properties": {
+          "averageAffectedAreaPct": {
+            "title": "Averageaffectedareapct",
+            "type": "number"
+          },
+          "caseCount": {
+            "title": "Casecount",
+            "type": "integer"
+          },
+          "maxAffectedAreaPct": {
+            "title": "Maxaffectedareapct",
+            "type": "number"
+          },
+          "pestCode": {
+            "title": "Pestcode",
+            "type": "string"
+          },
+          "pestName": {
+            "title": "Pestname",
+            "type": "string"
+          },
+          "week": {
+            "title": "Week",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week",
+          "pestCode",
+          "pestName",
+          "caseCount",
+          "averageAffectedAreaPct",
+          "maxAffectedAreaPct"
+        ],
+        "title": "PestIncidentModel",
+        "type": "object"
+      },
+      "QualityCheckModel": {
+        "additionalProperties": false,
+        "properties": {
+          "check": {
+            "title": "Check",
+            "type": "string"
+          },
+          "failedRows": {
+            "title": "Failedrows",
+            "type": "integer"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "table": {
+            "title": "Table",
+            "type": "string"
+          },
+          "totalRows": {
+            "title": "Totalrows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "check",
+          "failedRows",
+          "severity",
+          "table",
+          "totalRows"
+        ],
+        "title": "QualityCheckModel",
+        "type": "object"
+      },
+      "QualityChecksModel": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "items": {
+              "$ref": "#/components/schemas/QualityCheckModel"
+            },
+            "title": "After",
+            "type": "array"
+          },
+          "before": {
+            "items": {
+              "$ref": "#/components/schemas/QualityCheckModel"
+            },
+            "title": "Before",
+            "type": "array"
+          }
+        },
+        "required": [
+          "after",
+          "before"
+        ],
+        "title": "QualityChecksModel",
+        "type": "object"
+      },
+      "QualityRemediationModel": {
+        "additionalProperties": false,
+        "properties": {
+          "codesCanonicalized": {
+            "title": "Codescanonicalized",
+            "type": "integer"
+          },
+          "duplicatesRemoved": {
+            "title": "Duplicatesremoved",
+            "type": "integer"
+          },
+          "rowsQuarantined": {
+            "title": "Rowsquarantined",
+            "type": "integer"
+          },
+          "unitsConvertedToBase": {
+            "title": "Unitsconvertedtobase",
+            "type": "integer"
+          },
+          "unitsConvertedToKg": {
+            "title": "Unitsconvertedtokg",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "codesCanonicalized",
+          "duplicatesRemoved",
+          "rowsQuarantined",
+          "unitsConvertedToBase",
+          "unitsConvertedToKg"
+        ],
+        "title": "QualityRemediationModel",
+        "type": "object"
+      },
+      "QualityScoreModel": {
+        "additionalProperties": false,
+        "properties": {
+          "completenessPct": {
+            "title": "Completenesspct",
+            "type": "number"
+          },
+          "freshnessAgeDays": {
+            "title": "Freshnessagedays",
+            "type": "number"
+          },
+          "freshnessPct": {
+            "title": "Freshnesspct",
+            "type": "number"
+          },
+          "uniquenessPct": {
+            "title": "Uniquenesspct",
+            "type": "number"
+          },
+          "validityPct": {
+            "title": "Validitypct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "completenessPct",
+          "freshnessAgeDays",
+          "freshnessPct",
+          "uniquenessPct",
+          "validityPct"
+        ],
+        "title": "QualityScoreModel",
+        "type": "object"
+      },
+      "QualityScoresModel": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "$ref": "#/components/schemas/QualityScoreModel"
+          },
+          "before": {
+            "$ref": "#/components/schemas/QualityScoreModel"
+          }
+        },
+        "required": [
+          "after",
+          "before"
+        ],
+        "title": "QualityScoresModel",
+        "type": "object"
+      },
+      "RiskAlertModel": {
+        "additionalProperties": false,
+        "properties": {
+          "actualCostVnd": {
+            "title": "Actualcostvnd",
+            "type": "number"
+          },
+          "actualYieldKg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actualyieldkg"
+          },
+          "budgetCostVnd": {
+            "title": "Budgetcostvnd",
+            "type": "number"
+          },
+          "cropName": {
+            "title": "Cropname",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "fieldName": {
+            "title": "Fieldname",
+            "type": "string"
+          },
+          "riskType": {
+            "title": "Risktype",
+            "type": "string"
+          },
+          "seasonCode": {
+            "title": "Seasoncode",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "targetYieldKg": {
+            "title": "Targetyieldkg",
+            "type": "number"
+          }
+        },
+        "required": [
+          "seasonCode",
+          "farmName",
+          "fieldName",
+          "cropName",
+          "status",
+          "budgetCostVnd",
+          "actualCostVnd",
+          "targetYieldKg",
+          "actualYieldKg",
+          "riskType"
+        ],
+        "title": "RiskAlertModel",
+        "type": "object"
+      },
+      "ScopeModel": {
+        "additionalProperties": false,
+        "properties": {
+          "farmCodes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Farmcodes",
+            "type": "array"
+          },
+          "tenantId": {
+            "title": "Tenantid",
+            "type": "string"
+          },
+          "tenantWide": {
+            "title": "Tenantwide",
+            "type": "boolean"
+          },
+          "warehouseCodes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warehousecodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tenantId",
+          "tenantWide"
+        ],
+        "title": "ScopeModel",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Read-only, demo-tenant-gated analytics over checksum-verified aggregate snapshots.",
+    "title": "AgriInsight Internal Analytics API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health/ready": {
+      "get": {
+        "operationId": "getAnalyticsReadiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Getanalyticsreadiness",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ready"
+      }
+    },
+    "/internal/v1/catalog": {
+      "get": {
+        "operationId": "getAnalyticsCatalog",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_CatalogPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Catalog",
+        "tags": [
+          "analytics-catalog"
+        ]
+      }
+    },
+    "/internal/v1/costs": {
+      "get": {
+        "operationId": "getAnalyticsCosts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_CostsPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Costs",
+        "tags": [
+          "analytics-costs"
+        ]
+      }
+    },
+    "/internal/v1/crop-health": {
+      "get": {
+        "operationId": "getAnalyticsCropHealth",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "farm_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Farm Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_CropHealthPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Crop Health",
+        "tags": [
+          "analytics-crop-health"
+        ]
+      }
+    },
+    "/internal/v1/data-quality": {
+      "get": {
+        "operationId": "getAnalyticsDataQuality",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_DataQualityPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Data Quality",
+        "tags": [
+          "analytics-data-quality"
+        ]
+      }
+    },
+    "/internal/v1/farms": {
+      "get": {
+        "operationId": "getAnalyticsFarms",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "farm_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Farm Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "farm_code",
+              "enum": [
+                "farm_code",
+                "profit_desc"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_FarmsPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Farms",
+        "tags": [
+          "analytics-farms"
+        ]
+      }
+    },
+    "/internal/v1/inventory": {
+      "get": {
+        "operationId": "getAnalyticsInventory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "warehouse_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_InventoryPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Inventory",
+        "tags": [
+          "analytics-inventory"
+        ]
+      }
+    },
+    "/internal/v1/overview": {
+      "get": {
+        "operationId": "getAnalyticsOverview",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_OverviewPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Overview",
+        "tags": [
+          "analytics-overview"
+        ]
+      }
+    }
+  }
+}
