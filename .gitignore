@@ -28,3 +28,12 @@ artifacts/*
 !.claude/rules/
 !.claude/rules/**
 .claude/.env.example
+
+# Disposable Next/OIDC authentication spike runtime
+web-auth-spike/node_modules/
+web-auth-spike/.next/
+web-auth-spike/tsconfig.tsbuildinfo
+web-auth-spike/test-results/
+web-auth-spike/playwright-report/
+web-auth-spike/.runtime/
+.env.auth-spike.local

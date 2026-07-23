@@ -1,0 +1,136 @@
+{
+  "realm": "agriinsight-demo",
+  "enabled": true,
+  "displayName": "AgriInsight disposable OIDC demo",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 60,
+  "ssoSessionIdleTimeout": 900,
+  "ssoSessionMaxLifespan": 28800,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "clients": [
+    {
+      "clientId": "agriinsight-web",
+      "name": "AgriInsight Next BFF spike",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "http://localhost:3100",
+      "baseUrl": "http://localhost:3100/",
+      "redirectUris": [
+        "http://localhost:3100/api/auth/callback/keycloak"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3100/"
+      },
+      "protocolMappers": [
+        {
+          "name": "agriinsight-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "agriinsight-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "access-token-use",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "token_use",
+            "claim.value": "access",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "10000000-0000-4000-8000-000000000001",
+      "username": "tenant-admin",
+      "enabled": true,
+      "email": "tenant-admin@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Tenant",
+      "lastName": "Admin"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000002",
+      "username": "executive",
+      "enabled": true,
+      "email": "executive@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Executive"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000003",
+      "username": "farm-manager",
+      "enabled": true,
+      "email": "farm-manager@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Farm",
+      "lastName": "Manager"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000004",
+      "username": "inventory-manager",
+      "enabled": true,
+      "email": "inventory-manager@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Inventory",
+      "lastName": "Manager"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000005",
+      "username": "analyst",
+      "enabled": true,
+      "email": "analyst@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Analyst"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000006",
+      "username": "field-worker",
+      "enabled": true,
+      "email": "field-worker@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Field",
+      "lastName": "Worker"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000007",
+      "username": "supplier",
+      "enabled": true,
+      "email": "supplier@demo.invalid",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Supplier"
+    }
+  ]
+}

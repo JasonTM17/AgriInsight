@@ -1,0 +1,43 @@
+services:
+  auth-spike-postgres:
+    image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+    environment:
+      POSTGRES_DB: auth_spike
+      POSTGRES_USER: auth_spike_owner
+      POSTGRES_PASSWORD: ${AUTH_SPIKE_POSTGRES_PASSWORD:?set auth spike PostgreSQL password}
+    ports:
+      - "127.0.0.1:${AUTH_SPIKE_POSTGRES_PORT:-55439}:5432"
+    volumes:
+      - ${AUTH_SPIKE_POSTGRES_DATA_DIR:-./web-auth-spike/.runtime/postgres}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_spike_owner -d auth_spike"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    restart: unless-stopped
+
+  auth-spike-keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0
+    command: ["start-dev", "--import-realm", "--http-host=0.0.0.0", "--http-port=8080"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${AUTH_SPIKE_KEYCLOAK_ADMIN_USERNAME:?set demo Keycloak admin username}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${AUTH_SPIKE_KEYCLOAK_ADMIN_PASSWORD:?set demo Keycloak admin password}
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:${AUTH_SPIKE_KEYCLOAK_PORT:-58080}:8080"
+    volumes:
+      - ./deploy/demo/keycloak/realm-template.json:/opt/keycloak/data/import/agriinsight-demo-realm.json:ro
+    tmpfs:
+      - /opt/keycloak/data:uid=1000,gid=1000
+      - /tmp:uid=1000,gid=1000
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 180s
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
