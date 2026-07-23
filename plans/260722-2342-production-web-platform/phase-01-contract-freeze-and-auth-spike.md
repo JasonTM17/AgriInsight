@@ -1,9 +1,9 @@
 ---
 phase: 1
-title: "Contract freeze and auth spike"
-status: pending
+title: Contract freeze and auth spike
+status: completed
 priority: P1
-effort: "5d"
+effort: 5d
 dependencies: []
 ---
 
@@ -124,14 +124,22 @@ Freeze the Spring contract before any production `web/` code exists. This phase 
 
 ## Acceptance
 
-- [ ] `backend/src/main/resources/contracts/agriinsight-api-v1.openapi.json` regenerates deterministically and is checked in.
-- [ ] Missing Work/Admin GETs are bounded, tenant/scope-safe, redacted, deny-by-default, and included before OpenAPI freezes.
-- [ ] The artifact documents the exact secured route set plus shared auth, error, and header metadata.
-- [ ] The chosen auth path passes nonce/state, refresh, local logout/revocation, and concurrent-tab tests with Postgres-backed opaque sessions; optional issuer revocation/end-session behavior is recorded accurately.
-- [ ] Browser storage holds no access token, refresh token, or analytics secret.
-- [ ] Better Auth is either accepted with evidence or rejected and replaced by `openid-client` 6 in the same phase.
-- [ ] The winner passes inside Next 16 route handlers/proxy against the real demo issuer; a Node-only library test cannot satisfy the gate.
-- [ ] Candidate spike dependencies and lockfile are exact before testing; production pins include only the passing choice after the matrix.
+- [x] `backend/src/main/resources/contracts/agriinsight-api-v1.openapi.json` regenerates deterministically and is checked in.
+- [x] Missing Work/Admin GETs are bounded, tenant/scope-safe, redacted, deny-by-default, and included before OpenAPI freezes.
+- [x] The artifact documents the exact secured route set plus shared auth, error, and header metadata.
+- [x] The chosen auth path passes nonce/state, refresh, local logout/revocation, and concurrent-tab tests with Postgres-backed opaque sessions; optional issuer revocation/end-session behavior is recorded accurately.
+- [x] Browser storage holds no access token, refresh token, or analytics secret.
+- [x] Better Auth is either accepted with evidence or rejected and replaced by `openid-client` 6 in the same phase.
+- [x] The winner passes inside Next 16 route handlers/proxy against the real demo issuer; a Node-only library test cannot satisfy the gate.
+- [x] Candidate spike dependencies and lockfile are exact before testing; production pins include only the passing choice after the matrix.
+
+## Completion evidence
+
+- Backend broad gate: 459 Surefire + 100 PostgreSQL/Testcontainers tests, zero failures/errors/skips.
+- OpenAPI: 67 paths, 94 operations, 94/94 correlation request references, 13 versioned `ETag` references, deterministic SHA-256 `673b2dabb8853d75fff5b719fd1ecfaef350b0b076170e78a63b05fedbb7dfa8`.
+- Auth: Better Auth 1.6.24 rejected by exact-package executable refresh race; `openid-client` 6.8.4 passed 16 unit, 7 PostgreSQL integration, production build, and 1 installed-Chrome/Keycloak E2E.
+- Security review: all seven blocking findings resolved; final independent verdict `LAND`, 0 Critical and 0 High findings.
+- Evidence reports: `reports/phase-01-contract-evidence-2026-07-23.md` and `reports/auth-spike-2026-07-23-oidc-session-verdict.md`.
 
 ## Risks and rollback
 

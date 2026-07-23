@@ -12,7 +12,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Frontend | Streamlit visual polish accepted; production web gated | CK FE/Stitch artifacts plus six generated first-party visuals; production UI follows stable contracts and Phase 6 priorities |
+| Frontend | Streamlit visual polish accepted; production web gated | CK FE/Stitch artifacts plus eight generated first-party visuals; Phase 1 contract freeze exported the backend OpenAPI artifact and the disposable auth spike selected `openid-client` 6.8.4, but production UI is still gated |
 
 ## Next backend phases
 
@@ -46,6 +46,10 @@ implicitly converted into operating cost.
   digest smoke, and identical Docker Hub/GHCR phase-image evidence. Keep the
   protected production release environment and reviewer gates open until the
   release owner approves them.
+- Phase 1 contract freeze is verified in the checked-in backend OpenAPI
+  artifact. Keep the additive bounded GET reads, deterministic 67-path/94-op
+  contract, and current 459+100 backend gate intact before any later phase
+  reopens the contract surface.
 - Do not promote the manual `0.1.0-phase7`/commit tags as a production release;
   the future web image remains frontend-owned and unbuilt.
 - GitHub `main` is now the default branch. About description/topics, Discussions,
@@ -57,6 +61,8 @@ implicitly converted into operating cost.
 ## Future product tracks
 
 - Role-aware production frontend and browser security boundary.
+- Port the verified `openid-client` web-auth boundary into the production web
+  stack only after the protected release path opens.
 - Outbox consumer, realtime Kafka analytics, alerts, and mobile field workflows.
 - Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,
   and model monitoring.

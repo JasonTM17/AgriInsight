@@ -36,16 +36,18 @@ This repository contains a Python analytics plane and a Java operational backend
 - Keep security deny-by-default until a route is explicitly allowed.
 - Validate external JWT signature/algorithm, issuer, API audience, time claims, subject, and the configured access-token discriminator before identity lookup.
 - Resolve external identities by exact `(issuer, subject)` and retain only the internal principal in the security context; never log/store raw bearer tokens or trust JWT role/tenant claims for row scope.
-- Register every business mapping as an exact HTTP method + Spring `PathPattern`; endpoint inventory and `anyRequest().denyAll()` must catch omissions.
+- Register every business mapping as an exact HTTP method plus exact path mapping; endpoint inventory and `anyRequest().denyAll()` must catch omissions.
 - Authorize at both boundaries: the route registry checks the minimum permission, and a scoped application service rechecks permission/scope before repository or idempotency work.
 - Every tenant-owned service entry point uses `@TenantScoped`; the outer transaction binds the database-verified tenant and, for warehouse-scoped work, profile with transaction-local `set_config(..., true)` before data access. Never use session-level tenant settings or inherit request scope into async work.
 - Let a rejected business transaction roll back and release its connection before opening an independent authorization-denial audit transaction. Never nest that audit while the outer transaction owns the only pooled connection.
-- Pass `ScopeContext` into tenant repositories or keep repositories package-private behind a scoped service. Unknown domain scope resolvers fail closed until their FK-backed module is installed.
+- Pass an explicit tenant-scope object into tenant repositories or keep repositories package-private behind a scoped service. Unknown domain scope resolvers fail closed until their FK-backed module is installed.
 - Run the application as the restricted non-owner runtime role. Migration owner, operator, and identity-definer privileges are separate; runtime must never be superuser, table owner, `CREATEROLE`, or `BYPASSRLS`.
 - Keep transactional outbox persistence and drain fencing in the `integration` module. Do not add a broker, public drain route, or scheduler in code that still runs inside the Phase 7 handoff boundary.
 - Tenant tables require `tenant_id`, composite tenant-aware relationships where applicable, `ENABLE/FORCE ROW LEVEL SECURITY`, one reviewed permissive tenant policy per command, matching `USING`/`WITH CHECK`, and direct SQL isolation tests.
 - State-changing routes require a bounded idempotency key and canonical validated fingerprint bound to tenant, principal, method, route, path/query/body, and semantics-bearing headers. Store only the key digest and fixed-size replay metadata, never raw keys, credentials, request bodies, or response snapshots.
 - Authorization must run before an idempotency key is claimed. Replay may return only a currently authorized representation.
+- Phase 1 read contracts are additive and bounded: every collection GET stays limit/offset bounded, redacted, and non-enumerating. Do not route reads through command-only services or let list endpoints leak raw identity or audit material.
+- Keep the checked-in OpenAPI artifact deterministic. The live route inventory, shared `X-Correlation-Id`, and versioned `ETag` headers must remain aligned with the exported 67-path/94-operation contract.
 - Keep identity disabled when the complete provider contract is absent. Provider URLs use HTTPS outside loopback development; CORS origins are exact allowlist values.
 - Use UUIDs for operational identifiers and canonical ASCII business codes where needed.
 - Persist timestamps in UTC.
@@ -70,7 +72,7 @@ This repository contains a Python analytics plane and a Java operational backend
   and supplier data are server-derived/validated; issue cannot accept receipt
   finance fields. Reversals derive direction, allocation, supplier, and money
   from the original.
-- Use `BigDecimal`/`NUMERIC` for quantities and VND, explicit scale boundaries,
+- Use fixed-scale decimal numeric types for quantities and VND, explicit scale boundaries,
   deterministic `(expiry_date, received_at, id)` locks, and FEFO selection. A
   reconciliation query detects ledger, allocation, lot, and balance drift
   without mutating source data.
@@ -102,6 +104,7 @@ This repository contains a Python analytics plane and a Java operational backend
 - Cover both happy path and failure path where the contract can fail.
 - Do not weaken tests to hide a blocked integration gate.
 - Keep backend verification separate from analytics verification when the stacks diverge.
+- Treat the current phase gates as the acceptance baseline: Phase 1 backend contract gate is 459 surefire + 100 Failsafe/PostgreSQL tests, and the disposable auth spike gate is 16 unit + 7 PostgreSQL integration + 1 installed-Chrome E2E.
 
 ## Farm lifecycle standards
 

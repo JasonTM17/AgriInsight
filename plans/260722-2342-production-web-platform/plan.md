@@ -1,14 +1,23 @@
 ---
-title: "Production web and analytics platform"
-description: "Plan a Vietnamese-first Next 16 platform, real OIDC demo integration, secured Spring workflows, and verified Gold analytics surface without claiming public production release."
+title: Production web and analytics platform
+description: >-
+  Plan a Vietnamese-first Next 16 platform, real OIDC demo integration, secured
+  Spring workflows, and verified Gold analytics surface without claiming public
+  production release.
 status: pending
 priority: P1
 effort: 51d
-branch: "main"
-tags: [feature, frontend, backend, api, auth, infra]
+branch: main
+tags:
+  - feature
+  - frontend
+  - backend
+  - api
+  - auth
+  - infra
 blockedBy: []
 blocks: []
-created: 2026-07-22
+created: 2026-07-22T00:00:00.000Z
 ---
 
 # Production web and analytics platform
@@ -22,10 +31,11 @@ created: 2026-07-22
 
 ## Current State
 
-- No web app exists today.
+- No production web app exists yet; the disposable auth spike is isolated under `web-auth-spike/`.
 - Current product surface is Streamlit and local/internal.
-- Spring already exposes 86 secured routes that remain the domain source of truth.
-- Deterministic OpenAPI does not exist yet, so generated clients are unsafe to lock in now.
+- Spring exposes 94 secured operations that remain the domain source of truth, including the eight bounded Phase 1 Work/Admin reads.
+- Deterministic OpenAPI is checked in at 67 paths/94 operations and guarded by canonical regeneration; later generated clients can now lock to this artifact.
+- The auth spike rejected Better Auth 1.6.24 on an executable refresh race and selected `openid-client` 6.8.4 after 16 unit, 7 PostgreSQL, build, and real Chrome/Keycloak gates.
 - Analytics has verified Gold artifacts but no HTTP read layer.
 - The backend compose path has migrations/runtime but no demo identity/master bootstrap aligned to Gold canonical codes; without that boundary a production web UI would render empty or mismatched data.
 - Verified analytics footprint is 1.05M fact rows and 388.2 MB.
@@ -99,7 +109,7 @@ created: 2026-07-22
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [contract-freeze-and-auth-spike](./phase-01-contract-freeze-and-auth-spike.md) | Pending |
+| 1 | [contract-freeze-and-auth-spike](./phase-01-contract-freeze-and-auth-spike.md) | Completed |
 | 2 | [analytics-read-api](./phase-02-analytics-read-api.md) | Pending |
 | 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Pending |
 | 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Pending |
@@ -116,7 +126,7 @@ created: 2026-07-22
 
 | Phase | Entry criteria | Exit artifact | Rollback plan |
 |---|---|---|---|
-| 1 | none | route/auth contract matrix, missing Work/Admin GET models, deterministic Spring OpenAPI, auth spike report | remove additive reads/spec customizer and discard spike; keep current resource-server behavior untouched |
+| 1 | none | route/auth contract matrix, missing Work/Admin GET models, deterministic Spring OpenAPI, auth spike report | Completed |
 | 2 | Phase 1 | guarded demo bootstrap/reconciliation plus internal analytics HTTP contract | disable bootstrap/FastAPI; retain verified Streamlit demo and operational DB rollback |
 | 3 | Phases 1, 2 | Next app skeleton, web-owned DB session handling, generated clients and secured BFF helpers | disable web entrypoints, retain Streamlit-only operations |
 | 4 | Phase 3 | Field Ledger shell, navigation, copy and design gates for 8 areas | revert to minimal shell and hide incomplete areas |
@@ -160,7 +170,7 @@ Execution is sequential by default because generated contracts, the route regist
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Better Auth fails nonce/refresh/logout/concurrency needs | High | High | spike in Phase 1, fallback to `openid-client` 6, do not commit auth choice early |
+| Better Auth fails nonce/refresh/logout/concurrency needs | High | High | Resolved in Phase 1: exact 1.6.24 race failed, `openid-client` 6.8.4 selected with real issuer evidence |
 | Contract drift across 86 secured routes with no deterministic OpenAPI | High | High | deterministic checked-in spec, explicit BFF adapters, codegen drift and backend contract tests before feature phases |
 | Analytics artifact size and temp files exhaust C or D during build/query work | Medium | High | reuse `scripts/check-workspace-disk.ps1`; pause heavy work below warning thresholds C 10 GB/D 25 GB and fail all guarded work below C 8 GB/D 20 GB; keep temp/cache on D |
 | Demo-tenant analytics leaks broader data scope | Medium | High | Spring-derived scope checks, tenant enforcement in FastAPI, authorization tests |
@@ -206,7 +216,7 @@ Execution is sequential by default because generated contracts, the route regist
 - [phase-11-browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md)
 - [phase-12-container-release-and-docs](./phase-12-container-release-and-docs.md)
 - `./reports/` for auth spike, contract, performance, security, and release-gate evidence.
-- Verified planning facts supplied for this plan: current Streamlit state, 86 secured Spring routes, missing deterministic OpenAPI, missing analytics HTTP, verified 1.05M-row/388.2 MB analytics corpus, eight WebPs with provenance, Field Ledger design source, 8 planned areas, Docker Hub plus GHCR gated release target.
+- Initial planning facts and current deltas: Streamlit remains internal; Spring grew from 86 to 94 secured operations; deterministic OpenAPI is now complete while analytics HTTP remains missing; the verified 1.05M-row/388.2 MB analytics corpus, eight provenance-tracked WebPs, Field Ledger design source, 8 planned areas, and Docker Hub plus GHCR gated release target remain unchanged.
 
 ## Unresolved Deployment Inputs
 
@@ -226,6 +236,8 @@ Execution is sequential by default because generated contracts, the route regist
 - 2026-07-23: Verified disk policy from project docs: warn at C 10 GB/D 25 GB, fail at C 8 GB/D 20 GB. Latest check: C 14.240 GB, D 28.176 GB after earlier safe npm/pnpm cache cleanup; `tmp/`, artifacts, images, source, and Docker images remain preserved.
 - 2026-07-23: Generated, visually reviewed, stripped, and converted the missing Work and Administration visuals to 1440x810 WebP. Both stay below 350 KiB, have pinned SHA-256 values, and pass the visual-asset test suite; Phase 4 now owns catalog promotion/sync rather than image generation.
 - 2026-07-23: Completed the Full-tier whole-plan sweep across 13 Markdown files. Applied all 11 evidence-backed red-team findings, found 0 unresolved internal contradictions, and passed `ck plan validate` with 12 phases, 0 errors, and 0 warnings.
+- 2026-07-23: Completed Phase 1. Eight bounded Work/Admin reads passed real SQL/RLS coverage; the deterministic OpenAPI artifact froze 67 paths/94 operations; Better Auth 1.6.24 failed the exact-package race and `openid-client` 6.8.4 passed 16 unit, 7 PostgreSQL, build, and real Chrome/Keycloak E2E gates.
+- 2026-07-23: Independent blocker re-review resolved all seven original findings and returned `LAND` with 0 Critical/0 High. Latest disk check remained PASS at C 13.05 GB and D 25.74 GB; Big Data and all eight WebPs remain preserved.
 - 2026-07-22: User-interview tooling is unavailable in the current execution mode. Deployment-specific values remain explicit protected gates above; no answer is fabricated.
 
 ## Red Team Review
@@ -239,7 +251,7 @@ The three requested reviewer workers hit an external usage limit, so the control
 
 | # | Finding | Severity | Disposition | Applied To |
 |---|---|---|---|---|
-| 1 | No demo identity/master bootstrap reconciled Spring with Gold | Critical | Accept | Phases 2, 11, 12 |
+| 1 | No demo identity/master bootstrap reconciled Spring with Gold | Critical | Accept | Completed |
 | 2 | New Work GETs could accidentally reuse append-only authorization | High | Accept | Phase 1 |
 | 3 | Multi-role analytics scope precedence was undefined | High | Accept | Phase 2 |
 | 4 | Auth spike did not prove the real Next 16 integration boundary | High | Accept | Phase 1 |

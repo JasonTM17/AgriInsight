@@ -19,6 +19,8 @@ The analytics plane is the current validated MVP.
 - Python pipeline generates Bronze, Silver, quarantine, warehouse, Gold, and manifest artifacts.
 - Streamlit reads Gold contracts and renders operational views for the analytics MVP.
 - Reporting is derived from normalized Gold inputs and stays local/internal.
+- The demo catalog now includes eight generated WebP visuals; they are UI
+  evidence assets, not source facts.
 
 ```mermaid
 flowchart LR
@@ -48,6 +50,12 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - correlation IDs and redacted `application/problem+json` responses
 - liveness/readiness split and Flyway V1-V19 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, and transactional outbox lifecycle guards
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
+- Phase 1 contract freeze adds eight additive bounded GET reads:
+  activity assignments, activity logs, activity log correction history, user
+  roles, external-identity link status, farm assignments, warehouse
+  assignments, and tenant audit events.
+- Deterministic OpenAPI export is frozen at 67 paths and 94 operations. Every
+  operation carries `X-Correlation-Id`; 13 versioned detail GETs carry `ETag`.
 
 ```mermaid
 flowchart LR
@@ -61,7 +69,7 @@ flowchart LR
     R --> D["Unregistered route: deny + audit"]
 ```
 
-The request never accepts tenant scope from a header, path, or JWT tenant claim. The exact identity bootstrap is the only pre-tenant database operation. `TenantPrincipalLoader` then opens a short transaction, binds the database-verified tenant, loads the active profile plus fixed roles/permissions, closes that transaction, and only then lets Spring evaluate the exact route registry.
+The request never accepts tenant scope from a header, path, or JWT tenant claim. The exact identity bootstrap is the only pre-tenant database operation. The principal-loading step then opens a short transaction, binds the database-verified tenant, loads the active profile plus fixed roles/permissions, closes that transaction, and only then lets Spring evaluate the exact route registry.
 
 Every operational service entry point owns a separate `@TenantScoped` transaction. Its outer aspect binds the same tenant and authenticated profile with transaction-local `set_config` before any repository query. Missing or mismatched context fails closed, and the restricted runtime role remains subject to both application predicates and PostgreSQL FORCE RLS.
 
@@ -81,7 +89,7 @@ Phase 5 adds a PostgreSQL operational inventory lens without changing Python Gol
 
 V12 creates the inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignment lifecycle, and V15 adds profile-aware, role-aware `inventory_warehouse_access(warehouse_id, write)` policies plus tenant-leading indexes. Reads and writes are separate policy paths: Tenant Admin can write tenant inventory; assigned Inventory Manager can read/write; Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read; Supplier has no inventory permission. The API registry covers warehouse, material, supplier, assignment, balance, lot, movement, and reversal routes; mutations require idempotency keys and strong `If-Match` where a version is changed.
 
-Springdoc is disabled by default. `/v3/api-docs` and Swagger UI are exposed only when API docs are explicitly enabled in a development profile (or behind authenticated non-development access); inventory summaries and examples are verified by `InventoryOpenApiContractTest`.
+Springdoc is disabled by default. `/v3/api-docs` and Swagger UI are exposed only when API docs are explicitly enabled in a development profile (or behind authenticated non-development access); inventory summaries and examples are verified by the inventory OpenAPI contract checks.
 
 ## Operating-cost and reporting plane
 
@@ -120,9 +128,11 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Backend phase 4 operations | Accepted 2026-07-22; farm/season/workforce/activity/log/harvest gates green |
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
+| Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
 | Backend phase 7 release boundary | Core verified 2026-07-22; V18-V19 outbox, fenced drain, images, CI, recovery wrappers; protected release/recovery approval remains open |
+| Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Hosted CI | Run `29932250984` passed Java, Python, secret/dependency, and both image scan/smoke gates 5/5 at commit `8d8463f` |
 | Phase image publication | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
-The right way to read the repo is: analytics and backend phases 1-6 are accepted, while Phase 7's outbox, hosted CI, image and recovery evidence is verified. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.
+The right way to read the repo is: analytics and backend phases 1-6 are accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI artifact, and Phase 7's outbox, hosted CI, image and recovery evidence is verified. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.

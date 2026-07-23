@@ -172,10 +172,13 @@ validated sensor facts after intentional Bronze quality fixtures. The latest
 verified run passed quality/checksum/warehouse gates with a 388.2 MB artifact
 set. Do not commit generated artifacts.
 
-The dashboard now includes six optimized WebP visuals under
+The repository now includes eight optimized WebP visuals under
 [`dashboard/assets/generated/`](dashboard/assets/generated/), with captions and
-an explicit **AI-generated demo evidence** warning on Crop Health. The catalog
+an explicit **AI-generated demo evidence** warning on Crop Health. They cover
+Executive, Farm Performance, Inventory, Cost Analysis, Crop Health, Data
+Quality, Work, and Administration. The catalog
 records dimensions, SHA-256, prompt intent, accessible descriptions, and the
-evidence boundary. A 1280 × 640 social-preview source is available at
+evidence boundary; Phase 4 will promote the complete set into the production
+web asset manifest. A 1280 × 640 social-preview source is available at
 [`docs/assets/agriinsight-social-preview.jpg`](docs/assets/agriinsight-social-preview.jpg);
 GitHub account settings may still require a one-time manual upload.

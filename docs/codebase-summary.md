@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-22
+Verified snapshot: 2026-07-23
 
 ## Repository shape
 
@@ -29,7 +29,7 @@ warehouse. It does not write PostgreSQL operational state. The CLI keeps a fast
 365 days, 24 readings/day); the manifest stores resolved dimensions and a
 configuration-fingerprinted run identity.
 
-The dashboard uses six generated WebP visuals in `dashboard/assets/generated/`.
+The dashboard uses eight generated WebP visuals in `dashboard/assets/generated/`.
 They are contextual UI assets rather than source facts; Crop Health marks its
 image as AI-generated demo evidence and never assigns it an observation ID.
 The local Streamlit theme follows the Field Ledger palette from the CK FE
@@ -60,6 +60,22 @@ profile and database permissions, then binds `app.tenant_id` and
 `app.profile_id` transaction-locally. JWT roles and tenant claims are not
 trusted for authorization. Runtime roles are restricted, non-owner, and
 subject to PostgreSQL ENABLE/FORCE RLS.
+
+Phase 1 contract freeze adds eight bounded GET reads that stay additive and
+non-enumerating:
+
+- `GET /api/v1/activities/{id}/assignments`
+- `GET /api/v1/activities/{id}/logs`
+- `GET /api/v1/activities/{id}/logs/{logId}/history`
+- `GET /api/v1/users/{id}/roles`
+- `GET /api/v1/users/{id}/external-identities`
+- `GET /api/v1/farm-assignments`
+- `GET /api/v1/warehouse-assignments`
+- `GET /api/v1/audit-events`
+
+The deterministic backend OpenAPI artifact is frozen at 67 paths and 94
+operations. Every operation carries `X-Correlation-Id`; 13 versioned detail
+GETs also expose `ETag`.
 
 ## Inventory contract summary
 
@@ -104,6 +120,8 @@ subject to PostgreSQL ENABLE/FORCE RLS.
 
 ## Verification snapshot
 
+- Backend phase-1 contract gate (2026-07-23): 459 surefire tests + 100
+  Failsafe/PostgreSQL integration tests; zero failures, errors, and skips.
 - Backend guarded `mvn verify` (2026-07-22): 622 tests, including 98 Failsafe
   integration tests; zero failures, errors, and skips.
 - Hosted GitHub Actions run `29932250984` passed 5/5 jobs for commit
@@ -116,7 +134,11 @@ subject to PostgreSQL ENABLE/FORCE RLS.
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
 - OpenAPI contract: `/v3/api-docs` operation summaries and request examples
-  verified by `InventoryOpenApiContractTest`.
+  verified by the inventory OpenAPI contract checks.
+- Phase 1 contract export:
+  `backend/src/main/resources/contracts/agriinsight-api-v1.openapi.json`
+  regenerated deterministically with SHA-256
+  `673b2dabb8853d75fff5b719fd1ecfaef350b0b076170e78a63b05fedbb7dfa8`.
 - Analytics: Python 76 passed, 3 expected optional-PDF skips; compileall and
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
@@ -126,11 +148,16 @@ subject to PostgreSQL ENABLE/FORCE RLS.
 - Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
   Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
   smoke passed.
+- Disposable web-auth spike: `openid-client` 6.8.4 won; Better Auth 1.6.24
+  failed the executable refresh-fence harness. Real issuer gate remains proven
+  against Keycloak 26.7.0, PostgreSQL 18, Next 16.2.11, and installed Chrome.
+  Final auth gate: 16 unit, 7 PostgreSQL integration, 1 installed-Chrome E2E.
 
 ## Next boundary
 
-Phase 5 inventory/procurement and Phase 6 operating-cost/reporting separation
-are accepted. Phase 7 now has V18-V19 outbox, CI, image scanning,
+Phase 1 contract freeze is complete and preserved in the checked-in OpenAPI
+artifact. Phase 5 inventory/procurement and Phase 6 operating-cost/reporting
+separation are accepted. Phase 7 now has V18-V19 outbox, CI, image scanning,
 SBOM/provenance, Docker Hub/GHCR phase publication, backup/restore, and release
 metadata evidence. The next integration boundary is a separately authorized
 outbox consumer/realtime path; no production-release claim is made while
