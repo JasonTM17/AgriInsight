@@ -26,7 +26,7 @@ class ArtifactBoundaryTest {
 
         assertThat(compose)
                 .doesNotContain("./artifacts", "/app/artifacts")
-                .contains("./backend/.runtime/postgres:/var/lib/postgresql/data")
+                .contains("./backend/.runtime/postgres:/var/lib/postgresql")
                 .contains("127.0.0.1:${AGRIINSIGHT_BACKEND_PORT:-8080}:8080");
     }
 

@@ -9,7 +9,7 @@ services:
     ports:
       - "127.0.0.1:${AGRIINSIGHT_POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ./backend/.runtime/postgres:/var/lib/postgresql/data
+      - ./backend/.runtime/postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d agriinsight"]
       interval: 5s
