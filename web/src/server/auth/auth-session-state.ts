@@ -52,17 +52,21 @@ export function toValidSession(
   cipher: TokenCipher,
   session: StoredSession
 ): ValidSession {
-  assertCurrentKey(cipher, session.tokenKeyId);
+  assertAvailableKey(cipher, session.tokenKeyId);
   return {
-    accessToken: cipher.open(session.accessTokenCiphertext, "session:access"),
+    accessToken: cipher.openWithKeyId(
+      session.tokenKeyId,
+      session.accessTokenCiphertext,
+      "session:access"
+    ),
     expiresAt: session.accessTokenExpiresAt,
     sessionVersion: session.sessionVersion,
     subject: session.subject
   };
 }
 
-export function assertCurrentKey(cipher: TokenCipher, keyId: string): void {
-  if (keyId !== cipher.keyId) throw invalidSessionError();
+export function assertAvailableKey(cipher: TokenCipher, keyId: string): void {
+  if (!cipher.canOpen(keyId)) throw invalidSessionError();
 }
 
 export async function requireUsableSession(

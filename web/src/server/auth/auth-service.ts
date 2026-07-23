@@ -7,7 +7,7 @@ import type { OidcProviderAdapter } from "@/server/auth/provider";
 import { allowlistedReturnPath } from "@/server/auth/request-policy";
 import type { SessionStore, StoredSession } from "@/server/auth/session-contracts";
 import {
-  assertCurrentKey,
+  assertAvailableKey,
   createSessionInput,
   encryptedValue,
   requireUsableSession,
@@ -96,12 +96,17 @@ export class AuthService {
         "Trạng thái đăng nhập không hợp lệ hoặc đã hết hạn."
       );
     }
-    assertCurrentKey(this.cipher, preauth.tokenKeyId);
+    assertAvailableKey(this.cipher, preauth.tokenKeyId);
     const tokens = await this.provider.exchangeAuthorizationCode({
       callbackUrl,
-      expectedNonce: this.cipher.open(preauth.nonceCiphertext, "preauth:nonce"),
+      expectedNonce: this.cipher.openWithKeyId(
+        preauth.tokenKeyId,
+        preauth.nonceCiphertext,
+        "preauth:nonce"
+      ),
       expectedState: state,
-      pkceVerifier: this.cipher.open(
+      pkceVerifier: this.cipher.openWithKeyId(
+        preauth.tokenKeyId,
         preauth.pkceVerifierCiphertext,
         "preauth:pkce"
       )
@@ -169,11 +174,15 @@ export class AuthService {
       hashOpaqueToken(sessionToken),
       now
     );
-    if (!session || session.tokenKeyId !== this.cipher.keyId) return null;
+    if (!session || !this.cipher.canOpen(session.tokenKeyId)) return null;
     if (session.refreshTokenCiphertext) {
       try {
         await this.provider.bestEffortRevoke(
-          this.cipher.open(session.refreshTokenCiphertext, "session:refresh")
+          this.cipher.openWithKeyId(
+            session.tokenKeyId,
+            session.refreshTokenCiphertext,
+            "session:refresh"
+          )
         );
       } catch {
         // Local revocation remains authoritative when provider cleanup fails.
@@ -181,7 +190,11 @@ export class AuthService {
     }
     try {
       const idToken = session.idTokenCiphertext
-        ? this.cipher.open(session.idTokenCiphertext, "session:id")
+        ? this.cipher.openWithKeyId(
+            session.tokenKeyId,
+            session.idTokenCiphertext,
+            "session:id"
+          )
         : undefined;
       return await this.provider.buildEndSessionRedirect(idToken, this.env.baseUrl);
     } catch {

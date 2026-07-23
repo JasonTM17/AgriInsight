@@ -39,7 +39,11 @@ export function getAuthRuntime(): AuthRuntime {
     auth: new AuthService(
       env,
       store,
-      new TokenCipher(env.keyId, env.encryptionKey),
+      new TokenCipher(
+        env.keyId,
+        env.encryptionKey,
+        env.previousEncryptionKeys
+      ),
       provider
     ),
     env,

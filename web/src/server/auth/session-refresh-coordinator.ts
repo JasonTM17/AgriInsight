@@ -25,13 +25,14 @@ export async function refreshLeasedSession(
   cipher: TokenCipher,
   provider: OidcProviderAdapter
 ): Promise<ValidSession> {
-  if (lease.tokenKeyId !== cipher.keyId) {
+  if (!cipher.canOpen(lease.tokenKeyId)) {
     await store.revokeRefreshLease(lease, now);
     throw invalidSessionError();
   }
 
   try {
-    const refreshToken = cipher.open(
+    const refreshToken = cipher.openWithKeyId(
+      lease.tokenKeyId,
       lease.refreshTokenCiphertext,
       "session:refresh"
     );

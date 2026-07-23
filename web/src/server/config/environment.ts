@@ -1,5 +1,7 @@
 import "server-only";
 
+import { timingSafeEqual } from "node:crypto";
+
 import { AuthError } from "@/server/auth/auth-error";
 
 export type WebEnvironment = Readonly<{
@@ -15,8 +17,10 @@ export type WebEnvironment = Readonly<{
   encryptionKey: Buffer;
   issuer: URL;
   keyId: string;
+  previousEncryptionKeys: ReadonlyMap<string, Buffer>;
   sessionLifetimeSeconds: number;
   trustForwardedHeaders: boolean;
+  trustedProxyKey?: Buffer;
 }>;
 
 const CALLBACK_PATH = "/api/auth/callback";
@@ -47,6 +51,36 @@ function parseKey(source: NodeJS.ProcessEnv, name: string): Buffer {
   const key = Buffer.from(required(source, name), "base64");
   if (key.length !== 32) throw new Error(`${name} must decode to 32 bytes`);
   return key;
+}
+
+function parsePreviousKeys(
+  source: NodeJS.ProcessEnv,
+  currentKeyId: string
+): ReadonlyMap<string, Buffer> {
+  const raw = source.AGRIINSIGHT_WEB_SESSION_PREVIOUS_KEYS_JSON?.trim() || "{}";
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+    throw new Error("AGRIINSIGHT_WEB_SESSION_PREVIOUS_KEYS_JSON must be an object");
+  }
+  const entries = Object.entries(parsed);
+  if (entries.length > 4) {
+    throw new Error("At most four previous session encryption keys are allowed");
+  }
+  const keys = new Map<string, Buffer>();
+  for (const [keyId, encoded] of entries) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(keyId) || keyId === currentKeyId) {
+      throw new Error("Previous session key IDs must be valid and distinct");
+    }
+    if (typeof encoded !== "string") {
+      throw new Error("Previous session encryption keys must be base64 strings");
+    }
+    const key = Buffer.from(encoded, "base64");
+    if (key.length !== 32) {
+      throw new Error("Every previous session encryption key must decode to 32 bytes");
+    }
+    keys.set(keyId, key);
+  }
+  return keys;
 }
 
 function parseServiceUrl(value: string, name: string): URL {
@@ -81,6 +115,11 @@ export function loadWebEnvironment(
   if (!allowedHosts.has(baseUrl.host.toLowerCase())) {
     throw new Error("AGRIINSIGHT_WEB_ALLOWED_HOSTS must include the configured base host");
   }
+  const keyId = required(source, "AGRIINSIGHT_WEB_TOKEN_KEY_ID");
+  const trustForwardedHeaders = parseBoolean(
+    source.AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS,
+    "AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS"
+  );
 
   return {
     allowedHosts,
@@ -103,15 +142,16 @@ export function loadWebEnvironment(
       "AGRIINSIGHT_WEB_SESSION_ENCRYPTION_KEY_BASE64"
     ),
     issuer,
-    keyId: required(source, "AGRIINSIGHT_WEB_TOKEN_KEY_ID"),
+    keyId,
+    previousEncryptionKeys: parsePreviousKeys(source, keyId),
     sessionLifetimeSeconds: parsePositiveInteger(
       source.AGRIINSIGHT_WEB_SESSION_LIFETIME_SECONDS,
       28_800
     ),
-    trustForwardedHeaders: parseBoolean(
-      source.AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS,
-      "AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS"
-    )
+    trustForwardedHeaders,
+    trustedProxyKey: trustForwardedHeaders
+      ? parseKey(source, "AGRIINSIGHT_WEB_TRUSTED_PROXY_KEY_BASE64")
+      : undefined
   };
 }
 
@@ -126,7 +166,17 @@ export function assertTrustedRequest(request: Request, env: WebEnvironment): URL
     throw new AuthError("invalid_host", 400, "Forwarded headers are not trusted.");
   }
   if (env.trustForwardedHeaders) {
+    const attestation = request.headers.get("x-agriinsight-proxy-attestation");
+    let suppliedKey: Buffer;
+    try {
+      suppliedKey = Buffer.from(attestation ?? "", "base64");
+    } catch {
+      suppliedKey = Buffer.alloc(0);
+    }
     if (
+      !env.trustedProxyKey ||
+      suppliedKey.length !== env.trustedProxyKey.length ||
+      !timingSafeEqual(suppliedKey, env.trustedProxyKey) ||
       forwardedHost !== env.baseUrl.host.toLowerCase() ||
       forwardedProto !== env.baseUrl.protocol.slice(0, -1)
     ) {

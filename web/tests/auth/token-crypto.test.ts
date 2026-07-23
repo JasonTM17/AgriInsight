@@ -29,4 +29,22 @@ describe("server token cryptography", () => {
     expect(verifyBoundValue(signed, "session-a", key)).toBe(true);
     expect(verifyBoundValue(signed, "session-b", key)).toBe(false);
   });
+
+  it("opens prior-key ciphertext during a bounded key rotation window", () => {
+    const oldKey = Buffer.alloc(32, 4);
+    const oldCipher = new TokenCipher("old-v1", oldKey);
+    const sealed = oldCipher.seal("rotating-token", "session:access");
+    const ring = new TokenCipher(
+      "current-v2",
+      Buffer.alloc(32, 5),
+      new Map([["old-v1", oldKey]])
+    );
+    expect(
+      ring.openWithKeyId("old-v1", sealed, "session:access")
+    ).toBe("rotating-token");
+    expect(ring.canOpen("retired-v0")).toBe(false);
+    expect(() =>
+      ring.openWithKeyId("retired-v0", sealed, "session:access")
+    ).toThrow("Unknown token encryption key");
+  });
 });

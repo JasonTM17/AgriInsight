@@ -55,4 +55,34 @@ describe("effective host policy", () => {
     });
     expect(() => assertTrustedRequest(request, env)).toThrow();
   });
+
+  it("requires proxy attestation before trusting forwarded host metadata", () => {
+    const proxyKey = Buffer.alloc(32, 8).toString("base64");
+    const env = loadWebEnvironment(
+      source({
+        AGRIINSIGHT_WEB_ALLOWED_HOSTS:
+          "app.agriinsight.example,internal-proxy:3100",
+        AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS: "true",
+        AGRIINSIGHT_WEB_TRUSTED_PROXY_KEY_BASE64: proxyKey
+      })
+    );
+    const headers = {
+      Host: "internal-proxy:3100",
+      "X-Forwarded-Host": "app.agriinsight.example",
+      "X-Forwarded-Proto": "https"
+    };
+    const unattested = new Request("http://internal-proxy:3100/login", {
+      headers
+    });
+    expect(() => assertTrustedRequest(unattested, env)).toThrow(
+      "Forwarded host is not allowed"
+    );
+    const attested = new Request("http://internal-proxy:3100/login", {
+      headers: {
+        ...headers,
+        "X-AgriInsight-Proxy-Attestation": proxyKey
+      }
+    });
+    expect(assertTrustedRequest(attested, env).pathname).toBe("/login");
+  });
 });
