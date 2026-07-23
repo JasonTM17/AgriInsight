@@ -7,6 +7,7 @@ This guide documents the verified local/runtime contracts through Backend Phase 
 | Component | Current use | Exposure |
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
+| Internal analytics API | FastAPI read-only aggregate surface | Loopback/internal network only; Spring `/api/v1/me` remains the authorization source |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
@@ -44,6 +45,53 @@ alt descriptions, and Crop Health disclaimer are maintained in
 `dashboard/assets/generated/README.md`. The social-preview source is kept under
 `docs/assets/`; uploading it to GitHub Settings is a separate account-level
 action.
+
+## Phase 2 analytics API and demo tenant
+
+The internal analytics API serves only checksum-verified, already-aggregated
+Gold/quality datasets. It never reads Bronze/Silver or writes artifacts,
+SQLite, or PostgreSQL business tables during a request. Every request forwards
+the caller bearer to Spring `/api/v1/me`, compares the returned tenant UUID to
+the configured demo UUID, and intersects farm/warehouse filters with the live
+Spring catalogs.
+
+Install the API extra and provide the non-secret runtime contract:
+
+```powershell
+python -m pip install -e ".[api]"
+$env:AGRIINSIGHT_ANALYTICS_ARTIFACT_ROOT = (Resolve-Path "artifacts/big-data").Path
+$env:AGRIINSIGHT_ANALYTICS_DEMO_TENANT_ID = "20000000-0000-4000-8000-000000000001"
+$env:AGRIINSIGHT_ANALYTICS_RECONCILIATION_REPORT = (Resolve-Path "_tmp/demo-bootstrap/reconciliation.json").Path
+$env:AGRIINSIGHT_ANALYTICS_SPRING_BASE_URL = "http://127.0.0.1:8080"
+$env:AGRIINSIGHT_ANALYTICS_BIND_HOST = "127.0.0.1"
+$env:AGRIINSIGHT_ANALYTICS_PORT = "8081"
+agriinsight-analytics
+```
+
+`AGRIINSIGHT_ANALYTICS_MAX_ARTIFACT_AGE_HOURS` defaults to 48 and
+`AGRIINSIGHT_ANALYTICS_MAX_RECONCILIATION_AGE_HOURS` defaults to 24. The
+reconciliation report must be regenerated after any demo master, assignment,
+or artifact change; a stale, mismatched, or future report keeps readiness
+closed. `/health/live` is process-only, `/health/ready` is the reconciliation
+gate, and `/internal/v1/*` is GET-only.
+
+The explicit local demo overlay isolates its Compose project as
+`agriinsight-demo`, uses `backend/.runtime/postgres-demo`, and starts PostgreSQL
+with the server-side marker `app.agriinsight_demo_database=true`. The wrapper
+also requires `-ConfirmLocalDemo`, loopback, the exact `agriinsight_demo`
+database, a process-only `PGPASSWORD`, and a D-local `_tmp` output directory:
+
+```powershell
+$env:PGPASSWORD = "<set in the process; never write it to a file>"
+docker compose -f compose.yaml -f compose.backend.yaml -f compose.demo.yaml `
+  --profile backend up -d postgres backend-role-bootstrap backend-migrate
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap-demo-environment.ps1 `
+  -ConfirmLocalDemo -DatabasePort 5432 -OutputDirectory _tmp/demo-bootstrap
+```
+
+The generated bundle and reconciliation report must carry the same
+`demoTenantId`, `runId`, and `manifestFingerprint`. Keep the report under
+ignored `_tmp`; do not commit credentials or generated Big Data files.
 
 ## Backend database settings
 

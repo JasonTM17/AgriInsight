@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Analytics read API"
-status: pending
+status: completed
 priority: P1
 effort: "7d"
 dependencies: [1]
@@ -152,18 +152,18 @@ Establish one explicit demo-tenant integration boundary, then add an internal Fa
 
 ## Acceptance
 
-- [ ] One shared snapshot loader verifies arbitrary dataset sets against `manifest.json` checksums.
-- [ ] Explicit demo bootstrap creates seven real personas and operational masters/samples aligned to verified artifact codes; it is idempotent, transactional, credential-free in source, D-temp-only, and refuses non-demo targets.
-- [ ] Big-data canonical master reconciliation passes one-to-one before analytics readiness; missing/duplicate/inactive codes fail closed.
-- [ ] Internal FastAPI endpoints are GET-only, bounded, documented, and demo-tenant-gated through Spring `/me` plus scoped farm/warehouse catalog calls.
-- [ ] `/me.tenantId` is compared to the configured demo UUID; code/display names never authorize access.
-- [ ] Endpoint-specific role/permission policy and Spring-approved canonical farm/warehouse scope are enforced exactly as the matrix states.
-- [ ] Multi-role grants are unioned per domain then intersected with resource scope; unrelated roles never widen access.
-- [ ] Non-demo tenants and foreign farm/warehouse filters fail closed.
-- [ ] Deterministic `docs/contracts/agriinsight-analytics-v1.openapi.json` and drift tests cover typed success/error envelopes.
-- [ ] Verified aggregate snapshots are cached by manifest fingerprint and invalidated safely; raw million-row Silver data is never request-loaded.
-- [ ] The current Streamlit dashboard remains green after the shared-loader extraction.
-- [ ] No endpoint writes artifacts, SQLite, or PostgreSQL business tables.
+- [x] One shared snapshot loader verifies arbitrary dataset sets against `manifest.json` checksums.
+- [x] Explicit demo bootstrap creates seven real personas and operational masters/samples aligned to verified artifact codes; it is idempotent, transactional, credential-free in source, D-temp-only, and refuses non-demo targets.
+- [x] Big-data canonical master reconciliation passes one-to-one before analytics readiness; missing/duplicate/inactive codes fail closed.
+- [x] Internal FastAPI endpoints are GET-only, bounded, documented, and demo-tenant-gated through Spring `/me` plus scoped farm/warehouse catalog calls.
+- [x] `/me.tenantId` is compared to the configured demo UUID; code/display names never authorize access.
+- [x] Endpoint-specific role/permission policy and Spring-approved canonical farm/warehouse scope are enforced exactly as the matrix states.
+- [x] Multi-role grants are unioned per domain then intersected with resource scope; unrelated roles never widen access.
+- [x] Non-demo tenants and foreign farm/warehouse filters fail closed.
+- [x] Deterministic `docs/contracts/agriinsight-analytics-v1.openapi.json` and drift tests cover typed success/error envelopes.
+- [x] Verified aggregate snapshots are cached by manifest fingerprint and invalidated safely; raw million-row Silver data is never request-loaded.
+- [x] The current Streamlit dashboard remains green after the shared-loader extraction.
+- [x] No endpoint writes artifacts, SQLite, or PostgreSQL business tables.
 
 ## Risks and rollback
 
@@ -196,15 +196,17 @@ Rollback: disable the FastAPI service and keep Streamlit as the only analytics U
 
 ## Success Criteria
 
-- [ ] Shared artifact verification is reused instead of duplicated.
-- [ ] Analytics reads are internal, bounded, and read-only.
-- [ ] Demo-tenant gating is enforced through Spring-authenticated scope, not caller claims.
-- [ ] Dashboard regression and new FastAPI tests both pass.
+- [x] Shared artifact verification is reused instead of duplicated.
+- [x] Analytics reads are internal, bounded, and read-only.
+- [x] Demo-tenant gating is enforced through Spring-authenticated scope, not caller claims.
+- [x] Dashboard regression and new FastAPI tests both pass.
 
 ## Validation log
 
 - Tier: Standard
-- Claims checked: 9
-- Verified: 9
+- Claims checked: 12
+- Verified: 12
 - Failed: 0
 - Unverified: 0
+- Evidence: `plans/260722-2342-production-web-platform/reports/test-evidence-2026-07-23-phase2.md`
+- Review: `plans/260722-2342-production-web-platform/reports/code-review-2026-07-23-phase2.md`

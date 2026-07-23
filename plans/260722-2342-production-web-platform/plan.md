@@ -36,7 +36,9 @@ created: 2026-07-22T00:00:00.000Z
 - Spring exposes 94 secured operations that remain the domain source of truth, including the eight bounded Phase 1 Work/Admin reads.
 - Deterministic OpenAPI is checked in at 67 paths/94 operations and guarded by canonical regeneration; later generated clients can now lock to this artifact.
 - The auth spike rejected Better Auth 1.6.24 on an executable refresh race and selected `openid-client` 6.8.4 after 16 unit, 7 PostgreSQL, build, and real Chrome/Keycloak gates.
-- Analytics has verified Gold artifacts but no HTTP read layer.
+- Analytics Phase 2 now has a typed, scoped FastAPI read layer over verified
+  Gold/quality artifacts; the authenticated web/BFF consumer remains a later
+  phase.
 - The backend compose path has migrations/runtime but no demo identity/master bootstrap aligned to Gold canonical codes; without that boundary a production web UI would render empty or mismatched data.
 - Verified analytics footprint is 1.05M fact rows and 388.2 MB.
 - Eight generated WebPs now exist, including reviewed Work and Administration visuals; Phase 4 promotes them into the machine-readable catalog and deterministic web sync.
@@ -110,7 +112,7 @@ created: 2026-07-22T00:00:00.000Z
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [contract-freeze-and-auth-spike](./phase-01-contract-freeze-and-auth-spike.md) | Completed |
-| 2 | [analytics-read-api](./phase-02-analytics-read-api.md) | Pending |
+| 2 | [analytics-read-api](./phase-02-analytics-read-api.md) | Completed locally 2026-07-23 |
 | 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Pending |
 | 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Pending |
 | 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | Pending |
@@ -216,7 +218,13 @@ Execution is sequential by default because generated contracts, the route regist
 - [phase-11-browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md)
 - [phase-12-container-release-and-docs](./phase-12-container-release-and-docs.md)
 - `./reports/` for auth spike, contract, performance, security, and release-gate evidence.
-- Initial planning facts and current deltas: Streamlit remains internal; Spring grew from 86 to 94 secured operations; deterministic OpenAPI is now complete while analytics HTTP remains missing; the verified 1.05M-row/388.2 MB analytics corpus, eight provenance-tracked WebPs, Field Ledger design source, 8 planned areas, and Docker Hub plus GHCR gated release target remain unchanged.
+- Initial planning facts and current deltas: Streamlit remains internal; Spring
+  grew from 86 to 94 secured operations; deterministic OpenAPI and the
+  internal analytics HTTP surface are now locally verified; the authenticated
+  browser/BFF consumer remains later work. The verified 1.05M-row/388.2 MB
+  analytics corpus, eight provenance-tracked WebPs, Field Ledger design source,
+  8 planned areas, and Docker Hub plus GHCR gated release target remain
+  unchanged.
 
 ## Unresolved Deployment Inputs
 
@@ -231,6 +239,7 @@ Execution is sequential by default because generated contracts, the route regist
 ## Validation Log
 
 - 2026-07-22: `HOLD SCOPE` inherited from the user's repeated request for a complete, polished eight-area application with real Big Data and generated imagery. Realtime, ML, chatbot, and fake data remain out of scope.
+- 2026-07-23: Completed Analytics Phase 2 locally: typed FastAPI GET surface, guarded seven-persona demo bootstrap, one-to-one Big Data reconciliation, deterministic OpenAPI, final CK review, Python 125-pass gate, backend 463-pass package gate, and packaged Flyway exit probes. The internal API is not yet an authenticated browser/BFF product surface.
 - 2026-07-22: Verified the repository has no production web package, deterministic Spring OpenAPI, or analytics HTTP service; those are prerequisites, not assumed capabilities.
 - 2026-07-22: Rejected Auth.js v5 because the stable registry line is v4 and v5 remains prerelease. Phase 1 evaluates stable Better Auth first and pinned `openid-client` 6 as fallback.
 - 2026-07-23: Verified disk policy from project docs: warn at C 10 GB/D 25 GB, fail at C 8 GB/D 20 GB. Latest check: C 14.240 GB, D 28.176 GB after earlier safe npm/pnpm cache cleanup; `tmp/`, artifacts, images, source, and Docker images remain preserved.

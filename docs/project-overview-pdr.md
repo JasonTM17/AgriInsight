@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.7
-Updated: 2026-07-22
-Status: backend Phases 1-6 accepted; Phase 7 core verified; protected production release/recovery approvals remain open
+Version: 0.8
+Updated: 2026-07-23
+Status: backend Phases 1-6 accepted; Analytics Phase 2 implementation locally verified; Phase 7 core verified; protected production release/recovery approvals remain open
 
 ## Product goal
 
@@ -62,6 +62,14 @@ and [architecture](./architecture.md) for the normative boundaries.
   configuration; never make Swagger a production data bypass.
 - Provide a named, deterministic `big-data` profile for demonstrations and
   local performance exploration without changing the fast standard profile.
+- Provide an internal, GET-only FastAPI analytics read boundary over
+  checksum-verified Gold/quality aggregates, gated by Spring `/api/v1/me`, a
+  configured demo tenant UUID, live canonical farm/warehouse scope, and a
+  fresh cross-store reconciliation report.
+- Keep the explicit local demo bootstrap transactional, loopback-only,
+  server-marker-attested, credential-free in source, and isolated under the
+  `agriinsight-demo` Compose project; never run it implicitly during normal
+  application startup.
 - Use contextual first-party visuals with provenance/alt descriptions; label
   generated Crop Health imagery as demo evidence and never treat it as a source
   observation.
@@ -77,6 +85,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
 | 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Core verified; production release gated |
+| Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Implementation locally verified 2026-07-23; CK review/docs/frontend handoff gates remain |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):

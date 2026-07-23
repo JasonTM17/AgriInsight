@@ -5,6 +5,7 @@ AgriInsight is split into two planes.
 ## Contents
 
 - [Analytics plane](#analytics-plane) - current Bronze/Silver/Gold pipeline, artifacts, and dashboard.
+- [Internal analytics API](#internal-analytics-api) - read-only, Spring-gated Gold API and cache boundary.
 - [Operational backend](#operational-backend) - separate Java Spring boundary for operational state.
 - [Inventory and procurement plane](#inventory-and-procurement-plane) - PostgreSQL operational ledger and RLS.
 - [Operating-cost and reporting plane](#operating-cost-and-reporting-plane) - separate finance lens and summaries.
@@ -30,6 +31,38 @@ flowchart LR
     D --> E["Warehouse and Gold"]
     E --> F["Dashboard and reports"]
 ```
+
+## Internal analytics API
+
+The Phase 2 FastAPI service is an internal read surface over one immutable,
+checksum-verified snapshot. Its request path loads only bounded Gold and
+`quality/data_quality_report.json` datasets, validates exact DTO columns, and
+returns typed envelopes with lineage, freshness, scope, and correlation-aware
+errors. Raw million-row Silver facts remain artifact-side and are never loaded
+by an HTTP request.
+
+Authorization is deliberately split across two sources: Spring
+`/api/v1/me` supplies the authenticated tenant, roles, permissions, and live
+farm/warehouse catalogs; the configured demo UUID is the only tenant isolation
+key. Tenant-wide grants are unioned per analytics domain, while manager grants
+are intersected with Spring-returned canonical codes. Client-supplied foreign
+farm or warehouse filters fail closed before artifact shaping.
+
+The process-local cache is keyed by the verified manifest fingerprint and run.
+It rechecks the manifest before returning a response and rejects checksum,
+schema, freshness, reconciliation, and mid-read replacement failures. A
+reconciliation report is a deployment evidence artifact, not a substitute for
+the per-request Spring scope checks. The service is GET-only and has no
+artifact/database write path.
+
+The explicit demo bootstrap is a separate transaction boundary. It generates
+credential-free SQL under ignored D-local `_tmp`, requires a loopback target
+named `agriinsight_demo`, and verifies the PostgreSQL server marker
+`app.agriinsight_demo_database=true`. It imports bounded operational samples,
+seven personas, and canonical masters from the verified snapshot, then writes a
+report whose tenant/run/fingerprint must match the generated bundle. Deliberate
+revocation or scope shrinkage fails closed rather than silently restoring an
+authorization decision.
 
 ## Operational backend
 
