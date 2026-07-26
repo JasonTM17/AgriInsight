@@ -5,7 +5,7 @@ AgriInsight is split into two planes.
 ## Contents
 
 - [Analytics plane](#analytics-plane) - current Bronze/Silver/Gold pipeline, artifacts, and dashboard.
-- [Internal analytics API](#internal-analytics-api) - read-only, Spring-gated Gold API and cache boundary.
+- [Internal analytics API](#internal-analytics-api) - read-only, Spring-gated, filter-aware analytics API and cache boundary.
 - [Operational backend](#operational-backend) - separate Java Spring boundary for operational state.
 - [Inventory and procurement plane](#inventory-and-procurement-plane) - PostgreSQL operational ledger and RLS.
 - [Operating-cost and reporting plane](#operating-cost-and-reporting-plane) - separate finance lens and summaries.
@@ -35,18 +35,33 @@ flowchart LR
 ## Internal analytics API
 
 The Phase 2 FastAPI service is an internal read surface over one immutable,
-checksum-verified snapshot. Its request path loads only bounded Gold and
-`quality/data_quality_report.json` datasets, validates exact DTO columns, and
-returns typed envelopes with lineage, freshness, scope, and correlation-aware
-errors. Raw million-row Silver facts remain artifact-side and are never loaded
-by an HTTP request.
+checksum-verified snapshot. Its request path loads bounded Gold datasets plus
+verified `gold/cost_activity_detail.csv` and `silver/harvests.csv` fact tables,
+each capped at 100,000 rows, and `quality/data_quality_report.json`. Those fact
+tables are used only for canonical farm, field, crop, season, and date
+filtering, then server-side KPI aggregation. Raw million-row sensor and IoT
+reading facts remain artifact-side and are never loaded by an HTTP request.
 
-Authorization is deliberately split across two sources: Spring
-`/api/v1/me` supplies the authenticated tenant, roles, permissions, and live
-farm/warehouse catalogs; the configured demo UUID is the only tenant isolation
-key. Tenant-wide grants are unioned per analytics domain, while manager grants
-are intersected with Spring-returned canonical codes. Client-supplied foreign
-farm or warehouse filters fail closed before artifact shaping.
+Authorization is split across the web BFF and FastAPI. Spring `/api/v1/me`
+supplies the authenticated tenant, roles, permissions, and live farm/warehouse
+catalogs. The web layer resolves UUID filters to canonical Spring codes before
+calling analytics: `farmId -> farmCode`, `fieldId -> fieldCode + farmId`,
+`cropId -> cropCode`, and `seasonId -> seasonCode + farmId + fieldId + cropId`.
+Unknown, inactive, cross-parent, or incomplete selections fail closed before
+analytics access. FastAPI then independently rejects a `farm_code` outside the
+authorized scope and any requested filter combination that does not exist in the
+verified `cost_season` relationship table, with scope failures returning 403 and
+relationship conflicts returning 422.
+
+The filter contract accepts only `farm_code`, `field_code`, `crop_code`,
+`season_code`, and `date_preset`; bounded pagination and sorting remain separate
+query controls. The date presets are `all` for the full verified snapshot,
+`last-30-days` for `asOf - 29 days` through `asOf`, and `season-to-date` for the
+selected season's verified `start_date` through `asOf`; the last preset requires
+`season_code`. The response envelope exposes applied-filter metadata plus
+lineage and freshness. The applied filter carries canonical codes and resolved
+date bounds (`date_from`, `date_to`, `date_preset`) so the browser can render
+labels without recomputing the range.
 
 The process-local cache is keyed by the verified manifest fingerprint and run.
 It rechecks the manifest before returning a response and rejects checksum,
