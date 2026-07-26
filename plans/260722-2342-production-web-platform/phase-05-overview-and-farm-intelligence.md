@@ -20,6 +20,10 @@ dependencies: [2, 3, 4]
   `all`, `last-30-days`, or `season-to-date` before server-side KPI aggregation.
 - Added visible applied scope and resolved date bounds, filter-preserving forms,
   operational status/search/sort controls, and bounded presentation pagination.
+- Corrected the primary Overview -> Farms transition to carry the canonical
+  filter query, and extended the browser scenario through list and farm detail.
+  Source contracts and in-memory TypeScript syntax checks pass; real-browser
+  execution remains pending the disk recovery gate below.
 - UI/UX review:
   [`reports/ui-ux-phase5-review-2026-07-26.md`](./reports/ui-ux-phase5-review-2026-07-26.md).
 - Validation passed: independent analytics API run 55 tests; final filtered
@@ -219,6 +223,8 @@ These are the fixed Phase 5 ownership targets under the Phase 3 `web/` layout; r
 - [x] `/overview` becomes the post-login default and renders without browser-side KPI aggregation.
 - [x] Farm/field/crop/season UUID filters are scope-checked and resolved server-side to reconciled canonical codes before analytics access.
 - [x] `/farms` and `/farms/[farmId]` share current supported URL filters and keep deep links stable.
+- [ ] Real Keycloak/Playwright navigation proves the selected period survives
+  Overview -> Farms -> Farm detail without client-side reconstruction.
 - [x] Every analytic panel exposes scope, cutoff, freshness, and safe lineage metadata in visible UI.
 - [x] Charts have equivalent tables or textual summaries; contextual images have real alt text and do not carry KPI meaning.
 - [x] The view model never assumes Gold has UUIDs or `tenantId`.
