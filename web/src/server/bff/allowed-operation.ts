@@ -14,7 +14,18 @@ type GetPath<ContractPaths> = Extract<
   `/${string}`
 >;
 
-type AllowedOperation =
+type PostPath<ContractPaths> = Extract<
+  {
+    [Path in keyof ContractPaths]: ContractPaths[Path] extends {
+      readonly post: unknown;
+    }
+      ? Path
+      : never;
+  }[keyof ContractPaths],
+  `/${string}`
+>;
+
+type AllowedReadOperation =
   | Readonly<{
       method: "GET";
       path: GetPath<AnalyticsPaths>;
@@ -29,6 +40,13 @@ type AllowedOperation =
       queryParameters?: readonly string[];
       service: "backend";
     }>;
+
+type AllowedMutation = Readonly<{
+  method: "POST";
+  path: PostPath<BackendPaths>;
+  pathParameters: readonly string[];
+  service: "backend";
+}>;
 
 export const ALLOWED_OPERATIONS = Object.freeze({
   analyticsCatalog: {
@@ -85,6 +103,48 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     ],
     service: "analytics"
   },
+  activityAssignments: {
+    method: "GET",
+    path: "/api/v1/activities/{id}/assignments",
+    pathParameters: ["id"],
+    queryParameters: ["limit", "offset"],
+    service: "backend"
+  },
+  activityById: {
+    method: "GET",
+    path: "/api/v1/activities/{id}",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  activityCatalog: {
+    method: "GET",
+    path: "/api/v1/activities",
+    queryParameters: [
+      "activityType",
+      "farmId",
+      "fieldId",
+      "limit",
+      "offset",
+      "search",
+      "seasonId",
+      "status"
+    ],
+    service: "backend"
+  },
+  activityLogHistory: {
+    method: "GET",
+    path: "/api/v1/activities/{id}/logs/{logId}/history",
+    pathParameters: ["id", "logId"],
+    queryParameters: ["limit", "offset"],
+    service: "backend"
+  },
+  activityLogs: {
+    method: "GET",
+    path: "/api/v1/activities/{id}/logs",
+    pathParameters: ["id"],
+    queryParameters: ["limit", "offset"],
+    service: "backend"
+  },
   currentUser: {
     method: "GET",
     path: "/api/v1/me",
@@ -126,13 +186,36 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     queryParameters: ["limit", "offset", "active", "search"],
     service: "backend"
   }
-} as const satisfies Record<string, AllowedOperation>);
+} as const satisfies Record<string, AllowedReadOperation>);
+
+export const ALLOWED_MUTATIONS = Object.freeze({
+  activityLogAppend: {
+    method: "POST",
+    path: "/api/v1/activities/{id}/logs",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  activityLogCorrection: {
+    method: "POST",
+    path: "/api/v1/activities/{id}/logs/{logId}/corrections",
+    pathParameters: ["id", "logId"],
+    service: "backend"
+  }
+} as const satisfies Record<string, AllowedMutation>);
 
 export type AllowedOperationName = keyof typeof ALLOWED_OPERATIONS;
+export type AllowedMutationName = keyof typeof ALLOWED_MUTATIONS;
 
-export function resolveAllowedOperation(candidate: string): AllowedOperation {
+export function resolveAllowedOperation(candidate: string): AllowedReadOperation {
   if (!Object.hasOwn(ALLOWED_OPERATIONS, candidate)) {
     throw new Error("Upstream operation is not allowlisted");
   }
   return ALLOWED_OPERATIONS[candidate as AllowedOperationName];
+}
+
+export function resolveAllowedMutation(candidate: string): AllowedMutation {
+  if (!Object.hasOwn(ALLOWED_MUTATIONS, candidate)) {
+    throw new Error("Upstream mutation is not allowlisted");
+  }
+  return ALLOWED_MUTATIONS[candidate as AllowedMutationName];
 }

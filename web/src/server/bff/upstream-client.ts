@@ -2,10 +2,14 @@ import "server-only";
 
 import { boundedUpstreamFetch } from "@/server/bff/bounded-upstream-fetch";
 import {
+  resolveAllowedMutation,
   resolveAllowedOperation,
+  type AllowedMutationName,
   type AllowedOperationName
 } from "@/server/bff/allowed-operation";
 import type { WebEnvironment } from "@/server/config/environment";
+
+const MAX_UPSTREAM_REQUEST_BYTES = 64 * 1024;
 
 type QueryValue = boolean | number | string | null;
 type Query = Readonly<Record<string, QueryValue | readonly QueryValue[] | undefined>>;
@@ -41,6 +45,59 @@ export async function executeAllowedOperation(
       "X-Correlation-Id": correlationId
     }
   });
+}
+
+export async function executeAllowedMutation(
+  env: WebEnvironment,
+  operationName: AllowedMutationName,
+  accessToken: string,
+  correlationId: string,
+  idempotencyKey: string,
+  body: unknown,
+  pathParameters: PathParameters
+): Promise<Response> {
+  const operation = resolveAllowedMutation(operationName);
+  validateIdempotencyKey(idempotencyKey);
+  const serializedBody = serializeBoundedJsonBody(body);
+  const url = new URL(
+    interpolatePath(
+      operation.path,
+      operation.pathParameters,
+      pathParameters
+    ),
+    env.backendBaseUrl
+  );
+  return boundedUpstreamFetch(url, {
+    method: operation.method,
+    body: serializedBody,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+      "X-Correlation-Id": correlationId
+    }
+  });
+}
+
+function validateIdempotencyKey(idempotencyKey: string): void {
+  if (
+    typeof idempotencyKey !== "string"
+    || !/^[\x21-\x7e]{1,200}$/.test(idempotencyKey)
+  ) {
+    throw new Error("Invalid upstream idempotency key");
+  }
+}
+
+function serializeBoundedJsonBody(body: unknown): string {
+  const serializedBody = JSON.stringify(body);
+  if (typeof serializedBody !== "string") {
+    throw new Error("Invalid upstream JSON body");
+  }
+  if (new TextEncoder().encode(serializedBody).byteLength > MAX_UPSTREAM_REQUEST_BYTES) {
+    throw new Error("Upstream request body exceeded the byte limit");
+  }
+  return serializedBody;
 }
 
 function interpolatePath(

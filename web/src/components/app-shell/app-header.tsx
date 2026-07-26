@@ -25,7 +25,11 @@ export function AppHeader({
         <button aria-label="Mở thông báo" className="icon-button" type="button">
           <Icon name="bell" size={20} />
         </button>
-        <Link className="profile-chip" href="/protected?module=administration">
+        <Link
+          className="profile-chip"
+          href="/protected?module=administration"
+          prefetch={false}
+        >
           <span aria-hidden="true" className="profile-chip__avatar">
             {(identity.displayName[0] ?? "A").toUpperCase()}
           </span>

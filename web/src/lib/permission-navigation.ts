@@ -47,9 +47,9 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     key: "work",
     label: NAVIGATION_LABELS.work,
     description: NAVIGATION_DESCRIPTIONS.work,
-    href: "/protected?module=work",
+    href: "/work",
     icon: "clipboard",
-    requiredPermissions: ["ACTIVITY_READ", "WORKFORCE_PICKER_READ"]
+    requiredPermissions: ["ACTIVITY_READ"]
   },
   inventory: {
     key: "inventory",
@@ -116,6 +116,7 @@ export function getActiveNavigationKey(
 ): NavigationKey {
   if (pathname === "/overview") return "overview";
   if (pathname === "/farms" || pathname.startsWith("/farms/")) return "farms";
+  if (pathname === "/work") return "work";
   if (pathname !== "/protected") return "overview";
   const moduleKey = searchParams instanceof URLSearchParams
     ? searchParams.get("module")

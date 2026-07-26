@@ -90,7 +90,12 @@ export function NavigationRail({
         id="primary-navigation"
       >
         <div className="navigation-rail__brand">
-          <Link className="brand" href="/protected" onClick={() => setOpen(false)}>
+          <Link
+            className="brand"
+            href="/protected"
+            onClick={() => setOpen(false)}
+            prefetch={false}
+          >
             <span aria-hidden="true" className="brand-mark" />
             <span>AgriInsight</span>
           </Link>
@@ -112,6 +117,7 @@ export function NavigationRail({
                     className={`navigation-link${active ? " navigation-link--active" : ""}`}
                     href={item.href}
                     onClick={() => setOpen(false)}
+                    prefetch={false}
                     title={item.description}
                   >
                     <Icon name={item.icon} size={19} />
@@ -124,7 +130,7 @@ export function NavigationRail({
         </nav>
         <div className="navigation-rail__footer">
           <p>Phiên làm việc được xác minh từ máy chủ.</p>
-          <Link href="/login">Đăng xuất</Link>
+          <Link href="/login" prefetch={false}>Đăng xuất</Link>
         </div>
       </aside>
     </>

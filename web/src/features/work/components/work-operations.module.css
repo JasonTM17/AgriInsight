@@ -1,0 +1,583 @@
+.page {
+  min-width: 0;
+}
+
+.pageHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.pageHeading h1 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  letter-spacing: -0.045em;
+}
+
+.pageHeading > div:first-child > p:last-child {
+  max-width: 62ch;
+  margin: 0.7rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.trustNote {
+  display: grid;
+  flex: 0 1 22rem;
+  gap: 0.25rem;
+  padding: 0.75rem 0 0.75rem 1rem;
+  border-left: 3px solid var(--ochre);
+}
+
+.trustNote strong {
+  font-size: 0.85rem;
+}
+
+.trustNote span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.filterBar {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(11rem, 0.55fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.filterBar label,
+.field {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.filterBar input,
+.filterBar select,
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.7rem 0.8rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #a8b8ad;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 450;
+  line-height: 1.45;
+}
+
+.filterBar :is(input, select):focus-visible,
+.field :is(input, select, textarea):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.filterButton {
+  min-height: 3rem;
+  padding: 0.7rem 1rem;
+  color: #fff;
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.operationsGrid {
+  display: grid;
+  grid-template-columns: minmax(18.5rem, 23rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.queue,
+.detail {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+
+.queue {
+  position: sticky;
+  top: 5.5rem;
+}
+
+.panelHeader,
+.sectionHeading,
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panelHeader {
+  padding: 1.15rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panelHeader h2,
+.sectionHeading h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1.1rem;
+}
+
+.panelHeader > span,
+.sectionHeading > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.queueList,
+.logList,
+.lineageList,
+.assignmentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queueCard {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 7.5rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+}
+
+.queueCard:hover {
+  background: #f8fcf9;
+}
+
+.queueCardSelected {
+  background: var(--brand-soft);
+  box-shadow: inset 3px 0 var(--brand);
+}
+
+.queueCard strong {
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+.queueCard small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.activityType {
+  color: var(--brand-strong);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.queueMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.boundaryNote {
+  margin: 0;
+  padding: 0.85rem 1.15rem;
+  color: var(--muted);
+  background: #fbfdfb;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.mobileBack {
+  display: none;
+}
+
+.detailHeader {
+  padding: 1.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.detailHeader h2 {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  letter-spacing: -0.035em;
+}
+
+.detailHeader p {
+  max-width: 65ch;
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.statusChip,
+.serverOnlyBadge,
+.lineageBadge {
+  flex-shrink: 0;
+  padding: 0.35rem 0.5rem;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border: 1px solid #b8ddc2;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.lineageBadge {
+  color: #744604;
+  background: #fff7df;
+  border-color: #e6cf95;
+}
+
+.activityContext {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.activityContext div {
+  min-width: 0;
+  padding: 1rem 1.1rem;
+}
+
+.activityContext div + div {
+  border-left: 1px solid var(--border);
+}
+
+.activityContext dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.activityContext dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.detailSection {
+  display: grid;
+  gap: 1rem;
+  padding: 1.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.assignmentList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.65rem;
+}
+
+.assignmentList li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem;
+  background: #fbfdfb;
+  border: 1px solid var(--border);
+}
+
+.assignmentList strong {
+  font-size: 0.78rem;
+}
+
+.assignmentList small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.formCard {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fbfdfb;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+}
+
+.measureGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.formActions button {
+  min-height: 3rem;
+}
+
+.feedbackError,
+.feedbackSuccess {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.feedbackError {
+  color: #7d1b13;
+  background: #fff0ee;
+  border: 1px solid #e7b9b4;
+}
+
+.feedbackSuccess {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border: 1px solid #b8ddc2;
+}
+
+.feedbackError small,
+.feedbackSuccess small {
+  overflow-wrap: anywhere;
+}
+
+.historyStack {
+  display: grid;
+  gap: 1rem;
+}
+
+.pagination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pagination a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--brand-strong);
+}
+
+.pagination a:last-child {
+  justify-self: end;
+}
+
+.logList {
+  border-top: 1px solid var(--border);
+}
+
+.logList > li {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.logEntry {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.logEntry header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: space-between;
+}
+
+.logEntry header strong {
+  color: var(--brand-strong);
+  font-size: 0.78rem;
+}
+
+.logEntry time,
+.logEntry small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.logEntry p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.logEntry b {
+  font-size: 0.78rem;
+}
+
+.lineageLink {
+  min-height: 2.75rem;
+  color: var(--brand-strong);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.lineagePanel {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 3px solid var(--ochre);
+}
+
+.lineageList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lineageList > li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.8rem;
+  background: #fffaf0;
+  border: 1px solid #ead8ad;
+}
+
+.lineageList > li > span {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: #fff;
+  background: var(--ochre);
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+@media (max-width: 68rem) {
+  .operationsGrid {
+    grid-template-columns: minmax(17rem, 20rem) minmax(0, 1fr);
+  }
+
+  .activityContext {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .activityContext div:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .activityContext div:nth-child(4) {
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 48rem) {
+  .pageHeading {
+    display: grid;
+  }
+
+  .trustNote {
+    max-width: 32rem;
+  }
+
+  .operationsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .queue {
+    position: static;
+  }
+
+  .hasSelection .queue {
+    display: none;
+  }
+
+  .hasSelection .mobileBack {
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+    color: var(--brand-strong);
+    background: #fbfdfb;
+    border-bottom: 1px solid var(--border);
+    font-weight: 750;
+    text-decoration: none;
+  }
+}
+
+@media (max-width: 35rem) {
+  .filterBar {
+    grid-template-columns: 1fr;
+  }
+
+  .detailHeader {
+    display: grid;
+    padding: 1rem;
+  }
+
+  .statusChip {
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .activityContext {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .activityContext div {
+    padding: 0.8rem;
+  }
+
+  .detailSection {
+    padding: 1rem;
+  }
+
+  .measureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeading {
+    display: grid;
+  }
+
+  .formActions {
+    position: sticky;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    z-index: 2;
+    padding: 0.5rem;
+    margin: 0 -0.5rem -0.5rem;
+    background: rgb(255 255 255 / 96%);
+    border: 1px solid var(--border);
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+}

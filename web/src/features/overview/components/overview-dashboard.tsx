@@ -30,7 +30,13 @@ export function OverviewDashboard({ viewModel }: { viewModel: OverviewViewModel 
           <h2>Điểm cần xem xét</h2>
           <p>Theo dõi hiệu quả, xu hướng và ngoại lệ trong phạm vi dữ liệu đã xác minh.</p>
         </div>
-        <Link className={styles.primaryLink} href={currentFarmsHref(viewModel)}>Xem hiệu quả nông trại</Link>
+        <Link
+          className={styles.primaryLink}
+          href={currentFarmsHref(viewModel)}
+          prefetch={false}
+        >
+          Xem hiệu quả nông trại
+        </Link>
       </header>
       <OverviewPeriodFilter filters={viewModel.filters} />
 
@@ -143,7 +149,7 @@ function OverviewPeriodFilter({ filters }: { filters: OverviewFilters }) {
         </select>
       </label>
       <button type="submit">Áp dụng kỳ</button>
-      <Link className={styles.resetLink} href="/overview">Xóa bộ lọc</Link>
+      <Link className={styles.resetLink} href="/overview" prefetch={false}>Xóa bộ lọc</Link>
     </form>
   );
 }
