@@ -30,7 +30,7 @@ export function OverviewDashboard({ viewModel }: { viewModel: OverviewViewModel 
           <h2>Điểm cần xem xét</h2>
           <p>Theo dõi hiệu quả, xu hướng và ngoại lệ trong phạm vi dữ liệu đã xác minh.</p>
         </div>
-        <Link className={styles.primaryLink} href="/farms">Xem hiệu quả nông trại</Link>
+        <Link className={styles.primaryLink} href={currentFarmsHref(viewModel)}>Xem hiệu quả nông trại</Link>
       </header>
       <OverviewPeriodFilter filters={viewModel.filters} />
 
@@ -146,6 +146,11 @@ function OverviewPeriodFilter({ filters }: { filters: OverviewFilters }) {
 function currentOverviewHref(viewModel: OverviewViewModel): string {
   const query = toFilterQuery(viewModel.filters);
   return `/overview${query.size > 0 ? `?${query}` : ""}`;
+}
+
+function currentFarmsHref(viewModel: OverviewViewModel): string {
+  const query = toFilterQuery(viewModel.filters);
+  return `/farms${query.size > 0 ? `?${query}` : ""}`;
 }
 
 const RISK_LABELS: Readonly<Record<string, string>> = Object.freeze({
