@@ -1,13 +1,31 @@
 ---
 phase: 5
 title: "overview-and-farm-intelligence"
-status: pending
+status: in_progress
 priority: P1
 effort: "3d"
 dependencies: [2, 3, 4]
 ---
 
 # Phase 5: overview-and-farm-intelligence
+
+## Progress Snapshot — 2026-07-26
+
+- Implemented `/overview`, `/farms`, and `/farms/[farmId]` with server-only
+  session context, scoped Spring farm reads, canonical-code Gold joins, explicit
+  degraded states, stable deep links, safe lineage, signed financial trend, and
+  mobile farm cards.
+- Implemented current contract-safe filters: farm, operational status, search,
+  profit/code sort, and bounded presentation pagination. Field, crop, season,
+  and date presets fail closed with a recoverable message because the current
+  analytics endpoints cannot honor them yet.
+- UI/UX review:
+  [`reports/ui-ux-phase5-review-2026-07-26.md`](./reports/ui-ux-phase5-review-2026-07-26.md).
+- Focused validation passed: 21 Vitest checks, ESLint with zero warnings, and
+  TypeScript `--noEmit`.
+- Heavy validation paused: D has 19.99 GB free, below the 20 GB hard-stop gate.
+  Next production build and real Keycloak/Playwright E2E must wait for safe
+  disk recovery.
 
 ## Overview
 
@@ -137,13 +155,13 @@ These are the fixed Phase 5 ownership targets under the Phase 3 `web/` layout; r
 
 ## Acceptance Criteria
 
-- [ ] `/overview` becomes the post-login default and renders without browser-side KPI aggregation.
+- [x] `/overview` becomes the post-login default and renders without browser-side KPI aggregation.
 - [ ] Farm/field/crop/season UUID filters are scope-checked and resolved server-side to reconciled canonical codes before analytics access.
-- [ ] `/farms` and `/farms/[farmId]` share canonical URL filters and keep deep links stable.
-- [ ] Every analytic panel exposes scope, freshness, and safe lineage metadata in visible UI.
-- [ ] Charts have equivalent tables or textual summaries; contextual images have real alt text and do not carry KPI meaning.
-- [ ] The view model never assumes Gold has UUIDs or `tenantId`.
-- [ ] Partial Spring or Gold failure renders explicit degraded UI instead of fake combined numbers.
+- [x] `/farms` and `/farms/[farmId]` share current supported URL filters and keep deep links stable.
+- [x] Every analytic panel exposes scope, cutoff, freshness, and safe lineage metadata in visible UI.
+- [x] Charts have equivalent tables or textual summaries; contextual images have real alt text and do not carry KPI meaning.
+- [x] The view model never assumes Gold has UUIDs or `tenantId`.
+- [x] Partial Spring or Gold failure renders explicit degraded UI instead of fake combined numbers.
 - [ ] No code outside the overview/farms route tree and phase-local view-model adapters is required for rollout.
 
 ## Risks And Rollback
