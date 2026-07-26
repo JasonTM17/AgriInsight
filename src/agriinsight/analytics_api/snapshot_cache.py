@@ -39,6 +39,7 @@ from agriinsight.analytics_snapshot import (
 )
 
 AGGREGATE_CSV_DATASETS = {
+    "cost_activity_detail": "gold/cost_activity_detail.csv",
     "cost_breakdown": "gold/cost_breakdown.csv",
     "cost_farm": "gold/cost_farm.csv",
     "cost_monthly": "gold/cost_monthly.csv",
@@ -54,12 +55,33 @@ AGGREGATE_CSV_DATASETS = {
     "monthly_financials": "gold/monthly_financials.csv",
     "pest_incidents_weekly": "gold/pest_incidents_weekly.csv",
     "risk_alerts": "gold/risk_alerts.csv",
+    "harvests": "silver/harvests.csv",
 }
 AGGREGATE_JSON_DATASETS = {
     "insights": "gold/insights.json",
     "quality": "quality/data_quality_report.json",
 }
 EXPECTED_COLUMNS = {
+    "cost_activity_detail": {
+        "activity_id",
+        "activity_type",
+        "crop_code",
+        "crop_name",
+        "farm_code",
+        "farm_name",
+        "field_code",
+        "field_name",
+        "labor_hours",
+        "material_name",
+        "month",
+        "notes",
+        "occurred_at",
+        "operating_labor_cost_vnd",
+        "operating_material_cost_vnd",
+        "operating_total_cost_vnd",
+        "quantity_kg",
+        "season_code",
+    },
     "cost_breakdown": set(CostBreakdownModel.model_fields),
     "cost_farm": set(CostFarmModel.model_fields),
     "cost_monthly": set(CostMonthlyModel.model_fields),
@@ -100,6 +122,18 @@ EXPECTED_COLUMNS = {
     "monthly_financials": set(MonthlyFinancialModel.model_fields),
     "pest_incidents_weekly": set(PestIncidentModel.model_fields),
     "risk_alerts": set(RiskAlertModel.model_fields),
+    "harvests": {
+        "crop_code",
+        "farm_code",
+        "field_code",
+        "harvest_id",
+        "harvest_quantity_kg",
+        "harvested_at",
+        "quality_grade",
+        "revenue_vnd",
+        "season_code",
+        "waste_quantity_kg",
+    },
 }
 CSV_MODELS = {
     "cost_breakdown": CostBreakdownModel,
@@ -118,6 +152,7 @@ CSV_MODELS = {
     "risk_alerts": RiskAlertModel,
 }
 MAX_ROWS = {
+    "cost_activity_detail": 100_000,
     "cost_breakdown": 100,
     "cost_farm": 1_000,
     "cost_monthly": 600,
@@ -133,6 +168,7 @@ MAX_ROWS = {
     "monthly_financials": 600,
     "pest_incidents_weekly": 2_000,
     "risk_alerts": 1_000,
+    "harvests": 100_000,
 }
 
 
@@ -202,6 +238,7 @@ def _validate_snapshot(snapshot: ArtifactSnapshot) -> None:
         for name, model in CSV_MODELS.items()
     )
     invalid = invalid or not _valid_cost_season(snapshot.csv["cost_season"])
+    invalid = invalid or not _valid_filter_facts(snapshot)
     insights = snapshot.json.get("insights")
     quality = snapshot.json.get("quality")
     invalid = invalid or not isinstance(insights, dict)
@@ -285,3 +322,50 @@ def _valid_cost_season(frame) -> bool:
         if not np.isfinite(present.to_numpy(dtype=float)).all():
             return False
     return True
+
+
+def _valid_filter_facts(snapshot: ArtifactSnapshot) -> bool:
+    activity = snapshot.csv["cost_activity_detail"]
+    harvests = snapshot.csv["harvests"]
+    relation_keys = set(
+        map(
+            tuple,
+            snapshot.csv["cost_season"][
+                ["farm_code", "field_code", "season_code", "crop_code"]
+            ].itertuples(index=False, name=None),
+        )
+    )
+    activity_keys = set(
+        map(
+            tuple,
+            activity[
+                ["farm_code", "field_code", "season_code", "crop_code"]
+            ].itertuples(index=False, name=None),
+        )
+    )
+    harvest_keys = set(
+        map(
+            tuple,
+            harvests[
+                ["farm_code", "field_code", "season_code", "crop_code"]
+            ].itertuples(index=False, name=None),
+        )
+    )
+    if not activity_keys.issubset(relation_keys) or not harvest_keys.issubset(
+        relation_keys
+    ):
+        return False
+    if pd.to_datetime(activity["occurred_at"], errors="coerce").isna().any():
+        return False
+    if pd.to_datetime(harvests["harvested_at"], errors="coerce").isna().any():
+        return False
+    numeric_columns = (
+        (activity, "operating_total_cost_vnd"),
+        (harvests, "harvest_quantity_kg"),
+        (harvests, "revenue_vnd"),
+    )
+    return all(
+        np.isfinite(pd.to_numeric(frame[column], errors="coerce")).all()
+        and (pd.to_numeric(frame[column], errors="coerce") >= 0).all()
+        for frame, column in numeric_columns
+    )
