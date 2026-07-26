@@ -54,23 +54,19 @@ export async function getInventoryTransactionEtag(
   );
   if (!response.ok) {
     const problem = await readProblem(response);
-    throw new InventoryPreparationError(problem.title, false);
+    throw new InventoryPreparationError(problem.title);
   }
   const etag = response.headers.get("ETag");
   if (!etag || !/^"\d{1,19}"$/.test(etag)) {
     throw new InventoryPreparationError(
-      "Máy chủ không trả về phiên bản giao dịch hợp lệ.",
-      false
+      "Máy chủ không trả về phiên bản giao dịch hợp lệ."
     );
   }
   return etag;
 }
 
 export class InventoryPreparationError extends Error {
-  constructor(
-    message: string,
-    readonly ambiguous: boolean
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "InventoryPreparationError";
   }
