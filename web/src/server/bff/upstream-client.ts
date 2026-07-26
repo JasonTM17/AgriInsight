@@ -54,10 +54,15 @@ export async function executeAllowedMutation(
   correlationId: string,
   idempotencyKey: string,
   body: unknown,
-  pathParameters: PathParameters
+  pathParameters: PathParameters,
+  ifMatch?: string
 ): Promise<Response> {
   const operation = resolveAllowedMutation(operationName);
   validateIdempotencyKey(idempotencyKey);
+  const validatedIfMatch = validateMutationIfMatch(
+    operation.requiresIfMatch === true,
+    ifMatch
+  );
   const serializedBody = serializeBoundedJsonBody(body);
   const url = new URL(
     interpolatePath(
@@ -67,16 +72,20 @@ export async function executeAllowedMutation(
     ),
     env.backendBaseUrl
   );
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+    "Idempotency-Key": idempotencyKey,
+    "X-Correlation-Id": correlationId
+  };
+  if (validatedIfMatch) {
+    headers["If-Match"] = validatedIfMatch;
+  }
   return boundedUpstreamFetch(url, {
     method: operation.method,
     body: serializedBody,
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey,
-      "X-Correlation-Id": correlationId
-    }
+    headers
   });
 }
 
@@ -87,6 +96,19 @@ function validateIdempotencyKey(idempotencyKey: string): void {
   ) {
     throw new Error("Invalid upstream idempotency key");
   }
+}
+
+function validateMutationIfMatch(
+  required: boolean,
+  ifMatch: string | undefined
+): string | undefined {
+  if (!required && ifMatch !== undefined) {
+    throw new Error("If-Match is not allowlisted for this upstream mutation");
+  }
+  if (required && (ifMatch === undefined || !/^"\d{1,19}"$/.test(ifMatch))) {
+    throw new Error("Invalid upstream If-Match value");
+  }
+  return ifMatch;
 }
 
 function serializeBoundedJsonBody(body: unknown): string {

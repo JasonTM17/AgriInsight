@@ -64,7 +64,7 @@ describe("exact upstream allowlist", () => {
     });
   });
 
-  it("keeps the Phase 6 POST operations in a separate exact allowlist", () => {
+  it("keeps POST operations in a separate exact allowlist", () => {
     expect(ALLOWED_MUTATIONS).toEqual({
       activityLogAppend: {
         method: "POST",
@@ -76,6 +76,19 @@ describe("exact upstream allowlist", () => {
         method: "POST",
         path: "/api/v1/activities/{id}/logs/{logId}/corrections",
         pathParameters: ["id", "logId"],
+        service: "backend"
+      },
+      inventoryTransactionPost: {
+        method: "POST",
+        path: "/api/v1/inventory/transactions",
+        pathParameters: [],
+        service: "backend"
+      },
+      inventoryTransactionReversal: {
+        method: "POST",
+        path: "/api/v1/inventory/transactions/{id}/reversals",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
         service: "backend"
       }
     });

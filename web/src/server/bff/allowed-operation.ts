@@ -45,6 +45,7 @@ type AllowedMutation = Readonly<{
   method: "POST";
   path: PostPath<BackendPaths>;
   pathParameters: readonly string[];
+  requiresIfMatch?: boolean;
   service: "backend";
 }>;
 
@@ -174,10 +175,61 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     pathParameters: ["id"],
     service: "backend"
   },
+  inventoryBalances: {
+    method: "GET",
+    path: "/api/v1/inventory/balances",
+    queryParameters: ["limit", "lowStock", "materialId", "offset", "warehouseId"],
+    service: "backend"
+  },
+  inventoryLots: {
+    method: "GET",
+    path: "/api/v1/inventory/lots",
+    queryParameters: [
+      "expiringBefore",
+      "includeDepleted",
+      "limit",
+      "materialId",
+      "offset",
+      "warehouseId"
+    ],
+    service: "backend"
+  },
+  inventoryTransactionById: {
+    method: "GET",
+    path: "/api/v1/inventory/transactions/{id}",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  inventoryTransactions: {
+    method: "GET",
+    path: "/api/v1/inventory/transactions",
+    queryParameters: [
+      "kind",
+      "limit",
+      "materialId",
+      "occurredFrom",
+      "occurredTo",
+      "offset",
+      "warehouseId"
+    ],
+    service: "backend"
+  },
+  materialCatalog: {
+    method: "GET",
+    path: "/api/v1/materials",
+    queryParameters: ["limit", "offset", "active", "search"],
+    service: "backend"
+  },
   seasonById: {
     method: "GET",
     path: "/api/v1/seasons/{id}",
     pathParameters: ["id"],
+    service: "backend"
+  },
+  supplierCatalog: {
+    method: "GET",
+    path: "/api/v1/suppliers",
+    queryParameters: ["limit", "offset", "active", "search"],
     service: "backend"
   },
   warehouseCatalog: {
@@ -199,6 +251,19 @@ export const ALLOWED_MUTATIONS = Object.freeze({
     method: "POST",
     path: "/api/v1/activities/{id}/logs/{logId}/corrections",
     pathParameters: ["id", "logId"],
+    service: "backend"
+  },
+  inventoryTransactionPost: {
+    method: "POST",
+    path: "/api/v1/inventory/transactions",
+    pathParameters: [],
+    service: "backend"
+  },
+  inventoryTransactionReversal: {
+    method: "POST",
+    path: "/api/v1/inventory/transactions/{id}/reversals",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
     service: "backend"
   }
 } as const satisfies Record<string, AllowedMutation>);

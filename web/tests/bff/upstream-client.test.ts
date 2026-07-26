@@ -183,6 +183,76 @@ describe("bounded upstream client", () => {
     expect(fetchMock.mock.calls[0]![1]?.method).toBe("POST");
   });
 
+  it("forwards a validated If-Match only for inventory reversal", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({ id: "reversal" }, { status: 201 })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const transactionId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+
+    await executeAllowedMutation(
+      env,
+      "inventoryTransactionReversal",
+      "server-held-token",
+      "correlation-1",
+      "reverse-transaction-1",
+      { quantityBase: 2, reason: "Correct duplicate posting" },
+      { id: transactionId },
+      "\"7\""
+    );
+
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      `http://127.0.0.1:8080/api/v1/inventory/transactions/${transactionId}/reversals`
+    );
+    expect(fetchMock.mock.calls[0]![1]?.headers).toMatchObject({
+      "Idempotency-Key": "reverse-transaction-1",
+      "If-Match": "\"7\""
+    });
+  });
+
+  it("rejects missing, malformed, or non-allowlisted If-Match before fetch", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const transactionId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+
+    await expect(
+      executeAllowedMutation(
+        env,
+        "inventoryTransactionReversal",
+        "server-held-token",
+        "correlation-1",
+        "reverse-transaction-1",
+        { quantityBase: 2, reason: "Correct duplicate posting" },
+        { id: transactionId }
+      )
+    ).rejects.toThrow("If-Match");
+    await expect(
+      executeAllowedMutation(
+        env,
+        "inventoryTransactionReversal",
+        "server-held-token",
+        "correlation-1",
+        "reverse-transaction-1",
+        { quantityBase: 2, reason: "Correct duplicate posting" },
+        { id: transactionId },
+        "7"
+      )
+    ).rejects.toThrow("If-Match");
+    await expect(
+      executeAllowedMutation(
+        env,
+        "activityLogAppend",
+        "server-held-token",
+        "correlation-1",
+        "append-log-1",
+        { notes: "Irrigation completed" },
+        { id: transactionId },
+        "\"7\""
+      )
+    ).rejects.toThrow("not allowlisted");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects missing, extra, or unsafe resource path parameters", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
