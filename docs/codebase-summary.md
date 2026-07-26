@@ -145,12 +145,15 @@ GETs also expose `ETag`.
 ## Verification snapshot
 
 - Web Phase 6 local acceptance (2026-07-26): generated-contract drift,
-  TypeScript, zero-warning ESLint, Next 16 production build, 117 passed web
-  tests with 9 intentional DB-only skips, 21 focused Work contract/security
-  tests, 13 demo bootstrap/reconciliation tests, 9 Spring activity HTTP
+  TypeScript, zero-warning ESLint, Next 16 production build, 127 passed web
+  tests with 9 intentional DB-only skips, 31 focused Work contract/security
+  tests, 13 demo bootstrap/reconciliation tests, 5 Spring activity HTTP
   contract tests, production dependency audit with 0 vulnerabilities, and 6/6
   real Keycloak/PostgreSQL/Spring/Chrome scenarios. The E2E project and owned
-  runtime paths cleaned before `WEB_PLATFORM_E2E=PASS`.
+  runtime paths cleaned before `WEB_PLATFORM_E2E=PASS`. A tenant-scoped real
+  PostgreSQL seed → revoke → reseed probe also passed with
+  `preserved=1 active=0 history=1`, proving demo bootstrap never restores a
+  revoked assignment.
 - Web Phase 5 local acceptance (2026-07-26): clean `npm ci`, checked-in Spring
   and analytics contract drift, TypeScript, zero-warning ESLint, Next 16
   production build, Maven package with tests skipped by that gate, 82 passed
@@ -183,10 +186,12 @@ GETs also expose `ETag`.
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
-- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. The Phase 6
-  build observed minimum free space of C 9.09 GB and D 20.76 GB; both remained
-  above fail thresholds. Archived Codex sessions, Azure Functions cache, and
-  JetBrains local cache were moved recoverably to D through junctions.
+- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. The final
+  Phase 6 gate recorded C 9.37 GiB and D 20.93 GiB before cleanup; both
+  remained above fail thresholds. Archived Codex sessions, Azure Functions
+  cache, and JetBrains local cache were moved recoverably to D through
+  junctions; a 0.42 GiB inactive Maven-cache archive was also moved from C to
+  D to preserve C-drive headroom.
 - Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
   Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
   smoke passed.

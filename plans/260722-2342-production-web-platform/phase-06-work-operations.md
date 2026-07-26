@@ -39,10 +39,10 @@ proven on real PostgreSQL by `scripts/test-demo-assignment-revocation.ps1`
 - The approved CK FE Work prototype is the visual source. No new Stitch screen
   is needed; prototype offline queue and file-upload behavior are explicitly
   excluded because no such production contract exists.
-- The guarded demo already seeds snapshot-derived activities, but the
-  `FIELD_WORKER` persona lacks an employee link and activity assignments. A
-  deterministic local-demo remediation is required so browser mutation proof
-  remains real rather than mocked.
+- The guarded demo seeds snapshot-derived activities plus a deterministic
+  `FIELD_WORKER` employee and three assignments. Stable assignment IDs never
+  un-revoke history; the E2E lifecycle probe revokes one and leaves two active
+  tasks for real browser mutation and cross-target proof.
 
 ## Overview
 
@@ -105,6 +105,7 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 | MODIFY | `web/src/server/bff/{allowed-operation,upstream-client}.ts` | exact work GETs and two POST transports |
 | MODIFY | `web/src/lib/permission-navigation.ts` | expose and activate `/work` |
 | MODIFY | `scripts/run-web-e2e-tests.ps1` | expose the fixed field-worker E2E persona |
+| CREATE | `scripts/test-demo-assignment-revocation.ps1` | execute tenant-scoped seed → revoke → reseed lifecycle proof |
 | MODIFY | `src/agriinsight/demo_tenant_{bootstrap_sql,sample_sql}.py` | deterministic employee/assignment demo bridge |
 
 ## Interfaces And Contracts
@@ -164,7 +165,8 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 
 - Focused:
   - `.\backend\mvnw.cmd -f .\backend\pom.xml -Dtest=ActivityReadHttpContractTest,ActivityLogHttpContractTest test`
-  - `npm --prefix web run test -- work-operations`
+  - `python -m pytest tests/test_demo_tenant_bootstrap.py tests/test_demo_tenant_reconciliation.py -q`
+  - `npm --prefix web run test -- work-operations work-mutations work-route-security`
   - `npm --prefix web exec -- playwright test tests/e2e/work-operations-mobile.spec.ts --grep "@work"`
 - Broad:
   - `powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify`
@@ -181,6 +183,7 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 - [x] Correction uses append-only `POST /api/v1/activities/{id}/logs/{logId}/corrections` with `Idempotency-Key`, not a fabricated patch route.
 - [x] `If-Match` is not attached to log append/correction flows unless a real update/revoke route is explicitly consumed outside this phase.
 - [x] History timeline is server-backed and immutable from the client perspective, with bounded 50-row pagination driven by the upstream `hasMore` signal.
+- [x] Demo reseed never un-revokes deterministic assignment history; the real PostgreSQL lifecycle probe preserves the revoked row fail-closed.
 - [x] No speculative query layer or backend additions are introduced in this phase.
 
 ## Risks And Rollback

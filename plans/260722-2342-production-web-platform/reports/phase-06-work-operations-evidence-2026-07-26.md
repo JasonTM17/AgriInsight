@@ -29,13 +29,21 @@ The `FIELD_WORKER` persona now has a deterministic employee link (`DEMO-FIELD-WO
 - `npm --prefix web run typecheck` → clean.
 - `npm --prefix web run lint` → 0 warnings (`--max-warnings=0`).
 - `npm --prefix web run contracts:check` → no generated-client drift.
+- `npm --prefix web audit --omit=dev --audit-level=high` → 0 vulnerabilities.
 
 ### Real-browser E2E gate (`scripts/run-web-e2e-tests.ps1`)
 
-Final remediation run PASS (fresh, after the lifecycle fix):
+Static and runtime gates both passed after remediation. The full static
+invocation established clean install, contract, test, lint, typecheck, and
+production-build evidence before stopping at the newly added lifecycle probe.
+After the probe's missing RLS tenant scope and the resulting two-card E2E
+fixture expectation were corrected, the final runtime rerun used
+`-SkipStaticGates` and produced auditable logs at
+`_tmp/e2e-remediation-final2.stdout.log` and
+`_tmp/e2e-remediation-final2.stderr.log`:
 
 - `DISK_GUARD overall=WARN exit_code=0` before and after (C 9.25 GB, D 20.97 GB — above hard-fail thresholds).
-- Static gates: clean `npm ci` (441 packages), vitest **127 pass / 9 skips**, zero-warning lint, typecheck, Next production build, contract drift clean.
+- Static invocation: clean `npm ci` (441 packages), Vitest **127 pass / 9 skips**, zero-warning lint, typecheck, Next production build, contract drift clean.
 - `OIDC_DEMO_CONFIGURED issuer=exact pkce=S256 personas=7 claims=aud+token_use credentials=environment-only`.
 - `DEMO_BOOTSTRAP status=PASS database=agriinsight_demo` with reconciliation `{"errorCount": 0, "status": "passed"}`.
 - **`DEMO_ASSIGNMENT_REVOCATION=PASS preserved=1 active=0 history=1`** — real PostgreSQL seed → revoke → reseed probe: the revoked row is preserved, reseed does not resurrect it, no duplicate lifecycle row is created.
@@ -56,6 +64,7 @@ Final remediation run PASS (fresh, after the lifecycle fix):
 | Correction is append-only POST with `Idempotency-Key` | PASS — exact corrections route; no patch route exists |
 | No fabricated `If-Match` on append/correction | PASS — mutation headers exact-tested |
 | History timeline server-backed and immutable with bounded pagination | PASS — `hasMore`-driven controls, bounded offsets, no total-claim label |
+| Demo reseed preserves one-way assignment revocation | PASS — real PostgreSQL lifecycle marker `preserved=1 active=0 history=1` |
 | No speculative query layer/backend additions | PASS — phase-local adapter/BFF only |
 
 ## Unresolved Questions
