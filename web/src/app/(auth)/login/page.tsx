@@ -8,7 +8,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { returnTo } = await searchParams;
   const target = new URLSearchParams({ returnTo: returnTo ?? "/protected" });
   return (
-    <section className="foundation-panel foundation-panel--narrow">
+    <main className="foundation-panel foundation-panel--narrow" id="main-content" tabIndex={-1}>
       <p className="eyebrow">Xác thực doanh nghiệp</p>
       <h1>Đăng nhập an toàn</h1>
       <p>
@@ -18,6 +18,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <a className="primary-action" href={`/api/auth/login?${target}`}>
         Tiếp tục với nhà cung cấp OIDC
       </a>
-    </section>
+    </main>
   );
 }

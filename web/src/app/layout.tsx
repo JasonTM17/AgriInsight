@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { SkipLink } from "@/components/app-shell/skip-link";
 
 import "./globals.css";
 
@@ -22,17 +23,8 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body>
-        <a className="skip-link" href="#main-content">
-          Bỏ qua đến nội dung chính
-        </a>
-        <header className="site-header">
-          <Link className="brand" href="/">
-            <span aria-hidden="true" className="brand-mark" />
-            AgriInsight
-          </Link>
-          <span className="foundation-label">Secure web foundation</span>
-        </header>
-        <main id="main-content">{children}</main>
+        <SkipLink />
+        {children}
       </body>
     </html>
   );
