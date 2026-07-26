@@ -4,7 +4,7 @@ description: >-
   Plan a Vietnamese-first Next 16 platform, real OIDC demo integration, secured
   Spring workflows, and verified Gold analytics surface without claiming public
   production release.
-status: pending
+status: in_progress
 priority: P1
 effort: 51d
 branch: main
@@ -114,7 +114,7 @@ created: 2026-07-22T00:00:00.000Z
 | 1 | [contract-freeze-and-auth-spike](./phase-01-contract-freeze-and-auth-spike.md) | Completed |
 | 2 | [analytics-read-api](./phase-02-analytics-read-api.md) | Completed locally 2026-07-23 |
 | 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Completed locally 2026-07-23 |
-| 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Pending |
+| 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Completed 2026-07-26 |
 | 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | Pending |
 | 6 | [work-operations](./phase-06-work-operations.md) | Pending |
 | 7 | [inventory-control](./phase-07-inventory-control.md) | Pending |
@@ -249,6 +249,7 @@ Execution is sequential by default because generated contracts, the route regist
 - 2026-07-23: Independent blocker re-review resolved all seven original findings and returned `LAND` with 0 Critical/0 High. Latest disk check remained PASS at C 13.05 GB and D 25.74 GB; Big Data and all eight WebPs remain preserved.
 - 2026-07-23: Completed Phase 3 locally. The Next 16 BFF uses opaque encrypted Postgres sessions, PKCE OIDC, nonce/state replay protection, CSRF/origin/host enforcement, exact generated-contract operations, and fresh Spring `/api/v1/me` authorization. The full Keycloak-PostgreSQL-Spring-Next-Chrome gate passed with web static gates, 9/9 database privilege tests, one real browser scenario, Big Data reconciliation, and zero residual E2E processes or containers.
 - 2026-07-22: User-interview tooling is unavailable in the current execution mode. Deployment-specific values remain explicit protected gates above; no answer is fabricated.
+- 2026-07-26: Completed Phase 4 locally and pushed to `main`: Vietnamese Field Ledger shell, fresh-permission advisory navigation, mobile focus/inert drawer behavior, tokenized UI foundation, eight-entry WebP catalog/sync, Stitch evidence for Crop Health/Data Quality/Administration, documented GIF media, and shell/provenance gates. Full web suite: 50 passed, 9 intentional skips. `next build` remains deferred while C/D disk warning is active.
 
 ## Red Team Review
 
