@@ -1,0 +1,531 @@
+.stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.pageIntro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.pageIntro h2,
+.sectionHeading h3 {
+  margin: 0.35rem 0 0;
+  letter-spacing: -0.035em;
+}
+
+.pageIntro h2 {
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+}
+
+.pageIntro p:not(:global(.eyebrow)) {
+  max-width: 58ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.primaryLink {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.95rem;
+  color: #fff;
+  background: var(--brand);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.primaryLink:hover,
+.filterForm button:hover,
+.pagination a:hover {
+  background: var(--brand-strong);
+}
+
+.primaryLink:active,
+.filterForm button:active,
+.pagination a:active {
+  transform: translateY(1px);
+}
+
+.primaryLink:focus-visible,
+.farmLink:focus-visible,
+.filterForm input:focus-visible,
+.filterForm select:focus-visible,
+.filterForm button:focus-visible,
+.resetLink:focus-visible,
+.pagination a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.summaryBand {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.4fr);
+  background: var(--brand-strong);
+  color: #fff;
+  box-shadow: var(--shadow-panel);
+}
+
+.summaryLead {
+  display: grid;
+  align-content: center;
+  gap: 0.65rem;
+  min-height: 13rem;
+  padding: 1.5rem;
+  border-right: 1px solid rgb(255 255 255 / 18%);
+}
+
+.summaryLead span,
+.summaryLead small,
+.summaryLead p {
+  color: #d4e8d9;
+}
+
+.summaryLead strong {
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.summaryMetrics div {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  min-height: 6.5rem;
+  padding: 1rem 1.25rem;
+  border: solid rgb(255 255 255 / 14%);
+  border-width: 0 1px 1px 0;
+}
+
+.summaryMetrics dt {
+  color: #d4e8d9;
+  font-size: 0.75rem;
+}
+
+.summaryMetrics dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.evidenceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(17rem, 0.75fr);
+  gap: 1rem;
+}
+
+.riskPanel,
+.trendPanel,
+.contextVisual,
+.farmTable,
+.farmDetail {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-panel);
+}
+
+.riskPanel,
+.trendPanel,
+.farmTable,
+.farmDetail {
+  padding: 1.25rem;
+}
+
+.trendChart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(2rem, 1fr));
+  gap: 0.55rem;
+  min-height: 15rem;
+  margin-bottom: 1rem;
+  padding: 1rem 0.75rem 0.5rem;
+  overflow-x: auto;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+}
+
+.trendGroup {
+  display: grid;
+  grid-template-rows: 11rem auto;
+  gap: 0.45rem;
+  align-items: end;
+  min-width: 2rem;
+}
+
+.trendGroup small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.trendBars {
+  position: relative;
+  height: 11rem;
+}
+
+.trendBar {
+  position: absolute;
+  width: 27%;
+}
+
+.revenueBar {
+  left: 0;
+  background: var(--brand);
+}
+
+.costBar {
+  left: 36.5%;
+  background: var(--ochre);
+}
+
+.profitBar {
+  left: 73%;
+  background: var(--info);
+}
+
+.trendBaseline {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--muted);
+}
+
+.trendLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.trendLegend span {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.trendLegend i {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.trendLegend small {
+  flex-basis: 100%;
+  font-size: 0.82rem;
+}
+
+.revenueKey {
+  background: var(--brand);
+}
+
+.costKey {
+  background: var(--ochre);
+}
+
+.profitKey {
+  background: var(--info);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sectionHeading > span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.tableScroll:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tableScroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableScroll th,
+.tableScroll td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tableScroll th {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.contextVisual {
+  margin: 0;
+  overflow: hidden;
+}
+
+.contextVisual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+
+.contextVisual figcaption {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+}
+
+.contextVisual figcaption span,
+.contextVisual figcaption small,
+.sourceNote {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.sourceNote {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.filterForm {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto auto auto auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.filterForm label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.filterForm input,
+.filterForm select {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+}
+
+.filterForm button {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  color: #fff;
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  font-weight: 750;
+}
+
+.resetLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--brand-strong);
+  font-weight: 750;
+}
+
+.farmLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--brand-strong);
+  font-weight: 750;
+}
+
+.pagination {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.pagination a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.8rem;
+  color: #fff;
+  background: var(--brand);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.pagination a:last-child {
+  justify-self: end;
+}
+
+.paginationCurrent {
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.mutedValue {
+  color: var(--muted);
+}
+
+.farmDetailGrid {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.55fr) minmax(0, 1.45fr);
+  gap: 1rem;
+}
+
+.farmDetail dl {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+}
+
+.farmDetail dl div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.farmDetail dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.farmDetail dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.technicalDetails {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.technicalDetails summary {
+  min-height: 2.75rem;
+  color: var(--brand-strong);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.technicalDetails dl {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 60rem) {
+  .evidenceGrid,
+  .farmDetailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 44rem) {
+  .pageIntro {
+    display: grid;
+  }
+
+  .summaryBand {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryLead {
+    border-right: 0;
+    border-bottom: 1px solid rgb(255 255 255 / 18%);
+  }
+
+  .summaryMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .filterForm {
+    grid-template-columns: 1fr;
+  }
+
+  .farmTable .tableScroll {
+    overflow: visible;
+  }
+
+  .farmTable table,
+  .farmTable tbody,
+  .farmTable tr,
+  .farmTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .farmTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .farmTable tr {
+    display: grid;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+    padding: 0.9rem;
+    background: var(--canvas);
+    border: 1px solid var(--border);
+  }
+
+  .farmTable td {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 0.7fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  .farmTable td::before {
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+    content: attr(data-label);
+  }
+
+  .pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .paginationCurrent {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}

@@ -26,11 +26,17 @@ const STATE_ICONS: Record<RecoveryState, "refresh" | "search" | "shield-check" |
 export function StatePanel({
   state,
   correlationId,
-  actionHref = "/protected"
+  actionHref = "/protected",
+  actionLabel = "Thử lại",
+  label,
+  message
 }: {
   state: RecoveryState;
   correlationId?: string;
-  actionHref?: string;
+  actionHref?: string | null;
+  actionLabel?: string;
+  label?: string;
+  message?: string;
 }) {
   return (
     <section aria-live={state === "loading" ? "polite" : undefined} className={`state-panel state-panel--${state}`}>
@@ -38,12 +44,12 @@ export function StatePanel({
         <Icon name={STATE_ICONS[state]} size={22} />
       </span>
       <div>
-        <p className="eyebrow">{STATE_LABELS[state]}</p>
-        <p>{RECOVERY_MESSAGES[state]}</p>
+        <p className="eyebrow">{label ?? STATE_LABELS[state]}</p>
+        <p>{message ?? RECOVERY_MESSAGES[state]}</p>
         {correlationId ? <small className="state-panel__correlation">Mã tương quan: <span translate="no">{correlationId}</span></small> : null}
-        {state !== "loading" && state !== "denied" ? (
+        {state !== "loading" && state !== "denied" && actionHref ? (
           <a className="text-action" href={actionHref}>
-            Thử lại <Icon name="arrow-right" size={16} />
+            {actionLabel} <Icon name="arrow-right" size={16} />
           </a>
         ) : null}
       </div>
