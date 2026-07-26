@@ -136,9 +136,14 @@ function AbcPanel({
                 <strong>{item.materialCode}</strong>
                 <span>{item.abcClass} · {item.valueSharePct.toFixed(1)}%</span>
               </div>
-              <div className={styles.barTrack}>
-                <i style={{ width: `${Math.min(100, Math.max(0, item.valueSharePct))}%` }} />
-              </div>
+              <progress
+                aria-label={`Tỷ trọng giá trị ${item.materialCode}`}
+                className={styles.barTrack}
+                max={100}
+                value={Math.min(100, Math.max(0, item.valueSharePct))}
+              >
+                {item.valueSharePct.toFixed(1)}%
+              </progress>
             </div>
           ))}
         </div>

@@ -1,5 +1,9 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { InventoryAnalyticsPanels } from "@/features/inventory/components/inventory-analytics-panels";
 import {
   getInventoryTransactionPage,
   getMaterialCatalog,
@@ -8,6 +12,7 @@ import {
   getSupplierCatalog,
   getVisibleWarehouses
 } from "@/features/inventory/inventory-generated-client-adapter";
+import { inventoryAnalyticsEnvelopeSchema } from "@/features/inventory/inventory-analytics-contract-schema";
 import { loadInventoryViewModel } from "@/features/inventory/load-inventory-view-model";
 import {
   inventoryHref,
@@ -343,6 +348,40 @@ describe("inventory route state", () => {
     const state = parseInventoryRouteState({});
     expect(state).not.toBeNull();
     expect(state && inventoryHref(state)).toBe("/inventory");
+  });
+});
+
+describe("inventory analytics rendering", () => {
+  it("renders dynamic ABC shares without CSP-blocked style attributes", () => {
+    const data = inventoryAnalyticsEnvelopeSchema.parse({
+      ...analyticsEnvelope,
+      payload: {
+        ...analyticsEnvelope.payload,
+        abc: [{
+          abcClass: "A",
+          category: "Fertilizer",
+          cumulativeValueSharePct: 42.3,
+          inventoryValueVnd: 1_500_000,
+          materialCode: "FERT-001",
+          materialName: "Phân NPK",
+          stockLocations: 1,
+          valueSharePct: 42.3
+        }]
+      }
+    });
+    const markup = renderToStaticMarkup(createElement(
+      InventoryAnalyticsPanels,
+      {
+        analytics: { status: "ready", data },
+        hasOperationalFilters: false,
+        selectedWarehouseCode: "WH-01"
+      }
+    ));
+
+    expect(markup).toContain("<progress");
+    expect(markup).toContain('max="100"');
+    expect(markup).toContain('value="42.3"');
+    expect(markup).not.toContain("style=");
   });
 });
 
