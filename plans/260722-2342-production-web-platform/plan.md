@@ -31,17 +31,21 @@ created: 2026-07-22T00:00:00.000Z
 
 ## Current State
 
-- No production web app exists yet; the disposable auth spike is isolated under `web-auth-spike/`.
-- Current product surface is Streamlit and local/internal.
+- A production-oriented Next 16 package now exists under `web/` with a secure
+  BFF/session boundary and locally accepted Overview/Farms routes. It is not
+  publicly released; Streamlit remains the internal fallback until Phase 12.
+- The disposable `web-auth-spike/` remains historical decision evidence only;
+  its verified `openid-client` boundary has been ported into `web/`.
 - Spring exposes 94 secured operations that remain the domain source of truth, including the eight bounded Phase 1 Work/Admin reads.
 - Deterministic OpenAPI is checked in at 67 paths/94 operations and guarded by canonical regeneration; later generated clients can now lock to this artifact.
 - The auth spike rejected Better Auth 1.6.24 on an executable refresh race and selected `openid-client` 6.8.4 after 16 unit, 7 PostgreSQL, build, and real Chrome/Keycloak gates.
-- Analytics Phase 2 now has a typed, scoped FastAPI read layer over verified
-  Gold/quality artifacts; the authenticated web/BFF consumer remains a later
-  phase.
-- The backend compose path has migrations/runtime but no demo identity/master bootstrap aligned to Gold canonical codes; without that boundary a production web UI would render empty or mismatched data.
+- The typed FastAPI Gold read layer is consumed through the tokenless Next BFF
+  with Spring-derived scope and bounded query allowlists.
+- Guarded demo identity/master bootstrap and one-to-one artifact reconciliation
+  gate readiness and real-browser E2E.
 - Verified analytics footprint is 1.05M fact rows and 388.2 MB.
-- Eight generated WebPs now exist, including reviewed Work and Administration visuals; Phase 4 promotes them into the machine-readable catalog and deterministic web sync.
+- All eight reviewed WebPs are cataloged and deterministically synced into the
+  web build.
 - Field Ledger is the visual/design source and the planned web IA spans 8 areas.
 - Realtime, ML, and chatbot work stay deferred.
 
@@ -115,7 +119,7 @@ created: 2026-07-22T00:00:00.000Z
 | 2 | [analytics-read-api](./phase-02-analytics-read-api.md) | Completed locally 2026-07-23 |
 | 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Completed locally 2026-07-23 |
 | 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Completed 2026-07-26 |
-| 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | In progress |
+| 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | Completed locally 2026-07-26 |
 | 6 | [work-operations](./phase-06-work-operations.md) | Pending |
 | 7 | [inventory-control](./phase-07-inventory-control.md) | Pending |
 | 8 | [cost-analysis](./phase-08-cost-analysis.md) | Pending |
@@ -238,18 +242,19 @@ Execution is sequential by default because generated contracts, the route regist
 
 ## Validation Log
 
+- 2026-07-26: Phase 5 accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; final unified runner passed clean npm ci, contract drift, TypeScript, zero-warning ESLint, Next 16 production build, Maven package (tests skipped by gate), 9/9 PostgreSQL privilege tests, 82 web tests with 9 intentional skips, production dependency audit with 0 vulnerabilities at the configured threshold, and 3/3 installed-Chrome scenarios. Cleanup completed before the global PASS marker. Phase 6 Work Operations is next.
 - 2026-07-22: `HOLD SCOPE` inherited from the user's repeated request for a complete, polished eight-area application with real Big Data and generated imagery. Realtime, ML, chatbot, and fake data remain out of scope.
 - 2026-07-23: Completed Analytics Phase 2 locally: typed FastAPI GET surface, guarded seven-persona demo bootstrap, one-to-one Big Data reconciliation, deterministic OpenAPI, final CK review, Python 125-pass gate, backend 463-pass package gate, and packaged Flyway exit probes. The internal API is not yet an authenticated browser/BFF product surface.
 - 2026-07-22: Verified the repository has no production web package, deterministic Spring OpenAPI, or analytics HTTP service; those are prerequisites, not assumed capabilities.
 - 2026-07-22: Rejected Auth.js v5 because the stable registry line is v4 and v5 remains prerelease. Phase 1 evaluates stable Better Auth first and pinned `openid-client` 6 as fallback.
-- 2026-07-26: Rechecked disk policy: warn at C 10 GB/D 25 GB, fail at C 8 GB/D 20 GB. Latest free space is C 8.909 GB and D 21.107 GB, above hard-stop but still in warning. Heavy builds remain paused. Obsolete runtime caches were removed; Codex runtimes and Cursor/VS Code user data were losslessly relocated to D through verified junctions. Hibernation and Docker storage were not modified; `tmp/`, Big Data, images, source, and Docker images remain preserved.
+- 2026-07-26: Heavy Phase 5 gates resumed after D-local cache/swap remediation. The completion checkpoint recorded C 8.71 GB and D 28.91 GB free; WSL swap is configured at `D:\Docker\wsl-swap.vhdx`. Next build and the full platform E2E gate passed.
 - 2026-07-23: Generated, visually reviewed, stripped, and converted the missing Work and Administration visuals to 1440x810 WebP. Both stay below 350 KiB, have pinned SHA-256 values, and pass the visual-asset test suite; Phase 4 now owns catalog promotion/sync rather than image generation.
 - 2026-07-23: Completed the Full-tier whole-plan sweep across 13 Markdown files. Applied all 11 evidence-backed red-team findings, found 0 unresolved internal contradictions, and passed `ck plan validate` with 12 phases, 0 errors, and 0 warnings.
 - 2026-07-23: Completed Phase 1. Eight bounded Work/Admin reads passed real SQL/RLS coverage; the deterministic OpenAPI artifact froze 67 paths/94 operations; Better Auth 1.6.24 failed the exact-package race and `openid-client` 6.8.4 passed 16 unit, 7 PostgreSQL, build, and real Chrome/Keycloak E2E gates.
 - 2026-07-23: Independent blocker re-review resolved all seven original findings and returned `LAND` with 0 Critical/0 High. Latest disk check remained PASS at C 13.05 GB and D 25.74 GB; Big Data and all eight WebPs remain preserved.
 - 2026-07-23: Completed Phase 3 locally. The Next 16 BFF uses opaque encrypted Postgres sessions, PKCE OIDC, nonce/state replay protection, CSRF/origin/host enforcement, exact generated-contract operations, and fresh Spring `/api/v1/me` authorization. The full Keycloak-PostgreSQL-Spring-Next-Chrome gate passed with web static gates, 9/9 database privilege tests, one real browser scenario, Big Data reconciliation, and zero residual E2E processes or containers.
 - 2026-07-22: User-interview tooling is unavailable in the current execution mode. Deployment-specific values remain explicit protected gates above; no answer is fabricated.
-- 2026-07-26: Completed Phase 4 locally and pushed to `main`: Vietnamese Field Ledger shell, fresh-permission advisory navigation, mobile focus/inert drawer behavior, tokenized UI foundation, eight-entry WebP catalog/sync, Stitch evidence for Crop Health/Data Quality/Administration, documented GIF media, and shell/provenance gates. Full web suite: 50 passed, 9 intentional skips. `next build` remains deferred while C/D disk warning is active.
+- 2026-07-26: Completed Phase 4 locally and pushed to `main`: Vietnamese Field Ledger shell, fresh-permission advisory navigation, mobile focus/inert drawer behavior, tokenized UI foundation, eight-entry WebP catalog/sync, Stitch evidence for Crop Health/Data Quality/Administration, documented GIF media, and shell/provenance gates. Full web suite: 50 passed, 9 intentional skips. `next build` was deferred at that checkpoint and completed during Phase 5 acceptance.
 
 ## Red Team Review
 

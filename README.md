@@ -80,9 +80,9 @@ Dashboard mặc định mở tại `http://localhost:8501`. Navigation bên trá
 
 Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Form vận hành lọc theo nông trại/cây trồng/mùa vụ/hoạt động/tháng; form mua hàng lọc theo nông trại/nhà cung cấp/tháng. Chỉ khi submit form, service mới tạo các nút CSV/PDF và capability-gated XLSX từ request đã chuẩn hóa. PDF cục bộ cần `reports` extra như lệnh cài đặt trên. XLSX chỉ khả dụng khi provision explicit `AGRIINSIGHT_NODE_EXECUTABLE` và `AGRIINSIGHT_NODE_MODULES`.
 
-Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Frontend production có thể lập kế hoạch trên read/mutation contracts Phase 5 nhưng vẫn phải giữ warehouse scope, idempotency, ETag và Phase 6 dependency. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
+Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Nền tảng Next 16 và các route Overview/Farms của Web Phase 5 đã được nghiệm thu cục bộ; tích hợp Inventory production vẫn thuộc Web Phase 7 và phải giữ warehouse scope, idempotency, ETag cùng dependency Phase 6. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
 
-Dashboard hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
+Dashboard Streamlit hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
 
 Pipeline mặc định tạo 6 trang trại, 24 khu vực, 15 loại vật tư và khoảng 11.500 sensor readings. Có thể tạo dataset gần một triệu readings bằng cấu hình lớn hơn:
 
@@ -123,9 +123,10 @@ python -m pytest
 python -m compileall -q src dashboard tests
 docker compose -f compose.yaml config --quiet
 python -m pip wheel . --no-deps --no-build-isolation --wheel-dir artifacts/_tmp/wheel
+powershell -ExecutionPolicy Bypass -File scripts/run-web-e2e-tests.ps1
 ```
 
-Test suite kiểm tra pipeline end-to-end, idempotency, reproducibility, foreign keys, KPI reconciliation, export limits, disk thresholds, form-submit boundary và render/navigation của cả sáu dashboard.
+Test suite kiểm tra pipeline end-to-end, idempotency, reproducibility, foreign keys, KPI reconciliation, export limits, disk thresholds, form-submit boundary và render/navigation của cả sáu dashboard. Gate Web Phase 5 ngày 2026-07-26 đạt 82 web test với 9 skip có chủ đích, 9/9 PostgreSQL privilege test, contract drift/typecheck/lint/Next build/Maven package, 3/3 kịch bản Chrome cài sẵn, production dependency audit 0 lỗ hổng ở ngưỡng cấu hình và cleanup không còn runtime E2E.
 
 ## Cấu trúc artifact
 
@@ -155,6 +156,12 @@ artifacts/
 - [KPI catalog](docs/kpi-catalog.md)
 - [Tiêu chí nghiệm thu](docs/mvp-acceptance.md)
 - [Reporting và vận hành local](docs/reporting-and-local-operations.md)
+
+Web Phase 5 đã được nghiệm thu cục bộ ngày 2026-07-26 cho `/overview`,
+`/farms` và `/farms/[farmId]`. Xem [kế hoạch](plans/260722-2342-production-web-platform/plan.md),
+[phase file](plans/260722-2342-production-web-platform/phase-05-overview-and-farm-intelligence.md)
+và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
+Public release vẫn bị chặn; Phase 6 Work Operations là bước tiếp theo.
 
 ## Big-data demo và visual assets
 

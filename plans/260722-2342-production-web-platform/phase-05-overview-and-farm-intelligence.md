@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "overview-and-farm-intelligence"
-status: in_progress
+status: completed
 priority: P1
 effort: "3d"
 dependencies: [2, 3, 4]
@@ -11,38 +11,37 @@ dependencies: [2, 3, 4]
 
 ## Progress Snapshot — 2026-07-26
 
-- Implemented `/overview`, `/farms`, and `/farms/[farmId]` with server-only
-  session context, scoped Spring farm reads, canonical-code Gold joins, explicit
-  degraded states, stable deep links, safe lineage, signed financial trend, and
-  mobile farm cards.
-- Implemented scope-checked farm, field, crop, and season UUID resolution
-  through Spring masters. FastAPI now applies the resolved canonical codes plus
-  `all`, `last-30-days`, or `season-to-date` before server-side KPI aggregation.
-- Added visible applied scope and resolved date bounds, filter-preserving forms,
-  operational status/search/sort controls, and bounded presentation pagination.
-- Corrected the primary Overview -> Farms transition to carry the canonical
-  filter query, and extended the browser scenario through list and farm detail.
-  Source contracts and in-memory TypeScript syntax checks pass; real-browser
-  execution remains pending the disk recovery gate below.
+- Accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; not
+  publicly or production released.
+- Final unified runner passed clean `npm ci`, Spring and analytics contract
+  drift checks, TypeScript, zero-warning ESLint, Next 16 production build with
+  all routes dynamic, Maven package with tests skipped by gate, 9/9 PostgreSQL
+  privilege tests, 82 web tests with 9 intentional skips, and 3/3 installed-
+  Chrome scenarios.
+- Browser E2E covered nonce CSP landing/login/custom 404, real Keycloak/Spring
+  `/me`/PostgreSQL auth, and the period-preserving Overview -> Farms -> detail
+  path plus direct reviewed WebP rendering.
+- Shared rollout fixes stayed bounded to BFF query allowlists, request-scoped
+  nonce CSP/custom 404, provenance-safe direct WebP and CSP-safe trend
+  rendering, and owned/mutex-guarded E2E lifecycle.
+- Cleanup: no listeners on 3100, 55443, or 58080-58082; no
+  `agriinsight-web-e2e` Compose containers; no runtime roots.
+- Disk checkpoint: C 8.71 GB free WARN under the 10/8 thresholds; D 28.91 GB
+  free PASS under the 25/20 thresholds; WSL swap configured at
+  `D:\Docker\wsl-swap.vhdx`.
 - UI/UX review:
   [`reports/ui-ux-phase5-review-2026-07-26.md`](./reports/ui-ux-phase5-review-2026-07-26.md).
-- Validation passed: independent analytics API run 55 tests; final filtered
-  regression suite 6 tests; focused Web run 35 tests; deterministic OpenAPI and
-  generated TypeScript drift checks; ESLint with zero warnings; TypeScript
-  `--noEmit`.
-- Heavy validation paused: C has 8.07 GB and D has 19.96 GB free at checkpoint,
-  at or below the configured hard-stop margin. Next production build,
-  real Keycloak/Playwright E2E, and Docker build must wait for safe disk
-  recovery.
+- Final evidence:
+  [`reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md`](./reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
+- Phase 6 Work Operations is next.
 
 ## Contract Remediation Slice
 
-The checked-in Phase 2 analytics contract currently accepts only `farm_code`
-on `/farms` and no filters on `/overview`. Phase 5 cannot meet its filter
-acceptance criteria by adapting the browser alone. This slice intentionally
-extends the internal API while preserving bearer verification, Spring-derived
-authorization scope, checksum-backed snapshot reads, and existing unfiltered
-responses.
+The checked-in Phase 2 analytics contract now accepts canonical `farm_code`,
+`field_code`, `crop_code`, `season_code`, and `date_preset` on `/overview` and
+`/farms`. Phase 5 resolves operational UUIDs server-side before analytics calls
+while preserving bearer verification, Spring-derived authorization scope,
+checksum-backed snapshot reads, and the existing unfiltered responses.
 
 ### Exact semantics
 
@@ -209,6 +208,8 @@ These are the fixed Phase 5 ownership targets under the Phase 3 `web/` layout; r
 
 ## Validation
 
+- Integrated:
+  - `powershell -ExecutionPolicy Bypass -File scripts/run-web-e2e-tests.ps1`
 - Focused:
   - `npm --prefix web run test -- overview-route farm-intelligence`
   - `npm --prefix web run test:e2e -- --grep "overview|farm intelligence"`
@@ -223,13 +224,13 @@ These are the fixed Phase 5 ownership targets under the Phase 3 `web/` layout; r
 - [x] `/overview` becomes the post-login default and renders without browser-side KPI aggregation.
 - [x] Farm/field/crop/season UUID filters are scope-checked and resolved server-side to reconciled canonical codes before analytics access.
 - [x] `/farms` and `/farms/[farmId]` share current supported URL filters and keep deep links stable.
-- [ ] Real Keycloak/Playwright navigation proves the selected period survives
+- [x] Real Keycloak/Playwright navigation proves the selected period survives
   Overview -> Farms -> Farm detail without client-side reconstruction.
 - [x] Every analytic panel exposes scope, cutoff, freshness, and safe lineage metadata in visible UI.
 - [x] Charts have equivalent tables or textual summaries; contextual images have real alt text and do not carry KPI meaning.
 - [x] The view model never assumes Gold has UUIDs or `tenantId`.
 - [x] Partial Spring or Gold failure renders explicit degraded UI instead of fake combined numbers.
-- [ ] No code outside the overview/farms route tree and phase-local view-model adapters is required for rollout.
+- [x] Shared rollout fixes stayed bounded to BFF query allowlists, request-scoped nonce CSP/custom 404, provenance-safe direct WebP and CSP-safe trend rendering, and owned/mutex-guarded E2E lifecycle.
 
 ## Risks And Rollback
 
@@ -250,7 +251,9 @@ These are the fixed Phase 5 ownership targets under the Phase 3 `web/` layout; r
 - Hard blockers: Phases 2, 3, and 4 complete and stable.
 - Parallel safety:
   - Do not edit work, inventory, cost, crop-health, or admin route trees.
-  - Do not edit shared shell/layout or navigation registration files in this phase.
+  - Shared shell/navigation received no feature-scope change. Controller-owned
+    rollout fixes were limited to root request rendering/CSP, bounded BFF query
+    plumbing, reviewed visual rendering, and E2E runner lifecycle.
 - Owned artifacts:
   - overview/farms pages
   - overview/farms loaders, UUID/code resolvers, and mappers

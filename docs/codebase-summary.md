@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-23
+Verified snapshot: 2026-07-26
 
 ## Repository shape
 
@@ -8,6 +8,7 @@ Verified snapshot: 2026-07-23
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
 | `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
+| `web/` | Next 16 App Router/BFF, opaque session auth, and the `/overview`, `/farms`, `/farms/[farmId]` browser surface |
 | `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
 | `backend/` | Java 21 Spring Boot operational backend, PostgreSQL migrations, and transactional outbox |
 | `scripts/` | C/D disk guard, guarded backend verification, and big-data demo runner |
@@ -34,6 +35,21 @@ They are contextual UI assets rather than source facts; Crop Health marks its
 image as AI-generated demo evidence and never assigns it an observation ID.
 The local Streamlit theme follows the Field Ledger palette from the CK FE
 design system.
+
+## Web surface
+
+The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
+Phase 5 browser surface. The accepted product routes are `/overview`, `/farms`,
+and `/farms/[farmId]`; auth/support routes such as `/login`, `/protected`, and
+`/api/auth/*` exist as shell plumbing.
+
+Server loaders resolve scoped Spring UUID masters to canonical codes before
+calling the typed FastAPI Gold read layer. The browser receives aggregated
+view models through a tokenless BFF/opaque PostgreSQL session boundary and
+never reconstructs KPI joins. Partial-source failure renders explicit degraded
+states; safe lineage and reviewed contextual WebPs remain visible and bounded.
+Shared rollout hardening covers exact BFF query allowlists, request-scoped nonce
+CSP/custom 404 rendering, and mutex-owned E2E startup/cleanup.
 
 ## Operational backend
 
@@ -120,6 +136,15 @@ GETs also expose `ETag`.
 
 ## Verification snapshot
 
+- Web Phase 5 local acceptance (2026-07-26): clean `npm ci`, checked-in Spring
+  and analytics contract drift, TypeScript, zero-warning ESLint, Next 16
+  production build, Maven package with tests skipped by that gate, 82 passed
+  web tests with 9 intentional skips, 9/9 PostgreSQL privilege tests, 3/3
+  installed-Chrome scenarios, and production dependency audit with 0
+  vulnerabilities at the configured threshold.
+- Web E2E cleanup audit: zero listeners on 3100, 55443, and 58080-58082; zero
+  `agriinsight-web-e2e` Compose containers; `artifacts/_tmp/web-e2e` and
+  `_tmp/web-e2e` absent.
 - Backend phase-1 contract gate (2026-07-23): 459 surefire tests + 100
   Failsafe/PostgreSQL integration tests; zero failures, errors, and skips.
 - Backend guarded `mvn verify` (2026-07-22): 622 tests, including 98 Failsafe
@@ -143,8 +168,9 @@ GETs also expose `ETag`.
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
-- Disk policy: C warns/fails below 10/8 GB; D warns/fails below 25/20 GB; the
-  last Python/UI gate finished at C 10.274 GB and D 25.364 GB.
+- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. The Phase 5
+  completion checkpoint recorded C 8.71 GB free (WARN) and D 28.91 GB free
+  (PASS); WSL swap was configured on D.
 - Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
   Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
   smoke passed.
@@ -155,13 +181,11 @@ GETs also expose `ETag`.
 
 ## Next boundary
 
-Phase 1 contract freeze is complete and preserved in the checked-in OpenAPI
-artifact. Phase 5 inventory/procurement and Phase 6 operating-cost/reporting
-separation are accepted. Phase 7 now has V18-V19 outbox, CI, image scanning,
-SBOM/provenance, Docker Hub/GHCR phase publication, backup/restore, and release
-metadata evidence. The next integration boundary is a separately authorized
-outbox consumer/realtime path; no production-release claim is made while
-protected release/recovery approvals remain open.
+Production-web Phase 5 is completed locally. The next implementation boundary
+is Phase 6 Work Operations: mobile assignment reads, idempotent log append,
+append-only corrections, and immutable history over frozen Spring contracts.
+It adds no backend routes and no fake offline queue. Phase 11 browser quality
+and Phase 12 protected release gates still block any production-release claim.
 
 ## Unresolved questions
 

@@ -9,11 +9,11 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Track | Status | Evidence |
 |---|---|---|
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
-| Analytics read API | Phase 2 implementation verified locally; review/docs gate in progress | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, Python 125 passed + 3 intentional skips |
+| Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Frontend | Streamlit visual polish accepted; production web gated | CK FE/Stitch artifacts plus eight generated first-party visuals; Phase 1 contract freeze exported the backend OpenAPI artifact and the disposable auth spike selected `openid-client` 6.8.4, but production UI is still gated |
+| Frontend | Phase 5 accepted locally 2026-07-26; public release gated | Secure Next 16 BFF/session foundation, Vietnamese shell, eight reviewed first-party visuals, and real Overview/Farms routes; container publication and protected release remain later gates |
 
 ## Next backend phases
 
@@ -21,8 +21,14 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
 | Phase 7 | Outbox operations, verified images, CI/release hardening | Core verified 2026-07-22; V18-V19 outbox, image, and recovery evidence is in place, but protected release approval remains open |
-| Analytics Phase 2 | Internal read API and demo-tenant boundary | Implementation and real Big Data/PostgreSQL probes green; CK review, docs, focused commits, and frontend handoff remain |
-| Frontend follow-up | Role-aware dashboard and operational workflows | Backend API/OpenAPI stable; use `frontend-follow-up-brief.md` and design system |
+| Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
+| Frontend follow-up | Complete Web Phases 6-12 | Phase 6 Work Operations is next; browser quality and protected release remain Phases 11-12 |
+
+## Phase 5 checkpoint
+
+- Accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; not publicly released.
+- Evidence: [plan](../plans/260722-2342-production-web-platform/plan.md), [phase file](../plans/260722-2342-production-web-platform/phase-05-overview-and-farm-intelligence.md), [report](../plans/260722-2342-production-web-platform/reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
+- Phase 6 Work Operations is next.
 
 ## Phase 5 boundary
 
@@ -62,9 +68,9 @@ implicitly converted into operating cost.
 
 ## Future product tracks
 
-- Role-aware production frontend and browser security boundary.
-- Port the verified `openid-client` web-auth boundary into the production web
-  stack only after the protected release path opens.
+- Complete the remaining production-web route phases and protected release
+  work; the local `openid-client` OIDC boundary is implemented, while
+  production OIDC configuration and approval remain open.
 - Outbox consumer, realtime Kafka analytics, alerts, and mobile field workflows.
 - Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,
   and model monitoring.
