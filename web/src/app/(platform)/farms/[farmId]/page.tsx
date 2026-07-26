@@ -35,7 +35,8 @@ export default async function FarmDetailPage({
       env: context.env,
       accessToken: context.accessToken,
       correlationId: context.correlationId,
-      farmId
+      farmId,
+      filters
     });
   } catch (error) {
     if (error instanceof ScopeResolutionError) notFound();

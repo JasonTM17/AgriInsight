@@ -4,13 +4,23 @@ import { getAnalyticsPayload, type AnalyticsResponse } from "@/server/clients/an
 import type { WebEnvironment } from "@/server/config/environment";
 
 import { loadOperationalFarms } from "@/features/overview/load-operational-farms";
+import {
+  resolveOperationalAnalyticsMasters,
+  toAnalyticsFilterQuery
+} from "@/features/overview/load-operational-analytics-masters";
 import type { OverviewFilters } from "@/features/overview/overview-filter-schema";
 import {
   mergeFarmAnalyticsByCode,
-  resolveFarmCode,
   type OperationalFarm
 } from "@/features/overview/resolve-analytics-codes";
 import type { SourceResult } from "@/features/overview/load-overview-view-model";
+
+import {
+  createPagination,
+  hasAnalyticScopeFilter,
+  paginateFarms,
+  restrictOperationalFarms
+} from "./farm-intelligence-view-model-helpers";
 
 export type FarmAnalyticsEnvelope = AnalyticsResponse<"analyticsFarms">;
 export type FarmAnalyticsItem = FarmAnalyticsEnvelope["payload"]["items"][number];
@@ -48,12 +58,17 @@ export async function loadFarmListViewModel({
 }): Promise<FarmListViewModel> {
   const pageSize = 20;
   const active = filters.status === "all" ? undefined : filters.status === "active";
+  const resolved = await resolveOperationalAnalyticsMasters(
+    { env, accessToken, correlationId },
+    filters
+  );
   const [farmResult, analyticsResult] = await Promise.allSettled([
     loadOperationalFarms(env, accessToken, correlationId, {
       active,
       search: filters.search
     }),
     getAnalyticsPayload(env, "analyticsFarms", accessToken, correlationId, {
+      ...toAnalyticsFilterQuery(filters, resolved),
       limit: 100,
       offset: 0,
       sort: filters.sort
@@ -73,8 +88,24 @@ export async function loadFarmListViewModel({
     };
   }
   if (analyticsResult.status === "rejected") {
+    if (hasAnalyticScopeFilter(filters)) {
+      return {
+        filters,
+        farms: {
+          status: "failed",
+          message: "Không thể xác minh kết quả theo bộ lọc phân tích hiện tại.",
+          correlationId
+        },
+        analyticsMetadata: null,
+        partial: true,
+        pagination: createPagination(filters.page, pageSize, 0)
+      };
+    }
     const merged = paginateFarms(
-      mergeFarmAnalyticsByCode(farmResult.value, []),
+      mergeFarmAnalyticsByCode(
+        restrictOperationalFarms(farmResult.value, resolved.farmCode),
+        []
+      ),
       filters,
       pageSize
     );
@@ -91,7 +122,15 @@ export async function loadFarmListViewModel({
   }
   const merged = paginateFarms(
     mergeFarmAnalyticsByCode(
-      farmResult.value,
+      restrictOperationalFarms(
+        farmResult.value,
+        resolved.farmCode,
+        hasAnalyticScopeFilter(filters)
+          ? new Set(
+              analyticsResult.value.payload.items.map((item) => item.farmCode)
+            )
+          : undefined
+      ),
       analyticsResult.value.payload.items
     ),
     filters,
@@ -113,15 +152,21 @@ export async function loadFarmDetailViewModel({
   env,
   accessToken,
   correlationId,
-  farmId
+  farmId,
+  filters
 }: {
   env: WebEnvironment;
   accessToken: string;
   correlationId: string;
   farmId: string;
+  filters: OverviewFilters;
 }): Promise<FarmDetailViewModel> {
-  const farms = await loadOperationalFarms(env, accessToken, correlationId);
-  const farm = resolveFarmCode(farms, farmId);
+  const resolved = await resolveOperationalAnalyticsMasters(
+    { env, accessToken, correlationId },
+    { ...filters, farmId }
+  );
+  const farm = resolved.farm;
+  if (!farm) throw new Error("Resolved farm master is required");
   try {
     const analytics = await getAnalyticsPayload(
       env,
@@ -129,6 +174,7 @@ export async function loadFarmDetailViewModel({
       accessToken,
       correlationId,
       {
+        ...toAnalyticsFilterQuery(filters, resolved),
         farm_code: farm.code,
         limit: 1,
         offset: 0,
@@ -146,41 +192,4 @@ export async function loadFarmDetailViewModel({
       }
     };
   }
-}
-
-function paginateFarms(
-  farms: readonly Readonly<{
-    farm: OperationalFarm;
-    analytics: FarmAnalyticsItem | null;
-  }>[],
-  filters: OverviewFilters,
-  pageSize: number
-) {
-  const ordered = filters.sort === "profit_desc"
-    ? [...farms].sort((left, right) => {
-        const leftProfit = left.analytics?.profitVnd;
-        const rightProfit = right.analytics?.profitVnd;
-        if (leftProfit === undefined && rightProfit === undefined) {
-          return left.farm.code.localeCompare(right.farm.code);
-        }
-        if (leftProfit === undefined) return 1;
-        if (rightProfit === undefined) return -1;
-        return rightProfit - leftProfit || left.farm.code.localeCompare(right.farm.code);
-      })
-    : [...farms].sort((left, right) => left.farm.code.localeCompare(right.farm.code));
-  const pagination = createPagination(filters.page, pageSize, ordered.length);
-  const offset = (pagination.page - 1) * pageSize;
-  return {
-    items: ordered.slice(offset, offset + pageSize),
-    pagination
-  } as const;
-}
-
-function createPagination(page: number, pageSize: number, totalItems: number) {
-  return {
-    page,
-    pageSize,
-    totalItems,
-    totalPages: Math.max(1, Math.ceil(totalItems / pageSize))
-  } as const;
 }

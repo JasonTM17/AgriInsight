@@ -4,6 +4,10 @@ import type { AnalyticsResponse } from "@/server/clients/analytics";
 import { getAnalyticsPayload } from "@/server/clients/analytics";
 import type { WebEnvironment } from "@/server/config/environment";
 
+import {
+  resolveOperationalAnalyticsMasters,
+  toAnalyticsFilterQuery
+} from "./load-operational-analytics-masters";
 import { loadOperationalFarms } from "./load-operational-farms";
 import type { OverviewFilters } from "./overview-filter-schema";
 
@@ -32,6 +36,10 @@ export async function loadOverviewViewModel({
   filters: OverviewFilters;
 }): Promise<OverviewViewModel> {
   const active = filters.status === "all" ? undefined : filters.status === "active";
+  const resolved = await resolveOperationalAnalyticsMasters(
+    { env, accessToken, correlationId },
+    filters
+  );
   const [farms, analytics] = await Promise.allSettled([
     loadOperationalFarms(env, accessToken, correlationId, {
       active,
@@ -41,7 +49,8 @@ export async function loadOverviewViewModel({
       env,
       "analyticsOverview",
       accessToken,
-      correlationId
+      correlationId,
+      toAnalyticsFilterQuery(filters, resolved)
     )
   ]);
   const farmResult: OverviewViewModel["farms"] = farms.status === "fulfilled"

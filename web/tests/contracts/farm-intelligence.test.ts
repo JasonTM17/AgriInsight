@@ -205,12 +205,16 @@ describe("overview and farm loaders", () => {
   });
 
   it("resolves UUID before sending a canonical farm code to analytics", async () => {
+    vi.mocked(executeAllowedOperation).mockResolvedValueOnce(
+      Response.json(operationalFarm)
+    );
     vi.mocked(getAnalyticsPayload).mockResolvedValue(farmEnvelope as never);
     const result = await loadFarmDetailViewModel({
       env: {} as never,
       accessToken: "server-token",
       correlationId: "correlation-3",
-      farmId: operationalFarm.id
+      farmId: operationalFarm.id,
+      filters: parseOverviewFilters({})
     });
     expect(result.farm.code).toBe("FARM-001");
     expect(vi.mocked(getAnalyticsPayload)).toHaveBeenCalledWith(
@@ -232,5 +236,50 @@ describe("overview and farm loaders", () => {
     });
     expect(result.partial).toBe(false);
     expect(result.analytics.status).toBe("ready");
+  });
+
+  it("sends resolved crop code and date preset to overview analytics", async () => {
+    const cropId = "d9c12487-3eb9-4f41-a476-f51be3e48be7";
+    vi.mocked(executeAllowedOperation).mockImplementation(
+      async (_env, operation) => {
+        if (operation === "cropById") {
+          return Response.json({
+            id: cropId,
+            code: "COFFEE",
+            displayName: "Cà phê",
+            active: true,
+            version: 3
+          });
+        }
+        return Response.json({
+          items: [operationalFarm],
+          hasMore: false,
+          limit: 100,
+          offset: 0
+        });
+      }
+    );
+    vi.mocked(getAnalyticsPayload).mockResolvedValue(overviewEnvelope as never);
+
+    await loadOverviewViewModel({
+      env: {} as never,
+      accessToken: "server-token",
+      correlationId: "correlation-filtered-overview",
+      filters: parseOverviewFilters({
+        cropId,
+        datePreset: "last-30-days"
+      })
+    });
+
+    expect(vi.mocked(getAnalyticsPayload)).toHaveBeenCalledWith(
+      expect.anything(),
+      "analyticsOverview",
+      "server-token",
+      "correlation-filtered-overview",
+      {
+        crop_code: "COFFEE",
+        date_preset: "last-30-days"
+      }
+    );
   });
 });

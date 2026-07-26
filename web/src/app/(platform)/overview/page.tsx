@@ -7,7 +7,6 @@ import { loadPlatformPageContext } from "@/features/overview/load-platform-page-
 import {
   assertCurrentAnalyticsFilterSupport,
   parseOverviewFilters,
-  toFilterQuery,
   type FilterInput,
   type OverviewFilters
 } from "@/features/overview/overview-filter-schema";
@@ -37,10 +36,6 @@ export default async function OverviewPage({
         state="failed"
       />
     );
-  }
-  if (filters.farmId) {
-    const query = toFilterQuery(filters, { farmId: undefined });
-    redirect(`/farms/${filters.farmId}${query.size > 0 ? `?${query}` : ""}`);
   }
   let viewModel: Awaited<ReturnType<typeof loadOverviewViewModel>> | null = null;
   try {
