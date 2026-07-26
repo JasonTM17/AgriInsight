@@ -21,7 +21,7 @@ export default function HomePage() {
           <Link className="primary-action" href="/login">
             Đăng nhập vào hệ thống
           </Link>
-          <Link className="secondary-action" href="/protected">
+          <Link className="secondary-action" href="/overview">
             Mở tổng quan
           </Link>
         </div>

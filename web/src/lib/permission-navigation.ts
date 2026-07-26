@@ -31,7 +31,7 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     key: "overview",
     label: NAVIGATION_LABELS.overview,
     description: NAVIGATION_DESCRIPTIONS.overview,
-    href: "/protected",
+    href: "/overview",
     icon: "grid",
     requiredPermissions: []
   },
@@ -39,7 +39,7 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     key: "farms",
     label: NAVIGATION_LABELS.farms,
     description: NAVIGATION_DESCRIPTIONS.farms,
-    href: "/protected?module=farms",
+    href: "/farms",
     icon: "farm",
     requiredPermissions: ["FARM_READ"]
   },
@@ -114,6 +114,8 @@ export function getActiveNavigationKey(
   pathname: string,
   searchParams?: URLSearchParams | Readonly<Record<string, string | undefined>>
 ): NavigationKey {
+  if (pathname === "/overview") return "overview";
+  if (pathname === "/farms" || pathname.startsWith("/farms/")) return "farms";
   if (pathname !== "/protected") return "overview";
   const moduleKey = searchParams instanceof URLSearchParams
     ? searchParams.get("module")
