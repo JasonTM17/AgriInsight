@@ -22,14 +22,27 @@ test("@overview real executive can drill from overview to a scoped farm", async 
   await expect(page.getByText("Dấu vân tay dữ liệu")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/access_token|refresh_token|Bearer\s/i);
 
+  await page.locator('select[name="datePreset"]').selectOption("last-30-days");
+  await page.getByRole("button", { name: "Áp dụng kỳ" }).click();
+  await expect(page).toHaveURL(/\/overview\?datePreset=last-30-days$/);
+  await expect(page.getByText(/30 ngày gần nhất \(/).first()).toBeVisible();
+
   await page.getByRole("link", { name: "Xem hiệu quả nông trại" }).click();
-  await expect(page).toHaveURL(/\/farms$/);
+  await expect(page).toHaveURL(/\/farms\?datePreset=last-30-days$/);
   await expect(page.getByRole("heading", { name: "Hiệu quả nông trại" })).toBeVisible();
+  await expect(page.getByText(/30 ngày gần nhất \(/).first()).toBeVisible();
 
   const firstFarm = page.locator("tbody a").first();
   await expect(firstFarm).toBeVisible();
+  await expect(firstFarm).toHaveAttribute(
+    "href",
+    /^\/farms\/[0-9a-f-]{36}\?datePreset=last-30-days$/
+  );
   await firstFarm.click();
-  await expect(page).toHaveURL(/\/farms\/[0-9a-f-]{36}/);
+  await expect(page).toHaveURL(
+    /\/farms\/[0-9a-f-]{36}\?datePreset=last-30-days$/
+  );
+  await expect(page.getByText(/30 ngày gần nhất \(/).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Trạng thái hiện hành" })).toBeVisible();
   await expect(page.getByText("Mã nông trại")).toBeVisible();
 });

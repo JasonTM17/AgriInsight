@@ -40,7 +40,7 @@ describe("overview and farm presentation contracts", () => {
     expect(lineage).toContain("30 ngày gần nhất");
   });
 
-  it("preserves canonical scope filters in server-rendered forms", () => {
+  it("preserves canonical scope filters in forms and cross-route links", () => {
     const overview = read("src/features/overview/components/overview-dashboard.tsx");
     const farms = read("src/features/farms/components/farm-list.tsx");
     for (const filter of ["farmId", "fieldId", "cropId", "seasonId"]) {
@@ -49,6 +49,9 @@ describe("overview and farm presentation contracts", () => {
     }
     expect(overview).toContain('name="datePreset"');
     expect(farms).toContain('name="datePreset"');
+    expect(overview).toContain("href={currentFarmsHref(viewModel)}");
+    expect(overview).toContain("const query = toFilterQuery(viewModel.filters)");
+    expect(farms).toContain("href={farmHref(farm.id, viewModel)}");
   });
 
   it("keeps loading and errors inside stable route shells", () => {
