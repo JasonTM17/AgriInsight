@@ -53,8 +53,12 @@ if (-not $resolvedOutput.StartsWith(
 $contractPath = Join-Path $repositoryRoot "deploy/demo/demo-tenant.json"
 $pythonPath = Join-Path $repositoryRoot "src"
 $previousPythonPath = $env:PYTHONPATH
+$previousPostgresClientEncoding = $env:PGCLIENTENCODING
 try {
     $env:PYTHONPATH = $pythonPath
+    # The generated SQL contains Vietnamese catalog labels. Pin the native
+    # client boundary instead of inheriting the Windows ANSI code page.
+    $env:PGCLIENTENCODING = "UTF8"
     python -m agriinsight.demo_tenant_bootstrap `
         --artifact-root $resolvedArtifactRoot `
         --contract $contractPath `
@@ -134,6 +138,7 @@ try {
 }
 finally {
     $env:PYTHONPATH = $previousPythonPath
+    $env:PGCLIENTENCODING = $previousPostgresClientEncoding
 }
 
 Write-Output (

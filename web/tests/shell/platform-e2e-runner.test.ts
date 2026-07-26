@@ -8,6 +8,10 @@ const runner = readFileSync(
   resolve(repoRoot, "scripts/run-web-e2e-tests.ps1"),
   "utf8"
 );
+const demoBootstrap = readFileSync(
+  resolve(repoRoot, "scripts/bootstrap-demo-environment.ps1"),
+  "utf8"
+);
 
 describe("real-platform E2E runner", () => {
   it("keeps package caches on the workspace drive", () => {
@@ -19,6 +23,16 @@ describe("real-platform E2E runner", () => {
     );
     expect(runner).toContain(
       '$env:npm_config_cache = Join-Path $artifactRuntimeRoot "npm-cache"'
+    );
+  });
+
+  it("pins and restores UTF-8 at the PostgreSQL seed boundary", () => {
+    expect(demoBootstrap).toContain(
+      "$previousPostgresClientEncoding = $env:PGCLIENTENCODING"
+    );
+    expect(demoBootstrap).toContain('$env:PGCLIENTENCODING = "UTF8"');
+    expect(demoBootstrap).toContain(
+      "$env:PGCLIENTENCODING = $previousPostgresClientEncoding"
     );
   });
 
