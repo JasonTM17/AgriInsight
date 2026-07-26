@@ -15,17 +15,78 @@ dependencies: [2, 3, 4]
   session context, scoped Spring farm reads, canonical-code Gold joins, explicit
   degraded states, stable deep links, safe lineage, signed financial trend, and
   mobile farm cards.
-- Implemented current contract-safe filters: farm, operational status, search,
-  profit/code sort, and bounded presentation pagination. Field, crop, season,
-  and date presets fail closed with a recoverable message because the current
-  analytics endpoints cannot honor them yet.
+- Implemented scope-checked farm, field, crop, and season UUID resolution
+  through Spring masters. FastAPI now applies the resolved canonical codes plus
+  `all`, `last-30-days`, or `season-to-date` before server-side KPI aggregation.
+- Added visible applied scope and resolved date bounds, filter-preserving forms,
+  operational status/search/sort controls, and bounded presentation pagination.
 - UI/UX review:
   [`reports/ui-ux-phase5-review-2026-07-26.md`](./reports/ui-ux-phase5-review-2026-07-26.md).
-- Focused validation passed: 21 Vitest checks, ESLint with zero warnings, and
-  TypeScript `--noEmit`.
-- Heavy validation paused: D has 19.99 GB free, below the 20 GB hard-stop gate.
-  Next production build and real Keycloak/Playwright E2E must wait for safe
-  disk recovery.
+- Validation passed: independent analytics API run 55 tests; final filtered
+  regression suite 6 tests; focused Web run 35 tests; deterministic OpenAPI and
+  generated TypeScript drift checks; ESLint with zero warnings; TypeScript
+  `--noEmit`.
+- Heavy validation paused: C has 8.07 GB and D has 19.96 GB free at checkpoint,
+  at or below the configured hard-stop margin. Next production build,
+  real Keycloak/Playwright E2E, and Docker build must wait for safe disk
+  recovery.
+
+## Contract Remediation Slice
+
+The checked-in Phase 2 analytics contract currently accepts only `farm_code`
+on `/farms` and no filters on `/overview`. Phase 5 cannot meet its filter
+acceptance criteria by adapting the browser alone. This slice intentionally
+extends the internal API while preserving bearer verification, Spring-derived
+authorization scope, checksum-backed snapshot reads, and existing unfiltered
+responses.
+
+### Exact semantics
+
+- Spring resolves every supplied UUID to an active canonical master:
+  `farmId -> farmCode`, `fieldId -> fieldCode + farmId`,
+  `cropId -> cropCode`, and
+  `seasonId -> seasonCode + farmId + fieldId + cropId`.
+- Web rejects unknown, inactive, cross-parent, or incomplete selections before
+  calling analytics. FastAPI independently rejects a farm outside the effective
+  authorization scope and any filter combination absent from the verified
+  artifact relationship.
+- FastAPI accepts canonical `farm_code`, `field_code`, `crop_code`,
+  `season_code`, and `date_preset` on overview/farms.
+- `all` uses the full verified snapshot. `last-30-days` includes event facts
+  from `asOf - 29 days` through `asOf`. `season-to-date` requires
+  `season_code` and includes events from that season start through `asOf`.
+- Costs come from verified activity facts by `occurred_at`; revenue and harvest
+  quantity come from verified harvest facts by `harvested_at`. The API performs
+  all KPI and monthly aggregation; browser components only format returned
+  values.
+- The envelope exposes safe applied filters and resolved date bounds. It never
+  exposes UUIDs, tenant claims from the browser, raw fact rows, or filesystem
+  paths.
+
+### Files and contracts
+
+- FastAPI:
+  `analytics_api/{snapshot_cache,models,read_models,routers/overview,routers/farms,response_envelope}.py`
+- Checked-in contract:
+  `docs/contracts/agriinsight-analytics-v1.openapi.json`
+- Web BFF and adapters:
+  `web/src/server/bff/allowed-operation.ts`,
+  `web/src/features/overview/{load-operational-analytics-masters,resolve-analytics-codes,load-overview-view-model}.ts`,
+  `web/src/features/farms/load-farm-intelligence-view-model.ts`
+- Generated consumer:
+  `web/src/server/generated/analytics/schema.d.ts`
+- Tests:
+  `tests/analytics_api/*`, `web/tests/contracts/*`
+
+### Validation and rollback
+
+- TDD covers parent consistency, foreign/out-of-scope filters, all three date
+  presets, exact server aggregates, unfiltered backwards compatibility, and
+  OpenAPI drift.
+- Rollback removes the new optional query parameters and applied-filter
+  metadata; the original unfiltered overview/farms behavior remains unchanged.
+- Custom date ranges, browser-side aggregation, new persistence, realtime
+  facts, and public API exposure remain out of scope.
 
 ## Overview
 
@@ -156,7 +217,7 @@ These are the fixed Phase 5 ownership targets under the Phase 3 `web/` layout; r
 ## Acceptance Criteria
 
 - [x] `/overview` becomes the post-login default and renders without browser-side KPI aggregation.
-- [ ] Farm/field/crop/season UUID filters are scope-checked and resolved server-side to reconciled canonical codes before analytics access.
+- [x] Farm/field/crop/season UUID filters are scope-checked and resolved server-side to reconciled canonical codes before analytics access.
 - [x] `/farms` and `/farms/[farmId]` share current supported URL filters and keep deep links stable.
 - [x] Every analytic panel exposes scope, cutoff, freshness, and safe lineage metadata in visible UI.
 - [x] Charts have equivalent tables or textual summaries; contextual images have real alt text and do not carry KPI meaning.
