@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -15,11 +16,24 @@ POWERSHELL = (
     or shutil.which("powershell")
     or shutil.which("pwsh")
 )
+DISK_OVERRIDE_NAMES = tuple(
+    f"AGRIINSIGHT_DISK_GUARD_{drive}_{threshold}_GB"
+    for drive in ("C", "D")
+    for threshold in ("WARN", "FAIL")
+)
 
 
-def _run_guard(*arguments: object) -> subprocess.CompletedProcess[str]:
+def _run_guard(
+    *arguments: object,
+    environment_overrides: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     if POWERSHELL is None:
         pytest.skip("PowerShell is not available")
+
+    environment = os.environ.copy()
+    for name in DISK_OVERRIDE_NAMES:
+        environment.pop(name, None)
+    environment.update(environment_overrides or {})
 
     return subprocess.run(
         [
@@ -36,6 +50,7 @@ def _run_guard(*arguments: object) -> subprocess.CompletedProcess[str]:
         cwd=PROJECT_ROOT,
         capture_output=True,
         check=False,
+        env=environment,
         text=True,
         timeout=30,
     )
@@ -46,9 +61,15 @@ def _output(result: subprocess.CompletedProcess[str]) -> str:
 
 
 def _assert_drive_status(
-    result: subprocess.CompletedProcess[str], drive: str, status: str
+    result: subprocess.CompletedProcess[str],
+    drive: str,
+    status: str,
+    policy: str = "default",
 ) -> None:
-    pattern = rf"(?m)^DISK_GUARD drive={drive} .* status={status} source=test-only$"
+    pattern = (
+        rf"(?m)^DISK_GUARD drive={drive} .* status={status} "
+        rf"source=test-only policy={policy}$"
+    )
     assert re.search(pattern, result.stdout), _output(result)
 
 
@@ -166,7 +187,7 @@ def test_missing_drive_is_a_safe_failure(
     assert result.returncode == 2, _output(result)
     assert re.search(
         rf"(?m)^DISK_GUARD drive={missing_drive} free_gb=unavailable .* "
-        r"status=FAIL source=test-only reason=drive-not-found$",
+        r"status=FAIL source=test-only policy=default reason=drive-not-found$",
         result.stdout,
     ), _output(result)
     assert (
@@ -199,11 +220,13 @@ def test_default_execution_reports_both_actual_drives() -> None:
 
     assert result.returncode in {0, 2}, _output(result)
     assert re.search(
-        r"(?m)^DISK_GUARD drive=C .* source=actual(?: reason=[\w-]+)?$",
+        r"(?m)^DISK_GUARD drive=C .* source=actual policy=default"
+        r"(?: reason=[\w-]+)?$",
         result.stdout,
     ), _output(result)
     assert re.search(
-        r"(?m)^DISK_GUARD drive=D .* source=actual(?: reason=[\w-]+)?$",
+        r"(?m)^DISK_GUARD drive=D .* source=actual policy=default"
+        r"(?: reason=[\w-]+)?$",
         result.stdout,
     ), _output(result)
     assert re.search(
@@ -211,3 +234,61 @@ def test_default_execution_reports_both_actual_drives() -> None:
         rf"exit_code={result.returncode} source=actual$",
         result.stdout,
     ), _output(result)
+
+
+def test_valid_lower_override_keeps_absolute_floor_and_reports_policy() -> None:
+    result = _run_guard(
+        "-TestOnly",
+        "-TestOnlyCFreeGb",
+        100,
+        "-TestOnlyDFreeGb",
+        13,
+        environment_overrides={
+            "AGRIINSIGHT_DISK_GUARD_D_WARN_GB": "14",
+            "AGRIINSIGHT_DISK_GUARD_D_FAIL_GB": "12",
+        },
+    )
+
+    assert result.returncode == 0, _output(result)
+    _assert_drive_status(result, "C", "PASS")
+    _assert_drive_status(result, "D", "WARN", policy="override")
+    assert "warn_below_gb=14.000 fail_below_gb=12.000" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("environment_overrides", "reason"),
+    [
+        (
+            {"AGRIINSIGHT_DISK_GUARD_D_FAIL_GB": "not-a-number"},
+            "invalid-threshold-override-D",
+        ),
+        (
+            {"AGRIINSIGHT_DISK_GUARD_D_FAIL_GB": "7.999"},
+            "threshold-override-below-floor-D",
+        ),
+        (
+            {
+                "AGRIINSIGHT_DISK_GUARD_D_WARN_GB": "8",
+                "AGRIINSIGHT_DISK_GUARD_D_FAIL_GB": "9",
+            },
+            "threshold-override-inverted-D",
+        ),
+    ],
+)
+def test_invalid_override_configuration_fails_closed(
+    environment_overrides: dict[str, str], reason: str
+) -> None:
+    result = _run_guard(
+        "-TestOnly",
+        "-TestOnlyCFreeGb",
+        100,
+        "-TestOnlyDFreeGb",
+        100,
+        environment_overrides=environment_overrides,
+    )
+
+    assert result.returncode == 2, _output(result)
+    assert (
+        f"DISK_GUARD overall=FAIL exit_code=2 "
+        f"source=configuration reason={reason}"
+    ) in result.stdout
