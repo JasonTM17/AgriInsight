@@ -22,8 +22,10 @@ describe("web proxy security policy", () => {
     const policy = response.headers.get("content-security-policy");
     expect(policy).toMatch(/script-src 'self' 'nonce-[a-f0-9]+' 'strict-dynamic'/);
     expect(policy).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(policy).toMatch(/style-src 'self' 'nonce-[a-f0-9]+'/);
+    expect(policy).not.toContain("style-src-attr");
     expect(policy).toContain("frame-ancestors 'none'");
-    expect(policy).toContain("require-trusted-types-for 'script'");
+    expect(policy).not.toContain("require-trusted-types-for");
   });
 
   it("rejects a foreign host before redirect or application work", () => {

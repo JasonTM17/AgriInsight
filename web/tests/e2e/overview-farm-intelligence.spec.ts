@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+import {
+  expectNoCspViolations,
+  expectNonceCspHeader,
+  installCspViolationRecorder
+} from "./helpers/csp-assertions";
+
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Overview E2E requires ${name}`);
@@ -9,6 +15,7 @@ function required(name: string): string {
 test("@overview real executive can drill from overview to a scoped farm", async ({
   page
 }) => {
+  await installCspViolationRecorder(page);
   await page.goto("/api/auth/login?returnTo=/overview");
   await page.locator("#username").fill(required("AGRIINSIGHT_WEB_E2E_USERNAME"));
   await page.locator("#password").fill(required("AGRIINSIGHT_WEB_E2E_PASSWORD"));
@@ -21,6 +28,19 @@ test("@overview real executive can drill from overview to a scoped farm", async 
   await expect(page.getByText("Phiên dữ liệu")).toBeVisible();
   await expect(page.getByText("Dấu vân tay dữ liệu")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/access_token|refresh_token|Bearer\s/i);
+  await expectReviewedVisual(page, "overview-fields.webp");
+  const overviewResponse = await page.request.get("/overview");
+  expectNonceCspHeader(overviewResponse);
+  await expectNoCspViolations(page);
+  await expect
+    .poll(() =>
+      page
+        .locator("progress[data-trend-metric]")
+        .evaluateAll((bars) =>
+          bars.some((bar) => Number(bar.getAttribute("value")) > 0)
+        )
+    )
+    .toBe(true);
 
   await page.locator('select[name="datePreset"]').selectOption("last-30-days");
   await page.getByRole("button", { name: "Áp dụng kỳ" }).click();
@@ -31,6 +51,7 @@ test("@overview real executive can drill from overview to a scoped farm", async 
   await expect(page).toHaveURL(/\/farms\?datePreset=last-30-days$/);
   await expect(page.getByRole("heading", { name: "Hiệu quả nông trại" })).toBeVisible();
   await expect(page.getByText(/30 ngày gần nhất \(/).first()).toBeVisible();
+  await expectNoCspViolations(page);
 
   const firstFarm = page.locator("tbody a").first();
   await expect(firstFarm).toBeVisible();
@@ -45,4 +66,32 @@ test("@overview real executive can drill from overview to a scoped farm", async 
   await expect(page.getByText(/30 ngày gần nhất \(/).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Trạng thái hiện hành" })).toBeVisible();
   await expect(page.getByText("Mã nông trại")).toBeVisible();
+  await expectReviewedVisual(page, "farm-performance.webp");
+  await expectNoCspViolations(page);
 });
+
+async function expectReviewedVisual(
+  page: import("@playwright/test").Page,
+  filename: string
+): Promise<void> {
+  const image = page.locator(`img[src*="${filename}"]`);
+  await expect(image).toBeVisible();
+  await image.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      image.evaluate(
+        (element) =>
+          element instanceof HTMLImageElement
+          && element.complete
+          && element.naturalWidth > 0
+      )
+    )
+    .toBe(true);
+  const currentSourcePath = await image.evaluate(
+    (element) => new URL((element as HTMLImageElement).currentSrc).pathname
+  );
+  expect(currentSourcePath).toBe(`/visuals/${filename}`);
+  const response = await page.request.get(currentSourcePath);
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toMatch(/^image\/webp(?:;|$)/);
+}

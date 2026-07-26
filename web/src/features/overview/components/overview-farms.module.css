@@ -173,27 +173,59 @@
 
 .trendBars {
   position: relative;
+  width: 100%;
   height: 11rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9.5%;
+}
+
+.trendBarSlot {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  min-width: 0;
 }
 
 .trendBar {
-  position: absolute;
-  width: 27%;
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  writing-mode: vertical-lr;
+}
+
+.trendBar::-webkit-progress-bar {
+  background: transparent;
+}
+
+.trendBar::-webkit-progress-value {
+  background: currentcolor;
+}
+
+.trendBar::-moz-progress-bar {
+  background: currentcolor;
+}
+
+.positiveBar {
+  grid-row: 1;
+  transform: rotate(180deg);
+}
+
+.negativeBar {
+  grid-row: 2;
 }
 
 .revenueBar {
-  left: 0;
-  background: var(--brand);
+  color: var(--brand);
 }
 
 .costBar {
-  left: 36.5%;
-  background: var(--ochre);
+  color: var(--ochre);
 }
 
 .profitBar {
-  left: 73%;
-  background: var(--info);
+  color: var(--info);
 }
 
 .trendBaseline {
@@ -201,7 +233,9 @@
   top: 50%;
   right: 0;
   left: 0;
+  z-index: 1;
   border-top: 1px solid var(--muted);
+  pointer-events: none;
 }
 
 .trendLegend {

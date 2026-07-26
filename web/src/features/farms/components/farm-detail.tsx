@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 
+import { ReviewedVisual } from "@/components/media/reviewed-visual";
 import { StatePanel } from "@/components/app-shell/state-panels";
 import type { FarmDetailViewModel } from "@/features/farms/load-farm-intelligence-view-model";
 import {
@@ -97,7 +97,12 @@ export function FarmDetail({
       </div>
       {visual ? (
         <figure className={styles.contextVisual}>
-          <Image alt={visual.alt} height={visual.height} src={`/visuals/${visual.filename}`} width={visual.width} />
+          <ReviewedVisual
+            alt={visual.alt}
+            filename={visual.filename}
+            height={visual.height}
+            width={visual.width}
+          />
           <figcaption><strong>{visual.title}</strong><span>{visual.description}</span><small>Ảnh minh họa bối cảnh — không phải bằng chứng số liệu.</small></figcaption>
         </figure>
       ) : null}

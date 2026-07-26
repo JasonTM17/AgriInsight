@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 import type { AnalyticsOverviewEnvelope } from "@/features/overview/load-overview-view-model";
 
 import { AnalyticsContextLine } from "./lineage-banner";
@@ -52,12 +50,12 @@ export function MonthlyFinancialTrend({
           <div aria-hidden="true" className={styles.trendChart}>
             {visibleRows.map((row) => (
               <div className={styles.trendGroup} key={row.month}>
-                <div className={styles.trendBars}>
-                  <span className={styles.trendBaseline} />
-                  <span className={`${styles.trendBar} ${styles.revenueBar}`} style={signedBarStyle(row.revenueVnd, maxAbsoluteValue)} />
-                  <span className={`${styles.trendBar} ${styles.costBar}`} style={signedBarStyle(row.costVnd, maxAbsoluteValue)} />
-                  <span className={`${styles.trendBar} ${styles.profitBar}`} style={signedBarStyle(row.profitVnd, maxAbsoluteValue)} />
-                </div>
+                <FinancialTrendBars
+                  cost={row.costVnd}
+                  maxAbsoluteValue={maxAbsoluteValue}
+                  profit={row.profitVnd}
+                  revenue={row.revenueVnd}
+                />
                 <small>{row.month}</small>
               </div>
             ))}
@@ -84,12 +82,55 @@ export function MonthlyFinancialTrend({
   );
 }
 
-function signedBarStyle(value: number, maxAbsoluteValue: number): CSSProperties {
-  const height = value === 0
-    ? 0
-    : Math.max(2, Math.abs(value) / maxAbsoluteValue * 48);
-  return {
-    height: `${height}%`,
-    top: `${value < 0 ? 50 : 50 - height}%`
-  };
+function FinancialTrendBars({
+  cost,
+  maxAbsoluteValue,
+  profit,
+  revenue
+}: Readonly<{
+  cost: number;
+  maxAbsoluteValue: number;
+  profit: number;
+  revenue: number;
+}>) {
+  const bars = [
+    {
+      className: styles.revenueBar,
+      metric: "revenue",
+      value: revenue
+    },
+    {
+      className: styles.costBar,
+      metric: "cost",
+      value: cost
+    },
+    {
+      className: styles.profitBar,
+      metric: "profit",
+      value: profit
+    }
+  ] as const;
+  return (
+    <div
+      aria-hidden="true"
+      className={styles.trendBars}
+    >
+      <span className={styles.trendBaseline} />
+      {bars.map((bar) => (
+        <span className={styles.trendBarSlot} key={bar.metric}>
+          <progress
+            className={[
+              styles.trendBar,
+              bar.className,
+              bar.value < 0 ? styles.negativeBar : styles.positiveBar
+            ].join(" ")}
+            data-trend-direction={bar.value < 0 ? "negative" : "positive"}
+            data-trend-metric={bar.metric}
+            max={maxAbsoluteValue}
+            value={Math.abs(bar.value)}
+          />
+        </span>
+      ))}
+    </div>
+  );
 }

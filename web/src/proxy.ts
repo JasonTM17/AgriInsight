@@ -120,7 +120,6 @@ function buildContentSecurityPolicy(nonce: string): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'nonce-${nonce}'`,
     "worker-src 'self'",
-    "require-trusted-types-for 'script'"
   ].join("; ");
 }
 
