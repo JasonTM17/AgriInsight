@@ -113,7 +113,7 @@ created: 2026-07-22T00:00:00.000Z
 |-------|------|--------|
 | 1 | [contract-freeze-and-auth-spike](./phase-01-contract-freeze-and-auth-spike.md) | Completed |
 | 2 | [analytics-read-api](./phase-02-analytics-read-api.md) | Completed locally 2026-07-23 |
-| 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Pending |
+| 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Completed locally 2026-07-23 |
 | 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Pending |
 | 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | Pending |
 | 6 | [work-operations](./phase-06-work-operations.md) | Pending |
@@ -242,11 +242,12 @@ Execution is sequential by default because generated contracts, the route regist
 - 2026-07-23: Completed Analytics Phase 2 locally: typed FastAPI GET surface, guarded seven-persona demo bootstrap, one-to-one Big Data reconciliation, deterministic OpenAPI, final CK review, Python 125-pass gate, backend 463-pass package gate, and packaged Flyway exit probes. The internal API is not yet an authenticated browser/BFF product surface.
 - 2026-07-22: Verified the repository has no production web package, deterministic Spring OpenAPI, or analytics HTTP service; those are prerequisites, not assumed capabilities.
 - 2026-07-22: Rejected Auth.js v5 because the stable registry line is v4 and v5 remains prerelease. Phase 1 evaluates stable Better Auth first and pinned `openid-client` 6 as fallback.
-- 2026-07-23: Verified disk policy from project docs: warn at C 10 GB/D 25 GB, fail at C 8 GB/D 20 GB. Latest check: C 14.240 GB, D 28.176 GB after earlier safe npm/pnpm cache cleanup; `tmp/`, artifacts, images, source, and Docker images remain preserved.
+- 2026-07-26: Rechecked disk policy: warn at C 10 GB/D 25 GB, fail at C 8 GB/D 20 GB. Latest free space is C 8.909 GB and D 21.107 GB, above hard-stop but still in warning. Heavy builds remain paused. Obsolete runtime caches were removed; Codex runtimes and Cursor/VS Code user data were losslessly relocated to D through verified junctions. Hibernation and Docker storage were not modified; `tmp/`, Big Data, images, source, and Docker images remain preserved.
 - 2026-07-23: Generated, visually reviewed, stripped, and converted the missing Work and Administration visuals to 1440x810 WebP. Both stay below 350 KiB, have pinned SHA-256 values, and pass the visual-asset test suite; Phase 4 now owns catalog promotion/sync rather than image generation.
 - 2026-07-23: Completed the Full-tier whole-plan sweep across 13 Markdown files. Applied all 11 evidence-backed red-team findings, found 0 unresolved internal contradictions, and passed `ck plan validate` with 12 phases, 0 errors, and 0 warnings.
 - 2026-07-23: Completed Phase 1. Eight bounded Work/Admin reads passed real SQL/RLS coverage; the deterministic OpenAPI artifact froze 67 paths/94 operations; Better Auth 1.6.24 failed the exact-package race and `openid-client` 6.8.4 passed 16 unit, 7 PostgreSQL, build, and real Chrome/Keycloak E2E gates.
 - 2026-07-23: Independent blocker re-review resolved all seven original findings and returned `LAND` with 0 Critical/0 High. Latest disk check remained PASS at C 13.05 GB and D 25.74 GB; Big Data and all eight WebPs remain preserved.
+- 2026-07-23: Completed Phase 3 locally. The Next 16 BFF uses opaque encrypted Postgres sessions, PKCE OIDC, nonce/state replay protection, CSRF/origin/host enforcement, exact generated-contract operations, and fresh Spring `/api/v1/me` authorization. The full Keycloak-PostgreSQL-Spring-Next-Chrome gate passed with web static gates, 9/9 database privilege tests, one real browser scenario, Big Data reconciliation, and zero residual E2E processes or containers.
 - 2026-07-22: User-interview tooling is unavailable in the current execution mode. Deployment-specific values remain explicit protected gates above; no answer is fabricated.
 
 ## Red Team Review

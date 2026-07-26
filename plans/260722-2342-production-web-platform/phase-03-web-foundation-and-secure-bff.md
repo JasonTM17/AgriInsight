@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web foundation and secure BFF"
-status: pending
+status: completed
 priority: P1
 effort: "4-5d"
 dependencies: [1, 2]
@@ -133,16 +133,16 @@ Create the production `web/` runtime: Node 24, npm, Next 16 App Router, and a se
 
 ## Acceptance
 
-- [ ] `web/` builds on Node 24 and npm with one Next 16 app.
-- [ ] Browser-visible state contains only opaque cookies; no access or refresh token leaks.
-- [ ] CSRF and origin checks fail before any upstream mutation call.
-- [ ] Postgres session rows support revoke and refresh fencing.
-- [ ] Session tables live in a dedicated web-owned schema/role; no Spring Flyway migration owns BFF state.
-- [ ] Separate migrator/runtime role tests prove web runtime has no DDL, grant-management, or Spring business-table access.
-- [ ] Backend and analytics clients are generated from the checked-in Phase 1/2 artifacts and used for exact allowlisted calls.
-- [ ] Spring `/me` and scoped resource reads, not local session fields, authorize every protected operation.
-- [ ] No arbitrary catch-all proxy or caller-controlled upstream URL/path exists.
-- [ ] `web-auth-spike/` is removed after its winning behavior is reproduced in `web/`.
+- [x] `web/` builds on Node 24 and npm with one Next 16 app.
+- [x] Browser-visible state contains only opaque cookies; no access or refresh token leaks.
+- [x] CSRF and origin checks fail before any upstream mutation call.
+- [x] Postgres session rows support revoke and refresh fencing.
+- [x] Session tables live in a dedicated web-owned schema/role; no Spring Flyway migration owns BFF state.
+- [x] Separate migrator/runtime role tests prove web runtime has no DDL, grant-management, or Spring business-table access.
+- [x] Backend and analytics clients are generated from the checked-in Phase 1/2 artifacts and used for exact allowlisted calls.
+- [x] Spring `/me` and scoped resource reads, not local session fields, authorize every protected operation.
+- [x] No arbitrary catch-all proxy or caller-controlled upstream URL/path exists.
+- [x] `web-auth-spike/` is removed after its winning behavior is reproduced in `web/`.
 
 ## Risks and rollback
 
@@ -173,9 +173,9 @@ Rollback: disable `web/` startup and remove session cookies; Streamlit remains t
 
 ## Success Criteria
 
-- [ ] The BFF foundation exists and is secure by default.
-- [ ] Session, CSRF, and server-only bearer boundaries are all mechanically tested.
-- [ ] Shared web foundation files are ready for the shell and later route phases without reopening auth design.
+- [x] The BFF foundation exists and is secure by default.
+- [x] Session, CSRF, and server-only bearer boundaries are all mechanically tested.
+- [x] Shared web foundation files are ready for the shell and later route phases without reopening auth design.
 
 ## Validation log
 
@@ -184,3 +184,6 @@ Rollback: disable `web/` startup and remove session cookies; Streamlit remains t
 - Verified: 8
 - Failed: 0
 - Unverified: 0
+- Completed: 2026-07-23
+- Evidence:
+  `reports/phase-03-web-foundation-evidence-2026-07-23.md`
