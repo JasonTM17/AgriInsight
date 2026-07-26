@@ -11,14 +11,21 @@ dependencies: [1, 3, 4]
 
 ## Completion — 2026-07-26
 
-Accepted locally with fresh gates: backend activity HTTP contracts 5/5,
-21 focused work web tests, 117-pass broad suite, lint/typecheck/contract-drift
-clean, and the guarded real-browser E2E runner `WEB_PLATFORM_E2E=PASS` with
-6/6 Playwright scenarios including all three `@work` journeys. Both High
-review findings (cross-target draft/key reuse; silent 50-row truncation) and
-the Medium demo-assignment revocation conflict are fixed and verified. See
-[evidence report](reports/phase-06-work-operations-evidence-2026-07-26.md)
-and [review](reports/code-review-2026-07-26-phase-06.md).
+Accepted locally after two review cycles. Final gates: backend activity HTTP
+contracts 5/5, 31 focused work web tests (including the 10-case negative
+Host/CSRF/malformed-JSON/oversized-body route matrix), 127-pass broad suite,
+lint/typecheck/contract-drift clean, Python demo suite 13/13, and the guarded
+real-browser E2E runner `WEB_PLATFORM_E2E=PASS` with 6/6 Playwright scenarios
+including all three `@work` journeys. Both High findings (cross-target
+draft/key reuse; silent 50-row truncation) are fixed. The first Medium
+demo-revocation fix was rejected by the remediation review as violating the
+one-way revocation trigger; the final fix keeps revocation authoritative
+(no un-revoke, `ON CONFLICT DO NOTHING`, fail-closed identity guard) and is
+proven on real PostgreSQL by `scripts/test-demo-assignment-revocation.ps1`
+(`DEMO_ASSIGNMENT_REVOCATION=PASS preserved=1 active=0 history=1`). See
+[evidence report](reports/phase-06-work-operations-evidence-2026-07-26.md),
+[review](reports/code-review-2026-07-26-phase-06.md), and
+[remediation review](reports/code-review-remediation-2026-07-26-phase-06.md).
 
 ## Progress Snapshot — 2026-07-26
 

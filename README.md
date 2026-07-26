@@ -126,7 +126,7 @@ python -m pip wheel . --no-deps --no-build-isolation --wheel-dir artifacts/_tmp/
 powershell -ExecutionPolicy Bypass -File scripts/run-web-e2e-tests.ps1
 ```
 
-Test suite kiểm tra pipeline end-to-end, idempotency, reproducibility, foreign keys, KPI reconciliation, export limits, disk thresholds, form-submit boundary và render/navigation của cả sáu dashboard. Gate Web Phase 5 ngày 2026-07-26 đạt 82 web test với 9 skip có chủ đích, 9/9 PostgreSQL privilege test, contract drift/typecheck/lint/Next build/Maven package, 3/3 kịch bản Chrome cài sẵn, production dependency audit 0 lỗ hổng ở ngưỡng cấu hình và cleanup không còn runtime E2E.
+Test suite kiểm tra pipeline end-to-end, idempotency, reproducibility, foreign keys, KPI reconciliation, export limits, disk thresholds, form-submit boundary và render/navigation của cả sáu dashboard. Gate Web Phase 6 ngày 2026-07-26 đạt 127 web test với 9 skip có chủ đích, 31 contract/security test riêng cho Work Operations, probe vòng đời revoke→reseed trên PostgreSQL thật, 9/9 PostgreSQL privilege test, contract drift/typecheck/lint/Next build, 6/6 kịch bản Playwright trên Keycloak/PostgreSQL/Spring/Chrome thật, production dependency audit 0 lỗ hổng ở ngưỡng cấu hình và cleanup không còn runtime E2E.
 
 ## Cấu trúc artifact
 
