@@ -15,7 +15,7 @@
     <artifactId>agriinsight-backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>AgriInsight Backend</name>
-    <description>Operational API boundary for AgriInsight</description>
+    <description>Java 21 Spring Boot modular monolith: OIDC, tenant RBAC, PostgreSQL RLS, immutable ledgers, farm and inventory APIs.</description>
 
     <properties>
         <java.version>21</java.version>

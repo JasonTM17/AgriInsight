@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agriinsight"
 version = "0.2.0"
-description = "Enterprise agriculture analytics platform"
+description = "Deterministic Bronze-Silver-Gold agriculture analytics pipeline with quality gates, star-schema and Gold KPI contracts."
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [

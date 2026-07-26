@@ -1,6 +1,7 @@
 {
   "name": "@agriinsight/web",
   "version": "0.1.0",
+  "description": "Next.js 16 agriculture operations web platform with an opaque-session BFF, farm views and mobile-first idempotent work logging.",
   "private": true,
   "type": "module",
   "engines": {
