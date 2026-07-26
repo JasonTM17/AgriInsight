@@ -64,6 +64,27 @@ jobs:
           chmod +x mvnw
           ./mvnw --batch-mode --no-transfer-progress verify
 
+  web:
+    name: Next web foundation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24.12.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install exact web dependency graph
+        run: npm --prefix web ci --ignore-scripts
+      - name: Verify generated OpenAPI types
+        run: npm --prefix web run contracts:check
+      - run: npm --prefix web run typecheck
+      - run: npm --prefix web test
+      - run: npm --prefix web run lint
+      - run: npm --prefix web run build
+      - name: Audit production web dependencies
+        run: npm --prefix web run audit:prod
+
   security:
     name: Dependency, configuration, and secret scan
     runs-on: ubuntu-latest
@@ -81,7 +102,7 @@ jobs:
 
   images:
     name: Build ${{ matrix.name }} image without push
-    needs: [python, backend, security]
+    needs: [python, backend, web, security]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
