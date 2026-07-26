@@ -11,9 +11,12 @@ services:
     environment:
       POSTGRES_DB: agriinsight_demo
     volumes:
-      - ./backend/.runtime/postgres-demo:/var/lib/postgresql
+      - ${AGRIINSIGHT_DEMO_POSTGRES_DATA_DIR:-./backend/.runtime/postgres-demo}:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d agriinsight_demo"]
+      test:
+        - CMD-SHELL
+        - psql -U postgres -d agriinsight_demo -tAc 'SELECT 1' | grep -qx 1
+      start_period: 30s
 
   backend-role-bootstrap:
     environment:

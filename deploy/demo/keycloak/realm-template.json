@@ -16,7 +16,7 @@
   "clients": [
     {
       "clientId": "agriinsight-web",
-      "name": "AgriInsight Next BFF spike",
+      "name": "AgriInsight Next BFF",
       "enabled": true,
       "protocol": "openid-connect",
       "clientAuthenticatorType": "client-secret",
@@ -30,7 +30,7 @@
       "rootUrl": "http://localhost:3100",
       "baseUrl": "http://localhost:3100/",
       "redirectUris": [
-        "http://localhost:3100/api/auth/callback/keycloak"
+        "http://localhost:3100/api/auth/callback"
       ],
       "webOrigins": [],
       "attributes": {

@@ -1,0 +1,27 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0
+    command: ["start-dev", "--import-realm", "--http-host=0.0.0.0", "--http-port=8080"]
+    labels:
+      com.agriinsight.environment: local-web-e2e
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_USERNAME:?set demo Keycloak admin username}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_PASSWORD:?set demo Keycloak admin password}
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:${AGRIINSIGHT_DEMO_KEYCLOAK_PORT:-58080}:8080"
+    volumes:
+      - ./deploy/demo/keycloak/realm-template.json:/opt/keycloak/data/import/agriinsight-demo-realm.json:ro
+    tmpfs:
+      - /opt/keycloak/data:uid=1000,gid=1000
+      - /tmp:uid=1000,gid=1000
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 180s
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

@@ -5,16 +5,16 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $required = @(
-    "AUTH_SPIKE_KEYCLOAK_ADMIN_USERNAME",
-    "AUTH_SPIKE_KEYCLOAK_ADMIN_PASSWORD",
-    "AUTH_SPIKE_OIDC_CLIENT_SECRET",
-    "AUTH_SPIKE_TENANT_ADMIN_PASSWORD",
-    "AUTH_SPIKE_EXECUTIVE_PASSWORD",
-    "AUTH_SPIKE_FARM_MANAGER_PASSWORD",
-    "AUTH_SPIKE_INVENTORY_MANAGER_PASSWORD",
-    "AUTH_SPIKE_ANALYST_PASSWORD",
-    "AUTH_SPIKE_FIELD_WORKER_PASSWORD",
-    "AUTH_SPIKE_SUPPLIER_PASSWORD"
+    "AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_USERNAME",
+    "AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_PASSWORD",
+    "AGRIINSIGHT_DEMO_OIDC_CLIENT_SECRET",
+    "AGRIINSIGHT_DEMO_TENANT_ADMIN_PASSWORD",
+    "AGRIINSIGHT_DEMO_EXECUTIVE_PASSWORD",
+    "AGRIINSIGHT_DEMO_FARM_MANAGER_PASSWORD",
+    "AGRIINSIGHT_DEMO_INVENTORY_MANAGER_PASSWORD",
+    "AGRIINSIGHT_DEMO_ANALYST_PASSWORD",
+    "AGRIINSIGHT_DEMO_FIELD_WORKER_PASSWORD",
+    "AGRIINSIGHT_DEMO_SUPPLIER_PASSWORD"
 )
 
 foreach ($name in $required) {
@@ -24,10 +24,10 @@ foreach ($name in $required) {
     }
 }
 
-$container = if ($env:AUTH_SPIKE_KEYCLOAK_CONTAINER) {
-    $env:AUTH_SPIKE_KEYCLOAK_CONTAINER
+$container = if ($env:AGRIINSIGHT_DEMO_KEYCLOAK_CONTAINER) {
+    $env:AGRIINSIGHT_DEMO_KEYCLOAK_CONTAINER
 } else {
-    (& docker compose -p agriinsight-auth-spike -f compose.auth-spike.yaml ps -q auth-spike-keycloak)
+    (& docker compose -p agriinsight-web-e2e -f compose.web-e2e.yaml ps -q keycloak)
 }
 if ([string]::IsNullOrWhiteSpace($container)) {
     throw "Demo Keycloak container is not running"
@@ -82,8 +82,8 @@ function Invoke-KeycloakSecretCommand {
 Invoke-KeycloakSecretCommand -Command @'
 /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user "$KC_ADMIN_USER" --password "$KC_ADMIN_PASSWORD" >/dev/null 2>&1
 '@ -SecretEnvironment @{
-    KC_ADMIN_USER = $env:AUTH_SPIKE_KEYCLOAK_ADMIN_USERNAME
-    KC_ADMIN_PASSWORD = $env:AUTH_SPIKE_KEYCLOAK_ADMIN_PASSWORD
+    KC_ADMIN_USER = $env:AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_USERNAME
+    KC_ADMIN_PASSWORD = $env:AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_PASSWORD
 }
 
 $clientRows = Invoke-KeycloakAdmin -Arguments @(
@@ -97,17 +97,17 @@ Invoke-KeycloakSecretCommand -Command @'
 /opt/keycloak/bin/kcadm.sh update "clients/$KC_CLIENT_UUID" -r agriinsight-demo -s "secret=$KC_CLIENT_SECRET" >/dev/null 2>&1
 '@ -SecretEnvironment @{
     KC_CLIENT_UUID = $clientId
-    KC_CLIENT_SECRET = $env:AUTH_SPIKE_OIDC_CLIENT_SECRET
+    KC_CLIENT_SECRET = $env:AGRIINSIGHT_DEMO_OIDC_CLIENT_SECRET
 }
 
 $personas = @{
-    "tenant-admin" = $env:AUTH_SPIKE_TENANT_ADMIN_PASSWORD
-    "executive" = $env:AUTH_SPIKE_EXECUTIVE_PASSWORD
-    "farm-manager" = $env:AUTH_SPIKE_FARM_MANAGER_PASSWORD
-    "inventory-manager" = $env:AUTH_SPIKE_INVENTORY_MANAGER_PASSWORD
-    "analyst" = $env:AUTH_SPIKE_ANALYST_PASSWORD
-    "field-worker" = $env:AUTH_SPIKE_FIELD_WORKER_PASSWORD
-    "supplier" = $env:AUTH_SPIKE_SUPPLIER_PASSWORD
+    "tenant-admin" = $env:AGRIINSIGHT_DEMO_TENANT_ADMIN_PASSWORD
+    "executive" = $env:AGRIINSIGHT_DEMO_EXECUTIVE_PASSWORD
+    "farm-manager" = $env:AGRIINSIGHT_DEMO_FARM_MANAGER_PASSWORD
+    "inventory-manager" = $env:AGRIINSIGHT_DEMO_INVENTORY_MANAGER_PASSWORD
+    "analyst" = $env:AGRIINSIGHT_DEMO_ANALYST_PASSWORD
+    "field-worker" = $env:AGRIINSIGHT_DEMO_FIELD_WORKER_PASSWORD
+    "supplier" = $env:AGRIINSIGHT_DEMO_SUPPLIER_PASSWORD
 }
 
 foreach ($persona in $personas.GetEnumerator()) {
@@ -125,7 +125,7 @@ foreach ($persona in $personas.GetEnumerator()) {
     }
 }
 
-$issuerPort = if ($env:AUTH_SPIKE_KEYCLOAK_PORT) { $env:AUTH_SPIKE_KEYCLOAK_PORT } else { "58080" }
+$issuerPort = if ($env:AGRIINSIGHT_DEMO_KEYCLOAK_PORT) { $env:AGRIINSIGHT_DEMO_KEYCLOAK_PORT } else { "58080" }
 $expectedIssuer = "http://localhost:$issuerPort/realms/$realm"
 $discovery = Invoke-RestMethod -Uri "$expectedIssuer/.well-known/openid-configuration" -TimeoutSec 10
 if ($discovery.issuer -ne $expectedIssuer) { throw "Discovery issuer mismatch" }
