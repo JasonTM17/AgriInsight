@@ -65,9 +65,9 @@ export default async function WorkPage({
     );
   }
   return (
-      <WorkOperationsPage
-        canWriteLogs={context.identity.permissions.has("ACTIVITY_LOG_APPEND")}
-        correlationId={context.correlationId}
+    <WorkOperationsPage
+      canWriteLogs={context.identity.permissions.has("ACTIVITY_LOG_APPEND")}
+      correlationId={context.correlationId}
       routeState={routeState}
       viewModel={viewModel}
     />

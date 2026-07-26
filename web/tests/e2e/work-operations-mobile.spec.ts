@@ -6,6 +6,8 @@ import {
   installCspViolationRecorder
 } from "./helpers/csp-assertions";
 
+const ACTIVE_WORK_ITEMS_AFTER_REVOCATION_PROBE = 2;
+
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Work E2E requires ${name}`);
@@ -47,7 +49,9 @@ test("@work field worker safely retries append and adds a correction", async ({
     "AGRIINSIGHT_WEB_E2E_WORK_PASSWORD"
   );
   await expect(page.getByTestId("work-activity-queue")).toBeVisible();
-  await expect(page.getByTestId("work-activity-card")).toHaveCount(3);
+  await expect(page.getByTestId("work-activity-card")).toHaveCount(
+    ACTIVE_WORK_ITEMS_AFTER_REVOCATION_PROBE
+  );
   await expectNoHorizontalOverflow(page);
 
   await page.getByTestId("work-activity-card").first().click();
@@ -126,7 +130,9 @@ test("@work target navigation resets draft and retry identity", async ({
     "AGRIINSIGHT_WEB_E2E_WORK_USERNAME",
     "AGRIINSIGHT_WEB_E2E_WORK_PASSWORD"
   );
-  await expect(page.getByTestId("work-activity-card")).toHaveCount(3);
+  await expect(page.getByTestId("work-activity-card")).toHaveCount(
+    ACTIVE_WORK_ITEMS_AFTER_REVOCATION_PROBE
+  );
 
   const requestKeys: string[] = [];
   const requestTargets: string[] = [];

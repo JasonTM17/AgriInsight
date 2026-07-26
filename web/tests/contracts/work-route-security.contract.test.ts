@@ -48,6 +48,21 @@ type RuntimeGlobal = typeof globalThis & {
   __agriInsightWebAuthRuntime?: unknown;
 };
 
+const workRoutes = [
+  {
+    name: "append",
+    invoke: (request: NextRequest) =>
+      appendLog(request, { params: Promise.resolve({ activityId }) })
+  },
+  {
+    name: "correction",
+    invoke: (request: NextRequest) =>
+      correctLog(request, {
+        params: Promise.resolve({ activityId, logId })
+      })
+  }
+] as const;
+
 describe("work POST route security", () => {
   beforeEach(() => {
     vi.mocked(executeAllowedMutation).mockReset();
@@ -75,6 +90,51 @@ describe("work POST route security", () => {
     expect(requireSession).not.toHaveBeenCalled();
     expect(executeAllowedMutation).not.toHaveBeenCalled();
   });
+
+  it.each(workRoutes)(
+    "rejects an invalid Host on the $name route before session work",
+    async ({ invoke }) => {
+      const response = await invoke(
+        workRequest("/api/work/security-check", {
+          Host: "untrusted.example"
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect(requireSession).not.toHaveBeenCalled();
+      expect(executeAllowedMutation).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(workRoutes)(
+    "rejects a missing CSRF header on the $name route",
+    async ({ invoke }) => {
+      const response = await invoke(
+        workRequest("/api/work/security-check", {
+          "X-AgriInsight-Csrf": ""
+        })
+      );
+
+      expect(response.status).toBe(403);
+      expect(requireSession).not.toHaveBeenCalled();
+      expect(executeAllowedMutation).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(workRoutes)(
+    "rejects a mismatched CSRF token on the $name route",
+    async ({ invoke }) => {
+      const response = await invoke(
+        workRequest("/api/work/security-check", {
+          "X-AgriInsight-Csrf": "mismatched-token"
+        })
+      );
+
+      expect(response.status).toBe(403);
+      expect(requireSession).not.toHaveBeenCalled();
+      expect(executeAllowedMutation).not.toHaveBeenCalled();
+    }
+  );
 
   it("rejects missing idempotency after authenticating the session", async () => {
     const response = await appendLog(
@@ -119,6 +179,38 @@ describe("work POST route security", () => {
     expect(response.status).toBe(415);
     expect(executeAllowedMutation).not.toHaveBeenCalled();
   });
+
+  it.each(workRoutes)(
+    "rejects malformed JSON on the $name route",
+    async ({ invoke }) => {
+      const response = await invoke(
+        workRequest("/api/work/security-check", {}, "{")
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ code: "invalid_json" });
+      expect(executeAllowedMutation).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(workRoutes)(
+    "rejects an oversized streamed body on the $name route",
+    async ({ invoke }) => {
+      const response = await invoke(
+        workRequest(
+          "/api/work/security-check",
+          {},
+          JSON.stringify({ notes: "x".repeat(65 * 1024) })
+        )
+      );
+
+      expect(response.status).toBe(413);
+      expect(await response.json()).toMatchObject({
+        code: "request_too_large"
+      });
+      expect(executeAllowedMutation).not.toHaveBeenCalled();
+    }
+  );
 
   it("rejects an invalid correction path before upstream work", async () => {
     const response = await correctLog(
