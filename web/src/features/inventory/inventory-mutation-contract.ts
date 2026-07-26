@@ -37,17 +37,6 @@ export const postInventoryTransactionSchema = z.object({
 }).strict().superRefine((value, context) => {
   if (value.kind === "RECEIPT") {
     validateReceiptShape(value, context);
-    if (
-      value.expiryDate
-      && value.occurredAt
-      && value.expiryDate < value.occurredAt.slice(0, 10)
-    ) {
-      issue(
-        context,
-        "expiryDate",
-        "Ngày hết hạn không được trước ngày nhập kho."
-      );
-    }
     return;
   }
   validateIssueShape(value, context);

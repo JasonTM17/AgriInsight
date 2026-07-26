@@ -57,8 +57,7 @@ describe("inventory mutation contracts", () => {
     ["batch", { batchCode: undefined }],
     ["expiry", { expiryDate: undefined }],
     ["issue lot", { stockLotId }],
-    ["issue reason", { reason: "Apply to field" }],
-    ["past expiry", { expiryDate: "2026-12-31" }]
+    ["issue reason", { reason: "Apply to field" }]
   ])("rejects a receipt with invalid %s semantics", (_case, override) => {
     expect(() =>
       postInventoryTransactionSchema.parse({
@@ -74,6 +73,22 @@ describe("inventory mutation contracts", () => {
         ...override
       })
     ).toThrow();
+  });
+
+  it("leaves expiry-versus-occurrence ordering to the upstream contract", () => {
+    expect(() =>
+      postInventoryTransactionSchema.parse({
+        kind: "RECEIPT",
+        warehouseId,
+        materialId,
+        supplierId,
+        quantityBase: 25.5,
+        unitCostVnd: 12_500,
+        batchCode: "NPK-2027-01",
+        expiryDate: "2026-12-31",
+        occurredAt: "2027-01-01T08:00:00Z"
+      })
+    ).not.toThrow();
   });
 
   it("accepts an issue with an optional authoritative source lot", () => {
