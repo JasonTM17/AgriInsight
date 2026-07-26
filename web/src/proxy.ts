@@ -39,7 +39,10 @@ export function proxy(request: NextRequest) {
     !request.cookies.has(SESSION_COOKIE_NAME)
   ) {
     const target = new URL("/login", request.url);
-    target.searchParams.set("returnTo", request.nextUrl.pathname);
+    target.searchParams.set(
+      "returnTo",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`
+    );
     return withContentSecurityPolicy(
       NextResponse.redirect(target, 307),
       contentSecurityPolicy

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { returnTo } = await searchParams;
-  const target = new URLSearchParams({ returnTo: returnTo ?? "/protected" });
+  const target = new URLSearchParams({ returnTo: returnTo ?? "/overview" });
   return (
     <main className="foundation-panel foundation-panel--narrow" id="main-content" tabIndex={-1}>
       <p className="eyebrow">Xác thực doanh nghiệp</p>
