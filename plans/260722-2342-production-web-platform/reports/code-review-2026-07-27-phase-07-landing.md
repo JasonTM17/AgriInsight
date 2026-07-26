@@ -1,6 +1,6 @@
 # Phase 7 landing review — inventory control
 
-Date: 2026-07-27  
+Date: 2026-07-27
 Verdict: **LAND**
 
 ## Scope
