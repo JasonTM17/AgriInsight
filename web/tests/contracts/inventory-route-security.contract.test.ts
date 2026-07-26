@@ -219,6 +219,50 @@ describe("inventory route trust boundaries", () => {
     expect(await response.json()).toMatchObject({ id: transactionId });
   });
 
+  it("rejects an untrusted Host on the transaction read route", async () => {
+    const response = await getTransaction(
+      readRequest(
+        `/api/inventory/transactions/${transactionId}`,
+        "untrusted.example"
+      ),
+      { params: Promise.resolve({ transactionId }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(executeAllowedOperation).not.toHaveBeenCalled();
+  });
+
+  it("denies a persona without inventory read on the read route", async () => {
+    vi.mocked(getAuthorizationContext).mockResolvedValueOnce(
+      identity([]) as never
+    );
+    const response = await getTransaction(
+      readRequest(`/api/inventory/transactions/${transactionId}`),
+      { params: Promise.resolve({ transactionId }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(executeAllowedOperation).not.toHaveBeenCalled();
+  });
+
+  it("maps a missing upstream transaction to a sanitized 404", async () => {
+    vi.mocked(executeAllowedOperation).mockResolvedValueOnce(
+      Response.json(
+        { detail: "tenant 42 owns this ledger row" },
+        { status: 404 }
+      )
+    );
+    const response = await getTransaction(
+      readRequest(`/api/inventory/transactions/${transactionId}`),
+      { params: Promise.resolve({ transactionId }) }
+    );
+    const body = await response.text();
+
+    expect(response.status).toBe(404);
+    expect(body).not.toContain("ledger row");
+    expect(executeAllowedMutation).not.toHaveBeenCalled();
+  });
+
   it.each([undefined, "W/\"7\"", "7", "\"99999999999999999999\""])(
     "rejects invalid reversal If-Match %s",
     async (ifMatch) => {
@@ -402,11 +446,14 @@ function rawMutationRequest(
   });
 }
 
-function readRequest(path: string): NextRequest {
+function readRequest(
+  path: string,
+  host = "app.example.test"
+): NextRequest {
   return new NextRequest(new URL(path, env.baseUrl), {
     headers: {
       Cookie: `${SESSION_COOKIE_NAME}=${sessionToken}`,
-      Host: "app.example.test"
+      Host: host
     }
   });
 }
