@@ -24,6 +24,14 @@ phase: no Java file changed (git-verified below).
 | 9e5e5b9 | fix(web): give inventory form controls visible focus rings |
 | ef0981d | refactor(web): drop unused inventory preparation error flag |
 | 27fddb3 | docs(review): record phase 7 UI slice verdict |
+| fb49ee4 | docs(architecture): describe the inventory browser surface |
+| 071a28d | docs(plan): record phase 7 evidence in progress |
+| f7e17f3 | fix(web): render ABC shares without CSP-blocked inline styles |
+| c0bf801 | fix(web): let the backend own inventory version conflicts |
+| dd7b321 | test(web): wait for an authenticated database before dependent jobs |
+| e1d1ef8 | docs(architecture): correct where inventory reversal versions are enforced |
+| 8cc709a | docs(plan): accept inventory control locally |
+| b3e4eaf | fix(demo): pin UTF-8 for PostgreSQL seed |
 
 Two sessions implemented this phase concurrently against the same tree. The
 server-slice work converged on identical code; all commits were verified for
@@ -38,10 +46,10 @@ Run on the final tree (all remediation applied).
 | Typecheck | `npm --prefix web run typecheck` | exit 0 |
 | Lint | `npm --prefix web run lint` (`--max-warnings=0`) | exit 0 |
 | Generated contract drift | `npm --prefix web run contracts:check` | clean |
-| Unit/contract suite | `npm --prefix web run test` | 30 files passed / 1 skipped (31); **210 passed / 9 skipped (219)** |
+| Unit/contract suite | `npm --prefix web run test` | 30 files passed / 1 skipped (31); **211 passed / 9 skipped (220)** |
 | Focused inventory | `npm --prefix web run test -- inventory` | 3 files / **79 tests** passed |
 | Production build | `npm --prefix web run build` | `✓ Compiled successfully in 8.3s`; emits `/inventory` plus `/api/inventory/transactions`, `/api/inventory/transactions/[transactionId]`, `/api/inventory/transactions/[transactionId]/reversals` |
-| Guarded runtime | `.\scripts\run-web-e2e-tests.ps1 -SkipStaticGates` | `WEB_PLATFORM_E2E=PASS`; **8/8 Playwright** scenarios passed against real Keycloak, PostgreSQL, Spring, FastAPI, Next, and Chrome |
+| Guarded runtime | `.\scripts\run-web-e2e-tests.ps1 -SkipStaticGates` | `WEB_PLATFORM_E2E=PASS`; **8/8 Playwright** scenarios passed in 45.1s against real Keycloak, PostgreSQL, Spring, FastAPI, Next, and Chrome under the default disk policy |
 | Python (changed surface) | `python -m pytest tests -k "reconcil or demo"` | 18 passed |
 | Java | not re-run | `git diff --name-only 6438d88~1..HEAD -- backend` → **none**; Phase 5's accepted backend gate remains authoritative |
 
@@ -83,12 +91,13 @@ streamed body (413/415/400) → strict zod → exact upstream operation.
 
 ## Review cycles
 
-Two independent code reviews ran against this phase.
+Three independent code reviews ran against this phase.
 
 | Review | Verdict | Report |
 | --- | --- | --- |
 | Server slice | 0 Critical / 0 High / 3 Medium / 6 Low | `code-review-2026-07-26-phase-07-server-slice.md` |
 | UI slice | 0 Critical / **2 High** / 3 Medium / 5 Low | `code-review-2026-07-26-phase-07-ui-slice.md` |
+| Final landing | **LAND**, 0 Critical / 0 High; informational date mismatch fixed | `code-review-2026-07-27-phase-07-landing.md` |
 
 The UI slice was initially committed after static gates only. The gap was caught
 before acceptance and a dedicated content review was run, which found both High
@@ -211,17 +220,24 @@ before its final restart, releasing `backend-role-bootstrap` into a TCP refusal.
 The E2E-only override now waits on an authenticated TCP `SELECT 1`, with a
 180-second NTFS cold-start window. Production health semantics are unchanged.
 
+The final clean rerun exposed a separate Windows boundary: a fresh shell left
+`psql` on `WIN1252`, so the UTF-8 Vietnamese demo seed failed on a continuation
+byte before any browser scenario began. `bootstrap-demo-environment.ps1` now
+pins `PGCLIENTENCODING=UTF8` for all seed/inspection calls and restores the
+caller's previous value in `finally`. The confirming run then produced
+`DEMO_BOOTSTRAP status=PASS` and reconciliation `errorCount=0` before Playwright.
+
 ### Confirming run provenance
 
-A final independent invocation reproduced the verdict end to end, so no marker in
-this report is second-hand:
+A final invocation on 2026-07-27 reproduced the verdict end to end, so no marker
+in this report is second-hand:
 
 ```
 DEMO_ASSIGNMENT_REVOCATION=PASS preserved=1 active=0 history=1
 Tests  9 passed (9)                                   # PostgreSQL privileges
 [1/8] inventory-control.spec.ts:41  @inventory manager records a receipt, issue and ETag reversal
 [2/8] inventory-control.spec.ts:160 @inventory supplier receives a generic denied scope
-8 passed (1.1m)  ->  PLAYWRIGHT_E2E=PASS
+8 passed (45.1s)  ->  PLAYWRIGHT_E2E=PASS
 WEB_PLATFORM_E2E=PASS issuer=keycloak identity=spring-/me session=postgres browser=chrome
 ```
 
@@ -229,20 +245,17 @@ Two conditions of that run are stated rather than implied:
 
 - It used `-SkipStaticGates`, so the static numbers in the gates table above come
   from separate direct invocations on the same tree, not from this run.
-- The workspace disk guard ran with the D thresholds overridden to
-  warn 14 GB / fail 12 GB because the drive sits near its default 20 GB floor
-  while consuming roughly 2 GB per run. Every guard line in the log carries
-  `policy=override` for D and `policy=default` for C, and the C floor was left
-  untouched. Overrides are refused below an absolute 8 GB floor, so the guard
-  still protects the workspace.
+- The workspace disk guard used its default policy on both drives. C remained a
+  pass at 13.202 GiB. D remained a warning at 22.770 GiB, above its 20 GiB hard
+  floor. No threshold override was used.
 
 Both `@inventory` journeys are the first two entries of the passing set, which is
 the point of the run: before this, the inventory specs had never completed a
 single execution, so every inventory claim rested on static analysis alone.
 
 The final run ended with `PLAYWRIGHT_E2E=PASS` and
-`WEB_PLATFORM_E2E=PASS`. Its post-run disk guard measured C at 10.82 GiB (pass)
-and D at 21.36 GiB (warning, above the 20 GiB hard floor). All 13 background
+`WEB_PLATFORM_E2E=PASS`. Its post-run disk guard measured C at 13.202 GiB (pass)
+and D at 22.770 GiB (warning, above the 20 GiB hard floor). All 13 background
 Docker containers stopped for the gate were restored and verified healthy.
 
 ## Unresolved questions
