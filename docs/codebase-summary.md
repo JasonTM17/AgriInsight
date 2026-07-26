@@ -39,9 +39,9 @@ design system.
 ## Web surface
 
 The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
-accepted Phase 5-6 browser surface. Product routes are `/overview`, `/farms`,
-`/farms/[farmId]`, and `/work`; auth/support routes such as `/login`,
-`/protected`, and `/api/auth/*` exist as shell plumbing.
+Phase 5-7 browser surface. Product routes are `/overview`, `/farms`,
+`/farms/[farmId]`, `/work`, and `/inventory`; auth/support routes such as
+`/login`, `/protected`, and `/api/auth/*` exist as shell plumbing.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
 calling the typed FastAPI Gold read layer. The browser receives aggregated
@@ -58,6 +58,18 @@ routes with same-origin/CSRF/session checks, a streamed 64 KiB JSON limit,
 strict UUID/body validation, and caller-stable `Idempotency-Key` forwarding.
 Corrections remain linked append-only rows; the browser never sends a fabricated
 `If-Match`, patch request, offline queue, or client-synthesized history.
+
+`/inventory` pairs the Spring operational ledger with the Gold inventory
+envelope under one warehouse-scoped route. `src/features/inventory/` holds the
+route-state parser, the generated-client adapter, the strict mutation contract,
+the view-model loader that isolates per-source failure, and the idempotent
+mutation hook. Reads keep server order for balances, lots, and ledger rows and
+disclose both `hasMore` and the 10,000 offset ceiling rather than implying a
+total. Commands are a receipt/issue transaction and a linked reversal; only the
+reversal carries a strong `If-Match`, whose value the BFF re-reads server-side
+before forwarding. An unconfirmed command keeps its `Idempotency-Key` so retries
+dedupe upstream. No ABC class, FEFO order, alert, or low-stock threshold is
+recomputed in the browser.
 
 ## Operational backend
 

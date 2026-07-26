@@ -83,7 +83,7 @@ authorization decision.
 ## Web platform
 
 The Next 16 App Router is the browser boundary for `/overview`, `/farms`,
-`/farms/[farmId]`, and `/work`. The browser holds only an opaque encrypted
+`/farms/[farmId]`, `/work`, and `/inventory`. The browser holds only an opaque encrypted
 session cookie. OIDC tokens remain in the PostgreSQL-backed server session, and
 the server refreshes Spring `/api/v1/me` before relying on current permissions.
 Exact operation allowlists prevent the browser from turning the BFF into a
@@ -103,6 +103,25 @@ before the upstream call. The request stream is cancelled once it exceeds
 remain available for support. Append-only mutations do not carry `If-Match`;
 same-target retries reuse their key, while activity/log navigation resets draft
 and retry identity.
+
+`/inventory` is warehouse-scoped stock control. The route gates on
+`INVENTORY_READ`, sources command visibility from `INVENTORY_MANAGE`, redirects
+to the first visible warehouse, and fails closed when a requested warehouse or
+material sits outside session scope. Balances, lots, ledger rows, and
+material/supplier catalogs come from exact Spring GET operations in 50-row
+windows under the same 10,000 offset ceiling, and the browser preserves upstream
+ordering: warehouse/material code order for balances, FEFO for lots, and
+newest-first for the ledger. ABC classes, alerts, days of supply, and reorder
+suggestions render verbatim from the FastAPI Gold envelope, so an analytics
+denial or outage degrades that section alone and leaves the Spring ledger live.
+
+Two exact inventory POST operations carry commands: a receipt/issue transaction
+and a linked reversal. Both follow the Work trust-boundary order. The reversal
+additionally requires a strong quoted-integer `If-Match`; the BFF re-reads the
+source version from an authenticated transaction fetch and compares it before
+forwarding, so a stale or guessed version cannot win. A command whose outcome is
+unknown keeps its `Idempotency-Key`, so a retry of the identical payload dedupes
+upstream instead of appending a second ledger row.
 
 ```mermaid
 flowchart LR
