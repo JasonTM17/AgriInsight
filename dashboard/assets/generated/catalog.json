@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "generatedOn": "2026-07-22",
+  "source": "OpenAI image-generation tool",
+  "entries": [
+    {
+      "area": "overview",
+      "filename": "overview-fields.webp",
+      "title": "Toàn cảnh vận hành theo dữ liệu",
+      "description": "Đồng bộ hoạt động đồng ruộng, kho, tài chính, IoT và chất lượng dữ liệu.",
+      "alt": "Cánh đồng lúa và rau nhìn từ trên cao, có kênh tưới, cảm biến, máy kéo nhỏ và nhà kính lúc bình minh.",
+      "runtimeUse": "Tổng quan",
+      "width": 1600,
+      "height": 800,
+      "bytes": 203074,
+      "sha256": "9b03711e10447f443e4045bb9f47ed0df59672ce2b840f6049a18763a6b4ee3f",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "Aerial Vietnamese rice and vegetable fields with irrigation, sensors, a small tractor, and greenhouses at sunrise."
+      },
+      "demoEvidence": false
+    },
+    {
+      "area": "farms",
+      "filename": "farm-performance.webp",
+      "title": "Từ chỉ số đến hiện trường",
+      "description": "So sánh trang trại rồi drill-down về khu vực, mùa vụ và bằng chứng vận hành.",
+      "alt": "Quản lý trang trại kiểm tra máy tính bảng bên ruộng lúa và kênh tưới, phía xa có một nhân viên đồng ruộng.",
+      "runtimeUse": "Nông trại",
+      "width": 1440,
+      "height": 810,
+      "bytes": 132922,
+      "sha256": "d81a0f16bfcfc19b20b8ce82ca9ec2a9118b62ed9199ff2089755b2a8cfcb41e",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "A farm manager uses a rugged tablet beside rice rows and an irrigation channel, with one field worker in the distance."
+      },
+      "demoEvidence": false
+    },
+    {
+      "area": "work",
+      "filename": "work-operations.webp",
+      "title": "Công việc có người phụ trách",
+      "description": "Giao việc theo khu vực, mùa vụ và thời hạn; mọi thay đổi đều truy vết được.",
+      "alt": "Đội vận hành ghi nhận và phối hợp công việc tưới tiêu cạnh ruộng lúa và thiết bị bơm.",
+      "runtimeUse": "Công việc",
+      "width": 1440,
+      "height": 810,
+      "bytes": 121440,
+      "sha256": "fb588ca0449aa64f6a0e25f99c19eb270e1a288656172b90ffa9a042d5f1ca19",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "Field operations team records and coordinates irrigation work beside rice fields and practical pumping equipment."
+      },
+      "demoEvidence": false
+    },
+    {
+      "area": "inventory",
+      "filename": "inventory-control.webp",
+      "title": "Kho có phạm vi và truy vết lô",
+      "description": "Ưu tiên FEFO, số dư chính xác và luồng nhập–xuất có thể kiểm toán.",
+      "alt": "Hai nhân viên kiểm tra vật tư nông nghiệp niêm kín và phụ kiện tưới trong kho được sắp xếp theo lối đi.",
+      "runtimeUse": "Tồn kho",
+      "width": 1440,
+      "height": 810,
+      "bytes": 179790,
+      "sha256": "d9d5138b40c0a2606de13fb21e6f177c0b7b254ba6e1a2ccce2a58354663604a",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "Two inventory workers verify sealed agricultural supplies and irrigation parts in an organized warehouse."
+      },
+      "demoEvidence": false
+    },
+    {
+      "area": "costs",
+      "filename": "cost-procurement.webp",
+      "title": "Chi phí có ngữ cảnh và không đếm trùng",
+      "description": "Tách chi phí vận hành khỏi mua hàng, giữ drill-down về nguồn phát sinh.",
+      "alt": "Quản lý vận hành và nhà cung cấp kiểm tra rau quả thu hoạch cạnh cân sàn, thùng hàng và xe nâng tay.",
+      "runtimeUse": "Chi phí",
+      "width": 1440,
+      "height": 810,
+      "bytes": 143546,
+      "sha256": "44675bb309251d9f8dd70d98b100613cea4c24a39f446323fde95c4bf25dbaf7",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "Operations lead and supplier check harvested produce quantities beside crates, a platform scale, and a pallet trolley."
+      },
+      "demoEvidence": false
+    },
+    {
+      "area": "crop-health",
+      "filename": "crop-health-evidence.webp",
+      "title": "Bằng chứng quan sát cho bản trình diễn",
+      "description": "Hình ảnh chỉ minh họa cách UI gắn bằng chứng với chỉ số; không phải chẩn đoán thực địa.",
+      "alt": "Một số lá lúa có đốm nâu cục bộ cạnh cảm biến nhỏ sau mưa, phần lớn cây xung quanh vẫn xanh khỏe.",
+      "runtimeUse": "Sức khỏe cây trồng",
+      "width": 1200,
+      "height": 900,
+      "bytes": 115846,
+      "sha256": "abb6da1a4315537e121ffa6a2f4f25db860bb9afe8d02db48f63c61c04d29f8e",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "A scientifically plausible localized rice-leaf stress close view with mostly healthy surrounding plants and a compact sensor."
+      },
+      "demoEvidence": true,
+      "evidenceBoundary": "Ảnh minh họa do AI tạo — chỉ dùng cho demo; không phải bằng chứng thực địa."
+    },
+    {
+      "area": "data-quality",
+      "filename": "data-quality-sensors.webp",
+      "title": "Chất lượng bắt đầu từ điểm thu thập",
+      "description": "Theo dõi tính đầy đủ, hợp lệ, duy nhất, freshness và hành động remediation.",
+      "alt": "Kỹ thuật viên kiểm tra trạm thời tiết và hệ thống cảm biến đất cạnh các hàng cây trồng sau mưa.",
+      "runtimeUse": "Chất lượng dữ liệu",
+      "width": 1440,
+      "height": 810,
+      "bytes": 186530,
+      "sha256": "5adb169fc0b4814171676b5b203fadc5b8c1011a7abf8a8428d0e4df2db5ff5b",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "A field technician compares a handheld meter with installed weather and soil equipment after rain."
+      },
+      "demoEvidence": false
+    },
+    {
+      "area": "administration",
+      "filename": "tenant-administration.webp",
+      "title": "Quản trị rõ người, rõ phạm vi",
+      "description": "Quản lý thành viên, vai trò và phạm vi tenant với kiểm toán đầy đủ.",
+      "alt": "Đội vận hành nông nghiệp xem bản đồ khu ruộng và kế hoạch mùa vụ trong văn phòng nhìn ra cánh đồng.",
+      "runtimeUse": "Quản trị",
+      "width": 1440,
+      "height": 810,
+      "bytes": 99090,
+      "sha256": "a7b14aaeca7d7b13ac8ee95c6d512399ecd5250a14d9a4b13d297b2ff3036c0c",
+      "provenance": {
+        "tool": "OpenAI image-generation tool",
+        "generatedOn": "2026-07-22",
+        "source": "first-party demo visual",
+        "promptSummary": "Agriculture operations team reviews a field map and seasonal plan in a farm office overlooking cultivated fields."
+      },
+      "demoEvidence": false
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import tomllib
 from pathlib import Path
 
@@ -45,9 +46,17 @@ def test_visual_catalog_covers_every_dashboard_page() -> None:
 
 def test_generated_assets_match_reviewed_hashes_and_budget() -> None:
     asset_root = Path(__file__).parents[1] / "dashboard" / "assets" / "generated"
+    catalog = json.loads((asset_root / "catalog.json").read_text(encoding="utf-8"))
 
     assert {visual.filename for visual in PAGE_VISUALS.values()} == set(EXPECTED_HASHES)
-    reviewed_hashes = EXPECTED_HASHES | SUPPLEMENTARY_EXPECTED_HASHES
+    assert catalog["version"] == 1
+    assert len(catalog["entries"]) == 8
+    assert sum(entry["demoEvidence"] for entry in catalog["entries"]) == 1
+    assert next(entry for entry in catalog["entries"] if entry["area"] == "crop-health")["demoEvidence"] is True
+    reviewed_hashes = {
+        entry["filename"]: entry["sha256"] for entry in catalog["entries"]
+    }
+    assert reviewed_hashes == EXPECTED_HASHES | SUPPLEMENTARY_EXPECTED_HASHES
     for filename, expected_hash in reviewed_hashes.items():
         content = (asset_root / filename).read_bytes()
         assert len(content) <= 350 * 1024

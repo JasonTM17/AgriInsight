@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Protocol
 
@@ -8,6 +9,7 @@ import streamlit as st
 
 
 _ASSET_ROOT = Path(__file__).resolve().parent / "assets" / "generated"
+_CATALOG_PATH = _ASSET_ROOT / "catalog.json"
 
 
 @dataclass(frozen=True)
@@ -22,45 +24,33 @@ class PageVisual:
         return asset_root / self.filename
 
 
-PAGE_VISUALS = {
-    "Executive": PageVisual(
-        "overview-fields.webp",
-        "Toàn cảnh vận hành theo dữ liệu",
-        "Đồng bộ hoạt động đồng ruộng, kho, tài chính, IoT và chất lượng dữ liệu.",
-        "Cánh đồng lúa và rau nhìn từ trên cao, có kênh tưới, cảm biến, máy kéo nhỏ và nhà kính lúc bình minh.",
-    ),
-    "Farm Performance": PageVisual(
-        "farm-performance.webp",
-        "Từ chỉ số đến hiện trường",
-        "So sánh trang trại rồi drill-down về khu vực, mùa vụ và bằng chứng vận hành.",
-        "Quản lý trang trại kiểm tra máy tính bảng bên ruộng lúa và kênh tưới, phía xa có một nhân viên đồng ruộng.",
-    ),
-    "Inventory": PageVisual(
-        "inventory-control.webp",
-        "Kho có phạm vi và truy vết lô",
-        "Ưu tiên FEFO, số dư chính xác và luồng nhập–xuất có thể kiểm toán.",
-        "Hai nhân viên kiểm tra vật tư nông nghiệp niêm kín và phụ kiện tưới trong kho được sắp xếp theo lối đi.",
-    ),
-    "Crop Health": PageVisual(
-        "crop-health-evidence.webp",
-        "Bằng chứng quan sát cho bản trình diễn",
-        "Hình ảnh chỉ minh họa cách UI gắn bằng chứng với chỉ số; không phải chẩn đoán thực địa.",
-        "Một số lá lúa có đốm nâu cục bộ cạnh cảm biến nhỏ sau mưa, phần lớn cây xung quanh vẫn xanh khỏe.",
-        demo_evidence=True,
-    ),
-    "Data Quality": PageVisual(
-        "data-quality-sensors.webp",
-        "Chất lượng bắt đầu từ điểm thu thập",
-        "Theo dõi tính đầy đủ, hợp lệ, duy nhất, freshness và hành động remediation.",
-        "Kỹ thuật viên kiểm tra trạm thời tiết và hệ thống cảm biến đất cạnh các hàng cây trồng sau mưa.",
-    ),
-    "Cost Analysis": PageVisual(
-        "cost-procurement.webp",
-        "Chi phí có ngữ cảnh và không đếm trùng",
-        "Tách chi phí vận hành khỏi mua hàng, giữ drill-down về nguồn phát sinh.",
-        "Quản lý vận hành và nhà cung cấp kiểm tra rau quả thu hoạch cạnh cân sàn, thùng hàng và xe nâng tay.",
-    ),
+_PAGE_TO_CATALOG_AREA = {
+    "Executive": "overview",
+    "Farm Performance": "farms",
+    "Inventory": "inventory",
+    "Crop Health": "crop-health",
+    "Data Quality": "data-quality",
+    "Cost Analysis": "costs",
 }
+
+
+def _load_page_visuals() -> dict[str, PageVisual]:
+    catalog = json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
+    entries = {entry["area"]: entry for entry in catalog["entries"]}
+    return {
+        page_name: PageVisual(
+            entry["filename"],
+            entry["title"],
+            entry["description"],
+            entry["alt"],
+            demo_evidence=entry.get("demoEvidence", False),
+        )
+        for page_name, area in _PAGE_TO_CATALOG_AREA.items()
+        for entry in [entries[area]]
+    }
+
+
+PAGE_VISUALS = _load_page_visuals()
 
 
 class VisualUi(Protocol):

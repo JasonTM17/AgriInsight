@@ -5,6 +5,11 @@ image-generation tool, then stripped and converted to WebP with ImageMagick.
 No third-party stock image was used. These files are product/demo visuals, not
 photographs from a customer farm and not ground-truth training data.
 
+`catalog.json` is the canonical machine-readable manifest. It owns the
+filename, dimensions, byte budget, SHA-256, accessible description, runtime
+area, and generation provenance for every visual. Build scripts must read that
+file directly; Markdown is for human review only.
+
 ## Catalog
 
 | File | Dimensions | Runtime use | Accessible description | SHA-256 |
