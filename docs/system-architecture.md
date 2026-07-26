@@ -6,6 +6,7 @@ AgriInsight is split into two planes.
 
 - [Analytics plane](#analytics-plane) - current Bronze/Silver/Gold pipeline, artifacts, and dashboard.
 - [Internal analytics API](#internal-analytics-api) - read-only, Spring-gated, filter-aware analytics API and cache boundary.
+- [Web platform](#web-platform) - opaque browser sessions, exact BFF operations, and accepted product routes.
 - [Operational backend](#operational-backend) - separate Java Spring boundary for operational state.
 - [Inventory and procurement plane](#inventory-and-procurement-plane) - PostgreSQL operational ledger and RLS.
 - [Operating-cost and reporting plane](#operating-cost-and-reporting-plane) - separate finance lens and summaries.
@@ -78,6 +79,41 @@ seven personas, and canonical masters from the verified snapshot, then writes a
 report whose tenant/run/fingerprint must match the generated bundle. Deliberate
 revocation or scope shrinkage fails closed rather than silently restoring an
 authorization decision.
+
+## Web platform
+
+The Next 16 App Router is the browser boundary for `/overview`, `/farms`,
+`/farms/[farmId]`, and `/work`. The browser holds only an opaque encrypted
+session cookie. OIDC tokens remain in the PostgreSQL-backed server session, and
+the server refreshes Spring `/api/v1/me` before relying on current permissions.
+Exact operation allowlists prevent the browser from turning the BFF into a
+general upstream proxy.
+
+Overview and farm routes combine Spring-scoped UUID masters with canonical
+analytics codes before calling the read-only FastAPI plane. Work Operations
+uses only the frozen Spring activity family. Its loader pages activity logs and
+correction history in exact 50-row windows, preserves the upstream offset, and
+never fetches beyond the backend offset cap of 10,000.
+
+The two Work mutation handlers accept only append and correction POSTs. They
+reject untrusted host/origin, missing session/CSRF/idempotency headers,
+non-JSON or oversized payloads, invalid UUIDs, and unexpected body fields
+before the upstream call. The request stream is cancelled once it exceeds
+64 KiB. Upstream denial/conflict details are sanitized while correlation IDs
+remain available for support. Append-only mutations do not carry `If-Match`;
+same-target retries reuse their key, while activity/log navigation resets draft
+and retry identity.
+
+```mermaid
+flowchart LR
+    U["Mobile browser"] --> S["Opaque web session"]
+    S --> G["Exact Work BFF route"]
+    G --> V["Origin, CSRF, size, UUID, schema checks"]
+    V --> I["Idempotency-Key forwarding"]
+    I --> A["Spring activity/log API"]
+    A --> P["Tenant/profile scope and FORCE RLS"]
+    A --> H["Immutable log/correction lineage"]
+```
 
 ## Operational backend
 
@@ -162,6 +198,7 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Plane | Owns | Does not own |
 |---|---|---|
 | Analytics | artifacts, Gold contracts, local reporting, dashboard views | PostgreSQL operational state, OIDC/RBAC, backend images |
+| Web | opaque browser sessions, route UI, exact Spring/FastAPI BFF adapters | bearer-token storage in the browser, operational facts, analytics joins |
 | Backend | operational API boundary, OIDC identity, tenant RBAC/RLS, tenant administration, idempotency, health, PostgreSQL schema history | `artifacts/`, Gold CSVs, SQLite warehouse, report generation |
 
 ## Current status
@@ -179,6 +216,8 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
 | Backend phase 7 release boundary | Core verified 2026-07-22; V18-V19 outbox, fenced drain, images, CI, recovery wrappers; protected release/recovery approval remains open |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
+| Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
+| Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
 | Hosted CI | Run `29932250984` passed Java, Python, secret/dependency, and both image scan/smoke gates 5/5 at commit `8d8463f` |
 | Phase image publication | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |

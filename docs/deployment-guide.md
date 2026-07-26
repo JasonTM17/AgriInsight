@@ -8,6 +8,7 @@ This guide documents the verified local/runtime contracts through Backend Phase 
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
 | Internal analytics API | FastAPI read-only aggregate surface | Loopback/internal network only; Spring `/api/v1/me` remains the authorization source |
+| Next web platform | Locally verified overview, farm, and Work Operations browser surface | Loopback/private only until Phase 11 quality and Phase 12 protected release gates pass |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
@@ -92,6 +93,30 @@ powershell -ExecutionPolicy Bypass -File scripts/bootstrap-demo-environment.ps1 
 The generated bundle and reconciliation report must carry the same
 `demoTenantId`, `runId`, and `manifestFingerprint`. Keep the report under
 ignored `_tmp`; do not commit credentials or generated Big Data files.
+
+## Local web platform verification
+
+The canonical local browser gate starts isolated PostgreSQL/Keycloak
+infrastructure, reconciles the demo tenant, runs Spring and FastAPI on owned
+loopback ports, starts the production Next server, exercises installed Chrome,
+and removes every owned process/container/runtime directory:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-workspace-disk.ps1
+powershell -ExecutionPolicy Bypass -File scripts/run-web-e2e-tests.ps1
+```
+
+The runner generates database, OIDC, and seven persona passwords in the process
+environment only. Work scenarios use the deterministic `field-worker` persona;
+the denied-scope scenario uses `supplier`. Do not copy those generated values
+to `.env`, source, logs, or test fixtures. A successful run ends with both
+`PLAYWRIGHT_E2E=PASS` and `WEB_PLATFORM_E2E=PASS`.
+
+For a narrow local E2E iteration after static gates already passed, use
+`-SkipStaticGates`. This is not a release substitute. The full gate remains
+contract drift, TypeScript, tests, zero-warning lint, production build, backend
+package, database privilege checks, and real-browser scenarios. Stop heavy work
+when the disk guard fails below 8 GiB on C or 20 GiB on D.
 
 ## Backend database settings
 

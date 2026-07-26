@@ -8,7 +8,7 @@ Verified snapshot: 2026-07-26
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
 | `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
-| `web/` | Next 16 App Router/BFF, opaque session auth, and the `/overview`, `/farms`, `/farms/[farmId]` browser surface |
+| `web/` | Next 16 App Router/BFF, opaque session auth, and the `/overview`, `/farms`, `/farms/[farmId]`, `/work` browser surface |
 | `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
 | `backend/` | Java 21 Spring Boot operational backend, PostgreSQL migrations, and transactional outbox |
 | `scripts/` | C/D disk guard, guarded backend verification, and big-data demo runner |
@@ -39,9 +39,9 @@ design system.
 ## Web surface
 
 The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
-Phase 5 browser surface. The accepted product routes are `/overview`, `/farms`,
-and `/farms/[farmId]`; auth/support routes such as `/login`, `/protected`, and
-`/api/auth/*` exist as shell plumbing.
+accepted Phase 5-6 browser surface. Product routes are `/overview`, `/farms`,
+`/farms/[farmId]`, and `/work`; auth/support routes such as `/login`,
+`/protected`, and `/api/auth/*` exist as shell plumbing.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
 calling the typed FastAPI Gold read layer. The browser receives aggregated
@@ -50,6 +50,14 @@ never reconstructs KPI joins. Partial-source failure renders explicit degraded
 states; safe lineage and reviewed contextual WebPs remain visible and bounded.
 Shared rollout hardening covers exact BFF query allowlists, request-scoped nonce
 CSP/custom 404 rendering, and mutex-owned E2E startup/cleanup.
+
+`/work` consumes only frozen Spring activity, assignment, log, and correction
+history contracts. Reads use bounded 50-row pages with exact offsets up to the
+Spring limit of 10,000. Append and correction commands cross two exact BFF POST
+routes with same-origin/CSRF/session checks, a streamed 64 KiB JSON limit,
+strict UUID/body validation, and caller-stable `Idempotency-Key` forwarding.
+Corrections remain linked append-only rows; the browser never sends a fabricated
+`If-Match`, patch request, offline queue, or client-synthesized history.
 
 ## Operational backend
 
@@ -136,6 +144,13 @@ GETs also expose `ETag`.
 
 ## Verification snapshot
 
+- Web Phase 6 local acceptance (2026-07-26): generated-contract drift,
+  TypeScript, zero-warning ESLint, Next 16 production build, 117 passed web
+  tests with 9 intentional DB-only skips, 21 focused Work contract/security
+  tests, 13 demo bootstrap/reconciliation tests, 9 Spring activity HTTP
+  contract tests, production dependency audit with 0 vulnerabilities, and 6/6
+  real Keycloak/PostgreSQL/Spring/Chrome scenarios. The E2E project and owned
+  runtime paths cleaned before `WEB_PLATFORM_E2E=PASS`.
 - Web Phase 5 local acceptance (2026-07-26): clean `npm ci`, checked-in Spring
   and analytics contract drift, TypeScript, zero-warning ESLint, Next 16
   production build, Maven package with tests skipped by that gate, 82 passed
@@ -168,9 +183,10 @@ GETs also expose `ETag`.
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
-- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. The Phase 5
-  completion checkpoint recorded C 8.71 GB free (WARN) and D 28.91 GB free
-  (PASS); WSL swap was configured on D.
+- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. The Phase 6
+  build observed minimum free space of C 9.09 GB and D 20.76 GB; both remained
+  above fail thresholds. Archived Codex sessions, Azure Functions cache, and
+  JetBrains local cache were moved recoverably to D through junctions.
 - Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
   Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
   smoke passed.
@@ -181,11 +197,10 @@ GETs also expose `ETag`.
 
 ## Next boundary
 
-Production-web Phase 5 is completed locally. The next implementation boundary
-is Phase 6 Work Operations: mobile assignment reads, idempotent log append,
-append-only corrections, and immutable history over frozen Spring contracts.
-It adds no backend routes and no fake offline queue. Phase 11 browser quality
-and Phase 12 protected release gates still block any production-release claim.
+Production-web Phase 6 is completed locally. The next implementation boundary
+is Phase 7 Inventory Control over the frozen Spring inventory contracts.
+Phase 11 browser quality and Phase 12 protected release gates still block
+registry publication and any production-release claim.
 
 ## Unresolved questions
 
