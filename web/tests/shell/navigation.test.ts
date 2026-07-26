@@ -36,6 +36,7 @@ describe("Field Ledger permission navigation", () => {
     expect(getActiveNavigationKey("/farms")).toBe("farms");
     expect(getActiveNavigationKey("/farms/3eb92f10-60dd-45cb-9160-7c569c3258b4")).toBe("farms");
     expect(getActiveNavigationKey("/work")).toBe("work");
+    expect(getActiveNavigationKey("/inventory")).toBe("inventory");
     expect(getActiveNavigationKey("/protected", { module: "data-quality" })).toBe("dataQuality");
     expect(getActiveNavigationKey("/protected", { module: "not-a-module" })).toBe("overview");
     expect(getActiveNavigationKey("/platform/farms")).toBe("overview");
@@ -47,5 +48,13 @@ describe("Field Ledger permission navigation", () => {
     ).find((item) => item.key === "work");
 
     expect(work?.href).toBe("/work");
+  });
+
+  it("links the implemented inventory area directly", () => {
+    const inventory = getVisibleNavigation(
+      new Set(["INVENTORY_READ"])
+    ).find((item) => item.key === "inventory");
+
+    expect(inventory?.href).toBe("/inventory");
   });
 });
