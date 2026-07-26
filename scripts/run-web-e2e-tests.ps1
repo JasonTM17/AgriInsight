@@ -367,6 +367,8 @@ try {
     $env:AGRIINSIGHT_WEB_E2E_WORK_PASSWORD = $personaPassword
     $env:AGRIINSIGHT_WEB_E2E_DENIED_USERNAME = "supplier"
     $env:AGRIINSIGHT_WEB_E2E_DENIED_PASSWORD = $personaPassword
+    $env:AGRIINSIGHT_WEB_E2E_INVENTORY_USERNAME = "inventory-manager"
+    $env:AGRIINSIGHT_WEB_E2E_INVENTORY_PASSWORD = $personaPassword
     $composeEnvironmentReady = $true
 
     try {

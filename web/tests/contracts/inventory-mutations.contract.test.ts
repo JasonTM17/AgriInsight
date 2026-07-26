@@ -274,7 +274,8 @@ describe("post inventory transaction", () => {
   });
 
   it("rejects a malformed receipt before any upstream call", async () => {
-    const { supplierId: _supplierId, ...malformedReceipt } = receiptBody;
+    const malformedReceipt: Record<string, unknown> = { ...receiptBody };
+    delete malformedReceipt.supplierId;
 
     await expect(
       postInventoryTransaction(mutationContext, malformedReceipt)
