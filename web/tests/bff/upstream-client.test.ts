@@ -78,4 +78,28 @@ describe("bounded upstream client", () => {
       })
     ).rejects.toThrow("byte limit");
   });
+
+  it.each([
+    [{ "bad-key!": "value" }, "parameter name"],
+    [
+      Object.fromEntries(
+        Array.from({ length: 33 }, (_, index) => [`p${index}`, index])
+      ),
+      "Too many"
+    ],
+    [{ farmCode: "x".repeat(257) }, "too long"]
+  ])("rejects invalid query input before fetch", async (query, message) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      executeAllowedOperation(
+        env,
+        "analyticsFarms",
+        "server-held-token",
+        "correlation-1",
+        query
+      )
+    ).rejects.toThrow(message);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

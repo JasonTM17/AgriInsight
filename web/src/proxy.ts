@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -24,8 +26,7 @@ export function proxy(request: NextRequest) {
       .map((host) => host.trim().toLowerCase())
       .filter(Boolean)
   );
-  const host = request.headers.get("host")?.toLowerCase();
-  if (!host || !configuredHosts.has(host)) {
+  if (!hasTrustedHost(request, configuredHosts)) {
     return withContentSecurityPolicy(
       new NextResponse("Invalid request host", { status: 400 }),
       contentSecurityPolicy
@@ -55,16 +56,53 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    {
-      source:
-        "/((?!api/health|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" }
-      ]
-    }
+    "/((?!api/health|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)"
   ]
 };
+
+function hasTrustedHost(
+  request: NextRequest,
+  configuredHosts: ReadonlySet<string>
+): boolean {
+  const host = request.headers.get("host")?.toLowerCase();
+  if (!host || !configuredHosts.has(host)) return false;
+  const forwardedHost = request.headers.get("x-forwarded-host")?.toLowerCase();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.toLowerCase();
+  const trustsForwarded = process.env.AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS === "true";
+  if (!trustsForwarded) {
+    try {
+      const baseUrl = new URL(process.env.AGRIINSIGHT_WEB_BASE_URL ?? "");
+      return (
+        host === baseUrl.host.toLowerCase() &&
+        (!forwardedHost || forwardedHost === host) &&
+        (!forwardedProto ||
+          forwardedProto === baseUrl.protocol.slice(0, -1))
+      );
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const baseUrl = new URL(process.env.AGRIINSIGHT_WEB_BASE_URL ?? "");
+    const expectedKey = Buffer.from(
+      process.env.AGRIINSIGHT_WEB_TRUSTED_PROXY_KEY_BASE64 ?? "",
+      "base64"
+    );
+    const suppliedKey = Buffer.from(
+      request.headers.get("x-agriinsight-proxy-attestation") ?? "",
+      "base64"
+    );
+    return (
+      expectedKey.length === 32 &&
+      suppliedKey.length === expectedKey.length &&
+      timingSafeEqual(suppliedKey, expectedKey) &&
+      forwardedHost === baseUrl.host.toLowerCase() &&
+      forwardedProto === baseUrl.protocol.slice(0, -1)
+    );
+  } catch {
+    return false;
+  }
+}
 
 function buildContentSecurityPolicy(nonce: string): string {
   return [

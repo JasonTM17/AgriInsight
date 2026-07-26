@@ -7,12 +7,14 @@ import {
   SECURE_HTTP_ONLY_COOKIE
 } from "@/server/auth/cookie-policy";
 import { getAuthRuntime } from "@/server/auth/runtime";
+import { loginRateLimiter } from "@/server/auth/login-rate-limit";
 import { assertTrustedRequest } from "@/server/config/environment";
 
 export async function GET(request: NextRequest) {
   try {
     const runtime = getAuthRuntime();
     const requestUrl = assertTrustedRequest(request, runtime.env);
+    loginRateLimiter.assertAllowed(request, runtime.env);
     const login = await runtime.auth.beginLogin(
       requestUrl.searchParams.get("returnTo")
     );

@@ -29,11 +29,32 @@ export class PostgresSessionStore implements SessionStore {
 
   async createPreauth(input: CreatePreauthInput): Promise<void> {
     await this.ensureSchema();
-    await this.pool.query(
-      `INSERT INTO agriinsight_web.preauth_requests (
+    const inserted = await this.pool.query(
+      `WITH preauth_lock AS MATERIALIZED (
+         SELECT pg_advisory_xact_lock(198874937)
+       ),
+       cleanup AS (
+         DELETE FROM agriinsight_web.preauth_requests
+         WHERE expires_at <= now()
+            OR consumed_at < now() - interval '5 minutes'
+       ),
+       session_cleanup AS (
+         DELETE FROM agriinsight_web.sessions
+         WHERE session_expires_at < now() - interval '30 days'
+            OR revoked_at < now() - interval '30 days'
+       ),
+       capacity AS (
+         SELECT count(*) AS active_count
+         FROM agriinsight_web.preauth_requests, preauth_lock
+         WHERE consumed_at IS NULL AND expires_at > now()
+       )
+       INSERT INTO agriinsight_web.preauth_requests (
          id, state_hash, browser_binding_hash, pkce_verifier_ciphertext,
          nonce_ciphertext, token_key_id, return_path, expires_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+       )
+       SELECT $1, $2, $3, $4, $5, $6, $7, $8
+       FROM capacity
+       WHERE active_count < 10000`,
       [
         randomUUID(),
         input.stateHash,
@@ -45,6 +66,9 @@ export class PostgresSessionStore implements SessionStore {
         input.expiresAt
       ]
     );
+    if (inserted.rowCount !== 1) {
+      throw new Error("Pre-authentication request capacity is exhausted");
+    }
   }
 
   async consumePreauth(
@@ -105,7 +129,7 @@ export class PostgresSessionStore implements SessionStore {
   async findSession(sessionTokenHash: Buffer): Promise<StoredSession | null> {
     await this.ensureSchema();
     const result = await this.pool.query<SessionRow>(
-      `SELECT id, provider_issuer, provider_subject, token_key_id,
+      `SELECT id, session_token_hash, provider_issuer, provider_subject, token_key_id,
               access_token_ciphertext, refresh_token_ciphertext, id_token_ciphertext,
               access_token_expires_at, session_expires_at, session_version,
               refresh_lease_id, refresh_lease_expires_at, revoked_at
@@ -159,7 +183,7 @@ export class PostgresSessionStore implements SessionStore {
            refresh_lease_expires_at = NULL,
            updated_at = $2
        WHERE session_token_hash = $1
-       RETURNING id, provider_issuer, provider_subject, token_key_id,
+       RETURNING id, session_token_hash, provider_issuer, provider_subject, token_key_id,
                  access_token_ciphertext, refresh_token_ciphertext, id_token_ciphertext,
                  access_token_expires_at, session_expires_at, session_version,
                  refresh_lease_id, refresh_lease_expires_at, revoked_at`,
@@ -169,7 +193,8 @@ export class PostgresSessionStore implements SessionStore {
   }
 
   private ensureSchema(): Promise<void> {
-    this.schemaValidation ??= this.pool
+    if (this.schemaValidation) return this.schemaValidation;
+    const pending = this.pool
       .query<{ version: number }>(
         "SELECT max(version)::integer AS version FROM agriinsight_web.schema_migrations"
       )
@@ -178,6 +203,11 @@ export class PostgresSessionStore implements SessionStore {
           throw new Error("Web session schema version 1 is required");
         }
       });
+    const retriable = pending.catch((error: unknown) => {
+      if (this.schemaValidation === retriable) this.schemaValidation = undefined;
+      throw error;
+    });
+    this.schemaValidation = retriable;
     return this.schemaValidation;
   }
 }

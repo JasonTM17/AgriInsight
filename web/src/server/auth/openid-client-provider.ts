@@ -30,6 +30,8 @@ import type {
 } from "@/server/auth/session-contracts";
 import type { WebEnvironment } from "@/server/config/environment";
 
+export const PROVIDER_HTTP_TIMEOUT_SECONDS = 5;
+
 export class OpenIdClientProvider implements OidcProviderAdapter {
   private configuration?: Promise<Configuration>;
 
@@ -127,7 +129,8 @@ export class OpenIdClientProvider implements OidcProviderAdapter {
     const loopback = ["localhost", "127.0.0.1", "::1"].includes(
       this.env.issuer.hostname
     );
-    this.configuration ??= discovery(
+    if (this.configuration) return this.configuration;
+    const pending = discovery(
       this.env.issuer,
       this.env.clientId,
       {
@@ -141,9 +144,14 @@ export class OpenIdClientProvider implements OidcProviderAdapter {
       if (!configuration.serverMetadata().supportsPKCE()) {
         throw new Error("OIDC issuer does not advertise PKCE support");
       }
-      configuration.timeout = 5;
+      configuration.timeout = PROVIDER_HTTP_TIMEOUT_SECONDS;
       return configuration;
     });
+    const retriable = pending.catch((error: unknown) => {
+      if (this.configuration === retriable) this.configuration = undefined;
+      throw error;
+    });
+    this.configuration = retriable;
     return this.configuration;
   }
 }

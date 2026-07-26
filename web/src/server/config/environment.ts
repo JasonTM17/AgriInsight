@@ -162,8 +162,17 @@ export function assertTrustedRequest(request: Request, env: WebEnvironment): URL
   if (!host || !env.allowedHosts.has(host)) {
     throw new AuthError("invalid_host", 400, "Máy chủ yêu cầu không hợp lệ.");
   }
-  if (!env.trustForwardedHeaders && (forwardedHost || forwardedProto)) {
-    throw new AuthError("invalid_host", 400, "Forwarded headers are not trusted.");
+  if (
+    !env.trustForwardedHeaders &&
+    ((forwardedHost && forwardedHost !== host) ||
+      (forwardedProto &&
+        forwardedProto !== env.baseUrl.protocol.slice(0, -1)))
+  ) {
+    throw new AuthError(
+      "invalid_host",
+      400,
+      "Forwarded headers conflict with the request origin."
+    );
   }
   if (env.trustForwardedHeaders) {
     const attestation = request.headers.get("x-agriinsight-proxy-attestation");

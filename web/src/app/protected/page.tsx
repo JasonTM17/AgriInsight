@@ -26,7 +26,7 @@ export default async function ProtectedPage() {
         </div>
         <div>
           <dt>Email</dt>
-          <dd>{identity.email}</dd>
+          <dd>{identity.email ?? "Chưa cung cấp"}</dd>
         </div>
         <div>
           <dt>Quyền hiện hành</dt>

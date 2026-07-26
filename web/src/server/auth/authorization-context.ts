@@ -7,9 +7,9 @@ import { getCurrentUser } from "@/server/clients/backend";
 import type { WebEnvironment } from "@/server/config/environment";
 
 const currentUserSchema = z.object({
-  assurance: z.string().optional(),
-  displayName: z.string().min(1),
-  email: z.string().email(),
+  assurance: z.string().nullable().optional(),
+  displayName: z.string().min(1).nullable().optional(),
+  email: z.string().email().nullable().optional(),
   permissions: z.array(z.string()).default([]),
   profileId: z.uuid(),
   roles: z.array(z.string()).default([]),
@@ -18,7 +18,13 @@ const currentUserSchema = z.object({
 });
 
 export type AuthorizationContext = Readonly<
-  Omit<z.infer<typeof currentUserSchema>, "permissions" | "roles"> & {
+  Omit<
+    z.infer<typeof currentUserSchema>,
+    "assurance" | "displayName" | "email" | "permissions" | "roles"
+  > & {
+    assurance: string | null;
+    displayName: string;
+    email: string | null;
     permissions: ReadonlySet<string>;
     roles: ReadonlySet<string>;
   }
@@ -35,6 +41,9 @@ export const getAuthorizationContext = cache(
     );
     return Object.freeze({
       ...identity,
+      assurance: identity.assurance ?? null,
+      displayName: identity.displayName ?? "Người dùng AgriInsight",
+      email: identity.email ?? null,
       permissions: new Set(identity.permissions),
       roles: new Set(identity.roles)
     });

@@ -11,6 +11,7 @@ import {
   createSessionInput,
   encryptedValue,
   requireUsableSession,
+  sessionTokenPurpose,
   toValidSession
 } from "@/server/auth/auth-session-state";
 import {
@@ -22,7 +23,7 @@ import type { WebEnvironment } from "@/server/config/environment";
 
 const PREAUTH_LIFETIME_MS = 5 * 60 * 1000;
 const REFRESH_SKEW_MS = 30 * 1000;
-const REFRESH_WAIT_ATTEMPTS = 120;
+const REFRESH_WAIT_ATTEMPTS = 240;
 const REFRESH_POLL_INTERVAL_MS = 50;
 
 export type LoginStart = Readonly<{
@@ -181,7 +182,7 @@ export class AuthService {
           this.cipher.openWithKeyId(
             session.tokenKeyId,
             session.refreshTokenCiphertext,
-            "session:refresh"
+            sessionTokenPurpose(session.sessionTokenHash, "refresh")
           )
         );
       } catch {
@@ -193,7 +194,7 @@ export class AuthService {
         ? this.cipher.openWithKeyId(
             session.tokenKeyId,
             session.idTokenCiphertext,
-            "session:id"
+            sessionTokenPurpose(session.sessionTokenHash, "id")
           )
         : undefined;
       return await this.provider.buildEndSessionRedirect(idToken, this.env.baseUrl);

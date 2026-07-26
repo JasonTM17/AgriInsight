@@ -61,6 +61,10 @@ CREATE INDEX IF NOT EXISTS sessions_expiry_idx
     ON agriinsight_web.sessions (session_expires_at)
     WHERE revoked_at IS NULL;
 
+CREATE INDEX IF NOT EXISTS sessions_revoked_retention_idx
+    ON agriinsight_web.sessions (revoked_at)
+    WHERE revoked_at IS NOT NULL;
+
 INSERT INTO agriinsight_web.schema_migrations (version)
 VALUES (1)
 ON CONFLICT (version) DO NOTHING;

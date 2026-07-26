@@ -30,20 +30,33 @@ export function createSessionInput(
   sessionToken: string,
   now: Date
 ): CreateSessionInput {
+  const sessionTokenHash = hashOpaqueToken(sessionToken);
   return {
-    accessToken: encryptedValue(cipher, tokens.accessToken, "session:access"),
+    accessToken: encryptedValue(
+      cipher,
+      tokens.accessToken,
+      sessionTokenPurpose(sessionTokenHash, "access")
+    ),
     accessTokenExpiresAt: tokens.accessTokenExpiresAt,
     idToken: tokens.idToken
-      ? encryptedValue(cipher, tokens.idToken, "session:id")
+      ? encryptedValue(
+          cipher,
+          tokens.idToken,
+          sessionTokenPurpose(sessionTokenHash, "id")
+        )
       : undefined,
     issuer: env.issuer.href.replace(/\/$/, ""),
     refreshToken: tokens.refreshToken
-      ? encryptedValue(cipher, tokens.refreshToken, "session:refresh")
+      ? encryptedValue(
+          cipher,
+          tokens.refreshToken,
+          sessionTokenPurpose(sessionTokenHash, "refresh")
+        )
       : undefined,
     sessionExpiresAt: new Date(
       now.getTime() + env.sessionLifetimeSeconds * 1000
     ),
-    sessionTokenHash: hashOpaqueToken(sessionToken),
+    sessionTokenHash,
     subject: tokens.subject
   };
 }
@@ -57,12 +70,19 @@ export function toValidSession(
     accessToken: cipher.openWithKeyId(
       session.tokenKeyId,
       session.accessTokenCiphertext,
-      "session:access"
+      sessionTokenPurpose(session.sessionTokenHash, "access")
     ),
     expiresAt: session.accessTokenExpiresAt,
     sessionVersion: session.sessionVersion,
     subject: session.subject
   };
+}
+
+export function sessionTokenPurpose(
+  sessionTokenHash: Buffer,
+  tokenKind: "access" | "id" | "refresh"
+): string {
+  return `session:${sessionTokenHash.toString("base64url")}:${tokenKind}`;
 }
 
 export function assertAvailableKey(cipher: TokenCipher, keyId: string): void {

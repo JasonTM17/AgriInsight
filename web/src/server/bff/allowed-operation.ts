@@ -1,10 +1,30 @@
+import type { paths as AnalyticsPaths } from "@/server/generated/analytics/schema";
+import type { paths as BackendPaths } from "@/server/generated/backend/schema";
+
 export type UpstreamService = "analytics" | "backend";
 
-export type AllowedOperation = Readonly<{
-  method: "GET";
-  path: `/${string}`;
-  service: UpstreamService;
-}>;
+type GetPath<ContractPaths> = Extract<
+  {
+    [Path in keyof ContractPaths]: ContractPaths[Path] extends {
+      readonly get: unknown;
+    }
+      ? Path
+      : never;
+  }[keyof ContractPaths],
+  `/${string}`
+>;
+
+type AllowedOperation =
+  | Readonly<{
+      method: "GET";
+      path: GetPath<AnalyticsPaths>;
+      service: "analytics";
+    }>
+  | Readonly<{
+      method: "GET";
+      path: GetPath<BackendPaths>;
+      service: "backend";
+    }>;
 
 export const ALLOWED_OPERATIONS = Object.freeze({
   analyticsCatalog: {

@@ -7,7 +7,7 @@ import {
 } from "@/server/bff/allowed-operation";
 import type { WebEnvironment } from "@/server/config/environment";
 
-type QueryValue = boolean | number | string;
+type QueryValue = boolean | number | string | null;
 type Query = Readonly<Record<string, QueryValue | readonly QueryValue[] | undefined>>;
 
 export async function executeAllowedOperation(
@@ -42,7 +42,7 @@ function appendQuery(url: URL, query: Query): void {
     }
     const values = Array.isArray(rawValue) ? rawValue : [rawValue];
     for (const value of values) {
-      if (value === undefined) continue;
+      if (value === null || value === undefined) continue;
       entries += 1;
       if (entries > 32) throw new Error("Too many upstream query parameters");
       const normalized = String(value);

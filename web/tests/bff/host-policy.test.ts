@@ -34,17 +34,30 @@ describe("effective host policy", () => {
     expect(assertTrustedRequest(request, env).pathname).toBe("/login");
   });
 
-  it("rejects spoofed forwarded metadata by default", () => {
+  it("accepts framework-added forwarded metadata when it matches the origin", () => {
     const env = loadWebEnvironment(source());
     const request = new Request("https://app.agriinsight.example/login", {
       headers: {
         Host: "app.agriinsight.example",
         "X-Forwarded-Host": "app.agriinsight.example",
-        "X-Forwarded-Proto": "https"
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-For": "127.0.0.1"
+      }
+    });
+    expect(assertTrustedRequest(request, env).pathname).toBe("/login");
+  });
+
+  it("rejects conflicting forwarded metadata by default", () => {
+    const env = loadWebEnvironment(source());
+    const request = new Request("https://app.agriinsight.example/login", {
+      headers: {
+        Host: "app.agriinsight.example",
+        "X-Forwarded-Host": "evil.example",
+        "X-Forwarded-Proto": "http"
       }
     });
     expect(() => assertTrustedRequest(request, env)).toThrow(
-      "Forwarded headers are not trusted"
+      "Forwarded headers conflict with the request origin"
     );
   });
 

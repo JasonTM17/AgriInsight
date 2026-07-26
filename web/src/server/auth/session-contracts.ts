@@ -56,15 +56,18 @@ export type StoredSession = Readonly<{
   refreshTokenCiphertext: Buffer | null;
   revokedAt: Date | null;
   sessionExpiresAt: Date;
+  sessionTokenHash: Buffer;
   sessionVersion: number;
   subject: string;
   tokenKeyId: string;
 }>;
 
 export type RefreshLease = Readonly<{
+  idTokenCiphertext: Buffer | null;
   leaseId: string;
   refreshTokenCiphertext: Buffer;
   sessionId: string;
+  sessionTokenHash: Buffer;
   sessionVersion: number;
   subject: string;
   tokenKeyId: string;
@@ -76,7 +79,7 @@ export type RotateSessionInput = Readonly<{
   expectedSessionVersion: number;
   idToken?: EncryptedValue;
   leaseId: string;
-  refreshToken?: EncryptedValue;
+  refreshToken: EncryptedValue;
   sessionId: string;
 }>;
 

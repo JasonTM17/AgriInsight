@@ -53,6 +53,7 @@ export class MemorySessionStore implements SessionStore {
       refreshTokenCiphertext: input.refreshToken?.ciphertext ?? null,
       revokedAt: null,
       sessionExpiresAt: input.sessionExpiresAt,
+      sessionTokenHash: input.sessionTokenHash,
       sessionVersion: 1,
       subject: input.subject,
       tokenKeyId: input.accessToken.keyId

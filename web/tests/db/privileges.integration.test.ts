@@ -88,4 +88,104 @@ describe.runIf(enabled)("web session database privileges", () => {
       rolsuper: false
     });
   });
+
+  it("denies public schema/database creation and every role membership", async () => {
+    const privileges = await runtime?.query(
+      `SELECT
+         has_database_privilege(
+           current_user,
+           current_database(),
+           'CREATE'
+         ) AS can_create_database_objects,
+         has_schema_privilege(
+           current_user,
+           'public',
+           'CREATE'
+         ) AS can_create_in_public`
+    );
+    expect(privileges?.rows[0]).toEqual({
+      can_create_database_objects: false,
+      can_create_in_public: false
+    });
+    const memberships = await runtime?.query(
+      `SELECT count(*)::integer AS membership_count
+       FROM pg_catalog.pg_auth_members AS membership
+       JOIN pg_catalog.pg_roles AS member_role
+         ON member_role.oid = membership.member
+       WHERE member_role.rolname = current_user`
+    );
+    expect(memberships?.rows[0]?.membership_count).toBe(0);
+    await expect(
+      runtime?.query("SET ROLE agriinsight_web_owner")
+    ).rejects.toBeTruthy();
+  });
+
+  it("keeps owner/migrator attributes and membership options exact", async () => {
+    const roles = await admin?.query(
+      `SELECT rolname, rolcanlogin, rolsuper, rolinherit, rolcreatedb,
+              rolcreaterole, rolreplication, rolbypassrls
+       FROM pg_catalog.pg_roles
+       WHERE rolname IN (
+         'agriinsight_web_owner',
+         'agriinsight_web_migrator',
+         'agriinsight_web_runtime'
+       )
+       ORDER BY rolname`
+    );
+    expect(roles?.rows).toEqual([
+      {
+        rolbypassrls: false,
+        rolcanlogin: true,
+        rolcreatedb: false,
+        rolcreaterole: false,
+        rolinherit: false,
+        rolname: "agriinsight_web_migrator",
+        rolreplication: false,
+        rolsuper: false
+      },
+      {
+        rolbypassrls: false,
+        rolcanlogin: false,
+        rolcreatedb: false,
+        rolcreaterole: false,
+        rolinherit: false,
+        rolname: "agriinsight_web_owner",
+        rolreplication: false,
+        rolsuper: false
+      },
+      {
+        rolbypassrls: false,
+        rolcanlogin: true,
+        rolcreatedb: false,
+        rolcreaterole: false,
+        rolinherit: false,
+        rolname: "agriinsight_web_runtime",
+        rolreplication: false,
+        rolsuper: false
+      }
+    ]);
+    const membership = await admin?.query(
+      `SELECT granted_role.rolname AS granted_role,
+              member_role.rolname AS member_role,
+              membership.admin_option,
+              membership.inherit_option,
+              membership.set_option
+       FROM pg_catalog.pg_auth_members AS membership
+       JOIN pg_catalog.pg_roles AS granted_role
+         ON granted_role.oid = membership.roleid
+       JOIN pg_catalog.pg_roles AS member_role
+         ON member_role.oid = membership.member
+       WHERE granted_role.rolname LIKE 'agriinsight_web_%'
+          OR member_role.rolname LIKE 'agriinsight_web_%'`
+    );
+    expect(membership?.rows).toEqual([
+      {
+        admin_option: false,
+        granted_role: "agriinsight_web_owner",
+        inherit_option: false,
+        member_role: "agriinsight_web_migrator",
+        set_option: true
+      }
+    ]);
+  });
 });

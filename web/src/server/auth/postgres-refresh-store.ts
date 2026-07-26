@@ -9,6 +9,8 @@ import type {
   RotateSessionInput
 } from "@/server/auth/session-contracts";
 
+export const REFRESH_LEASE_SECONDS = 15;
+
 export class PostgresRefreshStore {
   constructor(private readonly pool: Pool) {}
 
@@ -16,15 +18,17 @@ export class PostgresRefreshStore {
     const leaseId = randomUUID();
     const result = await this.pool.query<{
       id: string;
+      id_token_ciphertext: Buffer | null;
       provider_subject: string;
       refresh_token_ciphertext: Buffer;
+      session_token_hash: Buffer;
       session_version: string;
       token_key_id: string;
     }>(
       `UPDATE agriinsight_web.sessions
        SET refresh_lease_id = $2,
            refresh_lease_version = session_version,
-           refresh_lease_expires_at = $3 + interval '15 seconds',
+           refresh_lease_expires_at = $3 + make_interval(secs => $4),
            refresh_attempted_at = $3,
            updated_at = $3
        WHERE session_token_hash = $1
@@ -34,16 +38,19 @@ export class PostgresRefreshStore {
          AND refresh_token_ciphertext IS NOT NULL
          AND (refresh_retry_after IS NULL OR refresh_retry_after <= $3)
          AND (refresh_lease_id IS NULL OR refresh_lease_expires_at <= $3)
-       RETURNING id, provider_subject, refresh_token_ciphertext,
+       RETURNING id, session_token_hash, provider_subject,
+                 refresh_token_ciphertext, id_token_ciphertext,
                  session_version, token_key_id`,
-      [sessionTokenHash, leaseId, now]
+      [sessionTokenHash, leaseId, now, REFRESH_LEASE_SECONDS]
     );
     const row = result.rows[0];
     if (!row) return null;
     return {
+      idTokenCiphertext: row.id_token_ciphertext,
       leaseId,
       refreshTokenCiphertext: row.refresh_token_ciphertext,
       sessionId: row.id,
+      sessionTokenHash: row.session_token_hash,
       sessionVersion: Number(row.session_version),
       subject: row.provider_subject,
       tokenKeyId: row.token_key_id
@@ -54,8 +61,8 @@ export class PostgresRefreshStore {
     const result = await this.pool.query(
       `UPDATE agriinsight_web.sessions
        SET access_token_ciphertext = $4,
-           refresh_token_ciphertext = COALESCE($5, refresh_token_ciphertext),
-           id_token_ciphertext = COALESCE($6, id_token_ciphertext),
+           refresh_token_ciphertext = $5,
+           id_token_ciphertext = $6,
            token_key_id = $7,
            access_token_expires_at = $8,
            session_version = session_version + 1,
@@ -75,7 +82,7 @@ export class PostgresRefreshStore {
         input.expectedSessionVersion,
         input.leaseId,
         input.accessToken.ciphertext,
-        input.refreshToken?.ciphertext ?? null,
+        input.refreshToken.ciphertext,
         input.idToken?.ciphertext ?? null,
         input.accessToken.keyId,
         input.accessTokenExpiresAt

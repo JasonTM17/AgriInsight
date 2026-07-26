@@ -1,11 +1,13 @@
 export type AuthErrorCode =
+  | "authorization_denied"
   | "invalid_host"
   | "invalid_nonce"
   | "invalid_origin"
   | "invalid_request"
   | "invalid_session"
   | "invalid_state"
-  | "issuer_unavailable";
+  | "issuer_unavailable"
+  | "rate_limited";
 
 export class AuthError extends Error {
   constructor(

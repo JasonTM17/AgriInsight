@@ -14,6 +14,7 @@ export type SessionRow = QueryResultRow & {
   refresh_token_ciphertext: Buffer | null;
   revoked_at: Date | null;
   session_expires_at: Date;
+  session_token_hash: Buffer;
   session_version: string;
   token_key_id: string;
 };
@@ -30,6 +31,7 @@ export function mapSession(row: SessionRow): StoredSession {
     refreshTokenCiphertext: row.refresh_token_ciphertext,
     revokedAt: row.revoked_at,
     sessionExpiresAt: row.session_expires_at,
+    sessionTokenHash: row.session_token_hash,
     sessionVersion: Number(row.session_version),
     subject: row.provider_subject,
     tokenKeyId: row.token_key_id

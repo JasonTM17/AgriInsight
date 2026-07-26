@@ -9,6 +9,7 @@ import type {
   RefreshLease,
   SessionStore
 } from "@/server/auth/session-contracts";
+import { sessionTokenPurpose } from "@/server/auth/auth-session-state";
 import { TokenCipher } from "@/server/auth/token-crypto";
 
 export type ValidSession = Readonly<{
@@ -34,29 +35,43 @@ export async function refreshLeasedSession(
     const refreshToken = cipher.openWithKeyId(
       lease.tokenKeyId,
       lease.refreshTokenCiphertext,
-      "session:refresh"
+      sessionTokenPurpose(lease.sessionTokenHash, "refresh")
     );
+    const priorIdToken = lease.idTokenCiphertext
+      ? cipher.openWithKeyId(
+          lease.tokenKeyId,
+          lease.idTokenCiphertext,
+          sessionTokenPurpose(lease.sessionTokenHash, "id")
+        )
+      : undefined;
     const refreshed = await provider.refresh(refreshToken);
     const rotated = await store.rotateSession({
       accessToken: {
-        ciphertext: cipher.seal(refreshed.accessToken, "session:access"),
+        ciphertext: cipher.seal(
+          refreshed.accessToken,
+          sessionTokenPurpose(lease.sessionTokenHash, "access")
+        ),
         keyId: cipher.keyId
       },
       accessTokenExpiresAt: refreshed.accessTokenExpiresAt,
       expectedSessionVersion: lease.sessionVersion,
-      idToken: refreshed.idToken
+      idToken: refreshed.idToken ?? priorIdToken
         ? {
-            ciphertext: cipher.seal(refreshed.idToken, "session:id"),
+            ciphertext: cipher.seal(
+              refreshed.idToken ?? priorIdToken!,
+              sessionTokenPurpose(lease.sessionTokenHash, "id")
+            ),
             keyId: cipher.keyId
           }
         : undefined,
       leaseId: lease.leaseId,
-      refreshToken: refreshed.refreshToken
-        ? {
-            ciphertext: cipher.seal(refreshed.refreshToken, "session:refresh"),
-            keyId: cipher.keyId
-          }
-        : undefined,
+      refreshToken: {
+        ciphertext: cipher.seal(
+          refreshed.refreshToken ?? refreshToken,
+          sessionTokenPurpose(lease.sessionTokenHash, "refresh")
+        ),
+        keyId: cipher.keyId
+      },
       sessionId: lease.sessionId
     });
     if (!rotated) throw invalidSessionError();
