@@ -220,13 +220,6 @@ function warehousePage(items: readonly unknown[]) {
   return { items, limit: 100, offset: 0, hasMore: false };
 }
 
-function transactionDetailResponse(etag: string) {
-  return new Response(JSON.stringify(transactionRecord), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ETag: etag }
-  });
-}
-
 describe("post inventory transaction", () => {
   beforeEach(() => {
     vi.mocked(executeAllowedOperation).mockReset();
@@ -316,10 +309,7 @@ describe("post inventory reversal", () => {
     vi.mocked(executeAllowedMutation).mockReset();
   });
 
-  it("reverses after confirming the caller's If-Match matches the current version", async () => {
-    vi.mocked(executeAllowedOperation).mockResolvedValueOnce(
-      transactionDetailResponse("\"7\"")
-    );
+  it("forwards the original If-Match so Spring can replay the idempotency tuple", async () => {
     vi.mocked(executeAllowedMutation).mockResolvedValueOnce(
       Response.json({ id: transactionId }, { status: 201 })
     );
@@ -344,21 +334,32 @@ describe("post inventory reversal", () => {
       { id: transactionId },
       "\"7\""
     );
+    expect(executeAllowedOperation).not.toHaveBeenCalled();
   });
 
-  it("rejects a stale If-Match before attempting the reversal", async () => {
-    vi.mocked(executeAllowedOperation).mockResolvedValueOnce(
-      transactionDetailResponse("\"8\"")
+  it("leaves stale-version and replay decisions to Spring's command boundary", async () => {
+    vi.mocked(executeAllowedMutation).mockResolvedValueOnce(
+      new Response(null, { status: 409 })
     );
 
-    await expect(
-      postInventoryReversal(
-        mutationContext,
-        { transactionId, quantityBase: 25, reason: "Correct duplicate warehouse posting" },
-        "\"7\""
-      )
-    ).rejects.toMatchObject({ status: 409 });
-    expect(executeAllowedMutation).not.toHaveBeenCalled();
+    const response = await postInventoryReversal(
+      mutationContext,
+      { transactionId, quantityBase: 25, reason: "Correct duplicate warehouse posting" },
+      "\"7\""
+    );
+
+    expect(response.status).toBe(409);
+    expect(executeAllowedMutation).toHaveBeenCalledWith(
+      mutationContext.env,
+      "inventoryTransactionReversal",
+      mutationContext.accessToken,
+      mutationContext.correlationId,
+      mutationContext.idempotencyKey,
+      expect.objectContaining({ quantityBase: 25 }),
+      { id: transactionId },
+      "\"7\""
+    );
+    expect(executeAllowedOperation).not.toHaveBeenCalled();
   });
 
   it("rejects a malformed reversal payload before any upstream call", async () => {

@@ -47,7 +47,7 @@ export function useIdempotentInventoryMutation(successMessage: string) {
           kind: "error",
           message: result.problem.title
         });
-        return "rejected";
+        return result.ambiguous ? "ambiguous" : "rejected";
       }
       fingerprint.current = null;
       idempotencyKey.current = null;

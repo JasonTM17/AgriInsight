@@ -282,7 +282,10 @@ describe("inventory route trust boundaries", () => {
     }
   );
 
-  it("rejects a stale ETag after refetching the source transaction", async () => {
+  it("forwards a stale ETag so Spring can resolve precondition or idempotent replay", async () => {
+    vi.mocked(executeAllowedMutation).mockResolvedValueOnce(
+      new Response(null, { status: 409 })
+    );
     const response = await reverseTransaction(
       mutationRequest(
         `/api/inventory/transactions/${transactionId}/reversals`,
@@ -293,18 +296,20 @@ describe("inventory route trust boundaries", () => {
     );
 
     expect(response.status).toBe(409);
-    expect(executeAllowedOperation).toHaveBeenCalledWith(
+    expect(executeAllowedMutation).toHaveBeenCalledWith(
       env,
-      "inventoryTransactionById",
+      "inventoryTransactionReversal",
       "server-token",
       expect.any(String),
-      {},
-      { id: transactionId }
+      expect.any(String),
+      expect.objectContaining({ quantityBase: 1 }),
+      { id: transactionId },
+      "\"6\""
     );
-    expect(executeAllowedMutation).not.toHaveBeenCalled();
+    expect(executeAllowedOperation).not.toHaveBeenCalled();
   });
 
-  it("forwards the raw refetched ETag on reversal", async () => {
+  it("forwards the raw server-issued ETag on reversal", async () => {
     const response = await reverseTransaction(
       mutationRequest(
         `/api/inventory/transactions/${transactionId}/reversals`,

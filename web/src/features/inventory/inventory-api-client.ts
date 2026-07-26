@@ -10,7 +10,11 @@ export type InventoryApiProblem = Readonly<{
 
 export type InventoryMutationResult =
   | Readonly<{ ok: true }>
-  | Readonly<{ ok: false; problem: InventoryApiProblem }>;
+  | Readonly<{
+      ambiguous: boolean;
+      ok: false;
+      problem: InventoryApiProblem;
+    }>;
 
 export async function postInventoryMutation(
   path: string,
@@ -21,6 +25,7 @@ export async function postInventoryMutation(
   const csrfToken = readCookie(CSRF_COOKIE_NAME);
   if (!csrfToken) {
     return {
+      ambiguous: false,
       ok: false,
       problem: { title: "Phiên bảo mật không còn hợp lệ. Hãy đăng nhập lại." }
     };
@@ -38,7 +43,11 @@ export async function postInventoryMutation(
     headers
   });
   if (response.ok) return { ok: true };
-  return { ok: false, problem: await readProblem(response) };
+  return {
+    ambiguous: response.status >= 500,
+    ok: false,
+    problem: await readProblem(response)
+  };
 }
 
 export async function getInventoryTransactionEtag(

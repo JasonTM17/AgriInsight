@@ -59,7 +59,7 @@ export function InventoryReversalForm({
         payload,
         prepared.current.etag
       );
-      if (outcome !== "ambiguous") prepared.current = null;
+      if (outcome === "success") prepared.current = null;
     } catch (error) {
       prepared.current = null;
       mutation.setLocalError(

@@ -110,10 +110,46 @@ test("@inventory manager records a receipt, issue and ETag reversal", async ({
   expect(requestKeys[3]).toBe(requestKeys[2]);
 
   await page.getByText("Đảo một phần giao dịch", { exact: true }).click();
+  const reversalKeys: string[] = [];
+  const reversalEtags: string[] = [];
+  let replaceFirstReversalConfirmation = true;
+  await page.route(
+    /\/api\/inventory\/transactions\/[0-9a-f-]+\/reversals$/,
+    async (route) => {
+      const headers = await route.request().allHeaders();
+      reversalKeys.push(headers["idempotency-key"] ?? "");
+      reversalEtags.push(headers["if-match"] ?? "");
+      if (replaceFirstReversalConfirmation) {
+        replaceFirstReversalConfirmation = false;
+        const response = await route.fetch();
+        expect(response.status()).toBe(201);
+        await route.fulfill({
+          status: 502,
+          contentType: "application/problem+json",
+          body: JSON.stringify({
+            code: "upstream_unavailable",
+            title: BAD_GATEWAY_TITLE
+          })
+        });
+        return;
+      }
+      await route.continue();
+    }
+  );
   await page.getByLabel("Số lượng cần đảo").fill("2");
   await page.getByLabel("Lý do hiệu chỉnh").fill("E2E đối soát phiếu nhập");
   await page.getByTestId("inventory-reversal-submit").click();
+  await expect(page.getByTestId("inventory-mutation-feedback")).toContainText(
+    BAD_GATEWAY_TITLE
+  );
+  await page.getByTestId("inventory-reversal-submit").click();
   await expect(page.getByTestId("inventory-transaction-row")).toHaveCount(3);
+  expect(reversalKeys).toHaveLength(2);
+  expect(reversalKeys[0]).toBeTruthy();
+  expect(reversalKeys[1]).toBe(reversalKeys[0]);
+  expect(reversalEtags).toHaveLength(2);
+  expect(reversalEtags[0]).toMatch(/^"\d+"$/);
+  expect(reversalEtags[1]).toBe(reversalEtags[0]);
   await expectNoHorizontalOverflow(page);
 
   const response = await page.request.get(page.url());
