@@ -29,6 +29,8 @@ _tmp/
 !.claude/rules/
 !.claude/rules/**
 .claude/.env.example
+/node_modules/
+/tmp/
 
 # Production web runtime outputs and local secrets
 web/node_modules/
