@@ -193,6 +193,26 @@ export interface components {
             readonly payload: components["schemas"]["OverviewPayload"];
             readonly scope: components["schemas"]["ScopeModel"];
         };
+        /** AppliedFilterModel */
+        readonly AppliedFilterModel: {
+            /** Cropcode */
+            readonly cropCode?: string | null;
+            /** Datefrom */
+            readonly dateFrom?: string | null;
+            /**
+             * Datepreset
+             * @enum {string}
+             */
+            readonly datePreset: "all" | "last-30-days" | "season-to-date";
+            /** Dateto */
+            readonly dateTo: string;
+            /** Farmcode */
+            readonly farmCode?: string | null;
+            /** Fieldcode */
+            readonly fieldCode?: string | null;
+            /** Seasoncode */
+            readonly seasonCode?: string | null;
+        };
         /** CatalogFarmModel */
         readonly CatalogFarmModel: {
             /** Code */
@@ -953,6 +973,7 @@ export interface components {
         };
         /** ScopeModel */
         readonly ScopeModel: {
+            readonly appliedFilter?: components["schemas"]["AppliedFilterModel"] | null;
             /** Farmcodes */
             readonly farmCodes?: readonly string[];
             /** Tenantid */
@@ -976,6 +997,7 @@ export type SchemaAnalyticsEnvelopeDataQualityPayload = components['schemas']['A
 export type SchemaAnalyticsEnvelopeFarmsPayload = components['schemas']['AnalyticsEnvelope_FarmsPayload_'];
 export type SchemaAnalyticsEnvelopeInventoryPayload = components['schemas']['AnalyticsEnvelope_InventoryPayload_'];
 export type SchemaAnalyticsEnvelopeOverviewPayload = components['schemas']['AnalyticsEnvelope_OverviewPayload_'];
+export type SchemaAppliedFilterModel = components['schemas']['AppliedFilterModel'];
 export type SchemaCatalogFarmModel = components['schemas']['CatalogFarmModel'];
 export type SchemaCatalogPayload = components['schemas']['CatalogPayload'];
 export type SchemaCatalogWarehouseModel = components['schemas']['CatalogWarehouseModel'];
@@ -1355,9 +1377,13 @@ export interface operations {
     readonly getAnalyticsFarms: {
         readonly parameters: {
             readonly query?: {
+                readonly crop_code?: string | null;
+                readonly date_preset?: "all" | "last-30-days" | "season-to-date";
                 readonly farm_code?: string | null;
+                readonly field_code?: string | null;
                 readonly limit?: number;
                 readonly offset?: number;
+                readonly season_code?: string | null;
                 readonly sort?: "farm_code" | "profit_desc";
             };
             readonly header?: never;
@@ -1511,7 +1537,13 @@ export interface operations {
     };
     readonly getAnalyticsOverview: {
         readonly parameters: {
-            readonly query?: never;
+            readonly query?: {
+                readonly crop_code?: string | null;
+                readonly date_preset?: "all" | "last-30-days" | "season-to-date";
+                readonly farm_code?: string | null;
+                readonly field_code?: string | null;
+                readonly season_code?: string | null;
+            };
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;

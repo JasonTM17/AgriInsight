@@ -19,9 +19,13 @@ describe("generated client contract types", () => {
     expectTypeOf<
       NonNullable<AnalyticsQuery<"analyticsFarms">>
     >().toEqualTypeOf<{
+      readonly crop_code?: string | null;
+      readonly date_preset?: "all" | "last-30-days" | "season-to-date";
       readonly farm_code?: string | null;
+      readonly field_code?: string | null;
       readonly limit?: number;
       readonly offset?: number;
+      readonly season_code?: string | null;
       readonly sort?: "farm_code" | "profit_desc";
     }>();
   });

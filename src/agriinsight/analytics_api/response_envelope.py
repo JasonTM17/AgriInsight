@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from agriinsight.analytics_api.auth_scope import AuthorizedScope
 from agriinsight.analytics_api.models import (
+    AppliedFilterModel,
     AnalyticsEnvelope,
     FreshnessModel,
     LineageModel,
@@ -25,6 +26,7 @@ def envelope(
     *,
     partial: bool = False,
     missing: bool = False,
+    applied_filter: AppliedFilterModel | None = None,
 ) -> AnalyticsEnvelope[Payload]:
     age_hours = max(
         0.0,
@@ -53,6 +55,7 @@ def envelope(
         ),
         payload=payload,
         scope=ScopeModel(
+            applied_filter=applied_filter,
             farm_codes=sorted(scope.farm_codes),
             tenant_id=str(scope.tenant_id),
             tenant_wide=scope.tenant_wide,

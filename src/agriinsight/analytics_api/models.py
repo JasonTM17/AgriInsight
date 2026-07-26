@@ -47,7 +47,18 @@ class ApiModel(BaseModel):
     )
 
 
+class AppliedFilterModel(ApiModel):
+    crop_code: str | None = None
+    date_from: str | None = None
+    date_preset: Literal["all", "last-30-days", "season-to-date"]
+    date_to: str
+    farm_code: str | None = None
+    field_code: str | None = None
+    season_code: str | None = None
+
+
 class ScopeModel(ApiModel):
+    applied_filter: AppliedFilterModel | None = None
     farm_codes: list[str] = Field(default_factory=list)
     tenant_id: str
     tenant_wide: bool

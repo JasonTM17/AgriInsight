@@ -5,6 +5,11 @@ from typing import Any
 import pandas as pd
 
 from agriinsight.analytics_api.auth_scope import AuthorizedScope
+from agriinsight.analytics_api.filter_scope import AppliedAnalyticsFilter
+from agriinsight.analytics_api.filtered_read_models import (
+    filtered_farms_payload,
+    filtered_overview_payload,
+)
 from agriinsight.analytics_api.models import (
     CatalogPayload,
     FarmsPayload,
@@ -13,6 +18,7 @@ from agriinsight.analytics_api.models import (
 )
 from agriinsight.analytics_api.response_shaping import first_record, json_safe, records
 from agriinsight.analytics_snapshot import ArtifactSnapshot
+
 
 def catalog_payload(
     farms: list[Any],
@@ -44,7 +50,15 @@ def catalog_payload(
 def overview_payload(
     snapshot: ArtifactSnapshot,
     scope: AuthorizedScope,
+    applied_filter: AppliedAnalyticsFilter | None = None,
 ) -> tuple[OverviewPayload, bool, bool]:
+    if applied_filter is not None and applied_filter.is_filtered:
+        payload, missing = filtered_overview_payload(
+            snapshot,
+            scope,
+            applied_filter,
+        )
+        return payload, False, missing
     if scope.farm_tenant_wide:
         insight_document = snapshot.json["insights"]
         return (
@@ -80,7 +94,20 @@ def farms_payload(
     limit: int,
     offset: int,
     sort: str,
+    applied_filter: AppliedAnalyticsFilter | None = None,
 ) -> FarmsPayload:
+    if (
+        applied_filter is not None
+        and applied_filter.requires_event_aggregation
+    ):
+        return filtered_farms_payload(
+            snapshot,
+            scope,
+            applied_filter,
+            limit=limit,
+            offset=offset,
+            sort=sort,
+        )
     farms = _farm_rows(snapshot, scope)
     if farm_code:
         farms = farms[farms["farm_code"] == farm_code]

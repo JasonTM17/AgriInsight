@@ -26,6 +26,20 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
     farm_parameters = contract["paths"]["/internal/v1/farms"]["get"]["parameters"]
     limit = next(item for item in farm_parameters if item["name"] == "limit")
     assert limit["schema"]["maximum"] == 100
+    expected_filters = {
+        "crop_code",
+        "date_preset",
+        "farm_code",
+        "field_code",
+        "season_code",
+    }
+    overview_parameters = contract["paths"]["/internal/v1/overview"]["get"][
+        "parameters"
+    ]
+    assert expected_filters <= {
+        item["name"] for item in overview_parameters
+    }
+    assert expected_filters <= {item["name"] for item in farm_parameters}
     assert contract["components"]["securitySchemes"]["HTTPBearer"]["scheme"] == "bearer"
     schemas = contract["components"]["schemas"]
     record_schemas = {
@@ -48,6 +62,16 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "remediationActions",
         "severity",
     }
+    assert set(schemas["AppliedFilterModel"]["properties"]) == {
+        "cropCode",
+        "dateFrom",
+        "datePreset",
+        "dateTo",
+        "farmCode",
+        "fieldCode",
+        "seasonCode",
+    }
+    assert "appliedFilter" in schemas["ScopeModel"]["properties"]
     for path, path_item in contract["paths"].items():
         operation = path_item["get"]
         if path.startswith("/internal/v1/"):

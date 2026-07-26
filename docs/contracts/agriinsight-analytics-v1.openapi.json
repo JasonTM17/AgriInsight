@@ -176,6 +176,85 @@
         "title": "AnalyticsEnvelope[OverviewPayload]",
         "type": "object"
       },
+      "AppliedFilterModel": {
+        "additionalProperties": false,
+        "properties": {
+          "cropCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cropcode"
+          },
+          "dateFrom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datefrom"
+          },
+          "datePreset": {
+            "enum": [
+              "all",
+              "last-30-days",
+              "season-to-date"
+            ],
+            "title": "Datepreset",
+            "type": "string"
+          },
+          "dateTo": {
+            "title": "Dateto",
+            "type": "string"
+          },
+          "farmCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Farmcode"
+          },
+          "fieldCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fieldcode"
+          },
+          "seasonCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasoncode"
+          }
+        },
+        "required": [
+          "datePreset",
+          "dateTo"
+        ],
+        "title": "AppliedFilterModel",
+        "type": "object"
+      },
       "CatalogFarmModel": {
         "additionalProperties": false,
         "properties": {
@@ -2352,6 +2431,16 @@
       "ScopeModel": {
         "additionalProperties": false,
         "properties": {
+          "appliedFilter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppliedFilterModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "farmCodes": {
             "items": {
               "type": "string"
@@ -2839,6 +2928,72 @@
           },
           {
             "in": "query",
+            "name": "field_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Field Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crop_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crop Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "season_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Season Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_preset",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "last-30-days",
+                "season-to-date"
+              ],
+              "title": "Date Preset",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
@@ -3091,6 +3246,91 @@
     "/internal/v1/overview": {
       "get": {
         "operationId": "getAnalyticsOverview",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "farm_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Farm Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "field_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Field Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crop_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crop Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "season_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Season Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_preset",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "last-30-days",
+                "season-to-date"
+              ],
+              "title": "Date Preset",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
