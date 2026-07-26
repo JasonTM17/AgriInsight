@@ -43,7 +43,12 @@ phase file already anticipates (the export router does not exist yet).
    `catalog, common, costs, crop_health, data_quality, farms, inventory,
    overview`. The normalized single-format export endpoint is genuinely new
    work, and its router registration must be serialized as the phase file says.
-5. Context line drift: the phase file cites `cost_report_service.py:30` for
+5. **The generated schema already carries every cost path**, so the typed
+   allowlist entries compile without regenerating the contract:
+   `src/server/generated/backend/schema.d.ts:151` `/api/v1/cost-entries`,
+   `:175` `/api/v1/cost-entries/{id}`, `:192` `.../corrections`,
+   `:212` `/api/v1/cost-summaries`.
+6. Context line drift: the phase file cites `cost_report_service.py:30` for
    CSV/PDF/XLSX assembly; the bundle entry point is actually `:82` (`:33` is the
    private `_artifact` helper). Harmless, but the line reference is stale.
 
