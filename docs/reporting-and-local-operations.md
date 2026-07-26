@@ -79,6 +79,16 @@ Thiếu hoặc không đọc được drive là FAIL. Script chỉ quan sát và
 không xóa file, cache hoặc artifact. Khi WARN, dừng build/cài đặt nặng và giữ
 temp/cache trong `artifacts/_tmp` trên D.
 
+Ngưỡng trong bảng là mặc định và có thể override từng ổ qua environment:
+`AGRIINSIGHT_DISK_GUARD_C_WARN_GB`, `AGRIINSIGHT_DISK_GUARD_C_FAIL_GB`,
+`AGRIINSIGHT_DISK_GUARD_D_WARN_GB`, `AGRIINSIGHT_DISK_GUARD_D_FAIL_GB`. Giá trị
+không phải số, WARN thấp hơn FAIL, hoặc bất kỳ ngưỡng dưới sàn tuyệt đối 8 GB
+đều là configuration FAIL (exit 2) chứ không âm thầm bỏ qua. Mọi dòng
+`DISK_GUARD drive=...` luôn in `warn_below_gb`, `fail_below_gb` và
+`policy=default|override`, nên một run đã hạ ngưỡng không thể bị đọc lẫn thành
+run mặc định. Override chỉ để chạy được trong workspace chật; nó không nới bất
+kỳ gate chất lượng nào.
+
 Evidence sau big-data/Python UI gates gần nhất: C còn 10.274 GB và D còn
 25.364 GB, cả hai PASS. Vì C gần ngưỡng cảnh báo, mọi Maven/temp/cache nặng
 phải giữ trên D.
