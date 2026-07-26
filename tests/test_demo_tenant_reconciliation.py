@@ -38,6 +38,7 @@ def test_exact_verified_catalog_passes(reconciliation_inputs) -> None:
         "seasons": 12,
         "warehouses": 3,
         "materials": 5,
+        "suppliers": 8,
         "personas": 7,
     }
 
@@ -62,6 +63,7 @@ def test_exact_verified_catalog_passes(reconciliation_inputs) -> None:
             lambda rows: rows.append({"code": "WH-FOREIGN", "active": True}),
             "unexpected",
         ),
+        ("suppliers", lambda rows: rows.pop(), "missing"),
         (
             "personas",
             lambda rows: rows[0].update(role="INVALID_ROLE"),

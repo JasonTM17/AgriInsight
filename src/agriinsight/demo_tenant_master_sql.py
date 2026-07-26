@@ -60,6 +60,15 @@ def master_catalog_sql(
         )
         for row in snapshot.csv["materials"].itertuples(index=False)
     )
+    lines.extend(
+        master_upsert(
+            "suppliers",
+            contract,
+            row.supplier_code,
+            {"display_name": row.supplier_name, "active": True},
+        )
+        for row in snapshot.csv["suppliers"].itertuples(index=False)
+    )
     return lines
 
 

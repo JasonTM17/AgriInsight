@@ -168,6 +168,25 @@ def test_demo_bundle_caps_operational_samples(
         )
 
 
+def test_demo_bundle_seeds_supplier_master_from_silver_artifact(
+    analytics_artifact_root: Path,
+) -> None:
+    bundle = create_demo_bundle(analytics_artifact_root, CONTRACT)
+    contract = load_demo_contract(CONTRACT)
+    suppliers = pd.read_csv(analytics_artifact_root / "silver" / "suppliers.csv")
+
+    assert len(suppliers) > 0
+    assert bundle.seed_sql.count("INSERT INTO suppliers") == len(suppliers)
+    for row in suppliers.itertuples(index=False):
+        expected_sql = master_upsert(
+            "suppliers",
+            contract,
+            row.supplier_code,
+            {"display_name": row.supplier_name, "active": True},
+        )
+        assert expected_sql in bundle.seed_sql
+
+
 def test_artifact_text_cannot_be_promoted_to_raw_sql() -> None:
     contract = load_demo_contract(CONTRACT)
 

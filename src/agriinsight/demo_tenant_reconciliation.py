@@ -13,7 +13,15 @@ from agriinsight.demo_tenant_contract import (
     load_demo_snapshot,
 )
 
-_DOMAINS = ("farms", "fields", "crops", "seasons", "warehouses", "materials")
+_DOMAINS = (
+    "farms",
+    "fields",
+    "crops",
+    "seasons",
+    "warehouses",
+    "materials",
+    "suppliers",
+)
 _REPOSITORY_TMP = Path(__file__).resolve().parents[2] / "_tmp"
 MAX_CATALOG_BYTES = 8 * 1024 * 1024
 
@@ -52,6 +60,10 @@ def expected_catalog(snapshot: ArtifactSnapshot) -> dict[str, list[dict[str, Any
         "materials": [
             {"code": row.material_code, "active": True}
             for row in snapshot.csv["materials"].itertuples(index=False)
+        ],
+        "suppliers": [
+            {"code": row.supplier_code, "active": True}
+            for row in snapshot.csv["suppliers"].itertuples(index=False)
         ],
     }
 

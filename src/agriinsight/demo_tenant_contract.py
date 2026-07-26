@@ -26,6 +26,7 @@ MASTER_DATASETS = {
     "fields": "silver/fields.csv",
     "materials": "silver/materials.csv",
     "seasons": "silver/seasons.csv",
+    "suppliers": "silver/suppliers.csv",
     "warehouses": "silver/warehouses.csv",
 }
 

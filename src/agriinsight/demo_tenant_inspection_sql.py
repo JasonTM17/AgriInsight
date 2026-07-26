@@ -39,6 +39,9 @@ SELECT json_build_object(
   'materials', (SELECT coalesce(json_agg(json_build_object(
     'code', code, 'active', active) ORDER BY code), '[]'::json)
     FROM materials WHERE tenant_id = {tenant}::uuid),
+  'suppliers', (SELECT coalesce(json_agg(json_build_object(
+    'code', code, 'active', active) ORDER BY code), '[]'::json)
+    FROM suppliers WHERE tenant_id = {tenant}::uuid),
   'personas', (SELECT coalesce(json_agg(json_build_object(
     'profileId', profile.id::text,
     'active', profile.active AND identity_row.active AND role_row.revoked_at IS NULL,
