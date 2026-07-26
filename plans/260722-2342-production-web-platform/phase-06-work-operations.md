@@ -1,13 +1,41 @@
 ---
 phase: 6
 title: "work-operations"
-status: pending
+status: completed
 priority: P1
 effort: "4d"
 dependencies: [1, 3, 4]
 ---
 
 # Phase 6: work-operations
+
+## Completion — 2026-07-26
+
+Accepted locally with fresh gates: backend activity HTTP contracts 5/5,
+21 focused work web tests, 117-pass broad suite, lint/typecheck/contract-drift
+clean, and the guarded real-browser E2E runner `WEB_PLATFORM_E2E=PASS` with
+6/6 Playwright scenarios including all three `@work` journeys. Both High
+review findings (cross-target draft/key reuse; silent 50-row truncation) and
+the Medium demo-assignment revocation conflict are fixed and verified. See
+[evidence report](reports/phase-06-work-operations-evidence-2026-07-26.md)
+and [review](reports/code-review-2026-07-26-phase-06.md).
+
+## Progress Snapshot — 2026-07-26
+
+- Contract and UI scouting completed before implementation.
+- The frozen backend surface has all required activity, assignment, log, and
+  correction-history reads plus append/correction commands. No backend route or
+  schema change is required.
+- Generated TypeScript declarations exist, but the shared BFF is currently
+  GET-only. Phase 6 therefore includes an exact POST allowlist/transport slice
+  for log append and correction only.
+- The approved CK FE Work prototype is the visual source. No new Stitch screen
+  is needed; prototype offline queue and file-upload behavior are explicitly
+  excluded because no such production contract exists.
+- The guarded demo already seeds snapshot-derived activities, but the
+  `FIELD_WORKER` persona lacks an employee link and activity assignments. A
+  deterministic local-demo remediation is required so browser mutation proof
+  remains real rather than mocked.
 
 ## Overview
 
@@ -25,10 +53,12 @@ Deliver mobile-first work assignment, append-log, correction, and history flows 
 ## Requirements
 
 - Functional:
-  - Show mobile-first assignment list for current user/team using the frozen generated client GETs.
+  - Show the scoped mobile-first activity list and per-activity assignments
+    using the frozen generated contract GETs.
   - Show append flow for new work logs with idempotent retry behavior.
   - Show correction flow for existing logs using append-only correction commands, not in-place updates.
-  - Show immutable history timeline for work-log changes and approvals.
+  - Show immutable correction history for work-log changes. No approval model
+    exists in the frozen contract.
   - Consume Phase 1 frozen GET assignment/log/history contracts instead of adding new Spring reads here.
 - Non-functional:
   - No fake offline sync, local queue, or background replay service.
@@ -59,8 +89,16 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 | CREATE | `web/src/features/work/submit-work-log.ts` | append command wrapper |
 | CREATE | `web/src/features/work/correct-work-log.ts` | correction command wrapper |
 | CREATE | `web/src/features/work/components/*.tsx` | mobile-first cards/forms/timeline |
+| CREATE | `web/src/features/work/components/work-operations.module.css` | feature-local responsive styling |
+| CREATE | `web/src/app/(platform)/work/{layout,loading,error}.tsx` | stable shell and recovery boundaries |
+| CREATE | `web/src/app/api/work/activities/[activityId]/logs/route.ts` | CSRF/session-protected append BFF handler |
+| CREATE | `web/src/app/api/work/activities/[activityId]/logs/[logId]/corrections/route.ts` | CSRF/session-protected correction BFF handler |
 | CREATE | `web/tests/contracts/work-operations.contract.test.ts` | generated-client and header contract tests |
 | CREATE | `web/tests/e2e/work-operations-mobile.spec.ts` | narrow-viewport flow |
+| MODIFY | `web/src/server/bff/{allowed-operation,upstream-client}.ts` | exact work GETs and two POST transports |
+| MODIFY | `web/src/lib/permission-navigation.ts` | expose and activate `/work` |
+| MODIFY | `scripts/run-web-e2e-tests.ps1` | expose the fixed field-worker E2E persona |
+| MODIFY | `src/agriinsight/demo_tenant_{bootstrap_sql,sample_sql}.py` | deterministic employee/assignment demo bridge |
 
 ## Interfaces And Contracts
 
@@ -74,9 +112,12 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 - Auth expectations:
   - anonymous -> `401`
   - authenticated without scope -> `403`
-  - scoped operator/supervisor -> `200/201`
+  - scoped operator/supervisor -> successful `2xx`; generated OpenAPI currently
+    declares `200`, while Spring HTTP contract tests prove mutation `201` plus
+    `Location`/`ETag`.
 - UI contract:
-  - assignment cards, append form, correction form, and history timeline all bind to server-recorded lineage only.
+  - assignment cards, append form, correction form, and history timeline all
+    bind to server-recorded lineage only.
   - no fabricated `PATCH /api/work/logs` route exists in this phase.
   - no optimistic completion that hides server rejection.
 
@@ -117,7 +158,7 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 - Focused:
   - `.\backend\mvnw.cmd -f .\backend\pom.xml -Dtest=ActivityReadHttpContractTest,ActivityLogHttpContractTest test`
   - `npm --prefix web run test -- work-operations`
-  - `npm --prefix web exec playwright test --project="Mobile Chrome" --grep "@work"`
+  - `npm --prefix web exec -- playwright test tests/e2e/work-operations-mobile.spec.ts --grep "@work"`
 - Broad:
   - `powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify`
   - `npm --prefix web run lint`
@@ -126,13 +167,14 @@ These are the fixed Phase 6 ownership targets under the Phase 3 `web/` layout.
 
 ## Acceptance Criteria
 
-- [ ] Phase 6 consumes the frozen Phase 1 generated client for assignment/log/history GETs and adds no backend routes.
-- [ ] `/work` works on narrow mobile viewports without requiring fake offline sync.
-- [ ] Append uses `Idempotency-Key`; retry cannot create duplicate logs.
-- [ ] Correction uses append-only `POST /api/v1/activities/{id}/logs/{logId}/corrections` with `Idempotency-Key`, not a fabricated patch route.
-- [ ] `If-Match` is not attached to log append/correction flows unless a real update/revoke route is explicitly consumed outside this phase.
-- [ ] History timeline is server-backed and immutable from the client perspective.
-- [ ] No speculative query layer or backend additions are introduced in this phase.
+- [x] Phase 6 consumes the frozen Phase 1 generated client for assignment/log/history GETs and adds no backend routes.
+- [x] `/work` works on a 375 px viewport without fake offline sync, fabricated
+  priority, team, approval, or upload behavior.
+- [x] Append uses `Idempotency-Key`; retry cannot create duplicate logs.
+- [x] Correction uses append-only `POST /api/v1/activities/{id}/logs/{logId}/corrections` with `Idempotency-Key`, not a fabricated patch route.
+- [x] `If-Match` is not attached to log append/correction flows unless a real update/revoke route is explicitly consumed outside this phase.
+- [x] History timeline is server-backed and immutable from the client perspective, with bounded 50-row pagination driven by the upstream `hasMore` signal.
+- [x] No speculative query layer or backend additions are introduced in this phase.
 
 ## Risks And Rollback
 

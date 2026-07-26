@@ -158,10 +158,14 @@ artifacts/
 - [Reporting và vận hành local](docs/reporting-and-local-operations.md)
 
 Web Phase 5 đã được nghiệm thu cục bộ ngày 2026-07-26 cho `/overview`,
-`/farms` và `/farms/[farmId]`. Xem [kế hoạch](plans/260722-2342-production-web-platform/plan.md),
-[phase file](plans/260722-2342-production-web-platform/phase-05-overview-and-farm-intelligence.md)
-và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
-Public release vẫn bị chặn; Phase 6 Work Operations là bước tiếp theo.
+`/farms` và `/farms/[farmId]`. Web Phase 6 Work Operations cũng được nghiệm
+thu cục bộ cùng ngày cho `/work`: hàng đợi công việc mobile-first 375 px,
+append log với `Idempotency-Key`, hiệu chỉnh append-only và lịch sử bất biến
+phân trang theo máy chủ, cùng 6/6 kịch bản Playwright trên Chrome thật
+(`WEB_PLATFORM_E2E=PASS`). Xem [kế hoạch](plans/260722-2342-production-web-platform/plan.md),
+[phase file](plans/260722-2342-production-web-platform/phase-06-work-operations.md)
+và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-06-work-operations-evidence-2026-07-26.md).
+Public release vẫn bị chặn; Phase 7 Inventory Control là bước tiếp theo.
 
 ## Big-data demo và visual assets
 

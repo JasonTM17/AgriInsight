@@ -120,7 +120,7 @@ created: 2026-07-22T00:00:00.000Z
 | 3 | [web-foundation-and-secure-bff](./phase-03-web-foundation-and-secure-bff.md) | Completed locally 2026-07-23 |
 | 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Completed 2026-07-26 |
 | 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | Completed locally 2026-07-26 |
-| 6 | [work-operations](./phase-06-work-operations.md) | Pending |
+| 6 | [work-operations](./phase-06-work-operations.md) | Completed locally 2026-07-26 |
 | 7 | [inventory-control](./phase-07-inventory-control.md) | Pending |
 | 8 | [cost-analysis](./phase-08-cost-analysis.md) | Pending |
 | 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | Pending |
