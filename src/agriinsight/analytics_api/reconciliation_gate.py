@@ -10,7 +10,16 @@ from agriinsight.analytics_api.errors import ApiProblem
 from agriinsight.analytics_snapshot import ArtifactSnapshot
 
 _RECONCILED_DOMAINS = frozenset(
-    {"crops", "farms", "fields", "materials", "personas", "seasons", "warehouses"}
+    {
+        "crops",
+        "farms",
+        "fields",
+        "materials",
+        "personas",
+        "seasons",
+        "suppliers",
+        "warehouses",
+    }
 )
 MAX_RECONCILIATION_BYTES = 8 * 1024 * 1024
 
