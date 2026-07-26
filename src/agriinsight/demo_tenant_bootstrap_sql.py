@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from agriinsight.analytics_snapshot import ArtifactSnapshot
 from agriinsight.demo_tenant_contract import DemoContract
 from agriinsight.demo_tenant_inspection_sql import inspection_sql
 from agriinsight.demo_tenant_master_sql import master_catalog_sql
-from agriinsight.demo_tenant_sample_sql import activity_sample_sql
+from agriinsight.demo_tenant_sample_sql import (
+    FIELD_WORKER_EMPLOYEE_CODE,
+    activity_sample_sql,
+    field_worker_employee_sql,
+)
 from agriinsight.demo_tenant_sql_primitives import deterministic_id, literal
 
 
@@ -26,6 +31,7 @@ def build_sql_bundle(
         raise ValueError("Sample activity limit must be between 0 and 100")
     lines = _preamble(contract)
     lines.extend(master_catalog_sql(contract, snapshot))
+    lines.extend(field_worker_employee_sql(contract))
     lines.extend(_persona_sql(contract))
     activity_lines, activity_count = activity_sample_sql(
         contract,
@@ -86,6 +92,9 @@ def _preamble(contract: DemoContract) -> list[str]:
 
 def _persona_sql(contract: DemoContract) -> list[str]:
     tenant = literal(str(contract.tenant_id))
+    employee_id = literal(
+        str(deterministic_id("employees", FIELD_WORKER_EMPLOYEE_CODE))
+    )
     lines: list[str] = []
     for persona in contract.personas:
         profile = literal(str(persona.profile_id))
@@ -95,17 +104,30 @@ def _persona_sql(contract: DemoContract) -> list[str]:
         role_id = literal(
             str(deterministic_id("user-role", str(persona.profile_id)))
         )
+        if persona.role == "FIELD_WORKER":
+            profile_sql = (
+                "INSERT INTO user_profiles "
+                "(id, tenant_id, employee_id, display_name, email, active) VALUES "
+                f"({profile}::uuid, {tenant}::uuid, {employee_id}::uuid, "
+                f"{literal(persona.display_name)}, {literal(persona.email)}, TRUE) "
+                "ON CONFLICT (id) DO UPDATE SET "
+                "employee_id = EXCLUDED.employee_id, "
+                "display_name = EXCLUDED.display_name, email = EXCLUDED.email, "
+                "active = TRUE, updated_at = CURRENT_TIMESTAMP;"
+            )
+        else:
+            profile_sql = (
+                "INSERT INTO user_profiles "
+                "(id, tenant_id, display_name, email, active) VALUES "
+                f"({profile}::uuid, {tenant}::uuid, "
+                f"{literal(persona.display_name)}, {literal(persona.email)}, TRUE) "
+                "ON CONFLICT (id) DO UPDATE SET "
+                "display_name = EXCLUDED.display_name, email = EXCLUDED.email, "
+                "active = TRUE, updated_at = CURRENT_TIMESTAMP;"
+            )
         lines.extend(
             [
-                (
-                    "INSERT INTO user_profiles "
-                    "(id, tenant_id, display_name, email, active) VALUES "
-                    f"({profile}::uuid, {tenant}::uuid, "
-                    f"{literal(persona.display_name)}, {literal(persona.email)}, TRUE) "
-                    "ON CONFLICT (id) DO UPDATE SET "
-                    "display_name = EXCLUDED.display_name, email = EXCLUDED.email, "
-                    "active = TRUE, updated_at = CURRENT_TIMESTAMP;"
-                ),
+                profile_sql,
                 (
                     "INSERT INTO external_identities "
                     "(id, tenant_id, user_profile_id, issuer, subject, active) VALUES "
