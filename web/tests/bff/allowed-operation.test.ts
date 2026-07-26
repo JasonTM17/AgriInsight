@@ -64,6 +64,60 @@ describe("exact upstream allowlist", () => {
     });
   });
 
+  it("contains the exact inventory-control read operations", () => {
+    expect(ALLOWED_OPERATIONS.inventoryBalances).toEqual({
+      method: "GET",
+      path: "/api/v1/inventory/balances",
+      queryParameters: ["limit", "lowStock", "materialId", "offset", "warehouseId"],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.inventoryLots).toEqual({
+      method: "GET",
+      path: "/api/v1/inventory/lots",
+      queryParameters: [
+        "expiringBefore",
+        "includeDepleted",
+        "limit",
+        "materialId",
+        "offset",
+        "warehouseId"
+      ],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.inventoryTransactions).toEqual({
+      method: "GET",
+      path: "/api/v1/inventory/transactions",
+      queryParameters: [
+        "kind",
+        "limit",
+        "materialId",
+        "occurredFrom",
+        "occurredTo",
+        "offset",
+        "warehouseId"
+      ],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.inventoryTransactionById).toEqual({
+      method: "GET",
+      path: "/api/v1/inventory/transactions/{id}",
+      pathParameters: ["id"],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.materialCatalog).toEqual({
+      method: "GET",
+      path: "/api/v1/materials",
+      queryParameters: ["limit", "offset", "active", "search"],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.supplierCatalog).toEqual({
+      method: "GET",
+      path: "/api/v1/suppliers",
+      queryParameters: ["limit", "offset", "active", "search"],
+      service: "backend"
+    });
+  });
+
   it("keeps POST operations in a separate exact allowlist", () => {
     expect(ALLOWED_MUTATIONS).toEqual({
       activityLogAppend: {

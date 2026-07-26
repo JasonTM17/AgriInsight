@@ -184,8 +184,12 @@ describe("bounded upstream client", () => {
   });
 
   it("forwards a validated If-Match only for inventory reversal", async () => {
-    const fetchMock = vi.fn(async () =>
-      Response.json({ id: "reversal" }, { status: 201 })
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        void input;
+        void init;
+        return Response.json({ id: "reversal" }, { status: 201 });
+      }
     );
     vi.stubGlobal("fetch", fetchMock);
     const transactionId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
