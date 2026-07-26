@@ -62,6 +62,54 @@ describe("bounded upstream client", () => {
     ).rejects.toBeInstanceOf(UpstreamResponseError);
   });
 
+  it("interpolates only an exact UUID into an allowlisted resource path", async () => {
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request) => {
+        void input;
+        return Response.json({ id: "farm" });
+      }
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const farmId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+    await executeAllowedOperation(
+      env,
+      "farmById",
+      "server-held-token",
+      "correlation-1",
+      {},
+      { id: farmId }
+    );
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      `http://127.0.0.1:8080/api/v1/farms/${farmId}`
+    );
+  });
+
+  it("rejects missing, extra, or unsafe resource path parameters", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const invalidParameters: ReadonlyArray<Readonly<Record<string, string>>> = [
+      {},
+      { id: "../admin" },
+      {
+        id: "3eb92f10-60dd-45cb-9160-7c569c3258b4",
+        extra: "3eb92f10-60dd-45cb-9160-7c569c3258b4"
+      }
+    ];
+    for (const pathParameters of invalidParameters) {
+      await expect(
+        executeAllowedOperation(
+          env,
+          "farmById",
+          "server-held-token",
+          "correlation-1",
+          {},
+          pathParameters
+        )
+      ).rejects.toThrow("path parameter");
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects an upstream response declared above the two-megabyte cap", async () => {
     vi.stubGlobal(
       "fetch",

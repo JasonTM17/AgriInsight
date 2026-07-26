@@ -9,20 +9,29 @@ import type { WebEnvironment } from "@/server/config/environment";
 
 type QueryValue = boolean | number | string | null;
 type Query = Readonly<Record<string, QueryValue | readonly QueryValue[] | undefined>>;
+type PathParameters = Readonly<Record<string, string>>;
 
 export async function executeAllowedOperation(
   env: WebEnvironment,
   operationName: AllowedOperationName,
   accessToken: string,
   correlationId: string,
-  query: Query = {}
+  query: Query = {},
+  pathParameters: PathParameters = {}
 ): Promise<Response> {
   const operation = resolveAllowedOperation(operationName);
   const baseUrl =
     operation.service === "backend"
       ? env.backendBaseUrl
       : env.analyticsBaseUrl;
-  const url = new URL(operation.path, baseUrl);
+  const url = new URL(
+    interpolatePath(
+      operation.path,
+      operation.pathParameters ?? [],
+      pathParameters
+    ),
+    baseUrl
+  );
   appendQuery(url, query);
   return boundedUpstreamFetch(url, {
     method: operation.method,
@@ -32,6 +41,36 @@ export async function executeAllowedOperation(
       "X-Correlation-Id": correlationId
     }
   });
+}
+
+function interpolatePath(
+  template: string,
+  expectedParameters: readonly string[],
+  suppliedParameters: PathParameters
+): string {
+  const suppliedNames = Object.keys(suppliedParameters).sort();
+  const expectedNames = [...expectedParameters].sort();
+  if (
+    suppliedNames.length !== expectedNames.length
+    || suppliedNames.some((name, index) => name !== expectedNames[index])
+  ) {
+    throw new Error("Invalid upstream path parameters");
+  }
+  let resolved = template;
+  for (const name of expectedNames) {
+    const value = suppliedParameters[name];
+    if (
+      !value
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+    ) {
+      throw new Error("Invalid upstream path parameter value");
+    }
+    resolved = resolved.replace(`{${name}}`, encodeURIComponent(value));
+  }
+  if (/[{}]/.test(resolved)) {
+    throw new Error("Unresolved upstream path parameter");
+  }
+  return resolved;
 }
 
 function appendQuery(url: URL, query: Query): void {

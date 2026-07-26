@@ -18,11 +18,13 @@ type AllowedOperation =
   | Readonly<{
       method: "GET";
       path: GetPath<AnalyticsPaths>;
+      pathParameters?: readonly string[];
       service: "analytics";
     }>
   | Readonly<{
       method: "GET";
       path: GetPath<BackendPaths>;
+      pathParameters?: readonly string[];
       service: "backend";
     }>;
 
@@ -67,9 +69,33 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     path: "/api/v1/me",
     service: "backend"
   },
+  cropById: {
+    method: "GET",
+    path: "/api/v1/crops/{id}",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  farmById: {
+    method: "GET",
+    path: "/api/v1/farms/{id}",
+    pathParameters: ["id"],
+    service: "backend"
+  },
   farmCatalog: {
     method: "GET",
     path: "/api/v1/farms",
+    service: "backend"
+  },
+  fieldById: {
+    method: "GET",
+    path: "/api/v1/fields/{id}",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  seasonById: {
+    method: "GET",
+    path: "/api/v1/seasons/{id}",
+    pathParameters: ["id"],
     service: "backend"
   },
   warehouseCatalog: {
