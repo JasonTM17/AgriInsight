@@ -118,6 +118,46 @@ describe("exact upstream allowlist", () => {
     });
   });
 
+  it("contains the exact cost-analysis read operations", () => {
+    expect(ALLOWED_OPERATIONS.operatingCostEntries).toEqual({
+      method: "GET",
+      path: "/api/v1/cost-entries",
+      queryParameters: [
+        "activityId",
+        "category",
+        "entryKind",
+        "farmId",
+        "fieldId",
+        "limit",
+        "occurredFrom",
+        "occurredTo",
+        "offset",
+        "seasonId",
+        "targetType"
+      ],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.operatingCostEntryById).toEqual({
+      method: "GET",
+      path: "/api/v1/cost-entries/{id}",
+      pathParameters: ["id"],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.operatingCostSummaries).toEqual({
+      method: "GET",
+      path: "/api/v1/cost-summaries",
+      queryParameters: [
+        "category",
+        "farmId",
+        "groupBy",
+        "occurredFrom",
+        "occurredTo",
+        "seasonId"
+      ],
+      service: "backend"
+    });
+  });
+
   it("keeps POST operations in a separate exact allowlist", () => {
     expect(ALLOWED_MUTATIONS).toEqual({
       activityLogAppend: {
@@ -143,6 +183,18 @@ describe("exact upstream allowlist", () => {
         path: "/api/v1/inventory/transactions/{id}/reversals",
         pathParameters: ["id"],
         requiresIfMatch: true,
+        service: "backend"
+      },
+      operatingCostCorrection: {
+        method: "POST",
+        path: "/api/v1/cost-entries/{id}/corrections",
+        pathParameters: ["id"],
+        service: "backend"
+      },
+      operatingCostPost: {
+        method: "POST",
+        path: "/api/v1/cost-entries",
+        pathParameters: [],
         service: "backend"
       }
     });
