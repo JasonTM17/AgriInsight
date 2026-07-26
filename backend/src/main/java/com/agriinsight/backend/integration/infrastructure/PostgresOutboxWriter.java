@@ -2,8 +2,6 @@ package com.agriinsight.backend.integration.infrastructure;
 
 import com.agriinsight.backend.integration.application.OutboxWriter;
 import com.agriinsight.backend.shared.application.CommandCommittedEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -15,6 +13,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 @Component
 @Profile("!test")
@@ -22,11 +22,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class PostgresOutboxWriter implements OutboxWriter {
 
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
-    public PostgresOutboxWriter(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public PostgresOutboxWriter(JdbcTemplate jdbcTemplate, JsonMapper jsonMapper) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper is required");
+        this.jsonMapper = Objects.requireNonNull(jsonMapper, "jsonMapper is required");
     }
 
     @Override
@@ -53,8 +53,8 @@ public class PostgresOutboxWriter implements OutboxWriter {
                     required.eventType(),
                     CommandCommittedEvent.SCHEMA_VERSION,
                     Timestamp.from(required.occurredAt()),
-                    objectMapper.writeValueAsString(envelope(eventId, required)));
-        } catch (JsonProcessingException exception) {
+                    jsonMapper.writeValueAsString(envelope(eventId, required)));
+        } catch (JacksonException exception) {
             throw new IllegalStateException("Unable to serialize outbox payload", exception);
         }
     }

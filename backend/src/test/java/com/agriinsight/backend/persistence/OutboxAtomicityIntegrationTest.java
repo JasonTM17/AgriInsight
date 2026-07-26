@@ -13,7 +13,6 @@ import com.agriinsight.backend.shared.application.CommandCommittedEvent;
 import com.agriinsight.backend.shared.application.CommandTarget;
 import com.agriinsight.backend.persistence.support.TenantTransactionTestHarness;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import tools.jackson.databind.json.JsonMapper;
 
 @Testcontainers
 class OutboxAtomicityIntegrationTest {
@@ -61,7 +61,7 @@ class OutboxAtomicityIntegrationTest {
         try (TenantTransactionTestHarness harness = TenantTransactionTestHarness.runtime(
                 POSTGRESQL, "agriinsight")) {
             PostgresOutboxWriter writer = new PostgresOutboxWriter(
-                    harness.jdbcTemplate(), new ObjectMapper());
+                    harness.jdbcTemplate(), new JsonMapper());
             harness.withinTenant(() -> {
                 writer.append(event(
                         UUID.fromString("77000000-0000-0000-0000-000000000012"),
