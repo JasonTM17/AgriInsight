@@ -32,7 +32,7 @@ export async function executeAllowedOperation(
     ),
     baseUrl
   );
-  appendQuery(url, query);
+  appendQuery(url, query, operation.queryParameters ?? []);
   return boundedUpstreamFetch(url, {
     method: operation.method,
     headers: {
@@ -73,11 +73,19 @@ function interpolatePath(
   return resolved;
 }
 
-function appendQuery(url: URL, query: Query): void {
+function appendQuery(
+  url: URL,
+  query: Query,
+  allowedParameters: readonly string[]
+): void {
+  const allowedNames = new Set(allowedParameters);
   let entries = 0;
   for (const [name, rawValue] of Object.entries(query)) {
-    if (!/^[A-Za-z][A-Za-z0-9]*$/.test(name)) {
+    if (!/^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*$/.test(name)) {
       throw new Error("Invalid upstream query parameter name");
+    }
+    if (!allowedNames.has(name)) {
+      throw new Error("Upstream query parameter is not allowlisted");
     }
     const values = Array.isArray(rawValue) ? rawValue : [rawValue];
     for (const value of values) {

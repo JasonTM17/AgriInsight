@@ -84,6 +84,30 @@ describe("bounded upstream client", () => {
     );
   });
 
+  it("forwards contract-defined snake-case analytics query parameters", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      void input;
+      return Response.json({ payload: {} });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await executeAllowedOperation(
+      env,
+      "analyticsOverview",
+      "server-held-token",
+      "correlation-1",
+      {
+        date_preset: "all",
+        farm_code: "FARM-001"
+      }
+    );
+
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      "http://127.0.0.1:8081/internal/v1/overview"
+      + "?date_preset=all&farm_code=FARM-001"
+    );
+  });
+
   it("rejects missing, extra, or unsafe resource path parameters", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -129,13 +153,12 @@ describe("bounded upstream client", () => {
 
   it.each([
     [{ "bad-key!": "value" }, "parameter name"],
+    [{ include_deleted: true }, "not allowlisted"],
     [
-      Object.fromEntries(
-        Array.from({ length: 33 }, (_, index) => [`p${index}`, index])
-      ),
+      { farm_code: Array.from({ length: 33 }, (_, index) => `FARM-${index}`) },
       "Too many"
     ],
-    [{ farmCode: "x".repeat(257) }, "too long"]
+    [{ farm_code: "x".repeat(257) }, "too long"]
   ])("rejects invalid query input before fetch", async (query, message) => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

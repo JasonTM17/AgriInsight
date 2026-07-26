@@ -19,12 +19,14 @@ type AllowedOperation =
       method: "GET";
       path: GetPath<AnalyticsPaths>;
       pathParameters?: readonly string[];
+      queryParameters?: readonly string[];
       service: "analytics";
     }>
   | Readonly<{
       method: "GET";
       path: GetPath<BackendPaths>;
       pathParameters?: readonly string[];
+      queryParameters?: readonly string[];
       service: "backend";
     }>;
 
@@ -42,6 +44,7 @@ export const ALLOWED_OPERATIONS = Object.freeze({
   analyticsCropHealth: {
     method: "GET",
     path: "/internal/v1/crop-health",
+    queryParameters: ["farm_code", "limit", "offset"],
     service: "analytics"
   },
   analyticsDataQuality: {
@@ -52,16 +55,34 @@ export const ALLOWED_OPERATIONS = Object.freeze({
   analyticsFarms: {
     method: "GET",
     path: "/internal/v1/farms",
+    queryParameters: [
+      "farm_code",
+      "field_code",
+      "crop_code",
+      "season_code",
+      "date_preset",
+      "limit",
+      "offset",
+      "sort"
+    ],
     service: "analytics"
   },
   analyticsInventory: {
     method: "GET",
     path: "/internal/v1/inventory",
+    queryParameters: ["warehouse_code", "limit", "offset"],
     service: "analytics"
   },
   analyticsOverview: {
     method: "GET",
     path: "/internal/v1/overview",
+    queryParameters: [
+      "farm_code",
+      "field_code",
+      "crop_code",
+      "season_code",
+      "date_preset"
+    ],
     service: "analytics"
   },
   currentUser: {
@@ -84,6 +105,7 @@ export const ALLOWED_OPERATIONS = Object.freeze({
   farmCatalog: {
     method: "GET",
     path: "/api/v1/farms",
+    queryParameters: ["limit", "offset", "active", "search"],
     service: "backend"
   },
   fieldById: {
@@ -101,6 +123,7 @@ export const ALLOWED_OPERATIONS = Object.freeze({
   warehouseCatalog: {
     method: "GET",
     path: "/api/v1/warehouses",
+    queryParameters: ["limit", "offset", "active", "search"],
     service: "backend"
   }
 } as const satisfies Record<string, AllowedOperation>);
