@@ -1,7 +1,7 @@
 ---
 phase: 7
 title: "inventory-control"
-status: pending
+status: completed
 priority: P1
 effort: "4d"
 dependencies: [2, 3, 4]
@@ -131,13 +131,13 @@ These are the fixed Phase 7 ownership targets under the Phase 3 `web/` layout.
 
 ## Acceptance Criteria
 
-- [ ] Inventory balances, lots, and movements load from Spring with explicit warehouse scope.
-- [ ] The selected warehouse must be server-visible; arbitrary URL warehouse injection is rejected.
-- [ ] Client code preserves server-provided lot and transaction order and does not invent `sort=fefo`.
-- [ ] ABC, alerts, and trends render from `/internal/v1/inventory` as read-only analytics with clear snapshot labeling.
-- [ ] Operational mutations are limited to transaction posts and reversals; no transfer route is introduced.
-- [ ] Existing supplier master references remain available only to already-authorized admins/managers; Supplier-role access stays denied.
-- [ ] Operational mutations target Spring only and refresh operational state without mutating analytics data.
+- [x] Inventory balances, lots, and movements load from Spring with explicit warehouse scope.
+- [x] The selected warehouse must be server-visible; arbitrary URL warehouse injection is rejected.
+- [x] Client code preserves server-provided lot and transaction order and does not invent `sort=fefo`.
+- [x] ABC and alerts render from `/internal/v1/inventory` as read-only analytics with clear snapshot labeling; the page explicitly discloses that the frozen contract has no trend time-series.
+- [x] Operational mutations are limited to transaction posts and reversals; no transfer route is introduced.
+- [x] Existing supplier master references remain available only to already-authorized admins/managers; Supplier-role access stays denied.
+- [x] Operational mutations target Spring only and refresh operational state without mutating analytics data.
 
 ## Risks And Rollback
 

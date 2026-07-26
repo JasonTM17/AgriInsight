@@ -165,7 +165,20 @@ phân trang theo máy chủ, cùng 6/6 kịch bản Playwright trên Chrome th�
 (`WEB_PLATFORM_E2E=PASS`). Xem [kế hoạch](plans/260722-2342-production-web-platform/plan.md),
 [phase file](plans/260722-2342-production-web-platform/phase-06-work-operations.md)
 và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-06-work-operations-evidence-2026-07-26.md).
-Public release vẫn bị chặn; Phase 7 Inventory Control là bước tiếp theo.
+
+Web Phase 7 Inventory Control được nghiệm thu cục bộ ngày 2026-07-26 cho
+`/inventory`: số dư, lô và sổ giao dịch giữ đúng thứ tự authoritative của máy
+chủ (FEFO là của backend, trình duyệt không sắp xếp lại), ABC/cảnh báo render
+nguyên văn từ Gold và suy giảm độc lập khi analytics từ chối, hai lệnh
+nhập/xuất và bút toán đảo đi qua đúng hai operation Spring với
+`Idempotency-Key` giữ nguyên khi kết quả chưa xác định, còn `If-Match` của bút
+toán đảo do backend thực thi. Gate đạt typecheck/lint/contract drift/Next
+build, 210 web test với 9 skip có chủ đích, 79 test tồn kho riêng, probe
+revoke→reseed và 9/9 PostgreSQL privilege test, cùng 8/8 kịch bản Playwright
+gồm cả hai hành trình `@inventory` (`WEB_PLATFORM_E2E=PASS`). Xem
+[phase file](plans/260722-2342-production-web-platform/phase-07-inventory-control.md)
+và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-07-inventory-control-evidence-2026-07-26.md).
+Public release vẫn bị chặn; Phase 8 Cost Analysis là bước tiếp theo.
 
 ## Big-data demo và visual assets
 

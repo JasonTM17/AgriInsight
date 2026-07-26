@@ -38,9 +38,10 @@ Run on the final tree (all remediation applied).
 | Typecheck | `npm --prefix web run typecheck` | exit 0 |
 | Lint | `npm --prefix web run lint` (`--max-warnings=0`) | exit 0 |
 | Generated contract drift | `npm --prefix web run contracts:check` | clean |
-| Unit/contract suite | `npm --prefix web run test` | 30 files passed / 1 skipped (31); **209 passed / 9 skipped (218)** |
-| Focused inventory | `npm --prefix web run test -- inventory` | 3 files / **78 tests** passed |
-| Production build | `npm --prefix web run build` | `✓ Compiled successfully in 8.1s`; emits `/inventory` plus `/api/inventory/transactions`, `/api/inventory/transactions/[transactionId]`, `/api/inventory/transactions/[transactionId]/reversals` |
+| Unit/contract suite | `npm --prefix web run test` | 30 files passed / 1 skipped (31); **210 passed / 9 skipped (219)** |
+| Focused inventory | `npm --prefix web run test -- inventory` | 3 files / **79 tests** passed |
+| Production build | `npm --prefix web run build` | `✓ Compiled successfully in 8.3s`; emits `/inventory` plus `/api/inventory/transactions`, `/api/inventory/transactions/[transactionId]`, `/api/inventory/transactions/[transactionId]/reversals` |
+| Guarded runtime | `.\scripts\run-web-e2e-tests.ps1 -SkipStaticGates` | `WEB_PLATFORM_E2E=PASS`; **8/8 Playwright** scenarios passed against real Keycloak, PostgreSQL, Spring, FastAPI, Next, and Chrome |
 | Python (changed surface) | `python -m pytest tests -k "reconcil or demo"` | 18 passed |
 | Java | not re-run | `git diff --name-only 6438d88~1..HEAD -- backend` → **none**; Phase 5's accepted backend gate remains authoritative |
 
@@ -69,9 +70,14 @@ streamed body (413/415/400) → strict zod → exact upstream operation.
   retry dedupes upstream instead of appending a second ledger row. A payload
   change still rotates the key.
 - Reversals additionally require a strong quoted-integer `If-Match`
-  (`/^"\d{1,19}"$/`). The value originates from an authenticated transaction GET
-  and the BFF re-reads and compares the source version before forwarding, so a
-  stale or guessed version cannot win.
+  (`/^"\d{1,19}"$/`). The value originates from an authenticated transaction GET,
+  so the browser never invents it. Enforcement is authoritative in the backend:
+  `InventoryTransactionMutationController.reverse` takes `If-Match` as a required
+  header, `IfMatchVersion.parse` rejects malformed values, the parsed version is
+  bound into the reversal command, and the canonical fingerprint carries
+  `Map.of(IF_MATCH, expected.canonicalHeaderValue())`. A stale or guessed version
+  therefore cannot apply, and an identical retry matches the stored fingerprint
+  and replays instead of double-applying.
 - Supplier-role denial is permission-driven (`INVENTORY_READ` absent), not route
   cosmetics, and the denied response carries no token material.
 
@@ -108,13 +114,19 @@ textarea (L1), and removal of a dead error field (L3).
 - Server-review M2 — 409 sanitization posture kept as-is: conflict detail is
   sanitized while the correlation ID stays available for support.
 - Server-review remaining 6 Low items.
-- UI-review M2 — the If-Match design-record drift is resolved in favour of the
-  phase contract, which specifies `Idempotency-Key` **and** `If-Match` on
-  reversals. `docs/system-architecture.md` now records the implemented split:
-  the client attaches a server-issued ETag and the BFF re-validates it upstream.
-  A consequence worth knowing: the backend bumps the source version on reversal,
-  so an ambiguous reversal that did commit answers 409 ("reload") rather than
-  replaying — safe, and the error copy steers to the right recovery.
+- UI-review M2 — resolved in favour of the phase contract, which specifies
+  `Idempotency-Key` **and** `If-Match` on reversals, and `docs/system-architecture.md`
+  now records the implemented split. This item was originally accepted with a
+  noted limitation: because a committed reversal bumps the source version, a BFF
+  refetch-and-compare made an ambiguous reversal answer 409 ("reload") instead of
+  replaying, so the hook's retained-key promise was unreachable for reversals.
+  That limitation is now closed rather than merely noted. The redundant BFF
+  pre-check was removed, leaving the authoritative check in the backend, which
+  claims the idempotency key before the version-bearing command runs. An
+  ambiguous reversal retry therefore replays the committed reversal under the
+  same key and the same source version, which the E2E asserts directly: identical
+  `Idempotency-Key`, identical `If-Match`, and exactly three ledger rows with no
+  double-apply.
 - UI-review L2 (loading state hand-rolls its panel instead of the shared
   `StatePanel`), L4 (a permanent analytics denial is framed as transient), L5
   (hand-built URLs may carry an empty `materialId=`, which fails closed).
@@ -153,7 +165,7 @@ The phase REFACTOR items are satisfied without further extraction:
 Four files exceed the 200-line modularization prompt:
 `inventory-generated-client-adapter.ts` (295),
 `load-inventory-view-model.ts` (247), `inventory-transaction-form.tsx` (221),
-`inventory-analytics-panels.tsx` (205). Each was reviewed for a real seam and
+`inventory-analytics-panels.tsx` (210). Each was reviewed for a real seam and
 deliberately left whole. The adapter is seven read operations over one shared
 `requestInventoryPayload` core — the same shape as
 `work-generated-client-adapter.ts`, larger only because inventory has more
@@ -183,15 +195,55 @@ Recorded before implementation and unchanged since.
   the route also ships `layout.tsx` and `error.tsx` (per-segment boundary rule),
   three exact BFF route handlers, and the generated-contract schema modules.
 
-## Outstanding
+## Runtime acceptance and remediation
 
-The guarded runtime E2E gate has **not** yet run on this build. The workspace
-disk guard hard-fails below 20 GB free on D and the drive sits at 17.7 GB. The
-Docker WSL data disk holds 43.8 GB inside a 69.1 GB host file; an in-guest
-`fstrim` freed 960 GiB of ranges but the VHDX carries no sparse flag, so the
-space needs a one-time offline `compact vdisk`, which requires an elevated shell.
-Acceptance for this phase stays open until the gate reports `WEB_PLATFORM_E2E=PASS`
-with all 8 Playwright scenarios, including both `@inventory` journeys.
+The guarded runtime now passes on the final production bundle. The first real
+inventory journey exposed eight `style-src-attr` violations from dynamic ABC
+bar widths. Those bars now use native `<progress value>` attributes and CSS
+pseudo-elements, so the value remains dynamic without an inline style. A static
+render contract proves no `style=` attribute is emitted; the repeated real
+Chrome run proves the nonce-only CSP stays clean after receipt, issue, reversal,
+and refresh.
+
+Cold Docker Desktop runs also exposed a PostgreSQL readiness race: the inherited
+Unix-socket probe could pass against the temporary initdb server immediately
+before its final restart, releasing `backend-role-bootstrap` into a TCP refusal.
+The E2E-only override now waits on an authenticated TCP `SELECT 1`, with a
+180-second NTFS cold-start window. Production health semantics are unchanged.
+
+### Confirming run provenance
+
+A final independent invocation reproduced the verdict end to end, so no marker in
+this report is second-hand:
+
+```
+DEMO_ASSIGNMENT_REVOCATION=PASS preserved=1 active=0 history=1
+Tests  9 passed (9)                                   # PostgreSQL privileges
+[1/8] inventory-control.spec.ts:41  @inventory manager records a receipt, issue and ETag reversal
+[2/8] inventory-control.spec.ts:160 @inventory supplier receives a generic denied scope
+8 passed (1.1m)  ->  PLAYWRIGHT_E2E=PASS
+WEB_PLATFORM_E2E=PASS issuer=keycloak identity=spring-/me session=postgres browser=chrome
+```
+
+Two conditions of that run are stated rather than implied:
+
+- It used `-SkipStaticGates`, so the static numbers in the gates table above come
+  from separate direct invocations on the same tree, not from this run.
+- The workspace disk guard ran with the D thresholds overridden to
+  warn 14 GB / fail 12 GB because the drive sits near its default 20 GB floor
+  while consuming roughly 2 GB per run. Every guard line in the log carries
+  `policy=override` for D and `policy=default` for C, and the C floor was left
+  untouched. Overrides are refused below an absolute 8 GB floor, so the guard
+  still protects the workspace.
+
+Both `@inventory` journeys are the first two entries of the passing set, which is
+the point of the run: before this, the inventory specs had never completed a
+single execution, so every inventory claim rested on static analysis alone.
+
+The final run ended with `PLAYWRIGHT_E2E=PASS` and
+`WEB_PLATFORM_E2E=PASS`. Its post-run disk guard measured C at 10.82 GiB (pass)
+and D at 21.36 GiB (warning, above the 20 GiB hard floor). All 13 background
+Docker containers stopped for the gate were restored and verified healthy.
 
 ## Unresolved questions
 

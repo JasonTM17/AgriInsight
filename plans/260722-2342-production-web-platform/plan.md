@@ -121,7 +121,7 @@ created: 2026-07-22T00:00:00.000Z
 | 4 | [field-ledger-shell-and-design-gates](./phase-04-field-ledger-shell-and-design-gates.md) | Completed 2026-07-26 |
 | 5 | [overview-and-farm-intelligence](./phase-05-overview-and-farm-intelligence.md) | Completed locally 2026-07-26 |
 | 6 | [work-operations](./phase-06-work-operations.md) | Completed locally 2026-07-26 |
-| 7 | [inventory-control](./phase-07-inventory-control.md) | Pending |
+| 7 | [inventory-control](./phase-07-inventory-control.md) | Completed locally 2026-07-26 |
 | 8 | [cost-analysis](./phase-08-cost-analysis.md) | Pending |
 | 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | Pending |
 | 10 | [tenant-administration](./phase-10-tenant-administration.md) | Pending |
@@ -242,6 +242,7 @@ Execution is sequential by default because generated contracts, the route regist
 
 ## Validation Log
 
+- 2026-07-26: Phase 7 Inventory Control accepted locally. Final tree passed contract drift, typecheck, zero-warning lint, production build, 79 focused inventory tests, 210 full web tests with 9 intentional skips, and 8/8 real Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome scenarios with `WEB_PLATFORM_E2E=PASS`. Runtime review caught and closed CSP-blocked inline ABC widths by moving to native progress attributes, plus a Docker Desktop cold-start race by requiring an authenticated PostgreSQL TCP probe in the E2E-only override. Phase 8 Cost Analysis is next.
 - 2026-07-26: Phase 6 remediation accepted. The remediation review's NO-GO findings are closed: demo reseed now keeps assignment revocation authoritative (no un-revoke; `ON CONFLICT DO NOTHING` plus fail-closed identity guard) and is proven on real PostgreSQL by the new seed→revoke→reseed probe (`DEMO_ASSIGNMENT_REVOCATION=PASS preserved=1 active=0 history=1`); both Work POST handlers gained the full negative matrix (invalid Host, missing/mismatched CSRF, malformed JSON, oversized streamed body). A full static invocation passed clean npm ci, contract drift, typecheck, zero-warning lint, Next production build, and 127 web tests with 9 intentional skips (31 focused Work); after the lifecycle harness was corrected, the final runtime rerun passed Python demo 13/13, 9/9 PostgreSQL privilege tests, and 6/6 installed-Chrome scenarios with `WEB_PLATFORM_E2E=PASS`. Phase 7 Inventory Control is next.
 - 2026-07-26: Phase 5 accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; final unified runner passed clean npm ci, contract drift, TypeScript, zero-warning ESLint, Next 16 production build, Maven package (tests skipped by gate), 9/9 PostgreSQL privilege tests, 82 web tests with 9 intentional skips, production dependency audit with 0 vulnerabilities at the configured threshold, and 3/3 installed-Chrome scenarios. Cleanup completed before the global PASS marker. Phase 6 Work Operations is next.
 - 2026-07-22: `HOLD SCOPE` inherited from the user's repeated request for a complete, polished eight-area application with real Big Data and generated imagery. Realtime, ML, chatbot, and fake data remain out of scope.
