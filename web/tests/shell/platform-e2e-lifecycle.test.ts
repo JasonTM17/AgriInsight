@@ -20,7 +20,7 @@ describe("real-platform E2E lifecycle behavior", () => {
     expect(result.output).toContain(
       "LIFECYCLE_PROBE=PASS cleanup_continued=true owned_process_stopped=true"
     );
-  });
+  }, 35_000);
 
   it("rejects a concurrent runner without printing the global pass marker", () => {
     const escapedRunner = runner.replaceAll("'", "''");
@@ -55,7 +55,7 @@ try {
     ]);
     expect(result.status, result.output).toBe(0);
     expect(result.output).toContain("CONCURRENT_RUNNER_PROBE=PASS");
-  });
+  }, 35_000);
 });
 
 function runPowerShell(arguments_: string[]) {

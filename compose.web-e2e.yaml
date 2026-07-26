@@ -1,4 +1,16 @@
 services:
+  postgres:
+    # The clean bind-mounted cluster can take more than a minute to initialize
+    # on Docker Desktop/NTFS. Probe TCP so the temporary initdb server cannot
+    # release dependent jobs before the final postmaster is accepting clients.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - PGPASSWORD=$$POSTGRES_PASSWORD psql -h 127.0.0.1 -U postgres -d agriinsight_demo -tAc 'SELECT 1' | grep -qx 1
+      start_period: 180s
+      timeout: 10s
+      retries: 30
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0
     command: ["start-dev", "--import-realm", "--http-host=0.0.0.0", "--http-port=8080"]
