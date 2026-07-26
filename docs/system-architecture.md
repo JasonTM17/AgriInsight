@@ -117,11 +117,14 @@ denial or outage degrades that section alone and leaves the Spring ledger live.
 
 Two exact inventory POST operations carry commands: a receipt/issue transaction
 and a linked reversal. Both follow the Work trust-boundary order. The reversal
-additionally requires a strong quoted-integer `If-Match`; the BFF re-reads the
-source version from an authenticated transaction fetch and compares it before
-forwarding, so a stale or guessed version cannot win. A command whose outcome is
-unknown keeps its `Idempotency-Key`, so a retry of the identical payload dedupes
-upstream instead of appending a second ledger row.
+additionally requires a strong quoted-integer `If-Match`. The browser never
+invents that version: it reads it from an authenticated transaction fetch through
+the BFF. Enforcement is authoritative in the backend, which parses the header,
+binds the expected version into the reversal command, and folds it into the
+canonical idempotency fingerprint, so a stale or guessed version cannot apply.
+A command whose outcome is unknown keeps both its `Idempotency-Key` and its
+source version, so an identical retry replays the already-committed reversal
+instead of appending a second ledger row.
 
 ```mermaid
 flowchart LR

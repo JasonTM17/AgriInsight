@@ -66,9 +66,11 @@ the view-model loader that isolates per-source failure, and the idempotent
 mutation hook. Reads keep server order for balances, lots, and ledger rows and
 disclose both `hasMore` and the 10,000 offset ceiling rather than implying a
 total. Commands are a receipt/issue transaction and a linked reversal; only the
-reversal carries a strong `If-Match`, whose value the BFF re-reads server-side
-before forwarding. An unconfirmed command keeps its `Idempotency-Key` so retries
-dedupe upstream. No ABC class, FEFO order, alert, or low-stock threshold is
+reversal carries a strong `If-Match`, read from an authenticated transaction
+fetch and enforced authoritatively by the backend, which binds the expected
+version into the command and into the idempotency fingerprint. An unconfirmed
+command keeps its `Idempotency-Key` and source version so retries replay
+upstream instead of double-applying. No ABC class, FEFO order, alert, or low-stock threshold is
 recomputed in the browser.
 
 ## Operational backend
