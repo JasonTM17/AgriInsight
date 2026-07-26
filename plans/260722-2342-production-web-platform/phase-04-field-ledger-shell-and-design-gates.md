@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Field Ledger shell and design gates"
-status: pending
+status: completed
 priority: P1
 effort: "3-4d"
 dependencies: [3]
@@ -128,14 +128,14 @@ Build the shared application shell, design tokens, Vietnamese copy catalog, perm
 
 ## Acceptance
 
-- [ ] Shared shell, navigation, and token files exist and are ready for later route-area phases.
-- [ ] The shell uses the Field Ledger token system and Vietnamese-first catalog rather than placeholder copy.
-- [ ] Visual assets are synced from the reviewed dashboard source with verified hashes and preserved provenance metadata.
-- [ ] Work and Administration add two generated/reviewed contextual WebPs, giving all eight areas a cataloged visual without turning any image into KPI evidence.
-- [ ] `catalog.json` is the only machine source; Markdown is not parsed and generated `web/public/visuals/**` binaries are ignored rather than maintained duplicates.
-- [ ] The crop-health visual still renders as explicit AI-generated demo evidence.
-- [ ] Overview uses existing approved Stitch evidence; only Crop Health, Data Quality, and Administration receive new Stitch evidence in this phase.
-- [ ] No raw Stitch HTML, CDN-only font import, or static export bundle ships as runtime code.
+- [x] Shared shell, navigation, and token files exist and are ready for later route-area phases.
+- [x] The shell uses the Field Ledger token system and Vietnamese-first catalog rather than placeholder copy.
+- [x] Visual assets are synced from the reviewed dashboard source with verified hashes and preserved provenance metadata.
+- [x] Work and Administration add two generated/reviewed contextual WebPs, giving all eight areas a cataloged visual without turning any image into KPI evidence.
+- [x] `catalog.json` is the only machine source; Markdown is not parsed and generated `web/public/visuals/**` binaries are ignored rather than maintained duplicates.
+- [x] The crop-health visual still renders as explicit AI-generated demo evidence.
+- [x] Overview uses existing approved Stitch evidence; only Crop Health, Data Quality, and Administration receive new Stitch evidence in this phase.
+- [x] No raw Stitch HTML, CDN-only font import, or static export bundle ships as runtime code.
 
 ## Risks and rollback
 
@@ -161,17 +161,22 @@ Rollback: keep the secure BFF foundation from Phase 3 but remove shell exposure 
 2. `feat(web): add ui tokens and vi copy catalog`
 3. `feat(assets): add complete visual catalog and verified sync`
 4. `test(web): lock shell accessibility and asset gates`
+5. `feat(assets): add documented field-ledger gif`
+6. `docs(design): record field-ledger stitch evidence`
 
 ## Success Criteria
 
-- [ ] Shared shell boundaries are stable enough for parallel route work.
-- [ ] Design and asset gates are encoded as tests, not tribal knowledge.
-- [ ] Runtime ships only first-party reviewed visuals and approved shared tokens.
+- [x] Shared shell boundaries are stable enough for parallel route work.
+- [x] Design and asset gates are encoded as tests, not tribal knowledge.
+- [x] Runtime ships only first-party reviewed visuals and approved shared tokens.
 
 ## Validation log
 
 - Tier: Standard
-- Claims checked: 8
-- Verified: 8
+- Claims checked: 12
+- Verified: 12
 - Failed: 0
 - Unverified: 0
+- Focused gates: `npm --prefix web run test` (50 passed, 9 intentional skips), `npm --prefix web run typecheck`, `npm --prefix web run lint`, `python -m pytest tests/test_visual_assets.py tests/test_generated_media.py -q`, and `node web/scripts/sync-dashboard-assets.mjs --check`.
+- Runtime smoke: Next dev with explicit `localhost:3100` host allowlist returned `200` for `/` and the synced `overview-fields.webp`.
+- Disk guard: C 9.23 GB free, D 20.80 GB free after verification; both above hard-stop, warning band remains active. `next build` intentionally deferred until a guarded build window.
