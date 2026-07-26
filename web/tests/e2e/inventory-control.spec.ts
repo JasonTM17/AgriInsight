@@ -6,6 +6,8 @@ import {
   installCspViolationRecorder
 } from "./helpers/csp-assertions";
 
+const BAD_GATEWAY_TITLE = "Cổng nghiệp vụ chưa xác nhận giao dịch kho.";
+
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Inventory E2E requires ${name}`);
@@ -50,6 +52,7 @@ test("@inventory manager records a receipt, issue and ETag reversal", async ({
 
   const requestKeys: string[] = [];
   let dropFirstConfirmation = true;
+  let rejectNextAsBadGateway = false;
   await page.route(
     /\/api\/inventory\/transactions$/,
     async (route) => {
@@ -60,6 +63,15 @@ test("@inventory manager records a receipt, issue and ETag reversal", async ({
         const response = await route.fetch();
         expect(response.status()).toBe(201);
         await route.abort("failed");
+        return;
+      }
+      if (rejectNextAsBadGateway) {
+        rejectNextAsBadGateway = false;
+        await route.fulfill({
+          status: 502,
+          contentType: "application/problem+json",
+          body: JSON.stringify({ title: BAD_GATEWAY_TITLE })
+        });
         return;
       }
       await route.continue();
@@ -87,8 +99,15 @@ test("@inventory manager records a receipt, issue and ETag reversal", async ({
   await page.getByLabel("Lý do xuất").fill("E2E cấp vật tư cho khu thử nghiệm");
   await page.getByLabel("Thời điểm nghiệp vụ").fill("2027-01-02T08:00");
   await page.getByLabel("Số lượng theo đơn vị gốc").fill("5");
+  rejectNextAsBadGateway = true;
+  await page.getByTestId("inventory-transaction-submit").click();
+  await expect(page.getByTestId("inventory-mutation-feedback")).toContainText(
+    BAD_GATEWAY_TITLE
+  );
   await page.getByTestId("inventory-transaction-submit").click();
   await expect(page.getByTestId("inventory-transaction-row")).toHaveCount(2);
+  expect(requestKeys).toHaveLength(4);
+  expect(requestKeys[3]).toBe(requestKeys[2]);
 
   await page.getByText("Đảo một phần giao dịch", { exact: true }).click();
   await page.getByLabel("Số lượng cần đảo").fill("2");

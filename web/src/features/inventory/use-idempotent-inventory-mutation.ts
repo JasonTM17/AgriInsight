@@ -42,8 +42,6 @@ export function useIdempotentInventoryMutation(successMessage: string) {
         ifMatch
       );
       if (!result.ok) {
-        fingerprint.current = null;
-        idempotencyKey.current = null;
         setFeedback({
           correlationId: result.problem.correlationId,
           kind: "error",
