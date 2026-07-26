@@ -67,13 +67,13 @@ test("real Keycloak, Spring /me and PostgreSQL keep browser auth opaque", async 
   });
 
   try {
-    await page.goto("/api/auth/login?returnTo=/protected");
+    await page.goto("/api/auth/login?returnTo=/overview");
     await page.locator("#username").fill(username);
     await page.locator("#password").fill(password);
     await page.locator("#kc-login").click();
-    await expect(page).toHaveURL("http://localhost:3100/protected");
+    await expect(page).toHaveURL("http://localhost:3100/overview");
     await expect(
-      page.getByRole("heading", { name: "Chào Demo Executive" })
+      page.getByRole("heading", { name: "Điểm cần xem xét" })
     ).toBeVisible();
     await expect(page.getByText("AGRIINSIGHT_DEMO")).toBeVisible();
 
@@ -163,7 +163,7 @@ test("real Keycloak, Spring /me and PostgreSQL keep browser auth opaque", async 
     });
 
     const nonceStart = await page.request.get(
-      "/api/auth/login?returnTo=/protected",
+      "/api/auth/login?returnTo=/overview",
       { maxRedirects: 0 }
     );
     expect(nonceStart.status()).toBe(302);
@@ -175,13 +175,13 @@ test("real Keycloak, Spring /me and PostgreSQL keep browser auth opaque", async 
     );
     const nonceFailure = await page.goto(tamperedAuthorization.href);
     expect(nonceFailure?.status()).toBe(400);
-    await page.goto("/protected");
+    await page.goto("/overview");
     await expect(
-      page.getByRole("heading", { name: "Chào Demo Executive" })
+      page.getByRole("heading", { name: "Điểm cần xem xét" })
     ).toBeVisible();
 
     const secondPage = await context.newPage();
-    await secondPage.goto("/protected");
+    await secondPage.goto("/overview");
     await pool.query(
       `UPDATE agriinsight_web.sessions
        SET access_token_expires_at = now() - interval '1 second'

@@ -32,7 +32,9 @@ describe("Field Ledger permission navigation", () => {
   });
 
   it("marks module query state without treating unknown routes as an area", () => {
-    expect(getActiveNavigationKey("/protected")).toBe("overview");
+    expect(getActiveNavigationKey("/overview")).toBe("overview");
+    expect(getActiveNavigationKey("/farms")).toBe("farms");
+    expect(getActiveNavigationKey("/farms/3eb92f10-60dd-45cb-9160-7c569c3258b4")).toBe("farms");
     expect(getActiveNavigationKey("/protected", { module: "data-quality" })).toBe("dataQuality");
     expect(getActiveNavigationKey("/protected", { module: "not-a-module" })).toBe("overview");
     expect(getActiveNavigationKey("/platform/farms")).toBe("overview");

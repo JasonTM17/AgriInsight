@@ -40,6 +40,24 @@ describe("web proxy security policy", () => {
     );
   });
 
+  it("preserves a same-origin farm deep link through login", () => {
+    process.env.AGRIINSIGHT_WEB_ALLOWED_HOSTS = "localhost:3100";
+    process.env.AGRIINSIGHT_WEB_BASE_URL = "http://localhost:3100";
+    const farmId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+    const response = proxy(
+      new NextRequest(
+        `http://localhost:3100/farms/${farmId}?status=all&sort=profit_desc`,
+        { headers: { Host: "localhost:3100" } }
+      )
+    );
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location")!);
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("returnTo")).toBe(
+      `/farms/${farmId}?status=all&sort=profit_desc`
+    );
+  });
+
   it("accepts matching framework forwarded metadata and rejects conflicts", () => {
     process.env.AGRIINSIGHT_WEB_ALLOWED_HOSTS = "localhost:3100";
     process.env.AGRIINSIGHT_WEB_BASE_URL = "http://localhost:3100";
