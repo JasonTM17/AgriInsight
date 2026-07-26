@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = resolve(import.meta.dirname, "../../..");
 const runner = resolve(repoRoot, "scripts/run-web-e2e-tests.ps1");
+const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
 
-describe("real-platform E2E lifecycle behavior", () => {
+describeOnWindows("real-platform E2E lifecycle behavior", () => {
   it("continues cleanup and releases an owned process under PowerShell 5.1", () => {
     const result = runPowerShell([
       "-NoProfile",
