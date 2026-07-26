@@ -93,6 +93,12 @@
   min-width: 0;
 }
 
+.filterBar :is(input, select):focus-visible,
+.formGrid :is(input, select, textarea):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .checkboxField {
   display: flex !important;
   align-items: center;
