@@ -35,6 +35,20 @@ describe("overview and farm presentation contracts", () => {
     expect(overview).toContain("alt={visual.alt}");
     expect(overview).toContain("không phải bằng chứng số liệu");
     expect(lineage).toContain("formatScope");
+    expect(lineage).toContain("appliedFilter");
+    expect(lineage).toContain("formatAppliedPeriod");
+    expect(lineage).toContain("30 ngày gần nhất");
+  });
+
+  it("preserves canonical scope filters in server-rendered forms", () => {
+    const overview = read("src/features/overview/components/overview-dashboard.tsx");
+    const farms = read("src/features/farms/components/farm-list.tsx");
+    for (const filter of ["farmId", "fieldId", "cropId", "seasonId"]) {
+      expect(overview).toContain(`name="${filter}"`);
+      expect(farms).toContain(`name="${filter}"`);
+    }
+    expect(overview).toContain('name="datePreset"');
+    expect(farms).toContain('name="datePreset"');
   });
 
   it("keeps loading and errors inside stable route shells", () => {

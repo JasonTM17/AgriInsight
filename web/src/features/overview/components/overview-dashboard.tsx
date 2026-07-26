@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import type { OverviewViewModel } from "@/features/overview/load-overview-view-model";
-import { toFilterQuery } from "@/features/overview/overview-filter-schema";
+import {
+  toFilterQuery,
+  type OverviewFilters
+} from "@/features/overview/overview-filter-schema";
 import { VISUAL_CATALOG_BY_AREA } from "@/lib/visual-catalog";
 
 import { AnalyticsContextLine, LineageBanner } from "./lineage-banner";
@@ -29,6 +32,7 @@ export function OverviewDashboard({ viewModel }: { viewModel: OverviewViewModel 
         </div>
         <Link className={styles.primaryLink} href="/farms">Xem hiệu quả nông trại</Link>
       </header>
+      <OverviewPeriodFilter filters={viewModel.filters} />
 
       {viewModel.analytics.status === "failed" ? (
         <StatePanel
@@ -115,6 +119,27 @@ export function OverviewDashboard({ viewModel }: { viewModel: OverviewViewModel 
         <p className={styles.sourceNote}>{viewModel.farms.data.length} nông trại nghiệp vụ trong phạm vi lọc hiện hành.</p>
       )}
     </div>
+  );
+}
+
+function OverviewPeriodFilter({ filters }: { filters: OverviewFilters }) {
+  return (
+    <form action="/overview" className={styles.periodFilter} method="get">
+      {filters.farmId ? <input name="farmId" type="hidden" value={filters.farmId} /> : null}
+      {filters.fieldId ? <input name="fieldId" type="hidden" value={filters.fieldId} /> : null}
+      {filters.cropId ? <input name="cropId" type="hidden" value={filters.cropId} /> : null}
+      {filters.seasonId ? <input name="seasonId" type="hidden" value={filters.seasonId} /> : null}
+      <label>
+        Kỳ dữ liệu
+        <select defaultValue={filters.datePreset} name="datePreset">
+          <option value="all">Toàn bộ dữ liệu</option>
+          <option value="last-30-days">30 ngày gần nhất</option>
+          <option disabled={!filters.seasonId} value="season-to-date">Từ đầu mùa vụ</option>
+        </select>
+      </label>
+      <button type="submit">Áp dụng kỳ</button>
+      <Link className={styles.resetLink} href="/overview">Xóa bộ lọc</Link>
+    </form>
   );
 }
 

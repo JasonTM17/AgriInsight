@@ -107,23 +107,36 @@ function currentFarmHref(viewModel: FarmListViewModel): string {
 }
 
 function FarmFilters({ viewModel }: { viewModel: FarmListViewModel }) {
+  const { filters } = viewModel;
   return (
     <form action="/farms" className={styles.filterForm} method="get">
+      {filters.farmId ? <input name="farmId" type="hidden" value={filters.farmId} /> : null}
+      {filters.fieldId ? <input name="fieldId" type="hidden" value={filters.fieldId} /> : null}
+      {filters.cropId ? <input name="cropId" type="hidden" value={filters.cropId} /> : null}
+      {filters.seasonId ? <input name="seasonId" type="hidden" value={filters.seasonId} /> : null}
       <label>
         Tìm theo tên hoặc mã
-        <input autoComplete="off" defaultValue={viewModel.filters.search} maxLength={80} name="search" placeholder="Ví dụ: An Phú…" spellCheck={false} type="search" />
+        <input autoComplete="off" defaultValue={filters.search} maxLength={80} name="search" placeholder="Ví dụ: An Phú…" spellCheck={false} type="search" />
       </label>
       <label>
         Trạng thái
-        <select defaultValue={viewModel.filters.status} name="status">
+        <select defaultValue={filters.status} name="status">
           <option value="active">Đang hoạt động</option>
           <option value="inactive">Ngừng hoạt động</option>
           <option value="all">Tất cả</option>
         </select>
       </label>
       <label>
+        Kỳ dữ liệu
+        <select defaultValue={filters.datePreset} name="datePreset">
+          <option value="all">Toàn bộ dữ liệu</option>
+          <option value="last-30-days">30 ngày gần nhất</option>
+          <option disabled={!filters.seasonId} value="season-to-date">Từ đầu mùa vụ</option>
+        </select>
+      </label>
+      <label>
         Sắp xếp
-        <select defaultValue={viewModel.filters.sort} name="sort">
+        <select defaultValue={filters.sort} name="sort">
           <option value="farm_code">Mã nông trại</option>
           <option value="profit_desc">Lợi nhuận giảm dần</option>
         </select>
