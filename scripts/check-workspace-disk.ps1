@@ -10,6 +10,12 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
+$invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
+
+# An operator may raise a threshold freely, or lower it for a constrained
+# workspace, but never below the space a run genuinely needs to finish safely.
+$absoluteMinimumFreeGb = 8.0
+
 $drivePolicies = @(
     [pscustomobject]@{
         Letter = "C"
@@ -45,6 +51,69 @@ function Test-FreeSpaceValue {
         -not [double]::IsNaN($Value) -and
         -not [double]::IsInfinity($Value)
     )
+}
+
+function Resolve-DrivePolicy {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Policy
+    )
+
+    $warnName = "AGRIINSIGHT_DISK_GUARD_{0}_WARN_GB" -f $Policy.Letter
+    $failName = "AGRIINSIGHT_DISK_GUARD_{0}_FAIL_GB" -f $Policy.Letter
+    $requested = @(
+        [pscustomobject]@{
+            Kind = "warn"
+            Raw = [Environment]::GetEnvironmentVariable($warnName)
+        },
+        [pscustomobject]@{
+            Kind = "fail"
+            Raw = [Environment]::GetEnvironmentVariable($failName)
+        }
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Raw) }
+
+    $resolved = [pscustomobject]@{
+        Letter = $Policy.Letter
+        WarnBelowGb = $Policy.WarnBelowGb
+        FailBelowGb = $Policy.FailBelowGb
+        Overridden = $false
+        Error = $null
+    }
+    if (@($requested).Count -eq 0) {
+        return $resolved
+    }
+
+    foreach ($entry in $requested) {
+        $parsed = 0.0
+        $isNumber = [double]::TryParse(
+            $entry.Raw,
+            [System.Globalization.NumberStyles]::Float,
+            $invariantCulture,
+            [ref]$parsed
+        )
+        if (-not $isNumber -or -not (Test-FreeSpaceValue -Value $parsed)) {
+            $resolved.Error = "invalid-threshold-override-{0}" -f $Policy.Letter
+            return $resolved
+        }
+        if ($parsed -lt $absoluteMinimumFreeGb) {
+            $resolved.Error = "threshold-override-below-floor-{0}" -f $Policy.Letter
+            return $resolved
+        }
+        if ($entry.Kind -eq "warn") {
+            $resolved.WarnBelowGb = $parsed
+        }
+        else {
+            $resolved.FailBelowGb = $parsed
+        }
+    }
+
+    if ($resolved.WarnBelowGb -lt $resolved.FailBelowGb) {
+        $resolved.Error = "threshold-override-inverted-{0}" -f $Policy.Letter
+        return $resolved
+    }
+
+    $resolved.Overridden = $true
+    return $resolved
 }
 
 function Get-ActualDriveObservation {
@@ -173,10 +242,19 @@ else {
     $observationSource = "actual"
 }
 
-$statuses = @()
-$invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
-
+$resolvedPolicies = @()
 foreach ($policy in $drivePolicies) {
+    $resolvedPolicy = Resolve-DrivePolicy -Policy $policy
+    if ($null -ne $resolvedPolicy.Error) {
+        Write-ConfigurationFailure -Reason $resolvedPolicy.Error
+        exit 2
+    }
+    $resolvedPolicies += $resolvedPolicy
+}
+
+$statuses = @()
+
+foreach ($policy in $resolvedPolicies) {
     if ($TestOnly) {
         if ($TestOnlyMissingDrive -eq $policy.Letter) {
             $observation = [pscustomobject]@{
@@ -202,26 +280,29 @@ foreach ($policy in $drivePolicies) {
     $statuses += $status
     $warnText = $policy.WarnBelowGb.ToString("F3", $invariantCulture)
     $failText = $policy.FailBelowGb.ToString("F3", $invariantCulture)
+    $policyText = if ($policy.Overridden) { "override" } else { "default" }
 
     if ($observation.Available) {
         $freeText = $observation.FreeGb.ToString("F3", $invariantCulture)
         Write-Output (
-            "DISK_GUARD drive={0} free_gb={1} warn_below_gb={2} fail_below_gb={3} status={4} source={5}" -f `
+            "DISK_GUARD drive={0} free_gb={1} warn_below_gb={2} fail_below_gb={3} status={4} source={5} policy={6}" -f `
                 $policy.Letter,
                 $freeText,
                 $warnText,
                 $failText,
                 $status,
-                $observationSource
+                $observationSource,
+                $policyText
         )
     }
     else {
         Write-Output (
-            "DISK_GUARD drive={0} free_gb=unavailable warn_below_gb={1} fail_below_gb={2} status=FAIL source={3} reason={4}" -f `
+            "DISK_GUARD drive={0} free_gb=unavailable warn_below_gb={1} fail_below_gb={2} status=FAIL source={3} policy={4} reason={5}" -f `
                 $policy.Letter,
                 $warnText,
                 $failText,
                 $observationSource,
+                $policyText,
                 $observation.Reason
         )
     }
