@@ -104,14 +104,6 @@ def _activity_assignment_sql(
             f"{employee_id}:{row.activity_id}",
         )
         statements.append(
-            "UPDATE activity_assignees AS existing "
-            "SET revoked_at = NULL "
-            f"WHERE existing.id = {literal(str(assignment_id))}::uuid "
-            f"AND existing.tenant_id = {tenant}::uuid "
-            f"AND existing.activity_id = {literal(str(activity_id))}::uuid "
-            f"AND existing.employee_id = {literal(str(employee_id))}::uuid;"
-        )
-        statements.append(
             "INSERT INTO activity_assignees "
             "(id, tenant_id, activity_id, employee_id, revoked_at) "
             f"SELECT {literal(str(assignment_id))}::uuid, {tenant}::uuid, "
@@ -127,6 +119,19 @@ def _activity_assignment_sql(
             f"WHERE existing.tenant_id = {tenant}::uuid "
             "AND existing.activity_id = activity.id "
             "AND existing.employee_id = employee.id "
-            "AND existing.revoked_at IS NULL);"
+            "AND existing.revoked_at IS NULL) "
+            "ON CONFLICT (id) DO NOTHING;"
+        )
+        statements.append(
+            "DO $assignment_guard$ BEGIN IF EXISTS "
+            "(SELECT 1 FROM activity_assignees AS existing "
+            f"WHERE existing.id = {literal(str(assignment_id))}::uuid "
+            "AND ("
+            f"existing.tenant_id <> {tenant}::uuid "
+            f"OR existing.activity_id <> {literal(str(activity_id))}::uuid "
+            f"OR existing.employee_id <> {literal(str(employee_id))}::uuid"
+            ")) THEN RAISE EXCEPTION "
+            "'demo activity assignment id is bound elsewhere'; "
+            "END IF; END $assignment_guard$;"
         )
     return statements

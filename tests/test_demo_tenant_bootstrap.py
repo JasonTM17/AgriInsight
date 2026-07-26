@@ -102,13 +102,18 @@ def test_demo_bundle_links_field_worker_and_assigns_exact_sample_prefix(
         assert f"SELECT '{assignment_id}'::uuid" in bundle.seed_sql
         assert f"AND activity.id = '{activity_id}'::uuid" in bundle.seed_sql
         assert (
-            "UPDATE activity_assignees AS existing "
-            "SET revoked_at = NULL "
-            f"WHERE existing.id = '{assignment_id}'::uuid "
-            f"AND existing.tenant_id = '{contract.tenant_id}'::uuid "
-            f"AND existing.activity_id = '{activity_id}'::uuid "
-            f"AND existing.employee_id = '{employee_id}'::uuid;"
+            "ON CONFLICT (id) DO NOTHING;"
         ) in bundle.seed_sql
+        assert (
+            f"WHERE existing.id = '{assignment_id}'::uuid "
+            "AND ("
+            f"existing.tenant_id <> '{contract.tenant_id}'::uuid "
+            f"OR existing.activity_id <> '{activity_id}'::uuid "
+            f"OR existing.employee_id <> '{employee_id}'::uuid"
+        ) in bundle.seed_sql
+
+    assert "UPDATE activity_assignees AS existing" not in bundle.seed_sql
+    assert "demo activity assignment id is bound elsewhere" in bundle.seed_sql
 
     unassigned = supported.iloc[WORK_ASSIGNMENT_LIMIT]
     unassigned_id = deterministic_id(

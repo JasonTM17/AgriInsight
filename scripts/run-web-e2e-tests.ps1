@@ -453,6 +453,12 @@ try {
         "-DatabasePort", "55443",
         "-OutputDirectory", "_tmp/web-e2e/demo-bootstrap"
     ) "Guarded demo bootstrap or reconciliation failed"
+    Invoke-Checked "powershell" @(
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/test-demo-assignment-revocation.ps1",
+        "-DatabasePort", "55443",
+        "-OutputDirectory", "_tmp/web-e2e/demo-bootstrap"
+    ) "Demo assignment revocation lifecycle probe failed"
     $demoContract = Get-Content -LiteralPath (
         Join-Path $repositoryRoot "deploy\demo\demo-tenant.json"
     ) -Raw | ConvertFrom-Json
