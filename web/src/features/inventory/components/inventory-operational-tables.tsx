@@ -7,6 +7,7 @@ import type {
   StockBalance,
   StockLot
 } from "../inventory-generated-client-adapter";
+import { INVENTORY_MAX_OFFSET } from "../inventory-generated-client-adapter";
 import type { InventoryRouteState } from "../inventory-route-state";
 import type { SourceResult } from "../load-inventory-view-model";
 import { inventoryHref } from "../inventory-route-state";
@@ -166,14 +167,18 @@ function Pager({
   if (page.status === "failed" || (!page.data.hasMore && page.data.offset === 0)) return null;
   const previousOffset = Math.max(0, page.data.offset - page.data.limit);
   const nextOffset = page.data.offset + page.data.limit;
+  const canLoadNext =
+    page.data.hasMore && nextOffset <= INVENTORY_MAX_OFFSET;
   return (
     <nav className={styles.pagination} aria-label="Phân trang dữ liệu kho">
       {page.data.offset > 0 ? (
         <Link href={inventoryHref(routeState, { [offsetKey]: previousOffset })}>← Trước</Link>
       ) : <span />}
       <span>Trang bắt đầu {page.data.offset + 1}</span>
-      {page.data.hasMore ? (
+      {canLoadNext ? (
         <Link href={inventoryHref(routeState, { [offsetKey]: nextOffset })}>Sau →</Link>
+      ) : page.data.hasMore ? (
+        <span>Đã đạt giới hạn máy chủ</span>
       ) : <span />}
     </nav>
   );

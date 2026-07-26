@@ -55,7 +55,7 @@ export function InventoryAnalyticsPanels({
         <AlertQueue alerts={payload.alerts} />
         <AbcPanel abc={payload.abc} />
       </div>
-      <StatusTable items={payload.items} />
+      <StatusTable items={payload.items} page={payload.page} />
       <p className={styles.lineageNote}>
         Snapshot sinh lúc {formatDate(analytics.data.lineage.generatedAt)} ·
         lineage {analytics.data.lineage.runId}. Không có trend time-series trong contract Phase 7.
@@ -120,7 +120,11 @@ function AbcPanel({
           <p className="eyebrow">Value allocation</p>
           <h3 id="abc-title">Phân bổ ABC</h3>
         </div>
-        <span>{abc.length} nhóm vật tư</span>
+        <span>
+          {abc.length > 8
+            ? `8/${abc.length} nhóm giá trị nhất`
+            : `${abc.length} nhóm vật tư`}
+        </span>
       </div>
       {abc.length === 0 ? (
         <p className={styles.emptyState}>Chưa có dữ liệu ABC.</p>
@@ -144,8 +148,12 @@ function AbcPanel({
 }
 
 function StatusTable({
-  items
-}: Readonly<{ items: InventoryAnalyticsEnvelope["payload"]["items"] }>) {
+  items,
+  page
+}: Readonly<{
+  items: InventoryAnalyticsEnvelope["payload"]["items"];
+  page: InventoryAnalyticsEnvelope["payload"]["page"];
+}>) {
   return (
     <section className={styles.panel} aria-labelledby="status-title">
       <div className={styles.panelHeading}>
@@ -153,7 +161,11 @@ function StatusTable({
           <p className="eyebrow">Stock status</p>
           <h3 id="status-title">Tình trạng theo SKU-location</h3>
         </div>
-        <span>{items.length} dòng trong trang Gold</span>
+        <span>
+          {page.hasMore
+            ? `${items.length} dòng đầu của trang Gold — snapshot còn thêm dữ liệu`
+            : `${items.length} dòng trong trang Gold`}
+        </span>
       </div>
       <div className={styles.tableScroll}>
         <table className={styles.dataTable}>
