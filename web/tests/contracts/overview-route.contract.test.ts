@@ -49,11 +49,16 @@ describe("overview and farm route contracts", () => {
     expect(() => parseOverviewFilters({ tenantId: farms[0].id })).toThrow();
   });
 
-  it("fails closed when the current analytics contract cannot honor a filter", () => {
+  it("accepts canonical filters and requires a season for season-to-date", () => {
     const filters = parseOverviewFilters({
       cropId: "d9c12487-3eb9-4f41-a476-f51be3e48be7"
     });
-    expect(() => assertCurrentAnalyticsFilterSupport(filters)).toThrow(
+    expect(() => assertCurrentAnalyticsFilterSupport(filters)).not.toThrow();
+    expect(() =>
+      assertCurrentAnalyticsFilterSupport(
+        parseOverviewFilters({ datePreset: "season-to-date" })
+      )
+    ).toThrow(
       UnsupportedAnalyticsFilterError
     );
   });

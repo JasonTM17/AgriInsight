@@ -46,10 +46,9 @@ export function assertCurrentAnalyticsFilterSupport(
   filters: OverviewFilters
 ): void {
   const unsupported = [
-    filters.fieldId ? "fieldId" : null,
-    filters.cropId ? "cropId" : null,
-    filters.seasonId ? "seasonId" : null,
-    filters.datePreset !== "all" ? "datePreset" : null
+    filters.datePreset === "season-to-date" && !filters.seasonId
+      ? "seasonId"
+      : null
   ].filter((name): name is string => name !== null);
   if (unsupported.length > 0) throw new UnsupportedAnalyticsFilterError(unsupported);
 }

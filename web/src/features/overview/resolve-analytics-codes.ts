@@ -8,13 +8,21 @@ export type OperationalFarm = Readonly<{
 
 export class ScopeResolutionError extends Error {
   constructor(
-    public readonly reason: "inactive" | "unknown",
+    public readonly reason: "conflict" | "inactive" | "unknown",
     message: string
   ) {
     super(message);
     this.name = "ScopeResolutionError";
   }
 }
+
+export type ResolvedAnalyticsCodes = Readonly<{
+  cropCode?: string;
+  farm?: OperationalFarm;
+  farmCode?: string;
+  fieldCode?: string;
+  seasonCode?: string;
+}>;
 
 export function resolveFarmCode(
   farms: readonly OperationalFarm[],
