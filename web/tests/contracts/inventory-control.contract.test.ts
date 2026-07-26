@@ -287,6 +287,33 @@ describe("inventory route state", () => {
     expect(parseInventoryRouteState({ warehouseId: "not-a-uuid" })).toBeNull();
   });
 
+  it("treats empty submitted filter fields as absent", () => {
+    const state = parseInventoryRouteState({
+      warehouseId,
+      materialId: "",
+      lowStock: "",
+      kind: "",
+      from: "",
+      to: "",
+      balanceOffset: "",
+      lotOffset: "",
+      txOffset: ""
+    });
+    expect(state).toEqual({
+      warehouseId,
+      balanceOffset: 0,
+      lotOffset: 0,
+      txOffset: 0,
+      filters: {
+        materialId: undefined,
+        lowStock: undefined,
+        kind: undefined,
+        from: undefined,
+        to: undefined
+      }
+    });
+  });
+
   it("returns null when a dependent filter is present without a warehouse", () => {
     expect(parseInventoryRouteState({ materialId })).toBeNull();
     expect(parseInventoryRouteState({ lowStock: "true" })).toBeNull();

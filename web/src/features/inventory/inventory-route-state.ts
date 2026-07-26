@@ -120,7 +120,9 @@ export function inventoryHref(
 }
 
 function scalar(value: RawValue): string | undefined {
-  return typeof value === "string" ? value : undefined;
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
 }
 
 function parseOffset(value: string | undefined): number | null {
