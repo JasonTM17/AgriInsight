@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [switch] $SkipStaticGates
+    [switch] $SkipStaticGates,
+    [switch] $RunLifecycleProbe
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,11 +9,17 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $projectName = "agriinsight-web-e2e"
+$runnerMutexName = "Global\AgriInsight.WebE2E.Runner"
 $artifactRuntimeRoot = Join-Path $repositoryRoot "artifacts\_tmp\web-e2e"
 $temporaryRuntimeRoot = Join-Path $repositoryRoot "_tmp\web-e2e"
+$mavenRepositoryRoot = Join-Path $repositoryRoot "_tmp\host-caches\maven-repository"
 $postgresRuntimeRoot = Join-Path $artifactRuntimeRoot "postgres"
 $composeEnvironmentReady = $false
+$runnerMutex = $null
+$runnerMutexHeld = $false
+$analyticsProcess = $null
 $backendProcess = $null
+$analyticsLogPath = Join-Path $artifactRuntimeRoot "analytics.log"
 $backendLogPath = Join-Path $artifactRuntimeRoot "backend.log"
 $composeFiles = @(
     "compose.yaml",
@@ -74,19 +81,74 @@ function Invoke-Compose {
     Invoke-Checked "docker" $composeArguments $Failure
 }
 
-function Wait-HttpReady {
+function Get-TcpPortListeners {
+    param([Parameter(Mandatory = $true)] [int] $Port)
+    return @(
+        Get-NetTCPConnection `
+            -LocalPort $Port `
+            -State Listen `
+            -ErrorAction SilentlyContinue
+    )
+}
+
+function Assert-TcpPortAvailable {
+    param([Parameter(Mandatory = $true)] [int] $Port)
+    $listeners = @(Get-TcpPortListeners $Port)
+    if ($listeners.Count -gt 0) {
+        $owners = ($listeners.OwningProcess | Sort-Object -Unique) -join ","
+        throw "TCP port $Port is already owned by process $owners"
+    }
+}
+
+function Resolve-JavaExecutable {
+    if ([string]::IsNullOrWhiteSpace($env:JAVA_HOME)) {
+        throw "Web E2E requires JAVA_HOME to launch an owned Java process"
+    }
+    $javaExecutable = Join-Path $env:JAVA_HOME "bin\java.exe"
+    if (-not (Test-Path -LiteralPath $javaExecutable -PathType Leaf)) {
+        throw "JAVA_HOME does not contain bin\java.exe"
+    }
+    return $javaExecutable
+}
+
+function Assert-ProcessOwnsTcpPort {
+    param(
+        [Parameter(Mandatory = $true)] [System.Diagnostics.Process] $LauncherProcess,
+        [Parameter(Mandatory = $true)] [int] $Port
+    )
+    $listeners = @(Get-TcpPortListeners $Port)
+    if (-not ($listeners.OwningProcess -contains $LauncherProcess.Id)) {
+        throw "Process $($LauncherProcess.Id) does not own TCP port $Port"
+    }
+}
+
+function Wait-OwnedHttpProcessReady {
     param(
         [Parameter(Mandatory = $true)] [string] $Uri,
+        [Parameter(Mandatory = $true)] [System.Diagnostics.Process] $LauncherProcess,
+        [Parameter(Mandatory = $true)] [int] $Port,
         [int] $Attempts = 60
     )
+    $lastFailure = "no readiness response"
     for ($attempt = 1; $attempt -le $Attempts; $attempt += 1) {
+        if ($LauncherProcess.HasExited) {
+            throw "Process $($LauncherProcess.Id) exited before $Uri became ready"
+        }
         try {
             $response = Invoke-WebRequest -Uri $Uri -TimeoutSec 3 -UseBasicParsing
-            if ($response.StatusCode -eq 200) { return }
-        } catch {
-            if ($attempt -eq $Attempts) {
-                throw "Timed out waiting for $Uri"
+            if ($response.StatusCode -eq 200) {
+                Assert-ProcessOwnsTcpPort $LauncherProcess $Port
+                return
             }
+            $lastFailure = "HTTP $($response.StatusCode)"
+        } catch {
+            $lastFailure = $_.Exception.Message
+        }
+        if ($LauncherProcess.HasExited) {
+            throw "Process $($LauncherProcess.Id) exited before $Uri became ready"
+        }
+        if ($attempt -eq $Attempts) {
+            throw "Timed out waiting for $Uri; last failure: $lastFailure"
         }
         Start-Sleep -Seconds 2
     }
@@ -122,49 +184,113 @@ function Assert-E2eProjectStopped {
     }
 }
 
-function Stop-BackendProcess {
+function Stop-OwnedProcess {
     param(
-        [Parameter(Mandatory = $true)] [string] $JarPath,
-        [System.Diagnostics.Process] $LauncherProcess
+        [System.Diagnostics.Process] $LauncherProcess,
+        [Parameter(Mandatory = $true)] [string] $Name
     )
-    if ($null -ne $LauncherProcess -and -not $LauncherProcess.HasExited) {
-        Stop-Process -Id $LauncherProcess.Id -Force
-        [void] $LauncherProcess.WaitForExit(10000)
+    if ($null -eq $LauncherProcess) { return }
+    try {
+        if (-not $LauncherProcess.HasExited) {
+            $LauncherProcess.Kill()
+        }
+    } catch [InvalidOperationException] {
+        if (-not $LauncherProcess.HasExited) { throw }
     }
-    $expectedCommandFragment = [IO.Path]::GetFullPath($JarPath)
-    $backendProcesses = @(
-        Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
-            Where-Object {
-                $_.CommandLine -and
-                $_.CommandLine.IndexOf(
-                    $expectedCommandFragment,
-                    [StringComparison]::OrdinalIgnoreCase
-                ) -ge 0
-            }
+    try {
+        if (
+            -not $LauncherProcess.HasExited -and
+            -not $LauncherProcess.WaitForExit(10000)
+        ) {
+            throw "$Name E2E process did not stop"
+        }
+        $LauncherProcess.WaitForExit()
+    } finally {
+        $LauncherProcess.Dispose()
+    }
+}
+
+function Invoke-CleanupStep {
+    param(
+        [Parameter(Mandatory = $true)] [string] $Name,
+        [Parameter(Mandatory = $true)] [scriptblock] $Action,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]] $Errors
     )
-    foreach ($process in $backendProcesses) {
-        Stop-Process -Id $process.ProcessId -Force
+    try {
+        & $Action
+    } catch {
+        $message = "$Name`: $($_.Exception.Message)"
+        $Errors.Add($message)
+        Write-Warning $message
     }
-    for ($attempt = 1; $attempt -le 20; $attempt += 1) {
-        $remaining = @(
-            Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
-                Where-Object {
-                    $_.CommandLine -and
-                    $_.CommandLine.IndexOf(
-                        $expectedCommandFragment,
-                        [StringComparison]::OrdinalIgnoreCase
-                    ) -ge 0
-                }
+}
+
+if ($RunLifecycleProbe) {
+    $probeErrors = [System.Collections.Generic.List[string]]::new()
+    $probeState = [pscustomobject]@{ CleanupContinued = $false }
+    Invoke-CleanupStep "injected cleanup failure" {
+        throw "injected lifecycle probe failure"
+    } $probeErrors
+    Invoke-CleanupStep "cleanup continuation" {
+        $probeState.CleanupContinued = $true
+    } $probeErrors
+    if (-not $probeState.CleanupContinued -or $probeErrors.Count -ne 1) {
+        throw "Lifecycle cleanup continuation probe failed"
+    }
+
+    $probeRoot = Join-Path (
+        Join-Path $repositoryRoot "_tmp"
+    ) ("web-e2e-lifecycle-probe-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Force -Path $probeRoot | Out-Null
+    $probeProcess = $null
+    try {
+        $probeProcess = Start-Process `
+            -FilePath "powershell.exe" `
+            -ArgumentList @("-NoProfile", "-Command", "Start-Sleep -Seconds 30") `
+            -WindowStyle Hidden `
+            -RedirectStandardOutput (Join-Path $probeRoot "probe.log") `
+            -RedirectStandardError (Join-Path $probeRoot "probe-error.log") `
+            -PassThru
+        $probeProcessId = $probeProcess.Id
+        Stop-OwnedProcess $probeProcess "Probe"
+        $probeProcess = $null
+        if (Get-Process -Id $probeProcessId -ErrorAction SilentlyContinue) {
+            throw "Lifecycle owned-process probe left a process running"
+        }
+    } finally {
+        if ($null -ne $probeProcess) {
+            Stop-OwnedProcess $probeProcess "Probe"
+        }
+        Remove-SafeRuntimeDirectory $probeRoot (
+            Join-Path $repositoryRoot "_tmp"
         )
-        if ($remaining.Count -eq 0) { return }
-        Start-Sleep -Milliseconds 500
     }
-    throw "Backend E2E process did not stop"
+    Write-Output (
+        "LIFECYCLE_PROBE=PASS cleanup_continued=true " +
+        "owned_process_stopped=true"
+    )
+    exit 0
 }
 
 Push-Location $repositoryRoot
 $backendJar = Join-Path $repositoryRoot "backend\target\agriinsight-backend-0.1.0-SNAPSHOT.jar"
+$javaExecutable = Resolve-JavaExecutable
+$previousPythonPath = $env:PYTHONPATH
+$runError = $null
+$cleanupErrors = [System.Collections.Generic.List[string]]::new()
 try {
+    $runnerMutex = [Threading.Mutex]::new($false, $runnerMutexName)
+    try {
+        $runnerMutexHeld = $runnerMutex.WaitOne(0)
+    } catch [Threading.AbandonedMutexException] {
+        $runnerMutexHeld = $true
+    }
+    if (-not $runnerMutexHeld) {
+        throw "Another AgriInsight web E2E runner already owns the workspace"
+    }
+
     Invoke-Checked "powershell" @(
         "-ExecutionPolicy", "Bypass", "-File", "scripts/check-workspace-disk.ps1"
     ) "Workspace disk guard failed before web E2E"
@@ -176,6 +302,8 @@ try {
         throw "Web E2E requires npm 11.6.2"
     }
     Invoke-Checked "docker" @("info") "Docker daemon is required for web E2E"
+    Assert-TcpPortAvailable 58081
+    Assert-TcpPortAvailable 58082
 
     $operatorPassword = New-HexSecret
     $backendMigratorPassword = New-HexSecret
@@ -253,7 +381,9 @@ try {
     )
     New-Item -ItemType Directory -Force -Path (
         Join-Path $artifactRuntimeRoot "npm-cache"
-    ), (Join-Path $artifactRuntimeRoot "temp"), $postgresRuntimeRoot | Out-Null
+    ), (
+        Join-Path $artifactRuntimeRoot "temp"
+    ), $mavenRepositoryRoot, $postgresRuntimeRoot | Out-Null
     $env:npm_config_cache = Join-Path $artifactRuntimeRoot "npm-cache"
     $env:TEMP = Join-Path $artifactRuntimeRoot "temp"
     $env:TMP = $env:TEMP
@@ -272,6 +402,7 @@ try {
         Invoke-Checked "npm" @("--prefix", "web", "run", "lint") "Web lint failed"
         Invoke-Checked "npm" @("--prefix", "web", "run", "build") "Web build failed"
         Invoke-Checked "mvn" @(
+            "-Dmaven.repo.local=$mavenRepositoryRoot",
             "-q", "-f", "backend/pom.xml", "-DskipTests", "package"
         ) "Backend package build failed"
     } else {
@@ -318,6 +449,19 @@ try {
         "-DatabasePort", "55443",
         "-OutputDirectory", "_tmp/web-e2e/demo-bootstrap"
     ) "Guarded demo bootstrap or reconciliation failed"
+    $demoContract = Get-Content -LiteralPath (
+        Join-Path $repositoryRoot "deploy\demo\demo-tenant.json"
+    ) -Raw | ConvertFrom-Json
+    $env:AGRIINSIGHT_ANALYTICS_ARTIFACT_ROOT = Join-Path (
+        $repositoryRoot
+    ) "artifacts\big-data"
+    $env:AGRIINSIGHT_ANALYTICS_DEMO_TENANT_ID = [string]$demoContract.tenant.id
+    $env:AGRIINSIGHT_ANALYTICS_RECONCILIATION_REPORT = Join-Path (
+        $temporaryRuntimeRoot
+    ) "demo-bootstrap\reconciliation.json"
+    $env:AGRIINSIGHT_ANALYTICS_SPRING_BASE_URL = "http://127.0.0.1:58081"
+    $env:AGRIINSIGHT_ANALYTICS_BIND_HOST = "127.0.0.1"
+    $env:AGRIINSIGHT_ANALYTICS_PORT = "58082"
 
     $env:PGPASSWORD = $operatorPassword
     Invoke-Checked "psql" @(
@@ -362,7 +506,7 @@ try {
     $env:SERVER_PORT = "58081"
     $env:AGRIINSIGHT_SERVER_ADDRESS = "127.0.0.1"
     $backendProcess = Start-Process `
-        -FilePath "java" `
+        -FilePath $javaExecutable `
         -ArgumentList @("-jar", $backendJar) `
         -WorkingDirectory (Join-Path $repositoryRoot "backend") `
         -WindowStyle Hidden `
@@ -371,7 +515,10 @@ try {
         -PassThru
     Write-Output "BACKEND_HOST_START jar=$backendJar port=58081"
     try {
-        Wait-HttpReady "http://127.0.0.1:58081/actuator/health/readiness"
+        Wait-OwnedHttpProcessReady `
+            "http://127.0.0.1:58081/actuator/health/readiness" `
+            $backendProcess `
+            58081
     } catch {
         if (Test-Path -LiteralPath $backendLogPath) {
             Write-Output "--- backend.log (tail) ---"
@@ -384,36 +531,128 @@ try {
         }
         throw
     }
+    Write-Output "BACKEND_HOST_READY port=58081"
+    $sourcePath = Join-Path $repositoryRoot "src"
+    if ([string]::IsNullOrWhiteSpace($previousPythonPath)) {
+        $env:PYTHONPATH = $sourcePath
+    } else {
+        $env:PYTHONPATH = (
+            $sourcePath + [IO.Path]::PathSeparator + $previousPythonPath
+        )
+    }
+    $analyticsProcess = Start-Process `
+        -FilePath "python" `
+        -ArgumentList @("-m", "agriinsight.analytics_api") `
+        -WorkingDirectory $repositoryRoot `
+        -WindowStyle Hidden `
+        -RedirectStandardOutput $analyticsLogPath `
+        -RedirectStandardError (
+            Join-Path $artifactRuntimeRoot "analytics-error.log"
+        ) `
+        -PassThru
+    Write-Output "ANALYTICS_HOST_START module=agriinsight.analytics_api port=58082"
+    try {
+        Wait-OwnedHttpProcessReady `
+            "http://127.0.0.1:58082/health/ready" `
+            $analyticsProcess `
+            58082
+    } catch {
+        if (Test-Path -LiteralPath $analyticsLogPath) {
+            Write-Output "--- analytics.log (tail) ---"
+            Get-Content -LiteralPath $analyticsLogPath -Tail 120
+        }
+        $analyticsErrorPath = Join-Path $artifactRuntimeRoot "analytics-error.log"
+        if (Test-Path -LiteralPath $analyticsErrorPath) {
+            Write-Output "--- analytics-error.log (tail) ---"
+            Get-Content -LiteralPath $analyticsErrorPath -Tail 120
+        }
+        throw
+    }
+    Write-Output "ANALYTICS_HOST_READY port=58082"
     Write-Output "PLAYWRIGHT_E2E_START base_url=http://localhost:3100"
-    Invoke-Checked "npm" @("--prefix", "web", "run", "test:e2e") (
-        "Real Keycloak/PostgreSQL/Spring/Chrome web E2E failed"
-    )
+    try {
+        Invoke-Checked "npm" @("--prefix", "web", "run", "test:e2e") (
+            "Real Keycloak/PostgreSQL/Spring/Chrome web E2E failed"
+        )
+    } catch {
+        foreach ($logPath in @(
+            $analyticsLogPath,
+            (Join-Path $artifactRuntimeRoot "analytics-error.log"),
+            $backendLogPath,
+            (Join-Path $artifactRuntimeRoot "backend-error.log")
+        )) {
+            if (Test-Path -LiteralPath $logPath) {
+                Write-Output "--- $(Split-Path -Leaf $logPath) (tail) ---"
+                Get-Content -LiteralPath $logPath -Tail 120
+            }
+        }
+        throw
+    }
     Write-Output "PLAYWRIGHT_E2E=PASS"
 
     Invoke-Checked "powershell" @(
         "-ExecutionPolicy", "Bypass", "-File", "scripts/check-workspace-disk.ps1"
     ) "Workspace disk guard failed after web E2E"
-    Write-Output (
-        "WEB_PLATFORM_E2E=PASS issuer=keycloak identity=spring-/me " +
-        "session=postgres browser=chrome"
-    )
+} catch {
+    $runError = $_
 } finally {
-    Stop-BackendProcess $backendJar $backendProcess
-    if ($composeEnvironmentReady) {
-        try {
-            Invoke-Compose @(
-                "--profile", "backend", "down", "--remove-orphans"
-            ) "Web E2E cleanup failed"
-        } catch {
-            Write-Warning $_
+    if ($runnerMutexHeld) {
+        Invoke-CleanupStep "analytics process cleanup" {
+            Stop-OwnedProcess $analyticsProcess "Analytics"
+        } $cleanupErrors
+        Invoke-CleanupStep "backend process cleanup" {
+            Stop-OwnedProcess $backendProcess "Backend"
+        } $cleanupErrors
+        Invoke-CleanupStep "Python path restoration" {
+            $env:PYTHONPATH = $previousPythonPath
+        } $cleanupErrors
+        if ($composeEnvironmentReady) {
+            Invoke-CleanupStep "Compose cleanup" {
+                Invoke-Compose @(
+                    "--profile", "backend", "down", "--remove-orphans"
+                ) "Web E2E cleanup failed"
+                Assert-E2eProjectStopped
+            } $cleanupErrors
         }
-        Assert-E2eProjectStopped
+        Invoke-CleanupStep "artifact runtime cleanup" {
+            Assert-E2eProjectStopped
+            Remove-SafeRuntimeDirectory $artifactRuntimeRoot (
+                Join-Path $repositoryRoot "artifacts\_tmp"
+            )
+        } $cleanupErrors
+        Invoke-CleanupStep "temporary runtime cleanup" {
+            Assert-E2eProjectStopped
+            Remove-SafeRuntimeDirectory $temporaryRuntimeRoot (
+                Join-Path $repositoryRoot "_tmp"
+            )
+        } $cleanupErrors
     }
-    Remove-SafeRuntimeDirectory $artifactRuntimeRoot (
-        Join-Path $repositoryRoot "artifacts\_tmp"
-    )
-    Remove-SafeRuntimeDirectory $temporaryRuntimeRoot (
-        Join-Path $repositoryRoot "_tmp"
-    )
-    Pop-Location
+    Invoke-CleanupStep "location restoration" {
+        Pop-Location
+    } $cleanupErrors
+    Invoke-CleanupStep "runner mutex cleanup" {
+        if ($runnerMutexHeld) {
+            $runnerMutex.ReleaseMutex()
+            $runnerMutexHeld = $false
+        }
+        if ($null -ne $runnerMutex) {
+            $runnerMutex.Dispose()
+        }
+    } $cleanupErrors
 }
+if ($null -ne $runError) {
+    if ($cleanupErrors.Count -gt 0) {
+        Write-Warning (
+            "Web E2E failed and cleanup also reported: " +
+            ($cleanupErrors -join "; ")
+        )
+    }
+    throw $runError
+}
+if ($cleanupErrors.Count -gt 0) {
+    throw "Web E2E cleanup failed: $($cleanupErrors -join '; ')"
+}
+Write-Output (
+    "WEB_PLATFORM_E2E=PASS issuer=keycloak identity=spring-/me " +
+    "session=postgres browser=chrome"
+)

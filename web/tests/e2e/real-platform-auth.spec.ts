@@ -75,7 +75,11 @@ test("real Keycloak, Spring /me and PostgreSQL keep browser auth opaque", async 
     await expect(
       page.getByRole("heading", { name: "Điểm cần xem xét" })
     ).toBeVisible();
-    await expect(page.getByText("AGRIINSIGHT_DEMO")).toBeVisible();
+    await expect(
+      page
+        .getByRole("complementary", { name: "Điều hướng chính" })
+        .getByText("AGRIINSIGHT_DEMO", { exact: true })
+    ).toBeVisible();
 
     const cookies = await context.cookies();
     const sessionCookie = cookies.find(
@@ -149,6 +153,14 @@ test("real Keycloak, Spring /me and PostgreSQL keep browser auth opaque", async 
     expect(audiences).toContain("agriinsight-api");
     expect(claims.token_use).toBe("access");
 
+    const sessionTotalsBeforeReplay = await pool.query<{
+      active_count: string;
+      total_count: string;
+    }>(
+      `SELECT count(*)::text AS total_count,
+              count(*) FILTER (WHERE revoked_at IS NULL)::text AS active_count
+       FROM agriinsight_web.sessions`
+    );
     expect(callbackUrl).toBeDefined();
     const replay = await page.request.get(callbackUrl!, { maxRedirects: 0 });
     expect(replay.status()).toBe(400);
@@ -157,10 +169,7 @@ test("real Keycloak, Spring /me and PostgreSQL keep browser auth opaque", async 
               count(*) FILTER (WHERE revoked_at IS NULL)::text AS active_count
        FROM agriinsight_web.sessions`
     );
-    expect(afterReplay.rows[0]).toEqual({
-      active_count: "1",
-      total_count: "1"
-    });
+    expect(afterReplay.rows[0]).toEqual(sessionTotalsBeforeReplay.rows[0]);
 
     const nonceStart = await page.request.get(
       "/api/auth/login?returnTo=/overview",
