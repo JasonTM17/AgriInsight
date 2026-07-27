@@ -23,6 +23,7 @@ export type NavigationItem = Readonly<{
   description: string;
   href: string;
   icon: NavigationIconName;
+  forbiddenRoles?: readonly string[];
   requiredPermissions: readonly string[];
   requiredRoles?: readonly string[];
 }>;
@@ -90,8 +91,9 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     key: "administration",
     label: NAVIGATION_LABELS.administration,
     description: NAVIGATION_DESCRIPTIONS.administration,
-    href: "/protected?module=administration",
+    href: "/admin",
     icon: "users",
+    forbiddenRoles: ["SUPPLIER"],
     requiredPermissions: ["IDENTITY_USER_MANAGE", "IDENTITY_ROLE_MANAGE"]
   }
 };
@@ -112,6 +114,15 @@ function hasAnyRole(
   return roles !== undefined && requiredRoles.some((role) => roles.has(role));
 }
 
+function hasForbiddenRole(
+  roles: ReadonlySet<string> | undefined,
+  forbiddenRoles: readonly string[] | undefined
+): boolean {
+  return roles !== undefined
+    && forbiddenRoles !== undefined
+    && forbiddenRoles.some((role) => roles.has(role));
+}
+
 export function getVisibleNavigation(
   permissions:
     | ReadonlySet<string>
@@ -122,6 +133,7 @@ export function getVisibleNavigation(
   return NAVIGATION_ORDER
     .map((key) => NAVIGATION_DEFINITIONS[key])
     .filter((item) => hasAnyPermission(permissionSet, item.requiredPermissions))
+    .filter((item) => !hasForbiddenRole(roles, item.forbiddenRoles))
     .filter((item) => hasAnyRole(roles, item.requiredRoles));
 }
 
@@ -143,6 +155,9 @@ export function getActiveNavigationKey(
   }
   if (pathname === "/data-quality" || pathname.startsWith("/data-quality/")) {
     return "dataQuality";
+  }
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return "administration";
   }
   if (pathname !== "/protected") return "overview";
   const moduleKey = searchParams instanceof URLSearchParams

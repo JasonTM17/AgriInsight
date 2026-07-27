@@ -124,6 +124,7 @@ export async function loadAdminAudit(
         : humanizeCode(entry.actorType),
       at: entry.occurredAt,
       correlationId: entry.correlationId ?? null,
+      eventKey: entry.id,
       outcome: entry.outcome,
       reasonLabel: entry.reasonCode ? humanizeCode(entry.reasonCode) : null,
       targetLabel: entry.targetId

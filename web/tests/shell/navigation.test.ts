@@ -42,6 +42,8 @@ describe("Field Ledger permission navigation", () => {
     expect(getActiveNavigationKey("/inventory")).toBe("inventory");
     expect(getActiveNavigationKey("/crop-health/FIELD-001")).toBe("cropHealth");
     expect(getActiveNavigationKey("/data-quality")).toBe("dataQuality");
+    expect(getActiveNavigationKey("/admin")).toBe("administration");
+    expect(getActiveNavigationKey("/admin/users/3eb92f10-60dd-45cb-9160-7c569c3258b4")).toBe("administration");
     expect(getActiveNavigationKey("/protected", { module: "data-quality" })).toBe("dataQuality");
     expect(getActiveNavigationKey("/protected", { module: "not-a-module" })).toBe("overview");
     expect(getActiveNavigationKey("/platform/farms")).toBe("overview");
@@ -61,5 +63,19 @@ describe("Field Ledger permission navigation", () => {
     ).find((item) => item.key === "inventory");
 
     expect(inventory?.href).toBe("/inventory");
+  });
+
+  it("links administration directly and denies supplier navigation", () => {
+    const administrator = getVisibleNavigation({
+      permissions: new Set(["IDENTITY_USER_MANAGE"]),
+      roles: new Set(["TENANT_ADMIN"])
+    }).find((item) => item.key === "administration");
+    const supplier = getVisibleNavigation({
+      permissions: new Set(["IDENTITY_USER_MANAGE"]),
+      roles: new Set(["SUPPLIER"])
+    }).find((item) => item.key === "administration");
+
+    expect(administrator?.href).toBe("/admin");
+    expect(supplier).toBeUndefined();
   });
 });

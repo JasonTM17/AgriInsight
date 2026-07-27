@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  AdminReadError,
   getAdminUser,
   getAdminUserPage
 } from "@/features/admin/admin-resource-client";
@@ -73,7 +72,7 @@ describe("tenant administration resource client", () => {
 
     await expect(
       getAdminUser(context, "21000000-0000-4000-8000-000000000002")
-    ).rejects.toMatchObject<Partial<AdminReadError>>({ kind });
+    ).rejects.toMatchObject({ kind });
   });
 
   it("requires a strong ETag on the subject detail", async () => {
@@ -88,7 +87,7 @@ describe("tenant administration resource client", () => {
 
     await expect(
       getAdminUser(context, "21000000-0000-4000-8000-000000000002")
-    ).rejects.toMatchObject<Partial<AdminReadError>>({
+    ).rejects.toMatchObject({
       kind: "unavailable",
       status: 502
     });
