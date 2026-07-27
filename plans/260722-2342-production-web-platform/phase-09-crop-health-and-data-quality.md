@@ -1,7 +1,7 @@
 ---
 phase: 9
 title: "crop-health-and-data-quality"
-status: pending
+status: in_progress
 priority: P1
 effort: "3d"
 dependencies: [2, 3, 4]
@@ -152,6 +152,22 @@ npm --prefix web run test
 - [ ] No copy, tests, or UI labels mention realtime, live sensors, prediction, or ML.
 - [ ] Big-data run still renders both routes without disk-guard breach or unacceptable empty-state regressions.
 - [ ] Permission-denied behavior is explicit and consistent with the protected app shell.
+
+## Implementation checkpoint — 2026-07-27
+
+- Implemented: Phase 2 contract amendment for `field_code` detail scope and
+  `assessmentMethod`; generated OpenAPI/types remain drift-free.
+- Implemented: server-only loaders, strict Zod envelopes, Vietnamese routes,
+  role/permission gating, AppShell navigation, loading/error states, evidence
+  tables, lineage display, and permanent Crop Health image warning.
+- Verified: 261 web tests pass with 9 intentional skips; focused component,
+  navigation, and Phase 2 contract tests pass; typecheck, zero-warning lint,
+  contract drift, Python analytics endpoint/OpenAPI tests, and Next production
+  build pass.
+- Pending: guarded real-browser route gate and big-data smoke. The repository
+  disk guard currently fails before browser startup because C: has 2.798 GiB
+  free (fail threshold 8 GiB); D: has 20.711 GiB (warning, fail threshold 20
+  GiB). No disk threshold override was used.
 
 ## Risks And Rollback
 

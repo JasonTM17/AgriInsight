@@ -123,7 +123,7 @@ created: 2026-07-22T00:00:00.000Z
 | 6 | [work-operations](./phase-06-work-operations.md) | Completed locally 2026-07-26 |
 | 7 | [inventory-control](./phase-07-inventory-control.md) | Completed locally 2026-07-27 |
 | 8 | [cost-analysis](./phase-08-cost-analysis.md) | Completed locally 2026-07-27 |
-| 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | Pending |
+| 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | In progress — static gates pass; browser gate blocked by C: disk floor |
 | 10 | [tenant-administration](./phase-10-tenant-administration.md) | Pending |
 | 11 | [browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md) | Pending |
 | 12 | [container-release-and-docs](./phase-12-container-release-and-docs.md) | Pending |
@@ -249,6 +249,15 @@ Execution is sequential by default because generated contracts, the route regist
   both `@costs` scenarios. The runner preserved the default disk policy and
   cleaned all owned services before `WEB_PLATFORM_E2E=PASS`. Phase 9 Crop
   Health and Data Quality is next.
+- 2026-07-27: Phase 9 Crop Health/Data Quality implementation checkpoint. Phase
+  2 contracts, strict server loaders, Vietnamese routes, permission-aware
+  navigation, lineage/taxonomy display, permanent demo-image warning, and
+  component/E2E coverage are committed through `71a6282`; 261 web tests,
+  typecheck, lint, contract drift, focused Python analytics tests, and Next
+  build pass. Guarded browser/big-data gates remain open because the default
+  disk guard observes C: 2.798 GiB free (fail below 8 GiB) and D: 20.711 GiB
+  free (warn below 25 GiB). No threshold override or destructive project-data
+  cleanup was used.
 - 2026-07-27: Phase 7 Inventory Control accepted locally. Final tree passed contract drift, typecheck, zero-warning lint, production build, 79 focused inventory tests, 211 full web tests with 9 intentional skips, and 8/8 real Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome scenarios with `WEB_PLATFORM_E2E=PASS`. Runtime review closed CSP-blocked inline ABC widths, a Docker Desktop cold-start race with an authenticated PostgreSQL TCP probe, and Windows `psql` seed corruption by pinning and restoring UTF-8 client encoding. The confirming run used default C/D disk policy. Phase 8 Cost Analysis is next.
 - 2026-07-26: Phase 6 remediation accepted. The remediation review's NO-GO findings are closed: demo reseed now keeps assignment revocation authoritative (no un-revoke; `ON CONFLICT DO NOTHING` plus fail-closed identity guard) and is proven on real PostgreSQL by the new seed→revoke→reseed probe (`DEMO_ASSIGNMENT_REVOCATION=PASS preserved=1 active=0 history=1`); both Work POST handlers gained the full negative matrix (invalid Host, missing/mismatched CSRF, malformed JSON, oversized streamed body). A full static invocation passed clean npm ci, contract drift, typecheck, zero-warning lint, Next production build, and 127 web tests with 9 intentional skips (31 focused Work); after the lifecycle harness was corrected, the final runtime rerun passed Python demo 13/13, 9/9 PostgreSQL privilege tests, and 6/6 installed-Chrome scenarios with `WEB_PLATFORM_E2E=PASS`. Phase 7 Inventory Control is next.
 - 2026-07-26: Phase 5 accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; final unified runner passed clean npm ci, contract drift, TypeScript, zero-warning ESLint, Next 16 production build, Maven package (tests skipped by gate), 9/9 PostgreSQL privilege tests, 82 web tests with 9 intentional skips, production dependency audit with 0 vulnerabilities at the configured threshold, and 3/3 installed-Chrome scenarios. Cleanup completed before the global PASS marker. Phase 6 Work Operations is next.
