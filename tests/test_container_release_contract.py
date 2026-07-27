@@ -133,7 +133,7 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
         assert f"- name: {name}" in workflow
     assert "${{ secrets.DOCKERHUB_USERNAME }}" in workflow
     assert "${{ secrets.DOCKERHUB_TOKEN }}" in workflow
-    assert "${{ secrets.GITHUB_TOKEN }}" in workflow
+    assert "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" in workflow
     assert "provenance: mode=max" in workflow
     assert "sbom: true" in workflow
     assert "Scan the exact published digest" in workflow

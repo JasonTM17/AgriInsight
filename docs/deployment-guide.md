@@ -349,6 +349,12 @@ environment, reviewers, `DOCKERHUB_USERNAME`, and `DOCKERHUB_TOKEN` are
 configured and an exact tag is approved. See the
 [repository-owner handoff](../plans/260722-2342-production-web-platform/reports/github-social-preview-owner-handoff.md).
 
+The default GHCR path uses the workflow `GITHUB_TOKEN` and requires each
+container package to be linked to this repository. If a legacy user-scoped
+package is intentionally retained but not linked, provide a narrowly scoped
+`GHCR_TOKEN` as an environment secret; it is a compatibility fallback, never a
+repository secret or image build argument.
+
 ## Production blockers
 
 - Protected tag-triggered production release environment, secrets, reviewers, and promotion approval
