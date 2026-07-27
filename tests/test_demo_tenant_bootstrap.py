@@ -11,7 +11,6 @@ from agriinsight.demo_tenant_bootstrap import (
 )
 from agriinsight.demo_tenant_contract import load_demo_contract
 from agriinsight.demo_tenant_sample_sql import (
-    ACTIVITY_TYPES,
     FIELD_WORKER_EMPLOYEE_CODE,
     WORK_ASSIGNMENT_LIMIT,
     select_activity_samples,
