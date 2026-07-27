@@ -10,6 +10,10 @@ permissions:
   packages: write
   id-token: write
 
+concurrency:
+  group: release-images
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publish ${{ matrix.name }}
@@ -17,6 +21,7 @@ jobs:
     environment: release-images
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - name: python
@@ -25,6 +30,12 @@ jobs:
           - name: backend
             context: ./backend
             file: ./backend/Dockerfile
+          - name: web
+            context: .
+            file: ./deploy/docker/web.Dockerfile
+          - name: analytics-api
+            context: .
+            file: ./deploy/docker/analytics-api.Dockerfile
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -48,19 +59,6 @@ jobs:
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Authenticate to Docker Hub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Authenticate to GitHub Container Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Derive immutable tags and OCI labels
         id: metadata
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
@@ -75,6 +73,50 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.refs.outputs.version }}
+
+      - name: Build the local release candidate
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: agriinsight-${{ matrix.name }}:release-candidate-${{ github.sha }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          build-args: |
+            OCI_SOURCE=${{ github.server_url }}/${{ github.repository }}
+            OCI_REVISION=${{ github.sha }}
+            OCI_VERSION=${{ steps.refs.outputs.version }}
+
+      - name: Scan the candidate before registry authentication
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: agriinsight-${{ matrix.name }}:release-candidate-${{ github.sha }}
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Smoke-test the local candidate as non-root and read-only
+        shell: pwsh
+        run: >-
+          ./scripts/smoke-image-digest.ps1
+          -Image 'agriinsight-${{ matrix.name }}:release-candidate-${{ github.sha }}'
+          -Kind '${{ matrix.name }}'
+
+      - name: Authenticate to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Authenticate to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build, attest, and publish
         id: build
@@ -93,6 +135,19 @@ jobs:
           provenance: mode=max
           sbom: true
 
+      - name: Verify published provenance and SBOM attestations
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE: ${{ steps.refs.outputs.ghcr }}
+        run: |
+          set -euo pipefail
+          provenance="$(docker buildx imagetools inspect "$IMAGE@$DIGEST" --format '{{json .Provenance}}')"
+          sbom="$(docker buildx imagetools inspect "$IMAGE@$DIGEST" --format '{{json .SBOM}}')"
+          test -n "$provenance"
+          test "$provenance" != "null"
+          test -n "$sbom"
+          test "$sbom" != "null"
+
       - name: Scan the exact published digest
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -102,13 +157,12 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
-      - name: Smoke-test exact Python digest
-        if: matrix.name == 'python'
-        run: docker run --rm --entrypoint python "${{ steps.refs.outputs.ghcr }}@${{ steps.build.outputs.digest }}" -c "import agriinsight; print('agriinsight-python-ok')"
-
-      - name: Smoke-test exact backend digest
-        if: matrix.name == 'backend'
-        run: docker run --rm --entrypoint /bin/sh "${{ steps.refs.outputs.ghcr }}@${{ steps.build.outputs.digest }}" -ec 'test -s /app/app.jar && java -version'
+      - name: Smoke-test the exact published digest
+        shell: pwsh
+        run: >-
+          ./scripts/smoke-image-digest.ps1
+          -Image '${{ steps.refs.outputs.ghcr }}@${{ steps.build.outputs.digest }}'
+          -Kind '${{ matrix.name }}'
 
       - name: Verify both registry tags resolve to the returned digest
         env:

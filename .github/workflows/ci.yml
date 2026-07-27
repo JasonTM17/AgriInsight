@@ -158,6 +158,16 @@ jobs:
             file: ./backend/Dockerfile
             tag: agriinsight-backend:ci
             version: 0.1.0-ci
+          - name: web
+            context: .
+            file: ./deploy/docker/web.Dockerfile
+            tag: agriinsight-web:ci
+            version: 0.1.0-ci
+          - name: analytics-api
+            context: .
+            file: ./deploy/docker/analytics-api.Dockerfile
+            tag: agriinsight-analytics-api:ci
+            version: 0.2.0-ci
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -179,9 +189,6 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: "1"
-      - name: Smoke-test Python image
-        if: matrix.name == 'python'
-        run: docker run --rm --entrypoint python ${{ matrix.tag }} -c "import agriinsight; print('agriinsight-python-ok')"
-      - name: Smoke-test backend image
-        if: matrix.name == 'backend'
-        run: docker run --rm --entrypoint /bin/sh ${{ matrix.tag }} -ec 'test -s /app/app.jar && java -version'
+      - name: Smoke-test non-root image with a read-only root filesystem
+        shell: pwsh
+        run: ./scripts/smoke-image-digest.ps1 -Image '${{ matrix.tag }}' -Kind '${{ matrix.name }}'

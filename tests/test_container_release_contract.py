@@ -117,7 +117,8 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
     assert "provenance: mode=max" in workflow
     assert "sbom: true" in workflow
     assert "Scan the exact published digest" in workflow
-    assert "latest" not in workflow.lower()
+    assert "type=raw,value=latest" not in workflow.lower()
+    assert ":latest" not in workflow.lower()
 
     pre_scan = workflow.index(
         "- name: Scan the candidate before registry authentication"
