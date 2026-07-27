@@ -19,12 +19,29 @@ $screensOut = Join-Path $repositoryRoot $OutputRoot
 $gifOut = Join-Path $repositoryRoot $GifPath
 
 function Resolve-Magick {
+    if ($env:AGRIINSIGHT_MAGICK_PATH) {
+        if (-not (Test-Path -LiteralPath $env:AGRIINSIGHT_MAGICK_PATH)) {
+            throw "AGRIINSIGHT_MAGICK_PATH does not exist: $($env:AGRIINSIGHT_MAGICK_PATH)"
+        }
+        return $env:AGRIINSIGHT_MAGICK_PATH
+    }
     $command = Get-Command "magick" -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
-    $fallback = Get-ChildItem "C:\Program Files" -Filter "magick.exe" -Recurse `
-        -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($fallback) { return $fallback.FullName }
-    throw "ImageMagick (magick.exe) is required to build documentation media"
+    # Bounded probe of the default installer layout. A recursive sweep of
+    # Program Files can take minutes, so only the one directory level is checked.
+    foreach ($base in @("$env:ProgramFiles", "${env:ProgramFiles(x86)}")) {
+        if (-not $base -or -not (Test-Path -LiteralPath $base)) { continue }
+        $candidate = Get-ChildItem -LiteralPath $base -Directory `
+            -Filter "ImageMagick*" -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName "magick.exe" } |
+            Where-Object { Test-Path -LiteralPath $_ } |
+            Select-Object -First 1
+        if ($candidate) { return $candidate }
+    }
+    throw (
+        "ImageMagick (magick.exe) is required to build documentation media. " +
+        "Install it or set AGRIINSIGHT_MAGICK_PATH."
+    )
 }
 
 $magick = Resolve-Magick

@@ -27,8 +27,17 @@ async function login(page: Page, userEnv: string, passwordEnv: string, returnTo:
  * This refuses to capture an empty, denied, loading or error surface, so a bad
  * frame fails the run instead of landing in the README.
  */
-async function expectPopulated(page: Page, heading: RegExp) {
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(heading);
+async function expectPopulated(page: Page, heading?: string) {
+  const title = page.getByRole("heading", { level: 1 }).first();
+  await expect(title).toBeVisible();
+  if (heading) {
+    await expect(title).toContainText(heading);
+  }
+  // A one-character heading would satisfy a loose matcher while the page is
+  // still a shell, so require real text before anything is photographed.
+  await expect
+    .poll(async () => (await title.innerText()).trim().length)
+    .toBeGreaterThan(2);
   const body = page.locator("body");
   await expect(body).not.toContainText(/không có quyền|Liên kết .* không hợp lệ/i);
   await expect(body).not.toContainText(/Đang tải|Chưa có dữ liệu/i);
@@ -64,18 +73,18 @@ test("@capture executive intelligence surfaces", async ({ page }) => {
   );
 
   await expect(page).toHaveURL(/\/overview$/);
-  await expectPopulated(page, /./);
+  await expectPopulated(page);
   await shoot(page, "01-overview");
 
   await page.goto("/farms");
-  await expectPopulated(page, /./);
+  await expectPopulated(page);
   await shoot(page, "02-farms");
 
   const firstFarm = page.locator('main a[href^="/farms/"]').first();
   await expect(firstFarm).toBeVisible();
   await firstFarm.click();
   await expect(page).toHaveURL(/\/farms\/[0-9a-f-]{36}/);
-  await expectPopulated(page, /./);
+  await expectPopulated(page);
   await shoot(page, "03-farm-detail");
 });
 
@@ -91,7 +100,7 @@ test("@capture warehouse inventory control", async ({ page }) => {
   await expect(page).toHaveURL(/\/inventory\?warehouseId=[0-9a-f-]{36}$/);
   await expect(page.getByTestId("inventory-control-page")).toBeVisible();
   await expect(page.getByTestId("inventory-balance-table")).toBeVisible();
-  await expectPopulated(page, /Kiểm soát tồn kho/);
+  await expectPopulated(page, "Kiểm soát tồn kho");
   await shoot(page, "04-inventory-control");
 
   await page.setViewportSize(MOBILE);
@@ -127,17 +136,17 @@ test("@capture navigation tour frames", async ({ page }) => {
     "/overview"
   );
 
-  await expectPopulated(page, /./);
+  await expectPopulated(page);
   await frame(page, 1);
 
   await page.goto("/farms");
-  await expectPopulated(page, /./);
+  await expectPopulated(page);
   await frame(page, 2);
 
   const firstFarm = page.locator('main a[href^="/farms/"]').first();
   await firstFarm.click();
   await expect(page).toHaveURL(/\/farms\/[0-9a-f-]{36}/);
-  await expectPopulated(page, /./);
+  await expectPopulated(page);
   await frame(page, 3);
   await page.mouse.wheel(0, 700);
   await page.waitForTimeout(400);
