@@ -1,0 +1,98 @@
+services:
+  kafka:
+    profiles: ["realtime"]
+    image: apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837
+    hostname: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_LISTENERS: CONTROLLER://:29093,INTERNAL://:19092,HOST://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,HOST://localhost:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_HEAP_OPTS: -Xms384m -Xmx384m
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+    ports:
+      - "127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}:9094"
+    volumes:
+      - ./backend/.runtime/kafka:/tmp/kraft-combined-logs
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:19092 --list >/dev/null 2>&1
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  realtime-role-password:
+    profiles: ["realtime"]
+    image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+    environment:
+      PGDATABASE: agriinsight
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${AGRIINSIGHT_POSTGRES_OPERATOR_PASSWORD:?set operator password}
+      AGRIINSIGHT_DB_REALTIME_PASSWORD: ${AGRIINSIGHT_DB_REALTIME_PASSWORD:?set realtime password}
+    volumes:
+      - ./backend/ops/postgres:/ops:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        psql -v ON_ERROR_STOP=1 \
+          -v realtime_password="$${AGRIINSIGHT_DB_REALTIME_PASSWORD}" \
+          -f /ops/configure-local-realtime-role-password.sql
+    depends_on:
+      backend-role-bootstrap:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  realtime-worker:
+    profiles: ["realtime"]
+    build:
+      context: ./backend
+      args:
+        OCI_REVISION: ${AGRIINSIGHT_IMAGE_REVISION:-local}
+        OCI_VERSION: ${AGRIINSIGHT_BACKEND_VERSION:-0.1.0-local}
+    environment:
+      SPRING_MAIN_WEB_APPLICATION_TYPE: none
+      AGRIINSIGHT_IDENTITY_ENABLED: "false"
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight
+      AGRIINSIGHT_DB_RUNTIME_USERNAME: agriinsight_realtime
+      AGRIINSIGHT_DB_RUNTIME_PASSWORD: ${AGRIINSIGHT_DB_REALTIME_PASSWORD:?set realtime password}
+      AGRIINSIGHT_FLYWAY_ENABLED: "false"
+      AGRIINSIGHT_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED: "true"
+      AGRIINSIGHT_REALTIME_CONSUMER_ENABLED: "false"
+      AGRIINSIGHT_REALTIME_WORKER_ID: ${AGRIINSIGHT_REALTIME_WORKER_ID:-realtime-worker-1}
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+      realtime-role-password:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
