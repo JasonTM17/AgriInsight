@@ -5,6 +5,7 @@ import { ADMIN_STATUS_LABELS } from "@/content/vi/administration";
 
 import { ADMIN_PAGE_SIZE } from "../admin-contract-schemas";
 import type { loadAdminDirectory } from "../admin-read-model";
+import { AdminCreateUserForm } from "./admin-create-user-form";
 import styles from "./tenant-administration.module.css";
 
 type Directory = Awaited<ReturnType<typeof loadAdminDirectory>>;
@@ -22,6 +23,7 @@ export function AdminDirectoryPage({
   const nextOffset = directory.offset + ADMIN_PAGE_SIZE;
   return (
     <div className={styles.page} data-testid="admin-directory-page">
+      <AdminCreateUserForm />
       <AdminDirectoryFilter search={search} status={status} />
       <section className={styles.panel}>
         <div className={styles.panelHeading}>

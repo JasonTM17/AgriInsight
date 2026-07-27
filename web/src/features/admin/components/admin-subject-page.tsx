@@ -5,15 +5,17 @@ import {
   ADMIN_STATUS_LABELS
 } from "@/content/vi/administration";
 
+import type { AdminCapabilities } from "../admin-access";
 import type { loadAdminSubject } from "../admin-read-model";
+import { AdminSubjectMutations } from "./admin-subject-mutations";
 import styles from "./tenant-administration.module.css";
 
 type Subject = Awaited<ReturnType<typeof loadAdminSubject>>;
 
 export function AdminSubjectPage({
-  canManageRoles,
+  capabilities,
   subject
-}: Readonly<{ canManageRoles: boolean; subject: Subject }>) {
+}: Readonly<{ capabilities: AdminCapabilities; subject: Subject }>) {
   return (
     <div className={styles.page} data-testid="admin-subject-page">
       <Link className={styles.backLink} href="/admin">← Danh sách người dùng</Link>
@@ -63,8 +65,9 @@ export function AdminSubjectPage({
         }))}
         title="Phạm vi vận hành"
       />
+      <AdminSubjectMutations capabilities={capabilities} subject={subject} />
       <p className={styles.permissionNote}>
-        {canManageRoles
+        {capabilities.roles
           ? "Phiên hiện tại có quyền quản lý vai trò."
           : "Phiên hiện tại chỉ có quyền quản lý vòng đời người dùng."}
       </p>

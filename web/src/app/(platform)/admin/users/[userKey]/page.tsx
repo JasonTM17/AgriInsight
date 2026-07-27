@@ -4,7 +4,7 @@ import { z } from "zod";
 import { StatePanel } from "@/components/app-shell/state-panels";
 import {
   canAccessAdministration,
-  canManageAdminRoles
+  getAdminCapabilities
 } from "@/features/admin/admin-access";
 import { AdminReadError } from "@/features/admin/admin-resource-client";
 import { loadAdminSubject } from "@/features/admin/admin-read-model";
@@ -35,7 +35,7 @@ export default async function AdminUserPage({
   return (
     <>
       <AdminPageHeader active="directory" />
-      <AdminSubjectPage canManageRoles={canManageAdminRoles(context.identity)} subject={subject} />
+      <AdminSubjectPage capabilities={getAdminCapabilities(context.identity)} subject={subject} />
     </>
   );
 }

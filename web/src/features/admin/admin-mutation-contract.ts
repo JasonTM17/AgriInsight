@@ -15,6 +15,7 @@ export const adminRoleCodeSchema = z.enum([
   "SUPPLIER",
   "TENANT_ADMIN"
 ]);
+export type AdminRoleCode = z.output<typeof adminRoleCodeSchema>;
 
 const createUser = z.object({
   displayName: z.string().trim().min(1).max(200),
