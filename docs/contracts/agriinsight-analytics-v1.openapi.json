@@ -176,6 +176,31 @@
         "title": "AnalyticsEnvelope[OverviewPayload]",
         "type": "object"
       },
+      "AnalyticsEnvelope_ProcurementCostsPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ProcurementCostsPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[ProcurementCostsPayload]",
+        "type": "object"
+      },
       "AppliedFilterModel": {
         "additionalProperties": false,
         "properties": {
@@ -2218,6 +2243,269 @@
         "title": "PestIncidentModel",
         "type": "object"
       },
+      "ProcurementCostCapabilitiesModel": {
+        "additionalProperties": false,
+        "properties": {
+          "detailPageAvailable": {
+            "const": true,
+            "title": "Detailpageavailable",
+            "type": "boolean"
+          },
+          "fileExportAvailable": {
+            "const": true,
+            "title": "Fileexportavailable",
+            "type": "boolean"
+          },
+          "readOnly": {
+            "const": true,
+            "title": "Readonly",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "readOnly",
+          "fileExportAvailable",
+          "detailPageAvailable"
+        ],
+        "title": "ProcurementCostCapabilitiesModel",
+        "type": "object"
+      },
+      "ProcurementCostItemModel": {
+        "additionalProperties": false,
+        "properties": {
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "farmName": {
+            "title": "Farmname",
+            "type": "string"
+          },
+          "materialCode": {
+            "title": "Materialcode",
+            "type": "string"
+          },
+          "materialName": {
+            "title": "Materialname",
+            "type": "string"
+          },
+          "procurementQuantityBaseUnit": {
+            "title": "Procurementquantitybaseunit",
+            "type": "number"
+          },
+          "procurementSpendVnd": {
+            "title": "Procurementspendvnd",
+            "type": "number"
+          },
+          "procurementUnitCostVnd": {
+            "title": "Procurementunitcostvnd",
+            "type": "number"
+          },
+          "supplierCode": {
+            "title": "Suppliercode",
+            "type": "string"
+          },
+          "supplierName": {
+            "title": "Suppliername",
+            "type": "string"
+          },
+          "transactionDate": {
+            "title": "Transactiondate",
+            "type": "string"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          },
+          "warehouseCode": {
+            "title": "Warehousecode",
+            "type": "string"
+          },
+          "warehouseName": {
+            "title": "Warehousename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "transactionDate",
+          "farmCode",
+          "farmName",
+          "warehouseCode",
+          "warehouseName",
+          "materialCode",
+          "materialName",
+          "supplierCode",
+          "supplierName",
+          "procurementQuantityBaseUnit",
+          "procurementUnitCostVnd",
+          "procurementSpendVnd"
+        ],
+        "title": "ProcurementCostItemModel",
+        "type": "object"
+      },
+      "ProcurementCostMonthlyModel": {
+        "additionalProperties": false,
+        "properties": {
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "procurementQuantityBaseUnit": {
+            "title": "Procurementquantitybaseunit",
+            "type": "number"
+          },
+          "procurementSpendVnd": {
+            "title": "Procurementspendvnd",
+            "type": "number"
+          },
+          "transactionCount": {
+            "title": "Transactioncount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "transactionCount",
+          "procurementQuantityBaseUnit",
+          "procurementSpendVnd"
+        ],
+        "title": "ProcurementCostMonthlyModel",
+        "type": "object"
+      },
+      "ProcurementCostSummaryModel": {
+        "additionalProperties": false,
+        "properties": {
+          "procurementQuantityBaseUnit": {
+            "title": "Procurementquantitybaseunit",
+            "type": "number"
+          },
+          "procurementSpendVnd": {
+            "title": "Procurementspendvnd",
+            "type": "number"
+          },
+          "transactionCount": {
+            "title": "Transactioncount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "transactionCount",
+          "procurementQuantityBaseUnit",
+          "procurementSpendVnd"
+        ],
+        "title": "ProcurementCostSummaryModel",
+        "type": "object"
+      },
+      "ProcurementCostSupplierModel": {
+        "additionalProperties": false,
+        "properties": {
+          "procurementSpendVnd": {
+            "title": "Procurementspendvnd",
+            "type": "number"
+          },
+          "supplierCode": {
+            "title": "Suppliercode",
+            "type": "string"
+          },
+          "supplierName": {
+            "title": "Suppliername",
+            "type": "string"
+          },
+          "transactionCount": {
+            "title": "Transactioncount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "supplierCode",
+          "supplierName",
+          "transactionCount",
+          "procurementSpendVnd"
+        ],
+        "title": "ProcurementCostSupplierModel",
+        "type": "object"
+      },
+      "ProcurementCostsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/ProcurementCostCapabilitiesModel"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcurementCostItemModel"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/ProcurementCostMonthlyModel"
+            },
+            "title": "Monthly",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/ProcurementPageModel"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ProcurementCostSummaryModel"
+          },
+          "suppliers": {
+            "items": {
+              "$ref": "#/components/schemas/ProcurementCostSupplierModel"
+            },
+            "title": "Suppliers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "capabilities",
+          "items",
+          "monthly",
+          "page",
+          "suppliers",
+          "summary"
+        ],
+        "title": "ProcurementCostsPayload",
+        "type": "object"
+      },
+      "ProcurementPageModel": {
+        "additionalProperties": false,
+        "properties": {
+          "hasMore": {
+            "title": "Hasmore",
+            "type": "boolean"
+          },
+          "limit": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasMore",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "title": "ProcurementPageModel",
+        "type": "object"
+      },
       "QualityCheckModel": {
         "additionalProperties": false,
         "properties": {
@@ -2685,6 +2973,403 @@
           }
         ],
         "summary": "Get Costs",
+        "tags": [
+          "analytics-costs"
+        ]
+      }
+    },
+    "/internal/v1/costs/export": {
+      "get": {
+        "operationId": "getAnalyticsCostExport",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "title": "Format",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "farm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Farm"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crop",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crop"
+            }
+          },
+          {
+            "in": "query",
+            "name": "activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Activity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "supplier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Supplier"
+            }
+          },
+          {
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Season"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "top_n",
+            "required": false,
+            "schema": {
+              "default": 15,
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Top N",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Cost Export",
+        "tags": [
+          "analytics-cost-exports"
+        ]
+      }
+    },
+    "/internal/v1/costs/procurement": {
+      "get": {
+        "operationId": "getProcurementCosts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "farm_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Farm Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_ProcurementCostsPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Procurement Costs",
         "tags": [
           "analytics-costs"
         ]

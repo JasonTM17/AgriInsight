@@ -54,6 +54,7 @@ AGGREGATE_CSV_DATASETS = {
     "inventory_status": "gold/inventory_status.csv",
     "monthly_financials": "gold/monthly_financials.csv",
     "pest_incidents_weekly": "gold/pest_incidents_weekly.csv",
+    "procurement_detail": "gold/procurement_detail.csv",
     "risk_alerts": "gold/risk_alerts.csv",
     "harvests": "silver/harvests.csv",
 }
@@ -121,6 +122,29 @@ EXPECTED_COLUMNS = {
     "inventory_status": set(InventoryStatusModel.model_fields),
     "monthly_financials": set(MonthlyFinancialModel.model_fields),
     "pest_incidents_weekly": set(PestIncidentModel.model_fields),
+    "procurement_detail": {
+        "transaction_id",
+        "transaction_date",
+        "month",
+        "transaction_type",
+        "farm_code",
+        "farm_name",
+        "warehouse_code",
+        "warehouse_name",
+        "material_code",
+        "material_name",
+        "material_category",
+        "base_unit",
+        "supplier_code",
+        "supplier_name",
+        "supplier_province",
+        "supplier_quality_rating",
+        "procurement_quantity_base_unit",
+        "procurement_unit_cost_vnd",
+        "procurement_spend_vnd",
+        "batch_code",
+        "expiry_date",
+    },
     "risk_alerts": set(RiskAlertModel.model_fields),
     "harvests": {
         "crop_code",
@@ -167,6 +191,7 @@ MAX_ROWS = {
     "inventory_status": 10_000,
     "monthly_financials": 600,
     "pest_incidents_weekly": 2_000,
+    "procurement_detail": 100_000,
     "risk_alerts": 1_000,
     "harvests": 100_000,
 }
@@ -238,6 +263,9 @@ def _validate_snapshot(snapshot: ArtifactSnapshot) -> None:
         for name, model in CSV_MODELS.items()
     )
     invalid = invalid or not _valid_cost_season(snapshot.csv["cost_season"])
+    invalid = invalid or not _valid_procurement_detail(
+        snapshot.csv["procurement_detail"]
+    )
     invalid = invalid or not _valid_filter_facts(snapshot)
     insights = snapshot.json.get("insights")
     quality = snapshot.json.get("quality")
@@ -320,6 +348,40 @@ def _valid_cost_season(frame) -> bool:
             return False
         present = values[frame[column].notna()]
         if not np.isfinite(present.to_numpy(dtype=float)).all():
+            return False
+    return True
+
+
+def _valid_procurement_detail(frame) -> bool:
+    required = (
+        "transaction_id",
+        "transaction_date",
+        "month",
+        "farm_code",
+        "supplier_code",
+        "procurement_quantity_base_unit",
+        "procurement_unit_cost_vnd",
+        "procurement_spend_vnd",
+    )
+    if any(column not in frame.columns for column in required):
+        return False
+    if frame[list(required)].isna().any().any():
+        return False
+    if pd.to_datetime(frame["transaction_date"], errors="coerce").isna().any():
+        return False
+    if not frame["month"].astype(str).str.fullmatch(
+        r"\d{4}-(0[1-9]|1[0-2])"
+    ).all():
+        return False
+    for column in (
+        "procurement_quantity_base_unit",
+        "procurement_unit_cost_vnd",
+        "procurement_spend_vnd",
+    ):
+        values = pd.to_numeric(frame[column], errors="coerce")
+        if values.isna().any() or not np.isfinite(values.to_numpy(dtype=float)).all():
+            return False
+        if (values < 0).any():
             return False
     return True
 

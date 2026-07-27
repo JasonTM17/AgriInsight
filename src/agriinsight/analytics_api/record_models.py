@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, JsonValue
+from pydantic import BaseModel, ConfigDict
 
 
 def _camel(value: str) -> str:
@@ -312,6 +312,48 @@ class CostCapabilitiesModel(RecordModel):
     file_export_available: Literal[False]
     monthly_breakdown_available: bool
     activity_breakdown_available: bool
+
+
+class ProcurementCostCapabilitiesModel(RecordModel):
+    read_only: Literal[True]
+    file_export_available: Literal[True]
+    detail_page_available: Literal[True]
+
+
+class ProcurementCostSummaryModel(RecordModel):
+    transaction_count: int
+    procurement_quantity_base_unit: float
+    procurement_spend_vnd: float
+
+
+class ProcurementCostMonthlyModel(RecordModel):
+    month: str
+    transaction_count: int
+    procurement_quantity_base_unit: float
+    procurement_spend_vnd: float
+
+
+class ProcurementCostSupplierModel(RecordModel):
+    supplier_code: str
+    supplier_name: str
+    transaction_count: int
+    procurement_spend_vnd: float
+
+
+class ProcurementCostItemModel(RecordModel):
+    transaction_id: str
+    transaction_date: str
+    farm_code: str
+    farm_name: str
+    warehouse_code: str
+    warehouse_name: str
+    material_code: str
+    material_name: str
+    supplier_code: str
+    supplier_name: str
+    procurement_quantity_base_unit: float
+    procurement_unit_cost_vnd: float
+    procurement_spend_vnd: float
 
 
 class QualityCheckModel(RecordModel):

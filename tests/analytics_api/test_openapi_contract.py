@@ -16,6 +16,8 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "/health/ready",
         "/internal/v1/catalog",
         "/internal/v1/costs",
+        "/internal/v1/costs/export",
+        "/internal/v1/costs/procurement",
         "/internal/v1/crop-health",
         "/internal/v1/data-quality",
         "/internal/v1/farms",

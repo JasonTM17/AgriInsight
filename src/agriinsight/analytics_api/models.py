@@ -13,6 +13,11 @@ from agriinsight.analytics_api.record_models import (
     CostFarmModel,
     CostMonthlyModel,
     CostSummaryModel,
+    ProcurementCostCapabilitiesModel,
+    ProcurementCostItemModel,
+    ProcurementCostMonthlyModel,
+    ProcurementCostSupplierModel,
+    ProcurementCostSummaryModel,
     CropHealthAlertModel,
     CropHealthSummaryModel,
     CropProfitabilityModel,
@@ -86,6 +91,13 @@ class PageModel(ApiModel):
     total: int = Field(ge=0, le=10_000)
 
 
+class ProcurementPageModel(ApiModel):
+    has_more: bool
+    limit: int = Field(ge=1, le=100)
+    offset: int = Field(ge=0, le=10_000)
+    total: int = Field(ge=0, le=100_000)
+
+
 Severity: TypeAlias = Literal["none", "low", "medium", "high"]
 
 
@@ -148,6 +160,15 @@ class CostsPayload(ApiModel):
     farms: list[CostFarmModel]
     monthly: list[CostMonthlyModel]
     summary: CostSummaryModel
+
+
+class ProcurementCostsPayload(ApiModel):
+    capabilities: ProcurementCostCapabilitiesModel
+    items: list[ProcurementCostItemModel]
+    monthly: list[ProcurementCostMonthlyModel]
+    page: ProcurementPageModel
+    suppliers: list[ProcurementCostSupplierModel]
+    summary: ProcurementCostSummaryModel
 
 
 PayloadT = TypeVar("PayloadT", bound=BaseModel)

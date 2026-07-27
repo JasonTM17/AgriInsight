@@ -55,6 +55,40 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/internal/v1/costs/export": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Get Cost Export */
+        readonly get: operations["getAnalyticsCostExport"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/internal/v1/costs/procurement": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Get Procurement Costs */
+        readonly get: operations["getProcurementCosts"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/internal/v1/crop-health": {
         readonly parameters: {
             readonly query?: never;
@@ -191,6 +225,13 @@ export interface components {
             readonly freshness: components["schemas"]["FreshnessModel"];
             readonly lineage: components["schemas"]["LineageModel"];
             readonly payload: components["schemas"]["OverviewPayload"];
+            readonly scope: components["schemas"]["ScopeModel"];
+        };
+        /** AnalyticsEnvelope[ProcurementCostsPayload] */
+        readonly AnalyticsEnvelope_ProcurementCostsPayload_: {
+            readonly freshness: components["schemas"]["FreshnessModel"];
+            readonly lineage: components["schemas"]["LineageModel"];
+            readonly payload: components["schemas"]["ProcurementCostsPayload"];
             readonly scope: components["schemas"]["ScopeModel"];
         };
         /** AppliedFilterModel */
@@ -897,6 +938,107 @@ export interface components {
             /** Week */
             readonly week: string;
         };
+        /** ProcurementCostCapabilitiesModel */
+        readonly ProcurementCostCapabilitiesModel: {
+            /**
+             * Detailpageavailable
+             * @constant
+             */
+            readonly detailPageAvailable: true;
+            /**
+             * Fileexportavailable
+             * @constant
+             */
+            readonly fileExportAvailable: true;
+            /**
+             * Readonly
+             * @constant
+             */
+            readonly readOnly: true;
+        };
+        /** ProcurementCostItemModel */
+        readonly ProcurementCostItemModel: {
+            /** Farmcode */
+            readonly farmCode: string;
+            /** Farmname */
+            readonly farmName: string;
+            /** Materialcode */
+            readonly materialCode: string;
+            /** Materialname */
+            readonly materialName: string;
+            /** Procurementquantitybaseunit */
+            readonly procurementQuantityBaseUnit: number;
+            /** Procurementspendvnd */
+            readonly procurementSpendVnd: number;
+            /** Procurementunitcostvnd */
+            readonly procurementUnitCostVnd: number;
+            /** Suppliercode */
+            readonly supplierCode: string;
+            /** Suppliername */
+            readonly supplierName: string;
+            /** Transactiondate */
+            readonly transactionDate: string;
+            /** Transactionid */
+            readonly transactionId: string;
+            /** Warehousecode */
+            readonly warehouseCode: string;
+            /** Warehousename */
+            readonly warehouseName: string;
+        };
+        /** ProcurementCostMonthlyModel */
+        readonly ProcurementCostMonthlyModel: {
+            /** Month */
+            readonly month: string;
+            /** Procurementquantitybaseunit */
+            readonly procurementQuantityBaseUnit: number;
+            /** Procurementspendvnd */
+            readonly procurementSpendVnd: number;
+            /** Transactioncount */
+            readonly transactionCount: number;
+        };
+        /** ProcurementCostsPayload */
+        readonly ProcurementCostsPayload: {
+            readonly capabilities: components["schemas"]["ProcurementCostCapabilitiesModel"];
+            /** Items */
+            readonly items: readonly components["schemas"]["ProcurementCostItemModel"][];
+            /** Monthly */
+            readonly monthly: readonly components["schemas"]["ProcurementCostMonthlyModel"][];
+            readonly page: components["schemas"]["ProcurementPageModel"];
+            readonly summary: components["schemas"]["ProcurementCostSummaryModel"];
+            /** Suppliers */
+            readonly suppliers: readonly components["schemas"]["ProcurementCostSupplierModel"][];
+        };
+        /** ProcurementCostSummaryModel */
+        readonly ProcurementCostSummaryModel: {
+            /** Procurementquantitybaseunit */
+            readonly procurementQuantityBaseUnit: number;
+            /** Procurementspendvnd */
+            readonly procurementSpendVnd: number;
+            /** Transactioncount */
+            readonly transactionCount: number;
+        };
+        /** ProcurementCostSupplierModel */
+        readonly ProcurementCostSupplierModel: {
+            /** Procurementspendvnd */
+            readonly procurementSpendVnd: number;
+            /** Suppliercode */
+            readonly supplierCode: string;
+            /** Suppliername */
+            readonly supplierName: string;
+            /** Transactioncount */
+            readonly transactionCount: number;
+        };
+        /** ProcurementPageModel */
+        readonly ProcurementPageModel: {
+            /** Hasmore */
+            readonly hasMore: boolean;
+            /** Limit */
+            readonly limit: number;
+            /** Offset */
+            readonly offset: number;
+            /** Total */
+            readonly total: number;
+        };
         /** QualityCheckModel */
         readonly QualityCheckModel: {
             /** Check */
@@ -997,6 +1139,7 @@ export type SchemaAnalyticsEnvelopeDataQualityPayload = components['schemas']['A
 export type SchemaAnalyticsEnvelopeFarmsPayload = components['schemas']['AnalyticsEnvelope_FarmsPayload_'];
 export type SchemaAnalyticsEnvelopeInventoryPayload = components['schemas']['AnalyticsEnvelope_InventoryPayload_'];
 export type SchemaAnalyticsEnvelopeOverviewPayload = components['schemas']['AnalyticsEnvelope_OverviewPayload_'];
+export type SchemaAnalyticsEnvelopeProcurementCostsPayload = components['schemas']['AnalyticsEnvelope_ProcurementCostsPayload_'];
 export type SchemaAppliedFilterModel = components['schemas']['AppliedFilterModel'];
 export type SchemaCatalogFarmModel = components['schemas']['CatalogFarmModel'];
 export type SchemaCatalogPayload = components['schemas']['CatalogPayload'];
@@ -1034,6 +1177,13 @@ export type SchemaMonthlyFinancialModel = components['schemas']['MonthlyFinancia
 export type SchemaOverviewPayload = components['schemas']['OverviewPayload'];
 export type SchemaPageModel = components['schemas']['PageModel'];
 export type SchemaPestIncidentModel = components['schemas']['PestIncidentModel'];
+export type SchemaProcurementCostCapabilitiesModel = components['schemas']['ProcurementCostCapabilitiesModel'];
+export type SchemaProcurementCostItemModel = components['schemas']['ProcurementCostItemModel'];
+export type SchemaProcurementCostMonthlyModel = components['schemas']['ProcurementCostMonthlyModel'];
+export type SchemaProcurementCostsPayload = components['schemas']['ProcurementCostsPayload'];
+export type SchemaProcurementCostSummaryModel = components['schemas']['ProcurementCostSummaryModel'];
+export type SchemaProcurementCostSupplierModel = components['schemas']['ProcurementCostSupplierModel'];
+export type SchemaProcurementPageModel = components['schemas']['ProcurementPageModel'];
 export type SchemaQualityCheckModel = components['schemas']['QualityCheckModel'];
 export type SchemaQualityChecksModel = components['schemas']['QualityChecksModel'];
 export type SchemaQualityRemediationModel = components['schemas']['QualityRemediationModel'];
@@ -1164,6 +1314,169 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["AnalyticsEnvelope_CostsPayload_"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Content */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            readonly 502: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readonly getAnalyticsCostExport: {
+        readonly parameters: {
+            readonly query: {
+                readonly activity?: string | null;
+                readonly crop?: string | null;
+                readonly farm?: string | null;
+                readonly format: string;
+                readonly month_from?: string | null;
+                readonly month_to?: string | null;
+                readonly scope?: string;
+                readonly season?: string | null;
+                readonly supplier?: string | null;
+                readonly top_n?: number;
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Successful Response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Content */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            readonly 502: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readonly getProcurementCosts: {
+        readonly parameters: {
+            readonly query?: {
+                readonly farm_code?: string | null;
+                readonly limit?: number;
+                readonly month_from?: string | null;
+                readonly month_to?: string | null;
+                readonly offset?: number;
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Successful Response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["AnalyticsEnvelope_ProcurementCostsPayload_"];
                 };
             };
             /** @description Unauthorized */

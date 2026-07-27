@@ -13,6 +13,24 @@ dependencies: [2, 3, 4]
 
 Deliver cost analysis with exactly two lenses: `operating` and `procurement`. Operating cost entries and summaries stay on the existing Spring `/api/v1/cost-entries` and `/api/v1/cost-summaries` routes, while procurement analytics and normalized export flow through FastAPI with real CSV/PDF/XLSX output, 25k-row or 10 MiB limits, and `_tmp`-only staging.
 
+### Verified contract amendment (2026-07-27)
+
+The initial read-only scout found a real implementation gap: the existing
+`GET /internal/v1/costs` response is operating-only (`CostsPayload` contains
+`cost_breakdown`, `cost_farm`, `cost_monthly`, and an operating summary), has no
+query parameters, and does not expose `procurement_detail`. Passing mapped farm
+codes to that route would therefore be misleading. Phase 8 adds a separate,
+explicit read-only route:
+
+- `GET /internal/v1/costs/procurement`
+- query: `farm_code`, `month_from`, `month_to`, `limit`, `offset`
+- payload: procurement-only summary, monthly trend, supplier drivers, and a
+  bounded detail page
+
+The existing `/internal/v1/costs` route remains backwards compatible for the
+operating analytics contract. The generated analytics OpenAPI artifact,
+allowlist, runtime schemas, and endpoint tests must be updated together.
+
 ## Context
 
 - Verified Spring operating-cost reads and mutations are rooted at `/api/v1/cost-entries` and `/api/v1/cost-summaries` in `backend/src/main/java/com/agriinsight/backend/cost/api/OperatingCostReadController.java:25`, `OperatingCostMutationController.java:34`, and `CostSummaryController.java:19`.
@@ -63,8 +81,16 @@ These are the fixed Phase 8 ownership targets; the FastAPI paths extend the Phas
 | CREATE | `web/src/features/costs/components/*.tsx` | lens tabs, tables, trend panels |
 | CREATE | `web/tests/contracts/cost-analysis.contract.test.ts` | two-lens and export rules |
 | CREATE | `web/tests/e2e/cost-analysis.spec.ts` | lens and export journey |
+| CREATE | `web/src/features/costs/cost-generated-contract-schemas.ts` | runtime-safe operating/procurement response schemas |
+| CREATE | `web/src/features/costs/cost-generated-client-adapter.ts` | Spring and FastAPI cost readers |
 | CREATE | `src/agriinsight/analytics_api/routers/cost_exports.py` | normalized FastAPI export endpoint |
+| MODIFY | `src/agriinsight/analytics_api/routers/costs.py` | procurement-only read route |
+| MODIFY | `src/agriinsight/analytics_api/models.py` | procurement payload contract |
+| MODIFY | `src/agriinsight/analytics_api/record_models.py` | procurement record models |
+| MODIFY | `src/agriinsight/analytics_api/snapshot_cache.py` | procurement detail column/row validation |
+| CREATE | `src/agriinsight/analytics_api/procurement_cost_read_models.py` | scoped procurement aggregation/read model |
 | CREATE | `tests/test_internal_cost_exports.py` | export endpoint row/byte/path guards |
+| CREATE | `tests/analytics_api/test_procurement_costs.py` | scoped procurement read contract |
 | MODIFY | `src/agriinsight/cost_report_service.py` | normalized response metadata reuse |
 | CREATE | `src/agriinsight/cost_report_single_export.py` | prepare once and render exactly the requested format without breaking the dashboard bundle API |
 | MODIFY | `src/agriinsight/cost_report_xlsx.py` | `_tmp` staging integration if needed |
@@ -83,7 +109,7 @@ These are the fixed Phase 8 ownership targets; the FastAPI paths extend the Phas
   - `POST /api/v1/cost-entries`
   - `POST /api/v1/cost-entries/{id}/corrections`
 - Procurement analytic contracts consumed via BFF:
-  - internal procurement analytics route
+  - `GET /internal/v1/costs/procurement`
   - normalized export endpoint reusing existing CSV/PDF/XLSX builders
 - Export contract:
   - success includes a streamed file plus safe metadata such as `runId`, `contractVersion`, `asOf`, checksum fingerprint, row count, byte size, and format

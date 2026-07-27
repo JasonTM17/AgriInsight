@@ -10,6 +10,7 @@ from agriinsight.analytics_api.models import ErrorEnvelope
 from agriinsight.analytics_api.reconciliation_gate import require_reconciliation
 from agriinsight.analytics_api.routers import (
     catalog,
+    cost_exports,
     costs,
     crop_health,
     data_quality,
@@ -69,6 +70,7 @@ def create_app(
         crop_health.router,
         data_quality.router,
         costs.router,
+        cost_exports.router,
     ):
         internal.include_router(route)
     app.include_router(internal)
