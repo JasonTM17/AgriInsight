@@ -1,7 +1,7 @@
 ---
 phase: 12
 title: "container-release-and-docs"
-status: pending
+status: blocked
 priority: P1
 effort: "5d"
 dependencies: [11]
@@ -119,23 +119,45 @@ Broad:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-workspace-disk.ps1
-docker compose -f compose.yaml -f deploy/compose.release-overlay.yaml config --quiet
-docker compose -f compose.yaml -f compose.backend.yaml -f deploy/compose.web-demo-overlay.yaml config --quiet
+docker compose -f compose.yaml -f compose.backend.yaml `
+  -f deploy/compose.release-overlay.yaml --profile backend config --quiet
+docker compose -f compose.yaml -f compose.backend.yaml -f compose.demo.yaml `
+  -f compose.web-e2e.yaml -f deploy/compose.release-overlay.yaml `
+  -f deploy/compose.web-demo-overlay.yaml --profile backend config --quiet
 ```
 
 ## Acceptance Criteria
 
-- [ ] Web and analytics API images boot as non-root and do not require writable app code mounts.
-- [ ] Dockerfile-specific context allowlists include required code/catalog assets and exclude `.env`, local artifacts, caches, VCS metadata, and unrelated services.
-- [ ] Web and analytics build/scan jobs can run independently, but publication is serialized and protected-gated.
-- [ ] Semantic and SHA tags are the only publishable tags; `latest` is impossible by workflow design.
+- [x] Web and analytics API images boot as non-root and do not require writable app code mounts.
+- [x] Dockerfile-specific context allowlists include required code/catalog assets and exclude `.env`, local artifacts, caches, VCS metadata, and unrelated services.
+- [x] Web and analytics build/scan jobs can run independently, but publication is serialized and protected-gated.
+- [x] Semantic and SHA tags are the only publishable tags; `latest` is impossible by workflow design.
 - [ ] SBOM, provenance, Trivy zero HIGH/CRITICAL, and pull-by-digest smoke evidence exist for both images.
-- [ ] The existing protected workflow retains Python/backend behavior, adds web/analytics, and serializes all four matrix publications with one tag/gate/evidence model.
+- [x] The existing protected workflow retains Python/backend behavior, adds web/analytics, and serializes all four matrix publications with one tag/gate/evidence model.
 - [ ] Pre-publication Trivy zero HIGH/CRITICAL blocks push; the exact published digest is scanned and smoked again.
 - [ ] The opt-in demo overlay proves real OIDC login through all services with reconciled big-data masters and separate web/backend migration/runtime roles; PostgreSQL/Keycloak remain upstream-only.
-- [ ] README, deployment docs, architecture docs, GitHub repository About metadata, and any social-preview owner handoff reflect the same gated-release posture.
-- [ ] No web-app About page or ninth IA surface is added by this phase.
-- [ ] If the external publication gate is open, outputs are labeled internal candidate only and no production claim is emitted.
+- [x] README, deployment docs, architecture docs, GitHub repository About metadata, and any social-preview owner handoff reflect the same gated-release posture.
+- [x] No web-app About page or ninth IA surface is added by this phase.
+- [x] If the external publication gate is open, outputs are labeled internal candidate only and no production claim is emitted.
+
+## Internal candidate checkpoint — 2026-07-27
+
+- Hosted CI builds, scans, and non-root/read-only smokes Python, backend, web,
+  and analytics API without pushing. Web uses the current pinned Node 24 LTS
+  runtime with npm/yarn removed from the runtime layer.
+- Compose release and demo overlay chains pass configuration validation.
+- The protected workflow contract enforces one exact semantic tag, serial
+  matrix publication, no `latest`, candidate scan before authentication,
+  BuildKit SBOM/provenance, and exact published-digest scan/smoke/equality.
+- GitHub About description, homepage, and topics are populated; README embeds
+  the 1280x640 repository image and generated navigation GIF.
+- External evidence stays unchecked because GitHub has no `release-images`
+  environment/reviewers/secrets and Docker Hub has no web/analytics
+  repositories. No tag or registry push was attempted. Exact owner actions are
+  recorded in the
+  [handoff report](./reports/github-social-preview-owner-handoff.md).
+- Candidate evidence:
+  [Phase 12 report](./reports/tester-2026-07-27-phase-12-release-candidate.md).
 
 ## Risks And Rollback
 

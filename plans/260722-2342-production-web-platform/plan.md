@@ -4,7 +4,7 @@ description: >-
   Plan a Vietnamese-first Next 16 platform, real OIDC demo integration, secured
   Spring workflows, and verified Gold analytics surface without claiming public
   production release.
-status: in-progress
+status: blocked
 priority: P1
 effort: 51d
 branch: main
@@ -31,9 +31,9 @@ created: 2026-07-22T00:00:00.000Z
 
 ## Current State
 
-- A production-oriented Next 16 package now exists under `web/` with a secure
-  BFF/session boundary and locally accepted Overview/Farms routes. It is not
-  publicly released; Streamlit remains the internal fallback until Phase 12.
+- The secure Next 16 BFF now covers all eight planned areas and has passed the
+  hosted seven-persona real-platform browser gate. It is an internal candidate,
+  not a public production release; Streamlit remains a local analytics tool.
 - The disposable `web-auth-spike/` remains historical decision evidence only;
   its verified `openid-client` boundary has been ported into `web/`.
 - Spring exposes 94 secured operations that remain the domain source of truth, including the eight bounded Phase 1 Work/Admin reads.
@@ -123,10 +123,10 @@ created: 2026-07-22T00:00:00.000Z
 | 6 | [work-operations](./phase-06-work-operations.md) | Completed locally 2026-07-26 |
 | 7 | [inventory-control](./phase-07-inventory-control.md) | Completed locally 2026-07-27 |
 | 8 | [cost-analysis](./phase-08-cost-analysis.md) | Completed locally 2026-07-27 |
-| 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | In progress — static gates pass; browser gate blocked by C: disk floor |
-| 10 | [tenant-administration](./phase-10-tenant-administration.md) | In progress — static gates pass; browser gate blocked by C: disk floor |
-| 11 | [browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md) | Pending |
-| 12 | [container-release-and-docs](./phase-12-container-release-and-docs.md) | Pending |
+| 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | Completed 2026-07-27 |
+| 10 | [tenant-administration](./phase-10-tenant-administration.md) | Completed 2026-07-27 |
+| 11 | [browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md) | Completed on hosted real-platform gate 2026-07-27 |
+| 12 | [container-release-and-docs](./phase-12-container-release-and-docs.md) | Internal candidate complete; external publication blocked |
 
 ## Execution Dependencies And Rollback
 
@@ -157,7 +157,10 @@ Execution is sequential by default because generated contracts, the route regist
 - Eight generated WebPs (six existing plus Work/Admin) ship through the machine-readable catalog with provenance and SHA-256 checks; they provide visual context, never runtime data evidence.
 - Web app behavior maps to existing secured Spring routes without inventing fake backend data.
 - Streamlit remains available until web quality and deployment gates are met.
-- Docker images build locally as `nguyenson1710/agriinsight-web` and `nguyenson1710/agriinsight-analytics-api`; Docker Hub and matching GHCR publication both require the protected gate.
+- Docker images build, scan, and smoke in hosted CI as
+  `nguyenson1710/agriinsight-web` and
+  `nguyenson1710/agriinsight-analytics-api`; Docker Hub and matching GHCR
+  publication both require the protected gate.
 - Plan language and release artifacts avoid claiming public production release before backend gate closure.
 
 ## Test Matrix
@@ -223,17 +226,20 @@ Execution is sequential by default because generated contracts, the route regist
 - [phase-12-container-release-and-docs](./phase-12-container-release-and-docs.md)
 - `./reports/` for auth spike, contract, performance, security, and release-gate evidence.
 - Initial planning facts and current deltas: Streamlit remains internal; Spring
-  grew from 86 to 94 secured operations; deterministic OpenAPI and the
-  internal analytics HTTP surface are now locally verified; the authenticated
-  browser/BFF consumer remains later work. The verified 1.05M-row/388.2 MB
-  analytics corpus, eight provenance-tracked WebPs, Field Ledger design source,
-  8 planned areas, and Docker Hub plus GHCR gated release target remain
-  unchanged.
+  grew from 86 to 94 secured operations; deterministic OpenAPI, the analytics
+  HTTP surface, and authenticated eight-area browser/BFF consumers are
+  verified. The 1.05M-row/388.2 MB analytics corpus, eight
+  provenance-tracked WebPs, Field Ledger design source, and Docker Hub plus
+  GHCR gated release target remain unchanged.
 
 ## Unresolved Deployment Inputs
 
 - Docker Hub visibility and protected credentials owner for `nguyenson1710/agriinsight-web` and `nguyenson1710/agriinsight-analytics-api`.
 - Exact GHCR owner visibility and whether dual-registry publication is mandatory for every release candidate.
+- `release-images` environment, required reviewers, protected tag rule, and
+  least-privilege Docker Hub token are not configured.
+- Repository license decision; candidate OCI labels intentionally omit a
+  license while no root license file exists.
 - Public hostname, cookie domain, TLS termination, and `X-Forwarded-*` contract for the BFF.
 - Protected backend release gate owner, approval artifact, and closure signal.
 - Observability destination for web, BFF, and FastAPI logs/metrics.
@@ -242,6 +248,13 @@ Execution is sequential by default because generated contracts, the route regist
 
 ## Validation Log
 
+- 2026-07-27: Phases 9-11 closed on the hosted real-platform gate: 202 Python,
+  463 Java unit/contract + 100 PostgreSQL integration, 308 web, 9 web database,
+  and 26 real Chrome journeys passed. Seven OIDC personas, all eight areas,
+  five viewports, axe, 1.05M-fact lab performance, auth/security boundaries,
+  and cleanup are covered. Phase 12 no-push candidate images, release overlays,
+  workflow contracts, documentation, and repository metadata are complete;
+  protected external publication controls remain the only release blocker.
 - 2026-07-27: Phase 8 Cost Analysis accepted locally. The final gate passed
   183 Python tests with 3 optional skips, 246 web tests with 9 intentional
   skips, contract drift, typecheck, zero-warning lint, Next production build,
