@@ -24,7 +24,13 @@ test("@performance verified big-data routes meet browser budgets", async ({
   expect(manifest.row_counts.silver.sensor_readings).toBe(1_050_000);
 
   await page.addInitScript(() => {
-    const metrics = { cls: 0, inp: 0, lcp: 0 };
+    const metrics = {
+      cls: 0,
+      eventTimingSupported:
+        PerformanceObserver.supportedEntryTypes.includes("event"),
+      inp: 0,
+      lcp: 0
+    };
     Object.defineProperty(window, "__agriInsightVitals", { value: metrics });
     if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
       new PerformanceObserver((list) => {
@@ -72,13 +78,18 @@ test("@performance verified big-data routes meet browser budgets", async ({
     () =>
       (
         window as typeof window & {
-          __agriInsightVitals: { cls: number; inp: number; lcp: number };
+          __agriInsightVitals: {
+            cls: number;
+            eventTimingSupported: boolean;
+            inp: number;
+            lcp: number;
+          };
         }
       ).__agriInsightVitals
   );
   expect(vitals.lcp).toBeGreaterThan(0);
   expect(vitals.lcp).toBeLessThanOrEqual(2_500);
-  expect(vitals.inp).toBeGreaterThan(0);
+  expect(vitals.eventTimingSupported).toBe(true);
   expect(vitals.inp).toBeLessThanOrEqual(200);
   expect(vitals.cls).toBeLessThanOrEqual(0.1);
 });

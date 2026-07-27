@@ -46,12 +46,17 @@ async function expectResponsive(page: Page, route: string) {
     await expect(page.locator("main")).toBeVisible();
     await expect
       .poll(
-        () =>
-          page.evaluate(
-            () =>
-              document.documentElement.scrollWidth <=
-              document.documentElement.clientWidth + 1
-          ),
+        async () => {
+          try {
+            return await page.evaluate(
+              () =>
+                document.documentElement.scrollWidth <=
+                document.documentElement.clientWidth + 1
+            );
+          } catch {
+            return false;
+          }
+        },
         { message: `${viewport.name} ${route} has horizontal overflow` }
       )
       .toBe(true);
