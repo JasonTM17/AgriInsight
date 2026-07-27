@@ -21,6 +21,23 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/internal/v1/assistant/query": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Query Assistant */
+        readonly post: operations["queryAnalyticsAssistant"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/internal/v1/catalog": {
         readonly parameters: {
             readonly query?: never;
@@ -254,6 +271,39 @@ export interface components {
             /** Seasoncode */
             readonly seasonCode?: string | null;
         };
+        /** AssistantAnswer */
+        readonly AssistantAnswer: {
+            /** Answer */
+            readonly answer: string;
+            /** Citations */
+            readonly citations?: readonly components["schemas"]["EvidenceCitation"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            readonly status: "answered" | "insufficient_evidence";
+            readonly usage: components["schemas"]["AssistantUsage"];
+        };
+        /** AssistantQuery */
+        readonly AssistantQuery: {
+            /** History */
+            readonly history?: readonly components["schemas"]["ConversationTurn"][];
+            /** Question */
+            readonly question: string;
+        };
+        /** AssistantUsage */
+        readonly AssistantUsage: {
+            /** Completiontokens */
+            readonly completionTokens: number;
+            /** Promptcachehittokens */
+            readonly promptCacheHitTokens: number;
+            /** Promptcachemisstokens */
+            readonly promptCacheMissTokens: number;
+            /** Prompttokens */
+            readonly promptTokens: number;
+            /** Totaltokens */
+            readonly totalTokens: number;
+        };
         /** CatalogFarmModel */
         readonly CatalogFarmModel: {
             /** Code */
@@ -286,6 +336,16 @@ export interface components {
             readonly id: string;
             /** Locationtext */
             readonly locationText?: string | null;
+        };
+        /** ConversationTurn */
+        readonly ConversationTurn: {
+            /** Content */
+            readonly content: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            readonly role: "user" | "assistant";
         };
         /** CostBreakdownModel */
         readonly CostBreakdownModel: {
@@ -542,6 +602,25 @@ export interface components {
             /** Correlationid */
             readonly correlationId: string;
             readonly error: components["schemas"]["ErrorDetail"];
+        };
+        /** EvidenceCitation */
+        readonly EvidenceCitation: {
+            /**
+             * Asof
+             * Format: date
+             */
+            readonly asOf: string;
+            /** Evidenceid */
+            readonly evidenceId: string;
+            /** Excerpt */
+            readonly excerpt: string;
+            /**
+             * Sourcetype
+             * @enum {string}
+             */
+            readonly sourceType: "overview" | "farm-performance" | "inventory" | "crop-health" | "data-quality" | "cost" | "procurement";
+            /** Title */
+            readonly title: string;
         };
         /** EvidenceSignalModel */
         readonly EvidenceSignalModel: {
@@ -1153,9 +1232,13 @@ export type SchemaAnalyticsEnvelopeInventoryPayload = components['schemas']['Ana
 export type SchemaAnalyticsEnvelopeOverviewPayload = components['schemas']['AnalyticsEnvelope_OverviewPayload_'];
 export type SchemaAnalyticsEnvelopeProcurementCostsPayload = components['schemas']['AnalyticsEnvelope_ProcurementCostsPayload_'];
 export type SchemaAppliedFilterModel = components['schemas']['AppliedFilterModel'];
+export type SchemaAssistantAnswer = components['schemas']['AssistantAnswer'];
+export type SchemaAssistantQuery = components['schemas']['AssistantQuery'];
+export type SchemaAssistantUsage = components['schemas']['AssistantUsage'];
 export type SchemaCatalogFarmModel = components['schemas']['CatalogFarmModel'];
 export type SchemaCatalogPayload = components['schemas']['CatalogPayload'];
 export type SchemaCatalogWarehouseModel = components['schemas']['CatalogWarehouseModel'];
+export type SchemaConversationTurn = components['schemas']['ConversationTurn'];
 export type SchemaCostBreakdownModel = components['schemas']['CostBreakdownModel'];
 export type SchemaCostCapabilitiesModel = components['schemas']['CostCapabilitiesModel'];
 export type SchemaCostFarmModel = components['schemas']['CostFarmModel'];
@@ -1169,6 +1252,7 @@ export type SchemaCropProfitabilityModel = components['schemas']['CropProfitabil
 export type SchemaDataQualityPayload = components['schemas']['DataQualityPayload'];
 export type SchemaErrorDetail = components['schemas']['ErrorDetail'];
 export type SchemaErrorEnvelope = components['schemas']['ErrorEnvelope'];
+export type SchemaEvidenceCitation = components['schemas']['EvidenceCitation'];
 export type SchemaEvidenceSignalModel = components['schemas']['EvidenceSignalModel'];
 export type SchemaExecutiveSummaryModel = components['schemas']['ExecutiveSummaryModel'];
 export type SchemaFarmPerformanceModel = components['schemas']['FarmPerformanceModel'];
@@ -1223,6 +1307,84 @@ export interface operations {
                     readonly "application/json": {
                         readonly [key: string]: string;
                     };
+                };
+            };
+            /** @description Service Unavailable */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readonly queryAnalyticsAssistant: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["AssistantQuery"];
+            };
+        };
+        readonly responses: {
+            /** @description Successful Response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["AssistantAnswer"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Content */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            readonly 502: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Service Unavailable */

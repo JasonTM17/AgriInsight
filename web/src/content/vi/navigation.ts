@@ -6,6 +6,7 @@ export const NAVIGATION_LABELS = {
   costs: "Chi phí",
   cropHealth: "Sức khỏe cây trồng",
   dataQuality: "Chất lượng dữ liệu",
+  assistant: "Trợ lý dữ liệu",
   administration: "Quản trị"
 } as const;
 
@@ -17,6 +18,7 @@ export const NAVIGATION_DESCRIPTIONS = {
   costs: "Chi phí vận hành và mua hàng.",
   cropHealth: "Quan sát cây trồng và bằng chứng.",
   dataQuality: "Freshness, hợp lệ và hành động khắc phục.",
+  assistant: "Hỏi đáp từ snapshot đã xác minh trong đúng phạm vi quyền.",
   administration: "Thành viên, vai trò và phạm vi tenant."
 } as const;
 
@@ -30,6 +32,7 @@ export const NAVIGATION_ORDER: readonly NavigationKey[] = [
   "costs",
   "cropHealth",
   "dataQuality",
+  "assistant",
   "administration"
 ];
 

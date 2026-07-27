@@ -20,6 +20,7 @@ describe("Field Ledger permission navigation", () => {
       "inventory",
       "cropHealth",
       "dataQuality",
+      "assistant",
       "administration"
     ]);
   });
@@ -42,11 +43,31 @@ describe("Field Ledger permission navigation", () => {
     expect(getActiveNavigationKey("/inventory")).toBe("inventory");
     expect(getActiveNavigationKey("/crop-health/FIELD-001")).toBe("cropHealth");
     expect(getActiveNavigationKey("/data-quality")).toBe("dataQuality");
+    expect(getActiveNavigationKey("/assistant")).toBe("assistant");
     expect(getActiveNavigationKey("/admin")).toBe("administration");
     expect(getActiveNavigationKey("/admin/users/3eb92f10-60dd-45cb-9160-7c569c3258b4")).toBe("administration");
     expect(getActiveNavigationKey("/protected", { module: "data-quality" })).toBe("dataQuality");
     expect(getActiveNavigationKey("/protected", { module: "not-a-module" })).toBe("overview");
     expect(getActiveNavigationKey("/platform/farms")).toBe("overview");
+  });
+
+  it("exposes the assistant only to supported scoped roles", () => {
+    const farmManager = getVisibleNavigation({
+      permissions: new Set(["FARM_READ"]),
+      roles: new Set(["FARM_MANAGER"])
+    }).find((item) => item.key === "assistant");
+    const inventoryManager = getVisibleNavigation({
+      permissions: new Set(["INVENTORY_READ"]),
+      roles: new Set(["INVENTORY_MANAGER"])
+    }).find((item) => item.key === "assistant");
+    const supplier = getVisibleNavigation({
+      permissions: new Set(["FARM_READ", "INVENTORY_READ"]),
+      roles: new Set(["SUPPLIER"])
+    }).find((item) => item.key === "assistant");
+
+    expect(farmManager?.href).toBe("/assistant");
+    expect(inventoryManager?.href).toBe("/assistant");
+    expect(supplier).toBeUndefined();
   });
 
   it("links the implemented work area directly", () => {

@@ -9,6 +9,13 @@ const CROP_HEALTH_ROLES = new Set([
   "FARM_MANAGER"
 ]);
 const DATA_QUALITY_ROLES = new Set(["TENANT_ADMIN", "DATA_ANALYST"]);
+const ASSISTANT_ROLES = new Set([
+  "TENANT_ADMIN",
+  "EXECUTIVE",
+  "DATA_ANALYST",
+  "FARM_MANAGER",
+  "INVENTORY_MANAGER"
+]);
 
 export function canAccessCropHealth(identity: AnalyticsIdentity): boolean {
   return identity.permissions.has("FARM_READ")
@@ -17,6 +24,15 @@ export function canAccessCropHealth(identity: AnalyticsIdentity): boolean {
 
 export function canAccessDataQuality(identity: AnalyticsIdentity): boolean {
   return intersects(identity.roles, DATA_QUALITY_ROLES);
+}
+
+export function canAccessAssistant(identity: AnalyticsIdentity): boolean {
+  return !identity.roles.has("SUPPLIER")
+    && intersects(identity.roles, ASSISTANT_ROLES)
+    && (
+      identity.permissions.has("FARM_READ")
+      || identity.permissions.has("INVENTORY_READ")
+    );
 }
 
 function intersects(

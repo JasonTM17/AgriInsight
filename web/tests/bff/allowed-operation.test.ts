@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ALLOWED_ANALYTICS_COMMANDS,
   ALLOWED_MUTATIONS,
   ALLOWED_OPERATIONS,
+  resolveAllowedAnalyticsCommand,
   resolveAllowedMutation,
   resolveAllowedOperation
 } from "@/server/bff/allowed-operation";
@@ -357,6 +359,22 @@ describe("exact upstream allowlist", () => {
     }
   });
 
+  it("keeps the assistant in a dedicated analytics POST allowlist", () => {
+    expect(ALLOWED_ANALYTICS_COMMANDS).toEqual({
+      analyticsAssistantQuery: {
+        method: "POST",
+        path: "/internal/v1/assistant/query",
+        service: "analytics"
+      }
+    });
+    expect(resolveAllowedAnalyticsCommand("analyticsAssistantQuery")).toEqual(
+      ALLOWED_ANALYTICS_COMMANDS.analyticsAssistantQuery
+    );
+    expect(() => resolveAllowedMutation("analyticsAssistantQuery")).toThrow(
+      "not allowlisted"
+    );
+  });
+
   it.each([
     "http://metadata.invalid/latest",
     "../admin",
@@ -373,6 +391,9 @@ describe("exact upstream allowlist", () => {
       "not allowlisted"
     );
     expect(() => resolveAllowedMutation("activityCatalog")).toThrow(
+      "not allowlisted"
+    );
+    expect(() => resolveAllowedAnalyticsCommand("activityLogAppend")).toThrow(
       "not allowlisted"
     );
   });

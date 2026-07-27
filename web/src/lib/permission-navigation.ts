@@ -15,6 +15,7 @@ export type NavigationIconName =
   | "receipt"
   | "sprout"
   | "shield-check"
+  | "message-spark"
   | "users";
 
 export type NavigationItem = Readonly<{
@@ -87,6 +88,22 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     requiredPermissions: [],
     requiredRoles: ["TENANT_ADMIN", "DATA_ANALYST"]
   },
+  assistant: {
+    key: "assistant",
+    label: NAVIGATION_LABELS.assistant,
+    description: NAVIGATION_DESCRIPTIONS.assistant,
+    href: "/assistant",
+    icon: "message-spark",
+    forbiddenRoles: ["SUPPLIER"],
+    requiredPermissions: ["FARM_READ", "INVENTORY_READ"],
+    requiredRoles: [
+      "TENANT_ADMIN",
+      "EXECUTIVE",
+      "DATA_ANALYST",
+      "FARM_MANAGER",
+      "INVENTORY_MANAGER"
+    ]
+  },
   administration: {
     key: "administration",
     label: NAVIGATION_LABELS.administration,
@@ -155,6 +172,9 @@ export function getActiveNavigationKey(
   }
   if (pathname === "/data-quality" || pathname.startsWith("/data-quality/")) {
     return "dataQuality";
+  }
+  if (pathname === "/assistant" || pathname.startsWith("/assistant/")) {
+    return "assistant";
   }
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return "administration";

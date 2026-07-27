@@ -1,0 +1,325 @@
+.page {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  max-width: 88rem;
+  margin: 0 auto;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 0.55fr);
+  gap: clamp(2rem, 6vw, 7rem);
+  align-items: end;
+  padding: clamp(1.5rem, 4vw, 3.5rem) 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero h1 {
+  max-width: 15ch;
+  margin: 0.65rem 0 1rem;
+  font-size: clamp(2.25rem, 5vw, 4.7rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.hero > div > p:last-child {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.trustNote {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.1rem 0 1.1rem 1.1rem;
+  border-left: 3px solid var(--ochre);
+}
+
+.trustNote span,
+.privacyNote {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.75fr) minmax(0, 1.35fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: start;
+}
+
+.composer,
+.result {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow-panel);
+}
+
+.composer {
+  display: grid;
+  gap: 1.35rem;
+  padding: clamp(1.1rem, 2.5vw, 1.75rem);
+}
+
+.composer h2,
+.initialState h2,
+.errorState h2,
+.answer h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.composer form,
+.composer label {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.composer label {
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.composer textarea {
+  width: 100%;
+  min-height: 9rem;
+  resize: vertical;
+  padding: 0.85rem;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.composer textarea:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.composerFooter,
+.answerHeading,
+.citationMeta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.composerFooter span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.composer button,
+.errorState button {
+  min-height: 2.75rem;
+  padding: 0.65rem 0.9rem;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-sm);
+  font-weight: 750;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.composer button:hover:not(:disabled),
+.errorState button:hover {
+  color: white;
+  background: var(--brand-strong);
+}
+
+.composerFooter button {
+  color: white;
+  background: var(--brand);
+}
+
+.composer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.suggestions {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.suggestions p {
+  margin: 0 0 0.2rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.suggestions button {
+  min-height: 2.75rem;
+  padding: 0.7rem 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.privacyNote {
+  margin: 0;
+}
+
+.result {
+  min-height: 34rem;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.initialState,
+.errorState,
+.loadingState {
+  display: grid;
+  align-content: center;
+  min-height: 28rem;
+}
+
+.initialState p:last-child,
+.errorState > p,
+.loadingState p {
+  max-width: 55ch;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.loadingState {
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.loadingMark {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: assistant-spin 800ms linear infinite;
+}
+
+.answer {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.answerHeading {
+  align-items: start;
+}
+
+.answerHeading > span {
+  padding: 0.35rem 0.55rem;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.answerText {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem);
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.citations {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 1.2rem 0 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.citations li {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  background: var(--panel-muted);
+  border-left: 3px solid var(--brand);
+}
+
+.citationMeta {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.citations p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.citations code,
+.correlation code {
+  width: fit-content;
+  color: var(--brand-strong);
+  overflow-wrap: anywhere;
+}
+
+.usage {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.usage summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+@keyframes assistant-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 62rem) {
+  .hero,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    gap: 1.5rem;
+  }
+
+  .result {
+    min-height: 24rem;
+  }
+}
+
+@media (max-width: 36rem) {
+  .composerFooter,
+  .answerHeading,
+  .citationMeta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .composerFooter button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingMark {
+    animation: none;
+    border-color: var(--brand);
+  }
+}

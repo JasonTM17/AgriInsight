@@ -1,8 +1,10 @@
 import "server-only";
 
 const MAX_UPSTREAM_BYTES = 2 * 1024 * 1024;
+const MAX_ASSISTANT_BYTES = 512 * 1024;
 const MAX_EXPORT_BYTES = 10 * 1024 * 1024;
 const UPSTREAM_TIMEOUT_MS = 5_000;
+const ASSISTANT_TIMEOUT_MS = 45_000;
 const EXPORT_TIMEOUT_MS = 30_000;
 
 export class UpstreamResponseError extends Error {
@@ -19,17 +21,46 @@ export async function boundedUpstreamFetch(
   input: string | URL,
   init: RequestInit
 ): Promise<Response> {
+  return boundedBufferedFetch(
+    input,
+    init,
+    UPSTREAM_TIMEOUT_MS,
+    MAX_UPSTREAM_BYTES
+  );
+}
+
+export async function boundedAssistantUpstreamFetch(
+  input: string | URL,
+  init: RequestInit
+): Promise<Response> {
+  return boundedBufferedFetch(
+    input,
+    init,
+    ASSISTANT_TIMEOUT_MS,
+    MAX_ASSISTANT_BYTES
+  );
+}
+
+async function boundedBufferedFetch(
+  input: string | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  maxBytes: number
+): Promise<Response> {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
   const response = await fetch(input, {
     ...init,
     cache: "no-store",
     redirect: "manual",
-    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)
+    signal: init.signal
+      ? AbortSignal.any([init.signal, timeoutSignal])
+      : timeoutSignal
   });
   if (response.status >= 300 && response.status < 400) {
     throw new UpstreamResponseError(502, "Upstream redirect was rejected");
   }
   const contentLength = readContentLength(response);
-  if (contentLength > MAX_UPSTREAM_BYTES) {
+  if (contentLength > maxBytes) {
     throw new UpstreamResponseError(502, "Upstream response exceeded the byte limit");
   }
   if (!response.body) return response;
@@ -41,7 +72,7 @@ export async function boundedUpstreamFetch(
     const { done, value } = await reader.read();
     if (done) break;
     received += value.byteLength;
-    if (received > MAX_UPSTREAM_BYTES) {
+    if (received > maxBytes) {
       await reader.cancel();
       throw new UpstreamResponseError(
         502,

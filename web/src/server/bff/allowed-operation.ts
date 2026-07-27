@@ -53,6 +53,12 @@ type AllowedMutation = Readonly<{
   service: "backend";
 }>;
 
+type AllowedAnalyticsCommand = Readonly<{
+  method: "POST";
+  path: PostPath<AnalyticsPaths>;
+  service: "analytics";
+}>;
+
 export const ALLOWED_OPERATIONS = Object.freeze({
   analyticsCatalog: {
     method: "GET",
@@ -503,8 +509,18 @@ export const ALLOWED_MUTATIONS = Object.freeze({
   }
 } as const satisfies Record<string, AllowedMutation>);
 
+export const ALLOWED_ANALYTICS_COMMANDS = Object.freeze({
+  analyticsAssistantQuery: {
+    method: "POST",
+    path: "/internal/v1/assistant/query",
+    service: "analytics"
+  }
+} as const satisfies Record<string, AllowedAnalyticsCommand>);
+
 export type AllowedOperationName = keyof typeof ALLOWED_OPERATIONS;
 export type AllowedMutationName = keyof typeof ALLOWED_MUTATIONS;
+export type AllowedAnalyticsCommandName =
+  keyof typeof ALLOWED_ANALYTICS_COMMANDS;
 
 export function resolveAllowedOperation(candidate: string): AllowedReadOperation {
   if (!Object.hasOwn(ALLOWED_OPERATIONS, candidate)) {
@@ -518,4 +534,15 @@ export function resolveAllowedMutation(candidate: string): AllowedMutation {
     throw new Error("Upstream mutation is not allowlisted");
   }
   return ALLOWED_MUTATIONS[candidate as AllowedMutationName];
+}
+
+export function resolveAllowedAnalyticsCommand(
+  candidate: string
+): AllowedAnalyticsCommand {
+  if (!Object.hasOwn(ALLOWED_ANALYTICS_COMMANDS, candidate)) {
+    throw new Error("Upstream analytics command is not allowlisted");
+  }
+  return ALLOWED_ANALYTICS_COMMANDS[
+    candidate as AllowedAnalyticsCommandName
+  ];
 }

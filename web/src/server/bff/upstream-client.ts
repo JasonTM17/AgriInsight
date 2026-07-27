@@ -1,12 +1,15 @@
 import "server-only";
 
 import {
+  boundedAssistantUpstreamFetch,
   boundedUpstreamFetch,
   boundedUpstreamStreamFetch
 } from "@/server/bff/bounded-upstream-fetch";
 import {
+  resolveAllowedAnalyticsCommand,
   resolveAllowedMutation,
   resolveAllowedOperation,
+  type AllowedAnalyticsCommandName,
   type PathParameterKind,
   type AllowedMutationName,
   type AllowedOperationName
@@ -109,6 +112,30 @@ export async function executeAllowedMutation(
     method: operation.method,
     body: serializedBody,
     headers
+  });
+}
+
+export async function executeAllowedAnalyticsCommand(
+  env: WebEnvironment,
+  operationName: AllowedAnalyticsCommandName,
+  accessToken: string,
+  correlationId: string,
+  body: unknown,
+  signal?: AbortSignal
+): Promise<Response> {
+  const operation = resolveAllowedAnalyticsCommand(operationName);
+  const serializedBody = serializeBoundedJsonBody(body);
+  const url = new URL(operation.path, env.analyticsBaseUrl);
+  return boundedAssistantUpstreamFetch(url, {
+    method: operation.method,
+    body: serializedBody,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Correlation-Id": correlationId
+    },
+    signal
   });
 }
 

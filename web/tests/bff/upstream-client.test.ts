@@ -7,6 +7,7 @@ import {
 } from "@/server/bff/bounded-upstream-fetch";
 import {
   executeAllowedFileOperation,
+  executeAllowedAnalyticsCommand,
   executeAllowedMutation,
   executeAllowedOperation
 } from "@/server/bff/upstream-client";
@@ -154,6 +155,77 @@ describe("bounded upstream client", () => {
     expect(init?.headers).not.toHaveProperty("If-Match");
     expect(init?.cache).toBe("no-store");
     expect(init?.redirect).toBe("manual");
+  });
+
+  it("posts assistant queries only to the fixed analytics endpoint", async () => {
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        void input;
+        void init;
+        return Response.json({
+        answer: "Kho WH-01 cần theo dõi [inventory:wh-01:mat-01].",
+        citations: [],
+        status: "insufficient_evidence",
+        usage: {
+          completionTokens: 0,
+          promptCacheHitTokens: 0,
+          promptCacheMissTokens: 0,
+          promptTokens: 0,
+          totalTokens: 0
+        }
+        });
+      }
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const body = { question: "Kho nào cần theo dõi?" };
+
+    await executeAllowedAnalyticsCommand(
+      env,
+      "analyticsAssistantQuery",
+      "server-held-token",
+      "correlation-assistant",
+      body
+    );
+
+    const [input, init] = fetchMock.mock.calls[0]!;
+    expect(String(input)).toBe(
+      "http://127.0.0.1:8081/internal/v1/assistant/query"
+    );
+    expect(init?.body).toBe(JSON.stringify(body));
+    expect(init?.headers).toEqual({
+      Accept: "application/json",
+      Authorization: "Bearer server-held-token",
+      "Content-Type": "application/json",
+      "X-Correlation-Id": "correlation-assistant"
+    });
+    expect(init?.headers).not.toHaveProperty("Idempotency-Key");
+    expect(init?.redirect).toBe("manual");
+  });
+
+  it("propagates assistant client cancellation into the bounded fetch", async () => {
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        void input;
+        void init;
+        return Response.json({});
+      }
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const controller = new AbortController();
+
+    await executeAllowedAnalyticsCommand(
+      env,
+      "analyticsAssistantQuery",
+      "server-held-token",
+      "correlation-assistant",
+      { question: "Kho nào cần theo dõi?" },
+      controller.signal
+    );
+
+    const forwardedSignal = fetchMock.mock.calls[0]![1]?.signal;
+    expect(forwardedSignal?.aborted).toBe(false);
+    controller.abort();
+    expect(forwardedSignal?.aborted).toBe(true);
   });
 
   it("interpolates both exact UUIDs into the correction POST path", async () => {
