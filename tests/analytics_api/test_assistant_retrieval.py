@@ -129,3 +129,11 @@ def test_unrelated_question_returns_no_evidence() -> None:
     )
 
     assert result == []
+
+
+def test_punctuation_and_emoji_only_questions_return_no_evidence() -> None:
+    retriever = EvidenceRetriever(max_items=8, max_characters=12_000)
+    corpus = [_chunk("ev-cost", "Chi phí FARM-01")]
+
+    assert retriever.retrieve("???", _scope(), corpus) == []
+    assert retriever.retrieve("🌾 🌱", _scope(), corpus) == []

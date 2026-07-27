@@ -41,12 +41,8 @@ class EvidenceChunk:
             raise ValueError("evidence title has an invalid length")
         if not self.content.strip() or len(self.content) > 4_000:
             raise ValueError("evidence content has an invalid length")
-        if self.tenant_wide_only and (
-            self.farm_codes or self.warehouse_codes
-        ):
-            raise ValueError(
-                "tenant-wide evidence cannot also declare resource codes"
-            )
+        if self.tenant_wide_only and (self.farm_codes or self.warehouse_codes):
+            raise ValueError("tenant-wide evidence cannot also declare resource codes")
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +68,8 @@ class EvidenceRetriever:
     ) -> list[RetrievedEvidence]:
         normalized_query = _normalize(question)
         query_tokens = _expanded_tokens(normalized_query)
+        if not normalized_query or not query_tokens:
+            return []
         candidates: list[RetrievedEvidence] = []
         for chunk in corpus:
             if not _is_visible(chunk, scope):
@@ -151,8 +149,6 @@ def _expanded_tokens(normalized_query: str) -> frozenset[str]:
 def _normalize(value: str) -> str:
     decomposed = unicodedata.normalize("NFKD", value.casefold())
     without_marks = "".join(
-        character
-        for character in decomposed
-        if unicodedata.category(character) != "Mn"
+        character for character in decomposed if unicodedata.category(character) != "Mn"
     )
     return " ".join(_TOKEN.findall(without_marks))

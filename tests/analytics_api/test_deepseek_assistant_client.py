@@ -62,18 +62,19 @@ def test_valid_answer_uses_fixed_model_bounded_prompt_and_citations() -> None:
             json={
                 "choices": [
                     {
+                        "finish_reason": "stop",
                         "message": {
+                            "role": "assistant",
                             "content": json.dumps(
                                 {
                                     "status": "answered",
                                     "answer": (
-                                        "Lợi nhuận là 240 triệu đồng "
-                                        "[ev-farm-01]."
+                                        "Lợi nhuận là 240 triệu đồng [ev-farm-01]."
                                     ),
                                     "citation_ids": ["ev-farm-01"],
                                 }
-                            )
-                        }
+                            ),
+                        },
                     }
                 ],
                 "usage": {
@@ -92,9 +93,7 @@ def test_valid_answer_uses_fixed_model_bounded_prompt_and_citations() -> None:
             base_url="https://api.deepseek.com",
             transport=httpx.MockTransport(handler),
         ) as http_client:
-            return await DeepSeekAssistantClient(
-                _settings(), http_client
-            ).generate(
+            return await DeepSeekAssistantClient(_settings(), http_client).generate(
                 AssistantQuery(question="Lợi nhuận FARM-01?"),
                 _evidence(),
                 TENANT_ID,
@@ -104,9 +103,7 @@ def test_valid_answer_uses_fixed_model_bounded_prompt_and_citations() -> None:
 
     assert answer.status == "answered"
     assert answer.citations[0].evidence_id == "ev-farm-01"
-    assert observed["authorization"] == (
-        "Bearer test-only-key-material-000000"
-    )
+    assert observed["authorization"] == ("Bearer test-only-key-material-000000")
     request_payload = observed["payload"]
     assert isinstance(request_payload, dict)
     assert request_payload["model"] == "deepseek-v4-flash"
@@ -127,15 +124,48 @@ def test_valid_answer_uses_fixed_model_bounded_prompt_and_citations() -> None:
                 json={
                     "choices": [
                         {
+                            "finish_reason": "stop",
                             "message": {
+                                "role": "assistant",
                                 "content": json.dumps(
                                     {
                                         "status": "answered",
                                         "answer": "Không hợp lệ [ev-unknown].",
                                         "citation_ids": ["ev-unknown"],
                                     }
-                                )
-                            }
+                                ),
+                            },
+                        }
+                    ],
+                    "usage": {
+                        "prompt_tokens": 1,
+                        "completion_tokens": 1,
+                        "total_tokens": 2,
+                        "prompt_cache_hit_tokens": 0,
+                        "prompt_cache_miss_tokens": 1,
+                    },
+                },
+            ),
+            "assistant_provider_invalid_response",
+            False,
+        ),
+        (
+            httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "finish_reason": "length",
+                            "message": {
+                                "role": "assistant",
+                                "content": json.dumps(
+                                    {
+                                        "status": "answered",
+                                        "answer": "Lợi nhuận [ev-farm-01].",
+                                        "citation_ids": ["ev-farm-01"],
+                                    }
+                                ),
+                            },
                         }
                     ],
                     "usage": {
@@ -218,3 +248,127 @@ def test_oversized_provider_response_is_rejected_before_json_parsing() -> None:
 
     assert captured.value.code == "assistant_provider_invalid_response"
     assert captured.value.retryable is False
+
+
+def test_answer_rejects_uncited_claims_and_undeclared_markers() -> None:
+    async def exercise(answer: str) -> None:
+        response = httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "finish_reason": "stop",
+                        "message": {
+                            "role": "assistant",
+                            "content": json.dumps(
+                                {
+                                    "status": "answered",
+                                    "answer": answer,
+                                    "citation_ids": ["ev-farm-01"],
+                                }
+                            ),
+                        },
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 1,
+                    "completion_tokens": 1,
+                    "total_tokens": 2,
+                    "prompt_cache_hit_tokens": 0,
+                    "prompt_cache_miss_tokens": 1,
+                },
+            },
+        )
+        async with httpx.AsyncClient(
+            base_url="https://api.deepseek.com",
+            transport=httpx.MockTransport(lambda _request: response),
+        ) as http_client:
+            await DeepSeekAssistantClient(_settings(), http_client).generate(
+                AssistantQuery(question="Lợi nhuận FARM-01?"),
+                _evidence(),
+                TENANT_ID,
+            )
+
+    for invalid_answer in (
+        "Lợi nhuận là 240 triệu [ev-farm-01]. Năng suất là 99 tấn.",
+        "Lợi nhuận là 240 triệu [ev-farm-01] [ev-undeclared].",
+    ):
+        with pytest.raises(AssistantProviderError) as captured:
+            asyncio.run(exercise(invalid_answer))
+        assert captured.value.code == "assistant_provider_invalid_response"
+
+
+def test_refusal_rejects_undeclared_citation_markers() -> None:
+    response = httpx.Response(
+        200,
+        json={
+            "choices": [
+                {
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": json.dumps(
+                            {
+                                "status": "insufficient_evidence",
+                                "answer": ("Không đủ bằng chứng [ev-farm-01]."),
+                                "citation_ids": [],
+                            }
+                        ),
+                    },
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 1,
+                "completion_tokens": 1,
+                "total_tokens": 2,
+                "prompt_cache_hit_tokens": 0,
+                "prompt_cache_miss_tokens": 1,
+            },
+        },
+    )
+
+    async def exercise() -> None:
+        async with httpx.AsyncClient(
+            base_url="https://api.deepseek.com",
+            transport=httpx.MockTransport(lambda _request: response),
+        ) as http_client:
+            await DeepSeekAssistantClient(_settings(), http_client).generate(
+                AssistantQuery(question="Lợi nhuận FARM-01?"),
+                _evidence(),
+                TENANT_ID,
+            )
+
+    with pytest.raises(AssistantProviderError) as captured:
+        asyncio.run(exercise())
+
+    assert captured.value.code == "assistant_provider_invalid_response"
+
+
+def test_provider_queue_wait_has_a_bounded_deadline() -> None:
+    async def exercise() -> None:
+        settings = AssistantSettings(
+            enabled=True,
+            api_key="test-only-key-material-000000",
+            max_concurrent_requests=1,
+            queue_timeout_seconds=0.1,
+        ).validated()
+        async with httpx.AsyncClient(
+            base_url="https://api.deepseek.com",
+            transport=httpx.MockTransport(lambda _request: httpx.Response(500)),
+        ) as http_client:
+            provider = DeepSeekAssistantClient(settings, http_client)
+            await provider._concurrency.acquire()
+            try:
+                await provider.generate(
+                    AssistantQuery(question="Lợi nhuận FARM-01?"),
+                    _evidence(),
+                    TENANT_ID,
+                )
+            finally:
+                provider._concurrency.release()
+
+    with pytest.raises(AssistantProviderError) as captured:
+        asyncio.run(exercise())
+
+    assert captured.value.code == "assistant_provider_busy"
+    assert captured.value.retryable is True
