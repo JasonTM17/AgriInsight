@@ -25,8 +25,7 @@ LABEL org.opencontainers.image.title="AgriInsight Web" \
       org.opencontainers.image.description="Tenant-safe Next.js agriculture analytics and operations platform" \
       org.opencontainers.image.source=$OCI_SOURCE \
       org.opencontainers.image.revision=$OCI_REVISION \
-      org.opencontainers.image.version=$OCI_VERSION \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.version=$OCI_VERSION
 
 ENV HOSTNAME=0.0.0.0 \
     HOME=/tmp \

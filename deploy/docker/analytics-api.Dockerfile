@@ -22,8 +22,7 @@ LABEL org.opencontainers.image.title="AgriInsight Analytics API" \
       org.opencontainers.image.description="Read-only FastAPI service over verified agriculture analytics snapshots" \
       org.opencontainers.image.source=$OCI_SOURCE \
       org.opencontainers.image.revision=$OCI_REVISION \
-      org.opencontainers.image.version=$OCI_VERSION \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.version=$OCI_VERSION
 
 ENV AGRIINSIGHT_ANALYTICS_BIND_HOST=0.0.0.0 \
     AGRIINSIGHT_ANALYTICS_PORT=8081 \

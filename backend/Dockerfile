@@ -24,8 +24,7 @@ LABEL org.opencontainers.image.title="AgriInsight Backend" \
       org.opencontainers.image.description="Tenant-safe operational agriculture API" \
       org.opencontainers.image.source=$OCI_SOURCE \
       org.opencontainers.image.revision=$OCI_REVISION \
-      org.opencontainers.image.version=$OCI_VERSION \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.version=$OCI_VERSION
 
 WORKDIR /app
 ENV AGRIINSIGHT_SERVER_ADDRESS=0.0.0.0 \

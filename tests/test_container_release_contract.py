@@ -93,6 +93,21 @@ def test_web_standalone_runtime_exposes_an_unauthenticated_liveness_route() -> N
     assert '"alive"' in health_route
 
 
+def test_images_do_not_claim_a_license_before_the_owner_selects_one() -> None:
+    dockerfiles = (
+        ROOT / "Dockerfile",
+        ROOT / "backend" / "Dockerfile",
+        ROOT / "deploy" / "docker" / "web.Dockerfile",
+        ROOT / "deploy" / "docker" / "analytics-api.Dockerfile",
+    )
+
+    assert not list(ROOT.glob("LICENSE*"))
+    for dockerfile in dockerfiles:
+        assert "org.opencontainers.image.licenses" not in dockerfile.read_text(
+            encoding="utf-8"
+        )
+
+
 def test_ci_builds_scans_and_smokes_all_four_images_without_push() -> None:
     workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
         encoding="utf-8"

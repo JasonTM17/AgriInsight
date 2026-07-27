@@ -10,8 +10,7 @@ LABEL org.opencontainers.image.title="AgriInsight Analytics" \
       org.opencontainers.image.description="Bronze-Silver-Gold agriculture analytics pipeline and dashboard" \
       org.opencontainers.image.source=$OCI_SOURCE \
       org.opencontainers.image.revision=$OCI_REVISION \
-      org.opencontainers.image.version=$OCI_VERSION \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.version=$OCI_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
