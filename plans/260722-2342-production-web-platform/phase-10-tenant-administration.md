@@ -1,10 +1,13 @@
 ---
 phase: 10
-title: "tenant-administration"
-status: pending
+title: tenant-administration
+status: in-progress
 priority: P1
-effort: "3d"
-dependencies: [1, 3, 4]
+effort: 3d
+dependencies:
+  - 1
+  - 3
+  - 4
 ---
 
 # Phase 10: tenant-administration
@@ -148,13 +151,19 @@ npm --prefix web run test
 
 ## Acceptance Criteria
 
-- [ ] Phase 10 consumes the exact Phase 1 user/role/external-identity/assignment resource families and does not mint `/api/v1/admin/*`.
-- [ ] The real allowed admin mutations are available for authorized users only: user lifecycle, role, external identity, farm, warehouse, and activity assignments.
-- [ ] No invite, JIT provisioning, password, or email-trigger copy exists anywhere in this phase.
+- [x] Phase 10 consumes the exact Phase 1 user/role/external-identity/assignment resource families and does not mint `/api/v1/admin/*`.
+- [x] The real allowed admin mutations are available for authorized users only: user lifecycle, role, external identity, farm, warehouse, and activity assignments.
+- [x] No invite, JIT provisioning, password, or email-trigger copy exists anywhere in this phase.
 - [ ] Server-side deep-link authorization returns a real `403` state for denied users, and `Supplier` is denied everywhere.
-- [ ] Concurrent removal/revocation surfaces explicit conflict or not-found states; no silent empty tables.
-- [ ] Browser-visible responses use only safe labels/opaque keys; an administrator-supplied create/link subject is one-way, never echoed, logged, cached, or retained in client state.
-- [ ] Audit timeline is bounded, evidence-oriented, and reflects backend truth for the allowed actions.
+- [x] Concurrent removal/revocation surfaces explicit conflict or not-found states; no silent empty tables.
+- [x] Browser-visible responses use only safe labels/opaque keys; an administrator-supplied create/link subject is one-way, never echoed, logged, cached, or retained in client state.
+- [x] Audit timeline is bounded, evidence-oriented, and reflects backend truth for the allowed actions.
+
+The remaining `403` item has a static implementation (`forbidden()`,
+`authInterrupts`, Supplier denial and a segment boundary) but stays unchecked
+until the guarded real-browser suite confirms the HTTP status and rendered
+shell. Evidence:
+[Phase 10 checkpoint](./reports/phase-10-tenant-administration-evidence-2026-07-27.md).
 
 ## Risks And Rollback
 

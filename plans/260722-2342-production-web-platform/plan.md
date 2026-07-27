@@ -4,7 +4,7 @@ description: >-
   Plan a Vietnamese-first Next 16 platform, real OIDC demo integration, secured
   Spring workflows, and verified Gold analytics surface without claiming public
   production release.
-status: in_progress
+status: in-progress
 priority: P1
 effort: 51d
 branch: main
@@ -124,7 +124,7 @@ created: 2026-07-22T00:00:00.000Z
 | 7 | [inventory-control](./phase-07-inventory-control.md) | Completed locally 2026-07-27 |
 | 8 | [cost-analysis](./phase-08-cost-analysis.md) | Completed locally 2026-07-27 |
 | 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | In progress — static gates pass; browser gate blocked by C: disk floor |
-| 10 | [tenant-administration](./phase-10-tenant-administration.md) | Pending |
+| 10 | [tenant-administration](./phase-10-tenant-administration.md) | In progress — static gates pass; browser gate blocked by C: disk floor |
 | 11 | [browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md) | Pending |
 | 12 | [container-release-and-docs](./phase-12-container-release-and-docs.md) | Pending |
 
