@@ -34,7 +34,7 @@ export function AdminSubjectMutations({
         />
       ) : null}
       {capabilities.activities ? (
-        <AdminActivityControls employeeKey={subject.userKey} />
+        <AdminActivityControls />
       ) : null}
     </div>
   );

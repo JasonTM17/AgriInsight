@@ -6,15 +6,14 @@ import { useIdempotentAdminMutation } from "../use-idempotent-admin-mutation";
 import { AdminMutationFeedbackView } from "./admin-mutation-feedback";
 import styles from "./admin-mutations.module.css";
 
-export function AdminActivityControls({
-  employeeKey
-}: Readonly<{ employeeKey: string }>) {
+export function AdminActivityControls() {
   const mutation = useIdempotentAdminMutation("Đã cập nhật phân công hoạt động.");
 
   async function grant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const activityKey = data.get("activityKey");
+    const employeeKey = data.get("employeeKey");
     const version = Number(data.get("version"));
     await mutation.submit({
       activityKey,
@@ -40,8 +39,9 @@ export function AdminActivityControls({
         <p className="eyebrow">Staff assignment</p><h2>Phân công hoạt động</h2>
       </header>
       <form className={styles.form} onSubmit={grant}>
-        <p>Cấp theo UUID hoạt động đã xác minh từ khu vực Công việc.</p>
+        <p>Cấp theo UUID hoạt động và nhân viên đã xác minh từ dữ liệu vận hành.</p>
         <label>UUID hoạt động<input name="activityKey" required /></label>
+        <label>UUID nhân viên<input name="employeeKey" required /></label>
         <label>Phiên bản hiện tại<input defaultValue={0} min={0} name="version" required step={1} type="number" /></label>
         <div className={styles.actions}><button disabled={mutation.pending} type="submit">Cấp phân công</button></div>
       </form>
