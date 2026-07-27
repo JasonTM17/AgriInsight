@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [switch] $SkipStaticGates,
-    [switch] $RunLifecycleProbe
+    [switch] $RunLifecycleProbe,
+    [switch] $CaptureMedia
 )
 
 $ErrorActionPreference = "Stop"
@@ -601,6 +602,17 @@ try {
         throw
     }
     Write-Output "PLAYWRIGHT_E2E=PASS"
+
+    if ($CaptureMedia) {
+        # Documentation captures run only on an already-passing stack, in their
+        # own config, so they can never change the acceptance scenario count.
+        Write-Output "MEDIA_CAPTURE_START"
+        Invoke-Checked "npm" @(
+            "--prefix", "web", "exec", "--",
+            "playwright", "test", "--config", "playwright.capture.config.ts"
+        ) "Documentation media capture failed"
+        Write-Output "MEDIA_CAPTURE=PASS"
+    }
 
     Invoke-Checked "powershell" @(
         "-ExecutionPolicy", "Bypass", "-File", "scripts/check-workspace-disk.ps1"
