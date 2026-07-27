@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Mapping
 from urllib.parse import urlsplit
 from uuid import UUID
+
+from agriinsight.analytics_api.assistant_settings import AssistantSettings
 
 
 class AnalyticsSettingsError(ValueError):
@@ -25,6 +27,7 @@ class AnalyticsSettings:
     max_upstream_bytes: int = 262_144
     read_timeout_seconds: float = 4.0
     upstream_attempts: int = 2
+    assistant: AssistantSettings = field(default_factory=AssistantSettings)
 
     @classmethod
     def from_environment(
@@ -62,6 +65,7 @@ class AnalyticsSettings:
             upstream_attempts=_integer(
                 values, "AGRIINSIGHT_ANALYTICS_UPSTREAM_ATTEMPTS", 2
             ),
+            assistant=AssistantSettings.from_environment(values),
         ).validated()
 
     def validated(self) -> AnalyticsSettings:
@@ -83,7 +87,11 @@ class AnalyticsSettings:
             raise AnalyticsSettingsError(
                 "Reconciliation age threshold is outside safe bounds"
             )
-        return replace(self, spring_base_url=normalized_spring_url)
+        return replace(
+            self,
+            spring_base_url=normalized_spring_url,
+            assistant=self.assistant.validated(),
+        )
 
 
 def _required(source: Mapping[str, str], key: str) -> str:
