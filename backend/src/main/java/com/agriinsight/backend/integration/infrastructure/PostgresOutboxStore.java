@@ -19,7 +19,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @Profile("!test")
-@ConditionalOnProperty(prefix = "agriinsight.identity", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "agriinsight.realtime",
+        name = "publisher-enabled",
+        havingValue = "true")
 public class PostgresOutboxStore implements OutboxStore {
 
     private static final RowMapper<OutboxEvent> MAPPER = (result, rowNumber) -> new OutboxEvent(
