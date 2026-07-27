@@ -1,11 +1,19 @@
 ---
 phase: 8
 title: "cost-analysis"
-status: pending
+status: implementation-complete
 priority: P1
 effort: "4d"
 dependencies: [2, 3, 4]
 ---
+
+## Delivery status (2026-07-27)
+
+Implementation and static verification are complete. The guarded browser gate
+is checked in as `web/tests/e2e/cost-analysis.spec.ts` but is intentionally not
+claimed locally while `scripts/check-workspace-disk.ps1` reports C: below its
+non-negotiable 8 GiB floor. See
+`reports/phase-08-cost-analysis-evidence-2026-07-27.md` for exact evidence.
 
 # Phase 8: cost-analysis
 
@@ -168,14 +176,14 @@ These are the fixed Phase 8 ownership targets; the FastAPI paths extend the Phas
 
 ## Acceptance Criteria
 
-- [ ] `/costs` exposes exactly two lenses: `operating` and `procurement`.
-- [ ] Operating lens uses the existing Spring `cost-entries` and `cost-summaries` routes for append/correction and summaries.
-- [ ] Procurement remains read-only analytics; inventory value stays in the Inventory area.
-- [ ] Export is a real server-mediated FastAPI contract reusing existing CSV/PDF/XLSX builders, not browser-built assembly.
-- [ ] Each export request invokes exactly one selected renderer; CSV/PDF requests never initialize the XLSX runtime or build the other formats.
-- [ ] Exports above 25k rows or 10 MiB are rejected with typed over-limit feedback.
-- [ ] Successful exports carry safe metadata and never expose filesystem paths.
-- [ ] No `PATCH` cost route, no `operating-costs` route, and no new Spring controller is introduced.
+- [x] `/costs` exposes exactly two lenses: `operating` and `procurement`.
+- [x] Operating lens uses the existing Spring `cost-entries` and `cost-summaries` routes for append/correction and summaries.
+- [x] Procurement remains read-only analytics; inventory value stays in the Inventory area.
+- [x] Export is a real server-mediated FastAPI contract reusing existing CSV/PDF/XLSX builders, not browser-built assembly.
+- [x] Each export request invokes exactly one selected renderer; CSV/PDF requests never initialize the XLSX runtime or build the other formats.
+- [x] Exports above 25k rows or 10 MiB are rejected with typed over-limit feedback.
+- [x] Successful exports carry safe metadata and never expose filesystem paths.
+- [x] No `PATCH` cost route, no `operating-costs` route, and no new Spring controller is introduced.
 
 ## Risks And Rollback
 

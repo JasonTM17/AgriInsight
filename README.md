@@ -22,7 +22,7 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đã có bằng chứng kỹ thuật cho transactional outbox, image hardening, CI và recovery wrappers, nhưng protected production release/recovery approvals vẫn mở. Backend hiện có application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đã có bằng chứng kỹ thuật cho transactional outbox, image hardening, CI và recovery wrappers, nhưng protected production release/recovery approvals vẫn mở. Web Phase 8 Cost Analysis hiện đã có route Next `/costs`, BFF allowlist và hai lens vận hành/mua hàng; backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
 
 Phase 7 bổ sung V18-V19 `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, optional backend Compose profile, pinned non-root images, CI image gate, protected Docker Hub/GHCR publication workflow và D-local backup/restore wrappers. Outbox chưa có consumer/Kafka/HTTP route; đây là handoff an toàn, at-least-once cho phase kế tiếp. Các digest đã xuất bản chỉ là bằng chứng phase, không phải production release.
 
@@ -40,6 +40,7 @@ Bằng chứng hiện tại:
 - Phase 4 cung cấp field/crop/season, Employee, farm/activity assignment, task lifecycle, log công việc bất biến và harvest ledger. Manager bị giới hạn theo farm assignment; worker chỉ thấy task được giao và chỉ append/correct log của chính mình; harvest chuẩn hóa KG/TONNE về kg và sửa sai bằng bản ghi correction thay vì ghi đè.
 - Local JDK mới hơn biên dịch bằng `--release 21`; multi-stage image dùng Temurin 21, chạy non-root `10001:10001`, chỉ chứa `/app/app.jar` và đã qua smoke test liveness/readiness/fail-closed OIDC.
 - Regression analytics đạt 76 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
+- Web Cost Analysis đã qua typecheck, lint, production build và 239 unit/contract tests (9 skip có chủ đích). Route `/costs` phân biệt đúng `operating`/`procurement`, BFF không nhận lens `inventory`, mutation dùng CSRF + idempotency, export chỉ forward file/header an toàn.
 - Không để lại smoke/Testcontainers PostgreSQL container; các container dự án khác không bị dọn. Upstream `postgres:18.0-alpine` vẫn chỉ là dependency kiểm thử.
 
 Các cổng còn mở thuộc phase sau:
@@ -78,9 +79,9 @@ Dashboard mặc định mở tại `http://localhost:8501`. Navigation bên trá
 - Data Quality
 - Cost Analysis
 
-Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Form vận hành lọc theo nông trại/cây trồng/mùa vụ/hoạt động/tháng; form mua hàng lọc theo nông trại/nhà cung cấp/tháng. Chỉ khi submit form, service mới tạo các nút CSV/PDF và capability-gated XLSX từ request đã chuẩn hóa. PDF cục bộ cần `reports` extra như lệnh cài đặt trên. XLSX chỉ khả dụng khi provision explicit `AGRIINSIGHT_NODE_EXECUTABLE` và `AGRIINSIGHT_NODE_MODULES`.
+Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Web `/costs` dùng Spring ledger cho operating append/correction và FastAPI snapshot cho procurement read-only; cả hai đều có filter ngày bounded, source/lineage, bảng evidence, KPI/trend và export CSV/PDF qua BFF. Dashboard Streamlit local vẫn giữ form Gold cũ với capability-gated XLSX; PDF cục bộ cần `reports` extra như lệnh cài đặt trên.
 
-Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Nền tảng Next 16 và các route Overview/Farms của Web Phase 5 đã được nghiệm thu cục bộ; tích hợp Inventory production vẫn thuộc Web Phase 7 và phải giữ warehouse scope, idempotency, ETag cùng dependency Phase 6. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
+Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Nền tảng Next 16, các route Overview/Farms và Web Cost Analysis đã được nghiệm thu static cục bộ; guarded browser gate cần chạy lại khi C: đạt floor 8 GiB. Tích hợp Inventory production vẫn phải giữ warehouse scope, idempotency, ETag cùng dependency Phase 6. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
 
 Dashboard Streamlit hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
 
@@ -120,6 +121,11 @@ writable riêng cho report temp. Artifact vẫn được lưu trong `artifacts/`
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-workspace-disk.ps1
 python -m pytest
+npm --prefix web run contracts:check
+npm --prefix web run typecheck
+npm --prefix web run test
+npm --prefix web run lint
+npm --prefix web run build
 python -m compileall -q src dashboard tests
 docker compose -f compose.yaml config --quiet
 python -m pip wheel . --no-deps --no-build-isolation --wheel-dir artifacts/_tmp/wheel
@@ -178,7 +184,7 @@ revoke→reseed và 9/9 PostgreSQL privilege test, cùng 8/8 kịch bản Playwr
 gồm cả hai hành trình `@inventory` (`WEB_PLATFORM_E2E=PASS`). Xem
 [phase file](plans/260722-2342-production-web-platform/phase-07-inventory-control.md)
 và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-07-inventory-control-evidence-2026-07-26.md).
-Public release vẫn bị chặn; Phase 8 Cost Analysis là bước tiếp theo.
+Public release vẫn bị chặn; Web Phase 8 Cost Analysis đã hoàn tất phần implementation/static gate, còn guarded browser E2E cần chạy khi workspace đạt disk floor.
 
 ## Big-data demo và visual assets
 

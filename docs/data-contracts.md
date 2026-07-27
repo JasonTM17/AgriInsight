@@ -128,6 +128,26 @@ assigned Farm Manager reads assigned farms; Inventory Manager and Supplier have
 no cost permission. Java does not write Gold, manifests, SQLite, or report
 artifacts; Phase 7's versioned outbox is the integration boundary.
 
+## Web Cost Analysis contract
+
+The authenticated Next BFF exposes one browser route, `/costs`, with exactly
+two URL lenses: `operating` and `procurement`. Unknown lenses (including
+`inventory`) and lens-incompatible filters are rejected before any upstream
+request. Operating requests use a bounded UTC window of at most 366 days and
+call Spring `cost-entries` plus `cost-summaries`; procurement requests resolve
+operational farm UUIDs to active canonical farm codes before calling
+`GET /internal/v1/costs/procurement`.
+
+| BFF surface | Permission | Upstream boundary | Contract |
+|---|---|---|---|
+| `GET /costs` | `COST_READ` | Spring + FastAPI | source-aware page with KPI, trend, evidence table and lineage |
+| `POST /api/costs/entries` | `COST_MANAGE` | Spring `POST /api/v1/cost-entries` | CSRF, idempotency, one positive posting |
+| `POST /api/costs/entries/{entryId}/corrections` | `COST_MANAGE` | Spring correction route | CSRF, idempotency, append-only reversal + replacement |
+| `GET /api/costs/export` | `COST_READ` | FastAPI `/internal/v1/costs/export` | allowlisted `csv|pdf|xlsx`, safe stream headers, no filesystem paths |
+
+Procurement remains read-only analytics. Inventory value never appears as a
+third cost lens, and browser code never assembles or estimates export files.
+
 ## Transactional outbox contract
 
 Phase 7 adds a PostgreSQL transactional outbox that is intentionally separate

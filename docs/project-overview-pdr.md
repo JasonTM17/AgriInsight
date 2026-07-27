@@ -85,6 +85,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
 | 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Core verified; production release gated |
+| 8 | Web Cost Analysis: two lenses, scoped BFF, export and command contracts | Implementation/static gate accepted 2026-07-27; guarded browser E2E pending disk capacity |
 | Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Implementation locally verified 2026-07-23; CK review/docs/frontend handoff gates remain |
 
 Phase 5 acceptance evidence is recorded in
@@ -143,6 +144,9 @@ the protected production release, identity/MFA and backup policy remain deferred
 
 - Keep PostgreSQL inventory/procurement facts separate from current Gold until a
   versioned ETL/outbox contract is accepted.
+- Keep Web Cost Analysis on exactly two lenses: Spring operating ledger and
+  FastAPI procurement Gold. The browser never calls either upstream service
+  directly; all reads, commands, and exports cross the opaque-session BFF.
 - Close Phase 7 protected production release and recovery-policy approvals
   without merging operating cost, procurement spend, or inventory value.
 - Use CK FE/Stitch design artifacts as the frontend source of truth, then build

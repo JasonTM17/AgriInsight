@@ -8,7 +8,7 @@ Verified snapshot: 2026-07-26
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
 | `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
-| `web/` | Next 16 App Router/BFF, opaque session auth, and the `/overview`, `/farms`, `/farms/[farmId]`, `/work` browser surface |
+| `web/` | Next 16 App Router/BFF, opaque session auth, and the `/overview`, `/farms`, `/farms/[farmId]`, `/work`, `/inventory`, `/costs` browser surface |
 | `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
 | `backend/` | Java 21 Spring Boot operational backend, PostgreSQL migrations, and transactional outbox |
 | `scripts/` | C/D disk guard, guarded backend verification, and big-data demo runner |
@@ -39,9 +39,9 @@ design system.
 ## Web surface
 
 The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
-Phase 5-7 browser surface. Product routes are `/overview`, `/farms`,
-`/farms/[farmId]`, `/work`, and `/inventory`; auth/support routes such as
-`/login`, `/protected`, and `/api/auth/*` exist as shell plumbing.
+Phase 5-8 browser surface. Product routes are `/overview`, `/farms`,
+`/farms/[farmId]`, `/work`, `/inventory`, and `/costs`; auth/support routes
+such as `/login`, `/protected`, and `/api/auth/*` exist as shell plumbing.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
 calling the typed FastAPI Gold read layer. The browser receives aggregated
@@ -72,6 +72,14 @@ version into the command and into the idempotency fingerprint. An unconfirmed
 command keeps its `Idempotency-Key` and source version so retries replay
 upstream instead of double-applying. No ABC class, FEFO order, alert, or low-stock threshold is
 recomputed in the browser.
+
+`/costs` exposes exactly two lenses. Operating reads/writes use the bounded
+Spring ledger and append-only correction routes; procurement stays read-only
+and uses the FastAPI Gold snapshot after farm UUID → canonical code mapping.
+Runtime Zod schemas validate both sources. Browser mutations require
+same-origin CSRF, `COST_MANAGE`, bounded JSON, and stable idempotency keys.
+CSV/PDF/XLSX requests use `/api/costs/export`, which forwards only allowlisted
+filters and safe file headers; inventory value never becomes a cost lens.
 
 ## Operational backend
 
@@ -157,6 +165,12 @@ GETs also expose `ETag`.
 - All unregistered business mappings are denied.
 
 ## Verification snapshot
+
+- Web Phase 8 implementation/static gate (2026-07-27): full Python suite,
+  generated-contract drift, TypeScript, zero-warning ESLint, 239 passed web
+  tests with 9 intentional skips, and Next 16 production build. The real
+  Keycloak/PostgreSQL/Spring/Chrome cost journey is checked in but not claimed
+  locally while C: remains below the guarded 8 GiB floor.
 
 - Web Phase 6 local acceptance (2026-07-26): generated-contract drift,
   TypeScript, zero-warning ESLint, Next 16 production build, 127 passed web

@@ -205,6 +205,23 @@ The API exposes bounded entry list/detail, correction, and summary routes. The s
 
 Operating cost, procurement spend, and inventory value are three independent lenses. Java does not read/write SQLite, Gold, manifests, or report files.
 
+## Web cost analysis plane
+
+Web Phase 8 adds a server-rendered Next route at `/costs`. The route dispatches
+only two explicit lenses: `operating` reads the Spring ledger and summaries;
+`procurement` reads the scoped FastAPI Gold snapshot. The BFF validates URL
+filters, checks `COST_READ`/`COST_MANAGE`, maps farm UUIDs to active canonical
+codes, and validates upstream payloads with generated-contract-derived Zod
+schemas. Browser code never stores bearer tokens or calls Spring/FastAPI
+directly.
+
+Commands remain append-only: posting and correction routes require same-origin
+CSRF plus a stable `Idempotency-Key`, and corrections carry the original entry
+identifier while the backend appends reversal/replacement rows. Export uses a
+single format per request (`csv`, `pdf`, or capability-gated `xlsx`), forwards
+only safe content headers, and never exposes staging paths. Procurement is
+read-only and inventory value remains outside both cost lenses.
+
 ## Transactional outbox
 
 Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration, not a broker or consumer implementation.
