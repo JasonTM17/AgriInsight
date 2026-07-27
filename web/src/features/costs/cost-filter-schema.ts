@@ -65,6 +65,7 @@ export function parseCostFilterState(
   if (from && !isoDateSchema.safeParse(from).success) return null;
   if (to && !isoDateSchema.safeParse(to).success) return null;
   if (from && to && from > to) return null;
+  if (from && to && dateSpanDays(from, to) > 366) return null;
   if (farmId && !javaUuidSchema.safeParse(farmId).success) return null;
   if (seasonId && !javaUuidSchema.safeParse(seasonId).success) return null;
   if (activityId && !javaUuidSchema.safeParse(activityId).success) return null;
@@ -91,6 +92,26 @@ export function parseCostFilterState(
   };
 }
 
+export function resolveCostDateRange(
+  filters: CostFilterState["filters"],
+  today = new Date()
+): Readonly<{ from: string; to: string }> {
+  const fallbackTo = formatUtcDate(today);
+  const fallbackFrom = formatUtcDate(
+    new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate() - 365
+    ))
+  );
+  const from = filters.from ?? fallbackFrom;
+  const to = filters.to ?? fallbackTo;
+  if (from > to || dateSpanDays(from, to) > 366) {
+    return { from: fallbackFrom, to: fallbackTo };
+  }
+  return { from, to };
+}
+
 export function costAnalysisHref(state: CostFilterState): string {
   const query = new URLSearchParams({ lens: state.lens });
   const { from, to, farmId, seasonId, activityId, category } = state.filters;
@@ -115,4 +136,14 @@ function compactFilters(
   return Object.fromEntries(
     Object.entries(filters).filter(([, value]) => value !== undefined)
   );
+}
+
+function dateSpanDays(from: string, to: string): number {
+  const fromMs = Date.parse(`${from}T00:00:00Z`);
+  const toMs = Date.parse(`${to}T00:00:00Z`);
+  return Math.floor((toMs - fromMs) / 86_400_000) + 1;
+}
+
+function formatUtcDate(value: Date): string {
+  return value.toISOString().slice(0, 10);
 }

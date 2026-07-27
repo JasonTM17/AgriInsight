@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   costAnalysisHref,
-  parseCostFilterState
+  parseCostFilterState,
+  resolveCostDateRange
 } from "@/features/costs/cost-filter-schema";
 
 const FARM_ID = "41000000-0000-0000-0000-000000000001";
@@ -77,10 +78,20 @@ describe("cost analysis route contract", () => {
   it.each([
     { lens: "operating", from: "2026-02-30" },
     { lens: "operating", from: "2026-12-31", to: "2026-01-01" },
+    { lens: "operating", from: "2025-01-01", to: "2026-01-02" },
     { lens: "operating", farmId: "farm-code-is-not-a-uuid" },
     { lens: "operating", category: "PROCUREMENT" }
   ])("rejects invalid operating filter values %#", (input) => {
     expect(parseCostFilterState(input)).toBeNull();
+  });
+
+  it("resolves missing dates to a bounded trailing-year UTC range", () => {
+    expect(
+      resolveCostDateRange(
+        {},
+        new Date("2026-07-27T12:00:00Z")
+      )
+    ).toEqual({ from: "2025-07-27", to: "2026-07-27" });
   });
 
   it("builds deterministic lens-safe hrefs", () => {
