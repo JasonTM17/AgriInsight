@@ -93,9 +93,11 @@ test("@admin tenant administrator completes lifecycle and assignment commands", 
     );
 
     let identitySection = section(page, "Liên kết đăng nhập OIDC");
-    const identityCount = await identitySection
-      .getByRole("button", { name: "Ngắt liên kết" })
-      .count();
+    const unlinkButtons = identitySection.getByRole("button", {
+      name: "Ngắt liên kết"
+    });
+    await expect(unlinkButtons).toHaveCount(1);
+    const identityCount = await unlinkButtons.count();
     await identitySection.locator('input[name="issuer"]').fill(ISSUER);
     await identitySection
       .locator('input[name="subject"]')

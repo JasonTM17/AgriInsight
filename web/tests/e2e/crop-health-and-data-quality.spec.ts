@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { loginWithRealOidc } from "./helpers/real-oidc-login";
+
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Crop quality E2E requires ${name}`);
@@ -25,9 +27,9 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
     .toBe(true);
 }
 
-test("@crop-health executive sees scoped evidence and data quality lineage", async ({ page }) => {
+test("@crop-health analyst sees scoped evidence and data quality lineage", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await login(page, "/crop-health");
+  await loginWithRealOidc(page, "analyst", "/crop-health");
   await expect(page.getByTestId("crop-health-page")).toBeVisible();
   await expect(
     page
