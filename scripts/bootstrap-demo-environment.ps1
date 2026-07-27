@@ -8,7 +8,9 @@ param(
     [int]$DatabasePort = 5432,
     [string]$DatabaseName = "agriinsight_demo",
     [string]$DatabaseUser = "agriinsight_migrator",
-    [string]$OutputDirectory = "_tmp/demo-bootstrap"
+    [string]$OutputDirectory = "_tmp/demo-bootstrap",
+    [switch]$HostedCi,
+    [string]$HostedCiTempPath
 )
 
 Set-StrictMode -Version 3.0
@@ -28,8 +30,29 @@ if ([string]::IsNullOrWhiteSpace($env:PGPASSWORD)) {
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$diskGuard = Join-Path $PSScriptRoot "check-workspace-disk.ps1"
-& powershell -ExecutionPolicy Bypass -File $diskGuard
+$powerShellCommand = if (
+    [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+) { "powershell" } else { "pwsh" }
+$diskGuardArguments = if ($HostedCi) {
+    if (
+        $env:CI -ne "true" -or
+        [string]::IsNullOrWhiteSpace($HostedCiTempPath)
+    ) {
+        throw "Hosted CI disk mode requires CI=true and HostedCiTempPath."
+    }
+    @(
+        "-NoProfile",
+        "-File", (Join-Path $PSScriptRoot "check-hosted-ci-disk.ps1"),
+        "-Path", $HostedCiTempPath
+    )
+} else {
+    @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "check-workspace-disk.ps1")
+    )
+}
+& $powerShellCommand @diskGuardArguments
 if ($LASTEXITCODE -ne 0) {
     throw "Workspace disk guard did not pass."
 }

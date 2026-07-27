@@ -48,9 +48,8 @@ describe("real-platform E2E runner", () => {
       '"http://127.0.0.1:58082/health/ready"'
     );
     expect(runner).toContain("Assert-ProcessOwnsTcpPort");
-    expect(runner).toContain(
-      '$javaExecutable = Join-Path $env:JAVA_HOME "bin\\java.exe"'
-    );
+    expect(runner).toContain('Join-Path $env:JAVA_HOME "bin\\java.exe"');
+    expect(runner).toContain('Join-Path $env:JAVA_HOME "bin/java"');
     expect(runner).toContain("-FilePath $javaExecutable");
     expect(runner).toContain("$LauncherProcess.Kill()");
     expect(runner).toContain("$LauncherProcess.Dispose()");
@@ -80,5 +79,16 @@ describe("real-platform E2E runner", () => {
     const platformPass = runner.lastIndexOf("WEB_PLATFORM_E2E=PASS");
     expect(cleanupFailureGate).toBeGreaterThan(finalCleanup);
     expect(platformPass).toBeGreaterThan(cleanupFailureGate);
+  });
+
+  it("uses runner.temp only behind the hosted CI guard", () => {
+    expect(runner).toContain("[switch] $HostedCi");
+    expect(runner).toContain('$env:CI -ne "true"');
+    expect(runner).toContain("$env:RUNNER_TEMP");
+    expect(runner).toContain("scripts/check-hosted-ci-disk.ps1");
+    expect(runner).toContain(
+      '$artifactRuntimeParent = Join-Path $env:RUNNER_TEMP "agriinsight-web-e2e"'
+    );
+    expect(runner).toContain("Invoke-WorkspaceDiskGuard");
   });
 });

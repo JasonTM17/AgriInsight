@@ -5,7 +5,9 @@ param(
     [int] $DatabasePort = 5432,
     [string] $DatabaseName = "agriinsight_demo",
     [string] $DatabaseUser = "agriinsight_migrator",
-    [string] $OutputDirectory = "_tmp/demo-bootstrap"
+    [string] $OutputDirectory = "_tmp/demo-bootstrap",
+    [switch] $HostedCi,
+    [string] $HostedCiTempPath
 )
 
 Set-StrictMode -Version 3.0
@@ -97,14 +99,26 @@ foreach ($part in $parts) {
 }
 $assignmentId, $tenantId, $activityId, $employeeId = $parts
 
-& powershell -ExecutionPolicy Bypass `
-    -File (Join-Path $PSScriptRoot "bootstrap-demo-environment.ps1") `
-    -ConfirmLocalDemo `
-    -DatabaseHost $DatabaseHost `
-    -DatabasePort $DatabasePort `
-    -DatabaseName $DatabaseName `
-    -DatabaseUser $DatabaseUser `
-    -OutputDirectory $OutputDirectory
+$powerShellCommand = if (
+    [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+) { "powershell" } else { "pwsh" }
+$bootstrapArguments = @(
+    "-NoProfile",
+    "-File", (Join-Path $PSScriptRoot "bootstrap-demo-environment.ps1"),
+    "-ConfirmLocalDemo",
+    "-DatabaseHost", $DatabaseHost,
+    "-DatabasePort", "$DatabasePort",
+    "-DatabaseName", $DatabaseName,
+    "-DatabaseUser", $DatabaseUser,
+    "-OutputDirectory", $OutputDirectory
+)
+if ($HostedCi) {
+    $bootstrapArguments += @(
+        "-HostedCi",
+        "-HostedCiTempPath", $HostedCiTempPath
+    )
+}
+& $powerShellCommand @bootstrapArguments
 if ($LASTEXITCODE -ne 0) {
     throw "Demo bootstrap failed after an assignment revocation."
 }

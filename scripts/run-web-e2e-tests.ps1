@@ -2,7 +2,8 @@
 param(
     [switch] $SkipStaticGates,
     [switch] $RunLifecycleProbe,
-    [switch] $CaptureMedia
+    [switch] $CaptureMedia,
+    [switch] $HostedCi
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,9 +12,33 @@ Set-StrictMode -Version Latest
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $projectName = "agriinsight-web-e2e"
 $runnerMutexName = "Global\AgriInsight.WebE2E.Runner"
+$isWindowsHost = (
+    [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+)
+if (-not $isWindowsHost) {
+    $runnerMutexName = "AgriInsight.WebE2E.Runner"
+}
+$powerShellCommand = if ($isWindowsHost) { "powershell" } else { "pwsh" }
 $artifactRuntimeRoot = Join-Path $repositoryRoot "artifacts\_tmp\web-e2e"
 $temporaryRuntimeRoot = Join-Path $repositoryRoot "_tmp\web-e2e"
 $mavenRepositoryRoot = Join-Path $repositoryRoot "_tmp\host-caches\maven-repository"
+$artifactRuntimeParent = Join-Path $repositoryRoot "artifacts/_tmp"
+if (-not $isWindowsHost) {
+    $artifactRuntimeRoot = Join-Path $repositoryRoot "artifacts/_tmp/web-e2e"
+    $temporaryRuntimeRoot = Join-Path $repositoryRoot "_tmp/web-e2e"
+    $mavenRepositoryRoot = Join-Path $repositoryRoot "_tmp/host-caches/maven-repository"
+}
+if ($HostedCi) {
+    if (
+        $env:CI -ne "true" -or
+        [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)
+    ) {
+        throw "HostedCi requires CI=true and RUNNER_TEMP."
+    }
+    $artifactRuntimeParent = Join-Path $env:RUNNER_TEMP "agriinsight-web-e2e"
+    $artifactRuntimeRoot = Join-Path $artifactRuntimeParent "artifacts"
+    $mavenRepositoryRoot = Join-Path $artifactRuntimeParent "maven-repository"
+}
 $postgresRuntimeRoot = Join-Path $artifactRuntimeRoot "postgres"
 $composeEnvironmentReady = $false
 $runnerMutex = $null
@@ -84,6 +109,9 @@ function Invoke-Compose {
 
 function Get-TcpPortListeners {
     param([Parameter(Mandatory = $true)] [int] $Port)
+    if (-not $isWindowsHost) {
+        return @()
+    }
     return @(
         Get-NetTCPConnection `
             -LocalPort $Port `
@@ -94,6 +122,20 @@ function Get-TcpPortListeners {
 
 function Assert-TcpPortAvailable {
     param([Parameter(Mandatory = $true)] [int] $Port)
+    if (-not $isWindowsHost) {
+        $listener = [Net.Sockets.TcpListener]::new(
+            [Net.IPAddress]::Loopback,
+            $Port
+        )
+        try {
+            $listener.Start()
+        } catch {
+            throw "TCP port $Port is already in use"
+        } finally {
+            $listener.Stop()
+        }
+        return
+    }
     $listeners = @(Get-TcpPortListeners $Port)
     if ($listeners.Count -gt 0) {
         $owners = ($listeners.OwningProcess | Sort-Object -Unique) -join ","
@@ -105,9 +147,13 @@ function Resolve-JavaExecutable {
     if ([string]::IsNullOrWhiteSpace($env:JAVA_HOME)) {
         throw "Web E2E requires JAVA_HOME to launch an owned Java process"
     }
-    $javaExecutable = Join-Path $env:JAVA_HOME "bin\java.exe"
+    $javaExecutable = if ($isWindowsHost) {
+        Join-Path $env:JAVA_HOME "bin\java.exe"
+    } else {
+        Join-Path $env:JAVA_HOME "bin/java"
+    }
     if (-not (Test-Path -LiteralPath $javaExecutable -PathType Leaf)) {
-        throw "JAVA_HOME does not contain bin\java.exe"
+        throw "JAVA_HOME does not contain the Java executable"
     }
     return $javaExecutable
 }
@@ -138,7 +184,9 @@ function Wait-OwnedHttpProcessReady {
         try {
             $response = Invoke-WebRequest -Uri $Uri -TimeoutSec 3 -UseBasicParsing
             if ($response.StatusCode -eq 200) {
-                Assert-ProcessOwnsTcpPort $LauncherProcess $Port
+                if ($isWindowsHost) {
+                    Assert-ProcessOwnsTcpPort $LauncherProcess $Port
+                }
                 return
             }
             $lastFailure = "HTTP $($response.StatusCode)"
@@ -153,6 +201,50 @@ function Wait-OwnedHttpProcessReady {
         }
         Start-Sleep -Seconds 2
     }
+}
+
+function Start-GuardedProcess {
+    param(
+        [Parameter(Mandatory = $true)] [string] $FilePath,
+        [Parameter(Mandatory = $true)] [string[]] $ArgumentList,
+        [Parameter(Mandatory = $true)] [string] $WorkingDirectory,
+        [Parameter(Mandatory = $true)] [string] $StandardOutput,
+        [Parameter(Mandatory = $true)] [string] $StandardError
+    )
+    $parameters = @{
+        FilePath = $FilePath
+        ArgumentList = $ArgumentList
+        WorkingDirectory = $WorkingDirectory
+        RedirectStandardOutput = $StandardOutput
+        RedirectStandardError = $StandardError
+        PassThru = $true
+    }
+    if ($isWindowsHost) {
+        $parameters.WindowStyle = "Hidden"
+    }
+    return Start-Process @parameters
+}
+
+function Invoke-WorkspaceDiskGuard {
+    if ($HostedCi) {
+        if (
+            $env:CI -ne "true" -or
+            [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)
+        ) {
+            throw "HostedCi requires CI=true and RUNNER_TEMP."
+        }
+        Invoke-Checked $powerShellCommand @(
+            "-NoProfile",
+            "-File", "scripts/check-hosted-ci-disk.ps1",
+            "-Path", $env:RUNNER_TEMP
+        ) "Hosted CI runner.temp disk guard failed"
+        return
+    }
+    Invoke-Checked $powerShellCommand @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/check-workspace-disk.ps1"
+    ) "Workspace disk guard failed"
 }
 
 function Remove-SafeRuntimeDirectory {
@@ -276,7 +368,9 @@ if ($RunLifecycleProbe) {
 }
 
 Push-Location $repositoryRoot
-$backendJar = Join-Path $repositoryRoot "backend\target\agriinsight-backend-0.1.0-SNAPSHOT.jar"
+$backendJar = Join-Path (
+    Join-Path $repositoryRoot "backend"
+) "target/agriinsight-backend-0.1.0-SNAPSHOT.jar"
 $javaExecutable = Resolve-JavaExecutable
 $previousPythonPath = $env:PYTHONPATH
 $runError = $null
@@ -292,9 +386,7 @@ try {
         throw "Another AgriInsight web E2E runner already owns the workspace"
     }
 
-    Invoke-Checked "powershell" @(
-        "-ExecutionPolicy", "Bypass", "-File", "scripts/check-workspace-disk.ps1"
-    ) "Workspace disk guard failed before web E2E"
+    Invoke-WorkspaceDiskGuard
 
     if ((& node --version) -ne "v24.12.0") {
         throw "Web E2E requires Node v24.12.0"
@@ -314,7 +406,7 @@ try {
     $clientSecret = New-HexSecret
     $personaPassword = New-HexSecret 16
 
-    $env:AGRIINSIGHT_DEMO_POSTGRES_DATA_DIR = "./artifacts/_tmp/web-e2e/postgres"
+    $env:AGRIINSIGHT_DEMO_POSTGRES_DATA_DIR = $postgresRuntimeRoot
     $env:AGRIINSIGHT_POSTGRES_PORT = "55443"
     $env:AGRIINSIGHT_BACKEND_PORT = "58081"
     $env:AGRIINSIGHT_POSTGRES_OPERATOR_PASSWORD = $operatorPassword
@@ -382,7 +474,7 @@ try {
     }
     Assert-E2eProjectStopped
     Remove-SafeRuntimeDirectory $artifactRuntimeRoot (
-        Join-Path $repositoryRoot "artifacts\_tmp"
+        $artifactRuntimeParent
     )
     Remove-SafeRuntimeDirectory $temporaryRuntimeRoot (
         Join-Path $repositoryRoot "_tmp"
@@ -445,34 +537,50 @@ try {
     if ([string]::IsNullOrWhiteSpace($env:AGRIINSIGHT_DEMO_KEYCLOAK_CONTAINER)) {
         throw "Keycloak E2E container was not found"
     }
-    Invoke-Checked "powershell" @(
+    Invoke-Checked $powerShellCommand @(
         "-ExecutionPolicy", "Bypass", "-File", "scripts/configure-demo-oidc.ps1"
     ) "Demo OIDC configuration failed"
 
     $env:PGPASSWORD = $backendMigratorPassword
-    Invoke-Checked "powershell" @(
+    $bootstrapArguments = @(
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/bootstrap-demo-environment.ps1",
         "-ConfirmLocalDemo",
         "-DatabasePort", "55443",
         "-OutputDirectory", "_tmp/web-e2e/demo-bootstrap"
-    ) "Guarded demo bootstrap or reconciliation failed"
-    Invoke-Checked "powershell" @(
+    )
+    $revocationArguments = @(
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/test-demo-assignment-revocation.ps1",
         "-DatabasePort", "55443",
         "-OutputDirectory", "_tmp/web-e2e/demo-bootstrap"
-    ) "Demo assignment revocation lifecycle probe failed"
+    )
+    if ($HostedCi) {
+        $bootstrapArguments += @(
+            "-HostedCi",
+            "-HostedCiTempPath", $env:RUNNER_TEMP
+        )
+        $revocationArguments += @(
+            "-HostedCi",
+            "-HostedCiTempPath", $env:RUNNER_TEMP
+        )
+    }
+    Invoke-Checked $powerShellCommand $bootstrapArguments (
+        "Guarded demo bootstrap or reconciliation failed"
+    )
+    Invoke-Checked $powerShellCommand $revocationArguments (
+        "Demo assignment revocation lifecycle probe failed"
+    )
     $demoContract = Get-Content -LiteralPath (
-        Join-Path $repositoryRoot "deploy\demo\demo-tenant.json"
+        Join-Path $repositoryRoot "deploy/demo/demo-tenant.json"
     ) -Raw | ConvertFrom-Json
     $env:AGRIINSIGHT_ANALYTICS_ARTIFACT_ROOT = Join-Path (
         $repositoryRoot
-    ) "artifacts\big-data"
+    ) "artifacts/big-data"
     $env:AGRIINSIGHT_ANALYTICS_DEMO_TENANT_ID = [string]$demoContract.tenant.id
     $env:AGRIINSIGHT_ANALYTICS_RECONCILIATION_REPORT = Join-Path (
         $temporaryRuntimeRoot
-    ) "demo-bootstrap\reconciliation.json"
+    ) "demo-bootstrap/reconciliation.json"
     $env:AGRIINSIGHT_ANALYTICS_SPRING_BASE_URL = "http://127.0.0.1:58081"
     $env:AGRIINSIGHT_ANALYTICS_BIND_HOST = "127.0.0.1"
     $env:AGRIINSIGHT_ANALYTICS_PORT = "58082"
@@ -519,14 +627,12 @@ try {
     $env:AGRIINSIGHT_OIDC_INTERACTIVE_CLIENT_ID = "agriinsight-web"
     $env:SERVER_PORT = "58081"
     $env:AGRIINSIGHT_SERVER_ADDRESS = "127.0.0.1"
-    $backendProcess = Start-Process `
+    $backendProcess = Start-GuardedProcess `
         -FilePath $javaExecutable `
         -ArgumentList @("-jar", $backendJar) `
         -WorkingDirectory (Join-Path $repositoryRoot "backend") `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $backendLogPath `
-        -RedirectStandardError (Join-Path $artifactRuntimeRoot "backend-error.log") `
-        -PassThru
+        -StandardOutput $backendLogPath `
+        -StandardError (Join-Path $artifactRuntimeRoot "backend-error.log")
     Write-Output "BACKEND_HOST_START jar=$backendJar port=58081"
     try {
         Wait-OwnedHttpProcessReady `
@@ -554,16 +660,14 @@ try {
             $sourcePath + [IO.Path]::PathSeparator + $previousPythonPath
         )
     }
-    $analyticsProcess = Start-Process `
+    $analyticsProcess = Start-GuardedProcess `
         -FilePath "python" `
         -ArgumentList @("-m", "agriinsight.analytics_api") `
         -WorkingDirectory $repositoryRoot `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $analyticsLogPath `
-        -RedirectStandardError (
+        -StandardOutput $analyticsLogPath `
+        -StandardError (
             Join-Path $artifactRuntimeRoot "analytics-error.log"
-        ) `
-        -PassThru
+        )
     Write-Output "ANALYTICS_HOST_START module=agriinsight.analytics_api port=58082"
     try {
         Wait-OwnedHttpProcessReady `
@@ -615,9 +719,7 @@ try {
         Write-Output "MEDIA_CAPTURE=PASS"
     }
 
-    Invoke-Checked "powershell" @(
-        "-ExecutionPolicy", "Bypass", "-File", "scripts/check-workspace-disk.ps1"
-    ) "Workspace disk guard failed after web E2E"
+    Invoke-WorkspaceDiskGuard
 } catch {
     $runError = $_
 } finally {
@@ -642,7 +744,7 @@ try {
         Invoke-CleanupStep "artifact runtime cleanup" {
             Assert-E2eProjectStopped
             Remove-SafeRuntimeDirectory $artifactRuntimeRoot (
-                Join-Path $repositoryRoot "artifacts\_tmp"
+                $artifactRuntimeParent
             )
         } $cleanupErrors
         Invoke-CleanupStep "temporary runtime cleanup" {
