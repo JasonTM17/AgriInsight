@@ -27,21 +27,15 @@ export default async function CropHealthFieldRoute({
       />
     );
   }
+  let envelope: Awaited<ReturnType<typeof loadCropHealthFieldViewModel>>;
   try {
-    const envelope = await loadCropHealthFieldViewModel(
+    envelope = await loadCropHealthFieldViewModel(
       {
         env: context.env,
         accessToken: context.accessToken,
         correlationId: context.correlationId
       },
       fieldCode
-    );
-    return (
-      <CropHealthFieldDetail
-        correlationId={context.correlationId}
-        envelope={envelope}
-        fieldCode={fieldCode}
-      />
     );
   } catch (error) {
     const denied = error instanceof AnalyticsUpstreamError && error.status === 403;
@@ -54,4 +48,11 @@ export default async function CropHealthFieldRoute({
       />
     );
   }
+  return (
+    <CropHealthFieldDetail
+      correlationId={context.correlationId}
+      envelope={envelope}
+      fieldCode={fieldCode}
+    />
+  );
 }

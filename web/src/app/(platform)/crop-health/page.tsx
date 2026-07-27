@@ -44,21 +44,15 @@ export default async function CropHealthRoute({
     );
   }
 
+  let envelope: Awaited<ReturnType<typeof loadCropHealthViewModel>>;
   try {
-    const envelope = await loadCropHealthViewModel(
+    envelope = await loadCropHealthViewModel(
       {
         env: context.env,
         accessToken: context.accessToken,
         correlationId: context.correlationId
       },
       routeState
-    );
-    return (
-      <CropHealthPage
-        correlationId={context.correlationId}
-        envelope={envelope}
-        state={routeState}
-      />
     );
   } catch (error) {
     return (
@@ -72,4 +66,11 @@ export default async function CropHealthRoute({
       />
     );
   }
+  return (
+    <CropHealthPage
+      correlationId={context.correlationId}
+      envelope={envelope}
+      state={routeState}
+    />
+  );
 }

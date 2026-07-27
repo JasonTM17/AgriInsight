@@ -21,13 +21,13 @@ export default async function DataQualityRoute() {
       />
     );
   }
+  let envelope: Awaited<ReturnType<typeof loadDataQualityViewModel>>;
   try {
-    const envelope = await loadDataQualityViewModel({
+    envelope = await loadDataQualityViewModel({
       env: context.env,
       accessToken: context.accessToken,
       correlationId: context.correlationId
     });
-    return <DataQualityPage correlationId={context.correlationId} envelope={envelope} />;
   } catch (error) {
     const denied = error instanceof AnalyticsUpstreamError && error.status === 403;
     return (
@@ -38,4 +38,5 @@ export default async function DataQualityRoute() {
       />
     );
   }
+  return <DataQualityPage correlationId={context.correlationId} envelope={envelope} />;
 }
