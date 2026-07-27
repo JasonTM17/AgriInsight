@@ -41,4 +41,13 @@ describe("Field Ledger shell accessibility guardrails", () => {
     ].join("\n");
     expect(source).not.toMatch(/stitch|fonts\.googleapis|cdn\./i);
   });
+
+  it("keeps one localized parent boundary for layout-level HTTP 403 responses", () => {
+    const boundary = read("src/app/(platform)/forbidden.tsx");
+    const panel = read("src/components/app-shell/platform-forbidden.tsx");
+
+    expect(boundary).toContain("PlatformForbidden");
+    expect(panel).toContain("Truy cập bị từ chối");
+    expect(panel).not.toMatch(/subject|employeeId|warehouseIds/i);
+  });
 });
