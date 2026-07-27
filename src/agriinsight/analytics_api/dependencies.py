@@ -45,9 +45,7 @@ class RequestScopeResolver:
         principal = principal_from(user, self._demo_tenant_id)
         plan = plan_scope(principal, area)
         farms = await self._farm_catalog() if plan.needs_farms else []
-        warehouses = (
-            await self._warehouse_catalog() if plan.needs_warehouses else []
-        )
+        warehouses = await self._warehouse_catalog() if plan.needs_warehouses else []
         _require_unique_active_catalog(farms, "farm")
         _require_unique_active_catalog(warehouses, "warehouse")
         farm_codes = (
@@ -108,9 +106,9 @@ class RequestScopeResolver:
         principal = principal_from(user, self._demo_tenant_id)
         roles = principal.roles
         permissions = principal.permissions
-        tenant_wide = bool(
-            roles & {"TENANT_ADMIN", "EXECUTIVE", "DATA_ANALYST"}
-        )
+        if "SUPPLIER" in roles:
+            raise _assistant_denied()
+        tenant_wide = bool(roles & {"TENANT_ADMIN", "EXECUTIVE", "DATA_ANALYST"})
         farm_access = "FARM_READ" in permissions and bool(
             tenant_wide or "FARM_MANAGER" in roles
         )
@@ -122,15 +120,11 @@ class RequestScopeResolver:
             raise _assistant_denied()
 
         farms = await self._farm_catalog() if farm_access else []
-        warehouses = (
-            await self._warehouse_catalog() if inventory_access else []
-        )
+        warehouses = await self._warehouse_catalog() if inventory_access else []
         _require_unique_active_catalog(farms, "farm")
         _require_unique_active_catalog(warehouses, "warehouse")
         farm_codes = frozenset(item.code for item in farms if item.active)
-        warehouse_codes = frozenset(
-            item.code for item in warehouses if item.active
-        )
+        warehouse_codes = frozenset(item.code for item in warehouses if item.active)
         if farm_access and not tenant_wide and not farm_codes:
             raise _empty_scope()
         if inventory_access and not tenant_wide and not warehouse_codes:

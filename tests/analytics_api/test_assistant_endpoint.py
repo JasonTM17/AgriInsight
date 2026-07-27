@@ -4,6 +4,7 @@ from agriinsight.analytics_api.assistant_models import (
     AssistantAnswer,
     AssistantUsage,
 )
+from agriinsight.analytics_api.assistant_quota import AssistantQuotaError
 from agriinsight.analytics_api.assistant_settings import AssistantSettings
 from agriinsight.analytics_api.deepseek_assistant_client import (
     AssistantProviderError,
@@ -36,6 +37,14 @@ class FailingAssistantService:
             "assistant_provider_busy",
             "internal provider detail",
             retryable=True,
+        )
+
+
+class QuotaLimitedAssistantService:
+    async def answer(self, _query, _scope, _corpus, _correlation_id):
+        raise AssistantQuotaError(
+            "assistant_daily_budget_exhausted",
+            "internal quota accounting detail",
         )
 
 
@@ -104,6 +113,26 @@ def test_supplier_is_denied_before_corpus_or_provider(api_factory) -> None:
     assert service.calls == []
 
 
+def test_supplier_vetoes_an_approved_secondary_role(api_factory) -> None:
+    service = RecordingAssistantService()
+    _app, client, _spring = api_factory(
+        roles={"SUPPLIER", "INVENTORY_MANAGER"},
+        permissions={"INVENTORY_READ"},
+        assistant_settings=_enabled(),
+        assistant_service=service,
+    )
+
+    response = client.post(
+        "/internal/v1/assistant/query",
+        headers={"Authorization": "Bearer test-token"},
+        json={"question": "Kho nào sắp thiếu vật tư?"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "analytics_forbidden"
+    assert service.calls == []
+
+
 def test_client_cannot_supply_tenant_or_model(api_factory) -> None:
     service = RecordingAssistantService()
     _app, client, _spring = api_factory(
@@ -141,3 +170,21 @@ def test_provider_error_is_sanitized(api_factory) -> None:
     payload = response.json()
     assert payload["error"]["code"] == "assistant_provider_busy"
     assert "internal provider detail" not in payload["error"]["message"]
+
+
+def test_quota_error_returns_sanitized_too_many_requests(api_factory) -> None:
+    _app, client, _spring = api_factory(
+        assistant_settings=_enabled(),
+        assistant_service=QuotaLimitedAssistantService(),
+    )
+
+    response = client.post(
+        "/internal/v1/assistant/query",
+        headers={"Authorization": "Bearer test-token"},
+        json={"question": "Tóm tắt dữ liệu."},
+    )
+
+    assert response.status_code == 429
+    payload = response.json()
+    assert payload["error"]["code"] == "assistant_daily_budget_exhausted"
+    assert "internal quota accounting detail" not in payload["error"]["message"]

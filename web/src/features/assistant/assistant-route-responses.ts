@@ -92,6 +92,13 @@ function problemForUpstreamStatus(status: number): AssistantApiError {
       "Câu hỏi hoặc lịch sử hội thoại chưa hợp lệ."
     );
   }
+  if (status === 429) {
+    return new AssistantApiError(
+      "assistant_rate_limited",
+      429,
+      "Đã đạt giới hạn sử dụng trợ lý. Hãy chờ rồi thử lại."
+    );
+  }
   return new AssistantApiError(
     "assistant_unavailable",
     status === 503 ? 503 : 502,

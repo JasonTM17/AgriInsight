@@ -19,9 +19,7 @@ def test_assistant_is_disabled_without_a_secret() -> None:
 
 def test_enabled_assistant_requires_a_valid_local_secret() -> None:
     with pytest.raises(AssistantSettingsError, match="API key is required"):
-        AssistantSettings.from_environment(
-            {"AGRIINSIGHT_ASSISTANT_ENABLED": "true"}
-        )
+        AssistantSettings.from_environment({"AGRIINSIGHT_ASSISTANT_ENABLED": "true"})
 
     with pytest.raises(AssistantSettingsError, match="invalid format"):
         AssistantSettings.from_environment(
@@ -45,6 +43,10 @@ def test_enabled_assistant_requires_a_valid_local_secret() -> None:
         ("AGRIINSIGHT_ASSISTANT_MAX_EVIDENCE_ITEMS", "0", "evidence items"),
         ("AGRIINSIGHT_ASSISTANT_MAX_OUTPUT_TOKENS", "9000", "output token"),
         ("AGRIINSIGHT_ASSISTANT_MAX_CONCURRENT_REQUESTS", "0", "concurrent"),
+        ("AGRIINSIGHT_LLM_QUEUE_TIMEOUT_SECONDS", "0", "queue timeout"),
+        ("AGRIINSIGHT_ASSISTANT_REQUESTS_PER_MINUTE", "0", "requests per"),
+        ("AGRIINSIGHT_ASSISTANT_DAILY_TOKEN_BUDGET", "100", "daily token"),
+        ("AGRIINSIGHT_ASSISTANT_TOKEN_RESERVATION", "100", "reservation"),
     ],
 )
 def test_provider_and_cost_boundaries_fail_closed(
@@ -68,3 +70,5 @@ def test_enabled_assistant_accepts_the_verified_deepseek_contract() -> None:
     assert settings.enabled is True
     assert settings.base_url == "https://api.deepseek.com"
     assert settings.thinking_enabled is False
+    assert settings.requests_per_minute == 30
+    assert settings.daily_token_budget == 1_000_000

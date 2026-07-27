@@ -44,9 +44,7 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
     overview_parameters = contract["paths"]["/internal/v1/overview"]["get"][
         "parameters"
     ]
-    assert expected_filters <= {
-        item["name"] for item in overview_parameters
-    }
+    assert expected_filters <= {item["name"] for item in overview_parameters}
     assert expected_filters <= {item["name"] for item in farm_parameters}
     assert contract["components"]["securitySchemes"]["HTTPBearer"]["scheme"] == "bearer"
     schemas = contract["components"]["schemas"]
@@ -76,9 +74,7 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "remediationActions",
         "severity",
     }
-    crop_parameters = contract["paths"]["/internal/v1/crop-health"]["get"][
-        "parameters"
-    ]
+    crop_parameters = contract["paths"]["/internal/v1/crop-health"]["get"]["parameters"]
     assert "field_code" in {item["name"] for item in crop_parameters}
     assert set(schemas["AppliedFilterModel"]["properties"]) == {
         "cropCode",
@@ -104,6 +100,9 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
     assert assistant_query["additionalProperties"] is False
     assert assistant_query["properties"]["question"]["maxLength"] == 1_200
     assert assistant_query["properties"]["history"]["maxItems"] == 6
+    assert (
+        "429" in contract["paths"]["/internal/v1/assistant/query"]["post"]["responses"]
+    )
 
 
 def test_checked_in_openapi_has_no_drift() -> None:

@@ -1369,6 +1369,15 @@ export interface operations {
                     readonly "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
+            /** @description Too Many Requests */
+            readonly 429: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Internal Server Error */
             readonly 500: {
                 headers: {

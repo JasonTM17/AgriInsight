@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from time import perf_counter
 from typing import Protocol
 from uuid import UUID
@@ -12,6 +13,10 @@ from agriinsight.analytics_api.assistant_models import (
 from agriinsight.analytics_api.assistant_observability import (
     AssistantTelemetry,
     AssistantTelemetryEvent,
+)
+from agriinsight.analytics_api.assistant_quota import (
+    AssistantQuota,
+    AssistantQuotaError,
 )
 from agriinsight.analytics_api.assistant_retrieval import (
     EvidenceChunk,
@@ -36,10 +41,16 @@ class AssistantService:
         retriever: EvidenceRetriever,
         generator: AssistantGenerator,
         telemetry: AssistantTelemetry | None = None,
+        quota: AssistantQuota | None = None,
     ) -> None:
         self._retriever = retriever
         self._generator = generator
         self._telemetry = telemetry or AssistantTelemetry()
+        self._quota = quota or AssistantQuota(
+            requests_per_minute=30,
+            daily_token_budget=1_000_000,
+            token_reservation=10_000,
+        )
 
     async def answer(
         self,
@@ -49,6 +60,21 @@ class AssistantService:
         correlation_id: str = "not-provided",
     ) -> AssistantAnswer:
         started_at = perf_counter()
+        try:
+            reservation = await self._quota.reserve(scope.tenant_id)
+        except AssistantQuotaError as error:
+            self._telemetry.record(
+                AssistantTelemetryEvent(
+                    correlation_id=correlation_id,
+                    latency_ms=_elapsed_ms(started_at),
+                    outcome="rejected",
+                    retrieval_count=0,
+                    refusal_reason=error.code,
+                    provider_code=None,
+                    usage=_zero_usage(),
+                )
+            )
+            raise
         evidence = self._retriever.retrieve(query.question, scope, corpus)
         if not evidence:
             answer = AssistantAnswer(
@@ -66,6 +92,7 @@ class AssistantService:
                     promptCacheMissTokens=0,
                 ),
             )
+            await reservation.finalize(0)
             self._record(
                 answer,
                 correlation_id,
@@ -80,7 +107,11 @@ class AssistantService:
                 evidence,
                 scope.tenant_id,
             )
+        except asyncio.CancelledError:
+            await reservation.finalize(reservation.reserved_tokens)
+            raise
         except Exception as error:
+            await reservation.finalize(reservation.reserved_tokens)
             self._telemetry.record(
                 AssistantTelemetryEvent(
                     correlation_id=correlation_id,
@@ -97,6 +128,7 @@ class AssistantService:
                 )
             )
             raise
+        await reservation.finalize(answer.usage.total_tokens)
         self._record(
             answer,
             correlation_id,

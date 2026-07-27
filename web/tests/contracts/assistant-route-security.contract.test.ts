@@ -118,7 +118,7 @@ describe("assistant BFF route security", () => {
     );
   });
 
-  it.each([401, 403, 422, 500, 503])(
+  it.each([401, 403, 422, 429, 500, 503])(
     "sanitizes upstream %s bodies",
     async (status) => {
       vi.mocked(executeAllowedAnalyticsCommand).mockResolvedValueOnce(
@@ -133,6 +133,10 @@ describe("assistant BFF route security", () => {
 
       expect(body).not.toContain("DeepSeek provider detail");
       expect(response.headers.get("Cache-Control")).toBe("no-store");
+      if (status === 429) {
+        expect(response.status).toBe(429);
+        expect(body).toContain("assistant_rate_limited");
+      }
     }
   );
 });

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from agriinsight.analytics_api.assistant_corpus import build_evidence_corpus
 from agriinsight.analytics_api.assistant_models import AssistantAnswer, AssistantQuery
+from agriinsight.analytics_api.assistant_quota import AssistantQuotaError
 from agriinsight.analytics_api.deepseek_assistant_client import (
     AssistantProviderError,
 )
@@ -12,6 +13,7 @@ from agriinsight.analytics_api.dependencies import (
     assistant_authorization,
 )
 from agriinsight.analytics_api.errors import ApiProblem, correlation_id
+from agriinsight.analytics_api.models import ErrorEnvelope
 from agriinsight.analytics_api.routers.common import (
     assert_snapshot_current,
     verified_snapshot,
@@ -24,6 +26,7 @@ router = APIRouter(tags=["analytics-assistant"])
     "/assistant/query",
     operation_id="queryAnalyticsAssistant",
     response_model=AssistantAnswer,
+    responses={429: {"model": ErrorEnvelope}},
 )
 async def query_assistant(
     query: AssistantQuery,
@@ -43,6 +46,12 @@ async def query_assistant(
             corpus,
             correlation_id(request),
         )
+    except AssistantQuotaError as error:
+        raise ApiProblem(
+            429,
+            error.code,
+            "The tenant assistant usage limit was reached.",
+        ) from error
     except AssistantProviderError as error:
         raise _provider_problem(error) from error
     assert_snapshot_current(request, snapshot)

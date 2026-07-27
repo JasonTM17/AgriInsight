@@ -7,6 +7,7 @@ import httpx
 from fastapi import APIRouter, FastAPI, Request
 
 from agriinsight.analytics_api.assistant_retrieval import EvidenceRetriever
+from agriinsight.analytics_api.assistant_quota import AssistantQuota
 from agriinsight.analytics_api.assistant_service import AssistantService
 from agriinsight.analytics_api.deepseek_assistant_client import (
     DeepSeekAssistantClient,
@@ -30,8 +31,7 @@ from agriinsight.analytics_api.snapshot_cache import SnapshotCache
 from agriinsight.analytics_api.spring_scope_client import SpringScopeClient
 
 _ERROR_RESPONSES = {
-    status: {"model": ErrorEnvelope}
-    for status in (401, 403, 422, 500, 502, 503)
+    status: {"model": ErrorEnvelope} for status in (401, 403, 422, 500, 502, 503)
 }
 
 
@@ -58,6 +58,11 @@ def create_app(
             DeepSeekAssistantClient(
                 resolved.assistant,
                 assistant_http_client,
+            ),
+            quota=AssistantQuota(
+                requests_per_minute=resolved.assistant.requests_per_minute,
+                daily_token_budget=resolved.assistant.daily_token_budget,
+                token_reservation=resolved.assistant.token_reservation,
             ),
         )
 
