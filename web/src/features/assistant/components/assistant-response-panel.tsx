@@ -6,6 +6,7 @@ type AssistantResponsePanelProps = Readonly<{
   answer: AssistantAnswer | null;
   error: AssistantClientError | null;
   loading: boolean;
+  onCancel: () => void;
   onRetry: () => void;
 }>;
 
@@ -23,6 +24,7 @@ export function AssistantResponsePanel({
   answer,
   error,
   loading,
+  onCancel,
   onRetry
 }: AssistantResponsePanelProps) {
   if (loading) {
@@ -32,6 +34,7 @@ export function AssistantResponsePanel({
         <div>
           <strong>Đang đối chiếu bằng chứng</strong>
           <p>Truy xuất snapshot trong phạm vi quyền và kiểm tra trích dẫn.</p>
+          <button onClick={onCancel} type="button">Dừng truy vấn</button>
         </div>
       </div>
     );

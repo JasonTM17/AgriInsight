@@ -23,7 +23,10 @@ export function AssistantWorkspace() {
   const controllerRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => () => controllerRef.current?.abort(), []);
+  useEffect(() => () => {
+    controllerRef.current?.abort();
+    controllerRef.current = null;
+  }, []);
   useEffect(() => {
     if (!loading && (answer || error)) resultRef.current?.focus();
   }, [answer, error, loading]);
@@ -67,8 +70,24 @@ export function AssistantWorkspace() {
           )
       );
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+        setLoading(false);
+      }
     }
+  }
+
+  function cancelRequest() {
+    const controller = controllerRef.current;
+    if (!controller) return;
+    controllerRef.current = null;
+    controller.abort();
+    setLoading(false);
+    setError(new AssistantClientError(
+      "query_cancelled",
+      499,
+      "Đã dừng câu hỏi theo yêu cầu của bạn."
+    ));
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -151,6 +170,7 @@ export function AssistantWorkspace() {
             answer={answer}
             error={error}
             loading={loading}
+            onCancel={cancelRequest}
             onRetry={() => void submitQuestion(question)}
           />
         </section>

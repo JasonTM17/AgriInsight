@@ -120,7 +120,8 @@
 }
 
 .composer button,
-.errorState button {
+.errorState button,
+.loadingState button {
   min-height: 2.75rem;
   padding: 0.65rem 0.9rem;
   color: var(--brand-strong);
@@ -134,7 +135,8 @@
 }
 
 .composer button:hover:not(:disabled),
-.errorState button:hover {
+.errorState button:hover,
+.loadingState button:hover {
   color: white;
   background: var(--brand-strong);
 }

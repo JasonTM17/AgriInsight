@@ -55,13 +55,34 @@ describe("assistant contract and presentation", () => {
     });
     const markup = renderToStaticMarkup(createElement(
       AssistantResponsePanel,
-      { answer, error: null, loading: false, onRetry: () => undefined }
+      {
+        answer,
+        error: null,
+        loading: false,
+        onCancel: () => undefined,
+        onRetry: () => undefined
+      }
     ));
 
     expect(markup).toContain("Bằng chứng được trích dẫn");
     expect(markup).toContain("inventory:wh-01:mat-01");
     expect(markup).toContain("Dữ liệu đến 27/07/2026");
     expect(markup).not.toContain("<script");
+  });
+
+  it("offers a real cancellation action while a query is pending", () => {
+    const markup = renderToStaticMarkup(createElement(
+      AssistantResponsePanel,
+      {
+        answer: null,
+        error: null,
+        loading: true,
+        onCancel: () => undefined,
+        onRetry: () => undefined
+      }
+    ));
+
+    expect(markup).toContain("Dừng truy vấn");
   });
 
   it("matches backend role and permission eligibility", () => {
@@ -76,6 +97,10 @@ describe("assistant contract and presentation", () => {
     expect(canAccessAssistant({
       permissions: new Set(["FARM_READ"]),
       roles: new Set(["SUPPLIER"])
+    })).toBe(false);
+    expect(canAccessAssistant({
+      permissions: new Set(["INVENTORY_READ"]),
+      roles: new Set(["INVENTORY_MANAGER", "SUPPLIER"])
     })).toBe(false);
   });
 });
