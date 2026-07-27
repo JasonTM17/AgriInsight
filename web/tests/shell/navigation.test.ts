@@ -8,7 +8,10 @@ import {
 describe("Field Ledger permission navigation", () => {
   it("keeps overview and exposes only permissions granted by Spring", () => {
     const items = getVisibleNavigation(
-      new Set(["FARM_READ", "INVENTORY_READ", "IDENTITY_USER_MANAGE"])
+      {
+        permissions: new Set(["FARM_READ", "INVENTORY_READ", "IDENTITY_USER_MANAGE"]),
+        roles: new Set(["DATA_ANALYST"])
+      }
     );
 
     expect(items.map((item) => item.key)).toEqual([
@@ -37,6 +40,8 @@ describe("Field Ledger permission navigation", () => {
     expect(getActiveNavigationKey("/farms/3eb92f10-60dd-45cb-9160-7c569c3258b4")).toBe("farms");
     expect(getActiveNavigationKey("/work")).toBe("work");
     expect(getActiveNavigationKey("/inventory")).toBe("inventory");
+    expect(getActiveNavigationKey("/crop-health/FIELD-001")).toBe("cropHealth");
+    expect(getActiveNavigationKey("/data-quality")).toBe("dataQuality");
     expect(getActiveNavigationKey("/protected", { module: "data-quality" })).toBe("dataQuality");
     expect(getActiveNavigationKey("/protected", { module: "not-a-module" })).toBe("overview");
     expect(getActiveNavigationKey("/platform/farms")).toBe("overview");

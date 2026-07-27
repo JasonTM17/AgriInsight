@@ -16,7 +16,7 @@ export function AppShell({
   pathname?: string;
   searchParams?: Readonly<Record<string, string | undefined>>;
 }) {
-  const items = getVisibleNavigation(identity.permissions);
+  const items = getVisibleNavigation(identity);
   const activeKey = getActiveNavigationKey(pathname, searchParams);
   const pageLabel = items.find((item) => item.key === activeKey)?.label ?? "Tổng quan";
 

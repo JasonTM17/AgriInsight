@@ -42,6 +42,13 @@ export type AnalyticsQuery<Operation extends AnalyticsOperation> =
     ? Query
     : never;
 
+export class AnalyticsUpstreamError extends Error {
+  constructor(readonly status: number) {
+    super(`Analytics request failed with status ${status}`);
+    this.name = "AnalyticsUpstreamError";
+  }
+}
+
 export async function getAnalyticsPayload<
   Operation extends AnalyticsOperation
 >(
@@ -64,7 +71,7 @@ export async function getAnalyticsPayload<
     >
   );
   if (!response.ok) {
-    throw new Error(`Analytics request failed with status ${response.status}`);
+    throw new AnalyticsUpstreamError(response.status);
   }
   return (await response.json()) as AnalyticsResponse<Operation>;
 }

@@ -24,6 +24,7 @@ export type NavigationItem = Readonly<{
   href: string;
   icon: NavigationIconName;
   requiredPermissions: readonly string[];
+  requiredRoles?: readonly string[];
 }>;
 
 const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = {
@@ -71,17 +72,19 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     key: "cropHealth",
     label: NAVIGATION_LABELS.cropHealth,
     description: NAVIGATION_DESCRIPTIONS.cropHealth,
-    href: "/protected?module=crop-health",
+    href: "/crop-health",
     icon: "sprout",
-    requiredPermissions: ["FARM_READ", "ACTIVITY_READ"]
+    requiredPermissions: ["FARM_READ"],
+    requiredRoles: ["TENANT_ADMIN", "EXECUTIVE", "DATA_ANALYST", "FARM_MANAGER"]
   },
   dataQuality: {
     key: "dataQuality",
     label: NAVIGATION_LABELS.dataQuality,
     description: NAVIGATION_DESCRIPTIONS.dataQuality,
-    href: "/protected?module=data-quality",
+    href: "/data-quality",
     icon: "shield-check",
-    requiredPermissions: ["FARM_READ", "COST_READ"]
+    requiredPermissions: [],
+    requiredRoles: ["TENANT_ADMIN", "DATA_ANALYST"]
   },
   administration: {
     key: "administration",
@@ -101,13 +104,25 @@ function hasAnyPermission(
     || requiredPermissions.some((permission) => permissions.has(permission));
 }
 
+function hasAnyRole(
+  roles: ReadonlySet<string> | undefined,
+  requiredRoles: readonly string[] | undefined
+): boolean {
+  if (!requiredRoles || requiredRoles.length === 0) return true;
+  return roles !== undefined && requiredRoles.some((role) => roles.has(role));
+}
+
 export function getVisibleNavigation(
-  permissions: ReadonlySet<string> | Pick<AuthorizationContext, "permissions">
+  permissions:
+    | ReadonlySet<string>
+    | Pick<AuthorizationContext, "permissions" | "roles">
 ): readonly NavigationItem[] {
   const permissionSet = "permissions" in permissions ? permissions.permissions : permissions;
+  const roles = "roles" in permissions ? permissions.roles : undefined;
   return NAVIGATION_ORDER
     .map((key) => NAVIGATION_DEFINITIONS[key])
-    .filter((item) => hasAnyPermission(permissionSet, item.requiredPermissions));
+    .filter((item) => hasAnyPermission(permissionSet, item.requiredPermissions))
+    .filter((item) => hasAnyRole(roles, item.requiredRoles));
 }
 
 export function getActiveNavigationKey(
@@ -123,10 +138,18 @@ export function getActiveNavigationKey(
   if (pathname === "/costs" || pathname.startsWith("/costs/")) {
     return "costs";
   }
+  if (pathname === "/crop-health" || pathname.startsWith("/crop-health/")) {
+    return "cropHealth";
+  }
+  if (pathname === "/data-quality" || pathname.startsWith("/data-quality/")) {
+    return "dataQuality";
+  }
   if (pathname !== "/protected") return "overview";
   const moduleKey = searchParams instanceof URLSearchParams
     ? searchParams.get("module")
     : searchParams?.module;
+  if (moduleKey === "crop-health") return "cropHealth";
+  if (moduleKey === "data-quality") return "dataQuality";
   const entry = Object.values(NAVIGATION_DEFINITIONS).find((item) =>
     item.href.endsWith(`module=${moduleKey}`)
   );
