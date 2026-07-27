@@ -157,6 +157,11 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
+      - name: Pull the exact published digest before smoke test
+        run: |
+          set -euo pipefail
+          docker pull "${{ steps.refs.outputs.ghcr }}@${{ steps.build.outputs.digest }}"
+
       - name: Smoke-test the exact published digest
         shell: pwsh
         run: >-

@@ -137,6 +137,11 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
     assert "provenance: mode=max" in workflow
     assert "sbom: true" in workflow
     assert "Scan the exact published digest" in workflow
+    assert "Pull the exact published digest before smoke test" in workflow
+    assert (
+        'docker pull "${{ steps.refs.outputs.ghcr }}@${{ steps.build.outputs.digest }}"'
+        in workflow
+    )
     assert "type=raw,value=latest" not in workflow.lower()
     assert ":latest" not in workflow.lower()
 
@@ -145,7 +150,14 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
     )
     docker_hub_login = workflow.index("- name: Authenticate to Docker Hub")
     publish = workflow.index("- name: Build, attest, and publish")
+    pull_published_digest = workflow.index(
+        "- name: Pull the exact published digest before smoke test"
+    )
+    smoke_published_digest = workflow.index(
+        "- name: Smoke-test the exact published digest"
+    )
     assert pre_scan < docker_hub_login < publish
+    assert publish < pull_published_digest < smoke_published_digest
 
 
 def test_release_helpers_enforce_read_only_non_root_smoke_and_sbom() -> None:
