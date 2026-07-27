@@ -13,7 +13,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Frontend | Phase 8 Cost Analysis implementation/static gate accepted 2026-07-27; browser release gate pending | Secure Next 16 BFF/session foundation, Vietnamese shell, Overview/Farms/Inventory/Cost routes, two cost lenses, scoped procurement/export BFF, and reviewed first-party visuals; guarded browser E2E waits on local C: disk floor |
+| Frontend | Phase 8 Cost Analysis accepted locally 2026-07-27 | Secure Next 16 BFF/session foundation, Vietnamese shell, Overview/Farms/Work/Inventory/Cost routes, two cost lenses, scoped procurement/export BFF, reviewed visuals, and 10/10 guarded real-browser journeys |
 
 ## Next backend phases
 
@@ -22,20 +22,20 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
 | Phase 7 | Outbox operations, verified images, CI/release hardening | Core verified 2026-07-22; V18-V19 outbox, image, and recovery evidence is in place, but protected release approval remains open |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
-| Frontend follow-up | Complete Web Phases 6-12 | Work Operations, Inventory Control, and Cost Analysis implementation are present; guarded browser quality and protected release remain Phases 11-12 |
+| Frontend follow-up | Complete Web Phases 9-12 | Work Operations, Inventory Control, and Cost Analysis are accepted locally; Crop Health/Data Quality is next, then Administration, quality, and protected release |
 
 ## Phase 5 checkpoint
 
 - Accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; not publicly released.
 - Evidence: [plan](../plans/260722-2342-production-web-platform/plan.md), [phase file](../plans/260722-2342-production-web-platform/phase-05-overview-and-farm-intelligence.md), [report](../plans/260722-2342-production-web-platform/reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
-- Work Operations, Inventory Control, and Cost Analysis implementation checkpoints are present. The next release action is a guarded browser run after C: has at least 8 GiB free.
+- Work Operations, Inventory Control, and Cost Analysis are accepted locally. Phase 9 Crop Health/Data Quality is next.
 
 ## Web Cost Analysis checkpoint
 
-- Implementation/static gate: accepted 2026-07-27 at commits `e0470c5`, `f1f9b1a`, `23b7d63`, and `5e7ef69`.
+- Full local gate: accepted 2026-07-27 through commit `186412e`.
 - Scope: exactly `operating` and `procurement`; Spring ledger reads/writes stay separate from FastAPI procurement Gold; export is server-mediated and format-specific.
-- Evidence: Python full suite green, Web 236 tests (9 intentional skips), typecheck, lint, contracts, and Next production build green; browser journey is checked in as `web/tests/e2e/cost-analysis.spec.ts`.
-- Environment note: local guarded browser E2E is not claimed yet because `scripts/check-workspace-disk.ps1` correctly blocks below its 8 GiB C: floor; current C: free space is ~2.8 GiB. No threshold override was used.
+- Evidence: Python full suite green, Web 246 tests (9 intentional skips), typecheck, lint, contracts, Next production build, 9/9 database privilege tests, and 10/10 real Chrome journeys green. Both Cost Analysis journeys passed; cleanup completed before `WEB_PLATFORM_E2E=PASS`.
+- Environment note: the accepted run used the default C/D thresholds with no override.
 
 ## Phase 5 boundary
 

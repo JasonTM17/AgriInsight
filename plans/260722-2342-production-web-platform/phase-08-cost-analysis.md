@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "cost-analysis"
-status: implementation-complete
+status: completed
 priority: P1
 effort: "4d"
 dependencies: [2, 3, 4]
@@ -9,10 +9,10 @@ dependencies: [2, 3, 4]
 
 ## Delivery status (2026-07-27)
 
-Implementation and static verification are complete. The guarded browser gate
-is checked in as `web/tests/e2e/cost-analysis.spec.ts` but is intentionally not
-claimed locally while `scripts/check-workspace-disk.ps1` reports C: below its
-non-negotiable 8 GiB floor. See
+Implementation, static verification, and the real guarded browser gate are
+complete. The unified runner passed all 10 Keycloak/PostgreSQL/Spring/FastAPI/
+Next/Chrome journeys, including both Cost Analysis scenarios, and cleaned its
+owned runtime before `WEB_PLATFORM_E2E=PASS`. See
 `reports/phase-08-cost-analysis-evidence-2026-07-27.md` for exact evidence.
 
 # Phase 8: cost-analysis

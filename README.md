@@ -81,7 +81,7 @@ Dashboard mặc định mở tại `http://localhost:8501`. Navigation bên trá
 
 Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Web `/costs` dùng Spring ledger cho operating append/correction và FastAPI snapshot cho procurement read-only; cả hai đều có filter ngày bounded, source/lineage, bảng evidence, KPI/trend và export CSV/PDF qua BFF. Dashboard Streamlit local vẫn giữ form Gold cũ với capability-gated XLSX; PDF cục bộ cần `reports` extra như lệnh cài đặt trên.
 
-Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Nền tảng Next 16, các route Overview/Farms và Web Cost Analysis đã được nghiệm thu static cục bộ; guarded browser gate cần chạy lại khi C: đạt floor 8 GiB. Tích hợp Inventory production vẫn phải giữ warehouse scope, idempotency, ETag cùng dependency Phase 6. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
+Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Nền tảng Next 16 cùng các route Overview/Farms/Work/Inventory/Cost đã qua guarded real-browser gate cục bộ; Phase 9 Crop Health/Data Quality là bước tiếp theo. Tích hợp Inventory production vẫn giữ warehouse scope, idempotency và ETag. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
 
 Dashboard Streamlit hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
 
@@ -184,7 +184,7 @@ revoke→reseed và 9/9 PostgreSQL privilege test, cùng 8/8 kịch bản Playwr
 gồm cả hai hành trình `@inventory` (`WEB_PLATFORM_E2E=PASS`). Xem
 [phase file](plans/260722-2342-production-web-platform/phase-07-inventory-control.md)
 và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-07-inventory-control-evidence-2026-07-26.md).
-Public release vẫn bị chặn; Web Phase 8 Cost Analysis đã hoàn tất phần implementation/static gate, còn guarded browser E2E cần chạy khi workspace đạt disk floor.
+Public release vẫn bị chặn; Web Phase 8 Cost Analysis đã qua 10/10 guarded real-browser journeys và cleanup với `WEB_PLATFORM_E2E=PASS`.
 
 ## Big-data demo và visual assets
 

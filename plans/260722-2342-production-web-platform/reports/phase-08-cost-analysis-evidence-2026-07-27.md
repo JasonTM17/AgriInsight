@@ -2,9 +2,8 @@
 
 ## Result
 
-Implementation/static gate complete. The feature is intentionally still marked
-browser-gate-pending because the guarded local E2E runner refuses to operate
-below the repository's 8 GiB C: free-space floor.
+Phase 8 accepted. Implementation/static gates and the real guarded browser
+journey passed without lowering either disk threshold.
 
 ## Delivered
 
@@ -45,7 +44,8 @@ below the repository's 8 GiB C: free-space floor.
 | `npm --prefix web run lint` | PASS |
 | `npm --prefix web run test` | PASS — 246 passed, 9 intentional skips |
 | `npm --prefix web run build` | PASS — Next 16 production build |
-| Guarded browser E2E | PENDING — C: ~2.8 GiB, guard floor 8 GiB |
+| Guarded browser E2E | PASS — 10/10 real Chrome journeys, including 2/2 Cost Analysis scenarios |
+| Runtime cleanup | PASS — no E2E containers/listeners; owned runtime removed before `WEB_PLATFORM_E2E=PASS` |
 | Docker runtime health | PASS — AgriCore compose services healthy |
 
 ## Commits
@@ -67,7 +67,5 @@ below the repository's 8 GiB C: free-space floor.
 
 ## Unresolved
 
-- Run the guarded Playwright suite and optional media capture after C: reaches
-  the configured 8 GiB floor. Do not lower the guard threshold.
 - Protected production registry release and reviewer approval remain outside
-  this local implementation gate.
+  this Phase 8 acceptance gate.

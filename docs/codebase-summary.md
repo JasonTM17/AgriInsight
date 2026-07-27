@@ -166,11 +166,12 @@ GETs also expose `ETag`.
 
 ## Verification snapshot
 
-- Web Phase 8 implementation/static gate (2026-07-27): full Python suite,
+- Web Phase 8 local acceptance (2026-07-27): full Python suite,
   generated-contract drift, TypeScript, zero-warning ESLint, 246 passed web
-  tests with 9 intentional skips, and Next 16 production build. The real
-  Keycloak/PostgreSQL/Spring/Chrome cost journey is checked in but not claimed
-  locally while C: remains below the guarded 8 GiB floor.
+  tests with 9 intentional skips, Next 16 production build, 9/9 database
+  privilege tests, and 10/10 real Keycloak/PostgreSQL/Spring/FastAPI/Next/
+  Chrome journeys. Both Cost Analysis scenarios passed; cleanup completed
+  before `WEB_PLATFORM_E2E=PASS`.
 
 - Web Phase 6 local acceptance (2026-07-26): generated-contract drift,
   TypeScript, zero-warning ESLint, Next 16 production build, 127 passed web
