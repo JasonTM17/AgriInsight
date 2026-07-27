@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Evaluation, release, and operations"
-status: pending
+status: in-progress
 priority: P1
 effort: 1.5d
 dependencies:
@@ -45,3 +45,14 @@ container delivery are proven on hosted storage.
 
 Disable provider and route flags, retain only aggregate metrics, and redeploy the
 previous immutable image digest.
+
+## Local checkpoint
+
+- Versioned 15-case Vietnamese/English retrieval evaluation is green:
+  recall@5 `1.00`, refusal precision `1.00`, cross-scope leakage `0`.
+- Redacted telemetry, dependency audit, secret boundary, contract drift,
+  static accessibility review, Python/web tests, and production web build pass.
+- Protected real-OIDC browser capture, hosted latency/load measurement,
+  daily-spend alert ownership, signed image publication, and release approval
+  remain external gates. See
+  [evaluation report](./reports/evaluation-2026-07-27.md).

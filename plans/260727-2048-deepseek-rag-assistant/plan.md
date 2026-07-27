@@ -35,8 +35,8 @@ only.
 |-------|------|--------|
 | 1 | [Contract and threat model](./phase-01-contract-and-threat-model.md) | Completed |
 | 2 | [Retrieval and DeepSeek API](./phase-02-retrieval-and-deepseek-api.md) | Completed |
-| 3 | [Secure chat API and web UI](./phase-03-secure-chat-api-and-web-ui.md) | In Progress |
-| 4 | [Evaluation, release, and operations](./phase-04-evaluation-release-and-operations.md) | Pending |
+| 3 | [Secure chat API and web UI](./phase-03-secure-chat-api-and-web-ui.md) | Completed |
+| 4 | [Evaluation, release, and operations](./phase-04-evaluation-release-and-operations.md) | In Progress |
 
 ## Dependencies
 
@@ -57,8 +57,8 @@ only.
   override the system contract.
 - Provider timeout, 401, 429, 5xx, malformed JSON, empty content, and user
   cancellation have tested safe behavior.
-- Vietnamese agricultural UX is accessible, responsive, and streams through
-  the existing tokenless BFF.
+- Vietnamese agricultural UX is accessible and responsive, and returns a
+  fully validated bounded response through the existing tokenless BFF.
 
 ## Decision
 
@@ -67,3 +67,8 @@ facts. DeepSeek's current public API documents chat completion but no embedding
 endpoint; inventing vector embeddings would require an undeclared second
 provider. Keep a provider-neutral retriever port so pgvector/hybrid embeddings
 can be added later without changing the chat contract.
+
+V1 deliberately buffers the provider JSON before returning it to the browser.
+This lets the server validate status, usage, citation IDs, and plain-text
+content before any model output crosses the trust boundary. Token streaming is
+deferred until it can preserve the same validation guarantee.

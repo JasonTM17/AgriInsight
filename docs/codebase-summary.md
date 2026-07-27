@@ -8,7 +8,7 @@ Verified snapshot: 2026-07-27
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
 | `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
-| `web/` | Next 16 App Router/BFF, opaque session auth, and eight permission-driven product areas from Overview through Tenant Administration |
+| `web/` | Next 16 App Router/BFF, opaque session auth, and nine permission-driven product areas including the RAG assistant |
 | `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
 | `backend/` | Java 21 Spring Boot operational backend, PostgreSQL migrations, and transactional outbox |
 | `deploy/` | Non-root web/analytics Dockerfiles, digest-pinned release overlay, and real-OIDC container demo overlay |
@@ -42,7 +42,7 @@ design system.
 The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
 Phase 5-10 browser surface. Product routes are `/overview`, `/farms`,
 `/farms/[farmId]`, `/work`, `/inventory`, `/costs`, `/crop-health`,
-`/data-quality`, and `/admin`; auth/support routes such as `/login`,
+`/data-quality`, `/assistant`, and `/admin`; auth/support routes such as `/login`,
 `/protected`, and `/api/auth/*` exist as shell plumbing.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
@@ -74,6 +74,13 @@ version into the command and into the idempotency fingerprint. An unconfirmed
 command keeps its `Idempotency-Key` and source version so retries replay
 upstream instead of double-applying. No ABC class, FEFO order, alert, or low-stock threshold is
 recomputed in the browser.
+
+`/assistant` uses a dedicated same-origin/CSRF BFF POST and a fixed FastAPI
+assistant operation. Spring-derived roles and farm/warehouse catalogs select
+the permitted Gold sources before deterministic lexical ranking. DeepSeek V4
+Flash receives only bounded retrieved evidence; strict JSON, citation, token,
+timeout, response-size, and concurrency contracts fail closed. Conversation
+state is ephemeral, and the browser never receives bearer/provider secrets.
 
 `/costs` exposes exactly two lenses. Operating reads/writes use the bounded
 Spring ledger and append-only correction routes; procurement stays read-only

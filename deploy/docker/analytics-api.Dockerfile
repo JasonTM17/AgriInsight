@@ -19,7 +19,7 @@ ARG OCI_REVISION="unknown"
 ARG OCI_VERSION="0.2.0"
 
 LABEL org.opencontainers.image.title="AgriInsight Analytics API" \
-      org.opencontainers.image.description="Read-only FastAPI service over verified agriculture analytics snapshots" \
+      org.opencontainers.image.description="FastAPI service over verified agriculture snapshots with optional scoped RAG" \
       org.opencontainers.image.source=$OCI_SOURCE \
       org.opencontainers.image.revision=$OCI_REVISION \
       org.opencontainers.image.version=$OCI_VERSION

@@ -78,8 +78,46 @@ agriinsight-analytics
 `AGRIINSIGHT_ANALYTICS_MAX_RECONCILIATION_AGE_HOURS` defaults to 24. The
 reconciliation report must be regenerated after any demo master, assignment,
 or artifact change; a stale, mismatched, or future report keeps readiness
-closed. `/health/live` is process-only, `/health/ready` is the reconciliation
-gate, and `/internal/v1/*` is GET-only.
+closed. `/health/live` is process-only and `/health/ready` is the
+reconciliation gate. Analytics reads remain GET-only; the optional assistant
+adds one authenticated `POST /internal/v1/assistant/query`.
+
+## DeepSeek RAG assistant
+
+The assistant is disabled by default. Enable it only on the internal analytics
+service after the snapshot/reconciliation and Spring scope gates are healthy:
+
+```powershell
+$env:AGRIINSIGHT_ASSISTANT_ENABLED = "true"
+$env:AGRIINSIGHT_LLM_API_KEY = "<read from a protected secret source>"
+agriinsight-analytics
+```
+
+The provider contract is intentionally fixed to
+`https://api.deepseek.com` + `deepseek-v4-flash`, with thinking disabled.
+`AGRIINSIGHT_LLM_PROVIDER`, `AGRIINSIGHT_LLM_BASE_URL`,
+`AGRIINSIGHT_LLM_MODEL`, and `AGRIINSIGHT_LLM_THINKING_ENABLED` fail closed if
+changed. Runtime budgets are documented in `.env.example`: 3-second connect,
+25-second provider read, 1,200 output tokens, 8 evidence items, 12,000 evidence
+characters, and 8 concurrent provider calls by default.
+
+Never pass the key as a Docker build argument, checked-in Compose literal,
+browser environment variable, screenshot, test fixture, log, or CI artifact.
+Inject it into the runtime environment from the deployment secret manager.
+Rotate it immediately if it
+appears in Git history or external logs. The telemetry event contains only
+correlation ID, outcome/refusal/provider code, latency, retrieval count, and
+token counters; it intentionally excludes question, history, evidence, answer,
+tenant UUID, user identity, and key.
+
+Rollback is one environment change:
+
+```powershell
+$env:AGRIINSIGHT_ASSISTANT_ENABLED = "false"
+```
+
+Restart the analytics service after changing the flag. The route then returns
+404 because it is not registered; no conversation data requires cleanup.
 
 The explicit local demo overlay isolates its Compose project as
 `agriinsight-demo`, uses `backend/.runtime/postgres-demo`, and starts PostgreSQL

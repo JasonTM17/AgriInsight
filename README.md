@@ -25,11 +25,33 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 - Nạp warehouse SQLite theo star schema, kiểm tra toàn bộ khóa ngoại trước khi thay thế database hiện hành.
 - Vật hóa Gold contracts cho Executive, Farm Performance, Inventory, Cost Analysis, Crop Health và Data Quality.
 - Sinh cảnh báo cùng khuyến nghị có bằng chứng dữ liệu; UI không tự tính lại logic KPI.
+- Hỏi đáp RAG bằng DeepSeek V4 Flash trên Gold snapshot đã xác minh, có
+  trích dẫn bắt buộc và từ chối khi không đủ bằng chứng.
 - Chạy lặp lại an toàn theo seed/ngày chốt dữ liệu, có manifest, row count và SHA-256 checksum.
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đã có bằng chứng kỹ thuật cho transactional outbox, image hardening, CI và recovery wrappers, nhưng protected production release/recovery approvals vẫn mở. Nền tảng Next 16 hiện phủ đủ tám khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đã có bằng chứng kỹ thuật cho transactional outbox, image hardening, CI và recovery wrappers, nhưng protected production release/recovery approvals vẫn mở. Nền tảng Next 16 hiện phủ chín khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality`, `/assistant` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+
+## Trợ lý dữ liệu DeepSeek RAG
+
+`/assistant` là giao diện tiếng Việt cho một RAG pipeline có kiểm soát:
+
+- Spring `/api/v1/me` xác định tenant, vai trò, farm và warehouse trước khi
+  corpus được tạo; trình duyệt không được gửi tenant, model hoặc scope.
+- Retriever lexical/structured chạy trên Gold snapshot đã xác minh, lọc scope
+  trước khi xếp hạng và dùng evidence ID ổn định.
+- DeepSeek V4 Flash chạy phía FastAPI với thinking tắt, JSON output, giới hạn
+  timeout/token/concurrency và trích dẫn nội tuyến bắt buộc.
+- Next BFF giữ bearer token phía máy chủ, kiểm tra host/origin/session/CSRF,
+  giới hạn body/response và không chuyển tiếp lỗi nhà cung cấp.
+- Hội thoại chỉ ở bộ nhớ component; không dùng `localStorage`, không ghi
+  prompt/evidence/answer vào telemetry.
+
+Tính năng mặc định tắt. Đặt khóa thật qua ignored `.env` cục bộ hoặc secret
+manager, không sửa `.env.example` và không commit khóa. Xem
+[deployment guide](docs/deployment-guide.md#deepseek-rag-assistant) và
+[kế hoạch/evaluation](plans/260727-2048-deepseek-rag-assistant/plan.md).
 
 Phase 7 bổ sung V18-V19 `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, optional backend Compose profile, pinned non-root images, CI image gate, protected Docker Hub/GHCR publication workflow và D-local backup/restore wrappers. Outbox chưa có consumer/Kafka/HTTP route; đây là handoff an toàn, at-least-once cho phase kế tiếp. Các digest đã xuất bản chỉ là bằng chứng phase, không phải production release.
 

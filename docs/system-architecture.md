@@ -241,6 +241,32 @@ single format per request (`csv`, `pdf`, or capability-gated `xlsx`), forwards
 only safe content headers, and never exposes staging paths. Procurement is
 read-only and inventory value remains outside both cost lenses.
 
+## DeepSeek RAG assistant plane
+
+The assistant is an optional query plane over existing authorized analytics
+facts, not a new source of truth and not Text-to-SQL. The request path is:
+
+```text
+Browser → same-origin Next BFF → FastAPI scope resolver
+        → checksum/reconciliation gate → scoped Gold evidence corpus
+        → deterministic lexical retrieval → DeepSeek V4 Flash
+        → strict JSON/citation validation → plain-text UI
+```
+
+The browser submits only `question` plus at most 6 ephemeral history turns.
+The BFF enforces host, origin, CSRF, opaque session, body/response limits,
+timeout/cancellation, exact upstream allowlisting, and sanitized problems.
+FastAPI derives tenant/farm/warehouse/source scope from Spring; it filters
+before ranking and never accepts a client model, tenant, evidence, or tool.
+Unsupported queries return a local insufficient-evidence response without an
+LLM call.
+
+DeepSeek receives only bounded, already-authorized evidence and an opaque
+one-way tenant hash. Thinking is disabled, redirects are rejected, output must
+be JSON, and every answered response must cite an evidence ID available in the
+retrieval result. The UI renders answer/citations as text rather than HTML.
+Telemetry records operational counters only and no conversation content.
+
 ## Transactional outbox
 
 Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration, not a broker or consumer implementation.

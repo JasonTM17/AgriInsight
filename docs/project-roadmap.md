@@ -10,10 +10,11 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
 | Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
+| DeepSeek RAG assistant | Local implementation complete; protected release gate open | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, and versioned retrieval evaluation |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Frontend | Internal release candidate complete 2026-07-27 | Eight permission-driven areas, tokenless BFF, seven-persona real-OIDC browser gate, five-viewport quality/performance coverage, and four no-push image candidates |
+| Frontend | Internal release candidate extended 2026-07-27 | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and four no-push image candidates |
 
 ## Next backend phases
 
@@ -95,7 +96,9 @@ implicitly converted into operating cost.
 - Outbox consumer, realtime Kafka analytics, alerts, and mobile field workflows.
 - Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,
   and model monitoring.
-- Guardrailed AI Assistant/Text-to-SQL with scoped metadata and auditable queries.
+- Guardrailed RAG assistant is implemented locally; keep Text-to-SQL,
+  embeddings, model monitoring, and auditable SQL execution as separately
+  approved future work.
 
 ## Roadmap rule
 

@@ -186,6 +186,11 @@ def test_release_overlay_uses_immutable_images_and_hardened_runtime_defaults() -
     assert "condition: service_healthy" in compose
     assert "/api/health/live" in compose
     assert "/health/ready" in compose
+    assert (
+        "AGRIINSIGHT_ASSISTANT_ENABLED: "
+        "${AGRIINSIGHT_ASSISTANT_ENABLED:-false}"
+    ) in compose
+    assert "AGRIINSIGHT_LLM_API_KEY: ${AGRIINSIGHT_LLM_API_KEY:-}" in compose
 
 
 def test_demo_overlay_orders_real_oidc_big_data_seed_and_reconciliation() -> None:
