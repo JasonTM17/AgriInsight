@@ -119,6 +119,35 @@ describe("exact upstream allowlist", () => {
   });
 
   it("contains the exact cost-analysis read operations", () => {
+    expect(ALLOWED_OPERATIONS.analyticsCostExport).toEqual({
+      method: "GET",
+      path: "/internal/v1/costs/export",
+      queryParameters: [
+        "activity",
+        "crop",
+        "farm",
+        "format",
+        "month_from",
+        "month_to",
+        "scope",
+        "season",
+        "supplier",
+        "top_n"
+      ],
+      service: "analytics"
+    });
+    expect(ALLOWED_OPERATIONS.analyticsProcurementCosts).toEqual({
+      method: "GET",
+      path: "/internal/v1/costs/procurement",
+      queryParameters: [
+        "farm_code",
+        "limit",
+        "month_from",
+        "month_to",
+        "offset"
+      ],
+      service: "analytics"
+    });
     expect(ALLOWED_OPERATIONS.operatingCostEntries).toEqual({
       method: "GET",
       path: "/api/v1/cost-entries",

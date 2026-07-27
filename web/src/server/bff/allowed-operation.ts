@@ -60,6 +60,35 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     path: "/internal/v1/costs",
     service: "analytics"
   },
+  analyticsCostExport: {
+    method: "GET",
+    path: "/internal/v1/costs/export",
+    queryParameters: [
+      "activity",
+      "crop",
+      "farm",
+      "format",
+      "month_from",
+      "month_to",
+      "scope",
+      "season",
+      "supplier",
+      "top_n"
+    ],
+    service: "analytics"
+  },
+  analyticsProcurementCosts: {
+    method: "GET",
+    path: "/internal/v1/costs/procurement",
+    queryParameters: [
+      "farm_code",
+      "limit",
+      "month_from",
+      "month_to",
+      "offset"
+    ],
+    service: "analytics"
+  },
   analyticsCropHealth: {
     method: "GET",
     path: "/internal/v1/crop-health",
