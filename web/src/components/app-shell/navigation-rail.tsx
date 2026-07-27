@@ -26,7 +26,7 @@ export function NavigationRail({
     const rail = railRef.current;
     const workspace = document.querySelector<HTMLElement>("[data-workspace]");
     if (!rail || !workspace) return;
-    const mediaQuery = window.matchMedia("(max-width: 47.999rem)");
+    const mediaQuery = window.matchMedia("(max-width: 48rem)");
     const updateMobileState = () => {
       rail.toggleAttribute("inert", mediaQuery.matches && !open);
       workspace.toggleAttribute("inert", mediaQuery.matches && open);
