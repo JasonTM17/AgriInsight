@@ -112,4 +112,23 @@ describe("real-platform E2E runner", () => {
     );
     expect(runner).toContain("Invoke-WorkspaceDiskGuard");
   });
+
+  it("reclaims root-owned hosted bind mounts only after safe-path validation", () => {
+    const cleanup = runner.slice(
+      runner.indexOf("function Remove-SafeRuntimeDirectory"),
+      runner.indexOf("function Assert-E2eProjectStopped")
+    );
+    const pathValidation = cleanup.indexOf("$resolvedPath.StartsWith");
+    const hostedOwnership = cleanup.indexOf(
+      "if ($HostedCi -and -not $isWindowsHost)"
+    );
+    const nativeRemoval = cleanup.indexOf(
+      "Remove-Item -LiteralPath $resolvedPath -Recurse -Force"
+    );
+
+    expect(pathValidation).toBeGreaterThan(0);
+    expect(hostedOwnership).toBeGreaterThan(pathValidation);
+    expect(nativeRemoval).toBeGreaterThan(hostedOwnership);
+    expect(cleanup).toContain('"chown", "--recursive", $runnerOwner, "--"');
+  });
 });

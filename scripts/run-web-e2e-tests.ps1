@@ -261,6 +261,15 @@ function Remove-SafeRuntimeDirectory {
     )) {
         throw "Refusing to remove runtime directory outside $resolvedParent"
     }
+    if ($HostedCi -and -not $isWindowsHost) {
+        $runnerOwner = "$(& id -u):$(& id -g)"
+        if ($LASTEXITCODE -ne 0 -or $runnerOwner -notmatch "^\d+:\d+$") {
+            throw "Could not resolve hosted runner ownership"
+        }
+        Invoke-Checked "sudo" @(
+            "chown", "--recursive", $runnerOwner, "--", $resolvedPath
+        ) "Could not restore hosted runtime ownership"
+    }
     Remove-Item -LiteralPath $resolvedPath -Recurse -Force
 }
 
