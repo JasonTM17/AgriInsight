@@ -13,7 +13,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Frontend | Phase 9 implementation in progress 2026-07-27 | Secure Next 16 BFF/session foundation, Vietnamese shell, Overview/Farms/Work/Inventory/Cost/Crop Health/Data Quality routes, strict analytics consumers, and permanent demo-evidence warning; browser gate awaits C: disk recovery |
+| Frontend | Internal release candidate complete 2026-07-27 | Eight permission-driven areas, tokenless BFF, seven-persona real-OIDC browser gate, five-viewport quality/performance coverage, and four no-push image candidates |
 
 ## Next backend phases
 
@@ -22,26 +22,26 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
 | Phase 7 | Outbox operations, verified images, CI/release hardening | Core verified 2026-07-22; V18-V19 outbox, image, and recovery evidence is in place, but protected release approval remains open |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
-| Frontend follow-up | Complete Web Phases 9-12 | Work Operations, Inventory Control, and Cost Analysis are accepted locally; Crop Health/Data Quality static implementation is ready, browser/big-data gate is pending disk recovery, then Administration, quality, and protected release |
+| Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 internal candidate is complete, while registry environment/reviewers/secrets and production operations remain owner-gated |
 
 ## Phase 5 checkpoint
 
 - Accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; not publicly released.
 - Evidence: [plan](../plans/260722-2342-production-web-platform/plan.md), [phase file](../plans/260722-2342-production-web-platform/phase-05-overview-and-farm-intelligence.md), [report](../plans/260722-2342-production-web-platform/reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
-- Work Operations, Inventory Control, and Cost Analysis are accepted locally. Phase 9 Crop Health/Data Quality has passed static implementation gates; its guarded browser/big-data gate is pending the C: disk floor.
+- Work Operations, Inventory Control, Cost Analysis, Crop Health/Data Quality,
+  and Tenant Administration are accepted through the hosted real-platform gate.
 
-## Web Crop Health and Data Quality checkpoint
+## Web quality checkpoint
 
-- Implementation is committed through `71a6282` with Phase 2 contract amendment,
-  strict server-only loaders, direct `/crop-health` and `/data-quality` routes,
-  field detail drill-down, current-identity navigation gating, and explicit
-  loading/empty/partial/unavailable/denied states.
-- Verification: 261 web tests pass with 9 intentional skips; typecheck, lint,
-  contract drift, focused Python analytics tests, and Next production build
-  pass. The permanent Crop Health warning remains visible on list and detail.
-- Browser/big-data gate is intentionally not claimed: the default disk guard
-  observed C: 2.798 GiB free (fail below 8 GiB) and D: 20.711 GiB free (warn
-  below 25 GiB). No override was used.
+- Crop Health/Data Quality preserve the Phase 2 taxonomy and permanent
+  demo-evidence warning; Tenant Administration preserves true `403`, conflict,
+  one-way identity handling, and unconditional Supplier denial.
+- Hosted CI proves 308 web tests plus 26 real-browser journeys over seven OIDC
+  personas, reconciled 1.05M-fact artifacts, five responsive viewports,
+  WCAG axe checks, lab LCP/INP/CLS budgets, and security boundaries.
+- Workstation C remains below the local heavy-work floor, so the accepted
+  browser/image evidence comes from the guarded hosted runner. No local
+  threshold was lowered.
 
 ## Web Cost Analysis checkpoint
 
@@ -79,7 +79,8 @@ implicitly converted into operating cost.
   contract, and current 459+100 backend gate intact before any later phase
   reopens the contract surface.
 - Do not promote the manual `0.1.0-phase7`/commit tags as a production release;
-  the future web image remains frontend-owned and unbuilt.
+  non-root web and analytics API image candidates now exist, but protected
+  Docker Hub/GHCR publication remains an external release-owner action.
 - GitHub `main` is now the default branch. About description/topics, Discussions,
   security scanning, Dependabot, templates, CODEOWNERS, and repository labels
   are configured; social-preview upload remains a one-time web-settings action.
@@ -88,8 +89,8 @@ implicitly converted into operating cost.
 
 ## Future product tracks
 
-- Complete the remaining production-web route phases and protected release
-  work; the local `openid-client` OIDC boundary is implemented, while
+- Keep the completed eight-area production-web route set behind the protected
+  release boundary; the `openid-client` OIDC boundary is implemented, while
   production OIDC configuration and approval remain open.
 - Outbox consumer, realtime Kafka analytics, alerts, and mobile field workflows.
 - Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,

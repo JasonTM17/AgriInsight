@@ -1,5 +1,12 @@
 # AgriInsight
 
+[![CI](https://github.com/JasonTM17/AgriInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/JasonTM17/AgriInsight/actions/workflows/ci.yml)
+[![Python 3.11–3.14](https://img.shields.io/badge/python-3.11%E2%80%933.14-2d5f8b.svg)](pyproject.toml)
+[![Java 21](https://img.shields.io/badge/Java-21-b85c38.svg)](backend/pom.xml)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-111111.svg)](web/package.json)
+
+![AgriInsight — enterprise agriculture analytics](docs/assets/agriinsight-social-preview.jpg)
+
 AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Phiên bản `0.2.0` cung cấp một Data Analytics MVP chạy end-to-end và có thể tái lập:
 
 ```text
@@ -22,7 +29,7 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đã có bằng chứng kỹ thuật cho transactional outbox, image hardening, CI và recovery wrappers, nhưng protected production release/recovery approvals vẫn mở. Web Phase 8 Cost Analysis hiện đã có route Next `/costs`, BFF allowlist và hai lens vận hành/mua hàng; backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 đã có bằng chứng kỹ thuật cho transactional outbox, image hardening, CI và recovery wrappers, nhưng protected production release/recovery approvals vẫn mở. Nền tảng Next 16 hiện phủ đủ tám khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
 
 Phase 7 bổ sung V18-V19 `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, optional backend Compose profile, pinned non-root images, CI image gate, protected Docker Hub/GHCR publication workflow và D-local backup/restore wrappers. Outbox chưa có consumer/Kafka/HTTP route; đây là handoff an toàn, at-least-once cho phase kế tiếp. Các digest đã xuất bản chỉ là bằng chứng phase, không phải production release.
 
@@ -81,7 +88,7 @@ Dashboard mặc định mở tại `http://localhost:8501`. Navigation bên trá
 
 Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Web `/costs` dùng Spring ledger cho operating append/correction và FastAPI snapshot cho procurement read-only; cả hai đều có filter ngày bounded, source/lineage, bảng evidence, KPI/trend và export CSV/PDF qua BFF. Dashboard Streamlit local vẫn giữ form Gold cũ với capability-gated XLSX; PDF cục bộ cần `reports` extra như lệnh cài đặt trên.
 
-Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Source/static/browser/print/review gates đã hoàn tất; đây chưa phải màn hình production. Nền tảng Next 16 cùng các route Overview/Farms/Work/Inventory/Cost đã qua guarded real-browser gate cục bộ; Crop Health và Data Quality hiện đã có route server-only, taxonomy/lineage contract và cảnh báo ảnh demo cố định, còn browser/big-data gate chờ C: vượt disk floor. Tích hợp Inventory production vẫn giữ warehouse scope, idempotency và ETag. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
+Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Nền tảng Next 16 đã thay fixture runtime bằng Spring/FastAPI thật cho cả tám khu vực sản phẩm; Crop Health luôn giữ cảnh báo ảnh AI-demo, Data Quality giữ nguyên taxonomy/lineage từ batch, Inventory giữ warehouse scope/idempotency/ETag và Tenant Administration chỉ gọi các resource family đã khóa. Public production release vẫn bị chặn bởi external controls, không phải bởi fallback dữ liệu UI. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
 
 Dashboard Streamlit hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
 
@@ -112,6 +119,22 @@ docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.
 
 Profile này bind PostgreSQL/API trên loopback, lưu database ở `backend/.runtime/postgres` trên D và chạy role bootstrap → Flyway → runtime restricted. Xem [backend deployment](docs/backend-deployment.md) trước khi dùng.
 
+Web và analytics API có Dockerfile non-root/read-only riêng. Release candidate
+dùng bốn image digest-pinned và Compose overlay:
+
+```powershell
+docker compose -f compose.yaml -f compose.backend.yaml `
+  -f deploy/compose.release-overlay.yaml --profile backend config --quiet
+```
+
+Demo container đầy đủ ghép thêm `compose.demo.yaml`,
+`compose.web-e2e.yaml` và `deploy/compose.web-demo-overlay.yaml` để chạy
+Keycloak thật, bảy persona, big-data seed/reconciliation, backend, analytics và
+web theo health ordering. Xem [deployment guide](docs/deployment-guide.md).
+Workflow release không tạo `latest`; Docker Hub/GHCR chỉ được push sau
+`release-images` approval, candidate scan/smoke, SBOM/provenance và
+exact-digest scan/smoke.
+
 Docker Desktop cần được khởi động trước. Dashboard chỉ publish tại
 `127.0.0.1:8501`; Gold được mount read-only, còn `artifacts/_tmp` là overlay
 writable riêng cho report temp. Artifact vẫn được lưu trong `artifacts/` trên host.
@@ -132,7 +155,15 @@ python -m pip wheel . --no-deps --no-build-isolation --wheel-dir artifacts/_tmp/
 powershell -ExecutionPolicy Bypass -File scripts/run-web-e2e-tests.ps1
 ```
 
-Test suite kiểm tra pipeline end-to-end, idempotency, reproducibility, foreign keys, KPI reconciliation, export limits, disk thresholds, form-submit boundary và render/navigation của cả sáu dashboard. Gate Web Phase 6 ngày 2026-07-26 đạt 127 web test với 9 skip có chủ đích, 31 contract/security test riêng cho Work Operations, probe vòng đời revoke→reseed trên PostgreSQL thật, 9/9 PostgreSQL privilege test, contract drift/typecheck/lint/Next build, 6/6 kịch bản Playwright trên Keycloak/PostgreSQL/Spring/Chrome thật, production dependency audit 0 lỗ hổng ở ngưỡng cấu hình và cleanup không còn runtime E2E.
+Gate ứng viên hiện kiểm tra pipeline end-to-end, idempotency, reproducibility,
+foreign keys, KPI reconciliation, export limits, disk thresholds, BFF/security
+boundaries và cả tám khu vực web. Bằng chứng hosted ngày 2026-07-27 đạt 202
+Python tests, 463 Java unit/contract + 100 PostgreSQL integration tests, 308
+web tests với 11 skip có chủ đích, 9/9 web database privilege tests và 26/26
+Playwright journeys trên Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome thật.
+Các journeys phủ bảy persona, năm viewport, axe WCAG, Big Data 1,05 triệu
+facts, Core Web Vitals, CSRF/cache/token-leak và cleanup; kết thúc bằng
+`WEB_PLATFORM_E2E=PASS`.
 
 ## Cấu trúc artifact
 
@@ -163,28 +194,14 @@ artifacts/
 - [Tiêu chí nghiệm thu](docs/mvp-acceptance.md)
 - [Reporting và vận hành local](docs/reporting-and-local-operations.md)
 
-Web Phase 5 đã được nghiệm thu cục bộ ngày 2026-07-26 cho `/overview`,
-`/farms` và `/farms/[farmId]`. Web Phase 6 Work Operations cũng được nghiệm
-thu cục bộ cùng ngày cho `/work`: hàng đợi công việc mobile-first 375 px,
-append log với `Idempotency-Key`, hiệu chỉnh append-only và lịch sử bất biến
-phân trang theo máy chủ, cùng 6/6 kịch bản Playwright trên Chrome thật
-(`WEB_PLATFORM_E2E=PASS`). Xem [kế hoạch](plans/260722-2342-production-web-platform/plan.md),
-[phase file](plans/260722-2342-production-web-platform/phase-06-work-operations.md)
-và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-06-work-operations-evidence-2026-07-26.md).
-
-Web Phase 7 Inventory Control được nghiệm thu cục bộ ngày 2026-07-27 cho
-`/inventory`: số dư, lô và sổ giao dịch giữ đúng thứ tự authoritative của máy
-chủ (FEFO là của backend, trình duyệt không sắp xếp lại), ABC/cảnh báo render
-nguyên văn từ Gold và suy giảm độc lập khi analytics từ chối, hai lệnh
-nhập/xuất và bút toán đảo đi qua đúng hai operation Spring với
-`Idempotency-Key` giữ nguyên khi kết quả chưa xác định, còn `If-Match` của bút
-toán đảo do backend thực thi. Gate đạt typecheck/lint/contract drift/Next
-build, 211 web test với 9 skip có chủ đích, 79 test tồn kho riêng, probe
-revoke→reseed và 9/9 PostgreSQL privilege test, cùng 8/8 kịch bản Playwright
-gồm cả hai hành trình `@inventory` (`WEB_PLATFORM_E2E=PASS`). Xem
-[phase file](plans/260722-2342-production-web-platform/phase-07-inventory-control.md)
-và [báo cáo bằng chứng](plans/260722-2342-production-web-platform/reports/phase-07-inventory-control-evidence-2026-07-26.md).
-Public release vẫn bị chặn; Web Phase 8 Cost Analysis đã qua 10/10 guarded real-browser journeys và cleanup với `WEB_PLATFORM_E2E=PASS`.
+Web Phases 5–10 đã hoàn tất cho Overview/Farms, Work Operations, Inventory,
+Cost Analysis, Crop Health/Data Quality và Tenant Administration. Hành vi
+mobile, idempotency/ETag, taxonomy batch, cảnh báo ảnh AI-demo, conflict/403 và
+Supplier denial đều được kiểm tra qua backend/analytics thật. Phase 11 browser
+gate đã xanh; Phase 12 đạt internal release candidate. Public production
+release vẫn bị chặn ở protected registry environment, reviewer/secrets,
+production OIDC/operations và quyết định license. Xem
+[kế hoạch và evidence](plans/260722-2342-production-web-platform/plan.md).
 
 ## Big-data demo và visual assets
 
@@ -217,3 +234,5 @@ it is documentation/demo media only, never agronomic evidence. A 1280 × 640
 social-preview source is available at
 [`docs/assets/agriinsight-social-preview.jpg`](docs/assets/agriinsight-social-preview.jpg);
 GitHub account settings may still require a one-time manual upload.
+
+![AgriInsight Field Ledger navigation preview](assets/generated/agriinsight-field-ledger-loop.gif)

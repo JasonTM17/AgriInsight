@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.8
-Updated: 2026-07-23
-Status: backend Phases 1-6 accepted; Analytics Phase 2 implementation locally verified; Phase 7 core verified; protected production release/recovery approvals remain open
+Version: 0.9
+Updated: 2026-07-27
+Status: backend core, Analytics Phase 2, and eight-area web internal candidate verified; protected production release/recovery approvals remain open
 
 ## Product goal
 
@@ -32,7 +32,10 @@ hiding them in dashboards.
 2. **Operational plane** — Java/Spring owns authenticated operational commands,
    tenant/profile authorization, PostgreSQL source facts, inventory ledgers,
    assignments, audit/idempotency, and health/readiness.
-3. **Integration boundary** — No direct Gold mutation or shared mutable storage.
+3. **Browser plane** — Next 16 owns the Vietnamese-first eight-area product
+   shell, opaque PostgreSQL sessions, OIDC authorization-code/PKCE flow, exact
+   Spring/FastAPI BFF allowlists, and server-rendered permission boundaries.
+4. **Integration boundary** — No direct Gold mutation or shared mutable storage.
    Phase 7 provides the versioned transactional outbox and fenced drain boundary;
    a real consumer/Kafka/Gold ingestion adapter remains future work.
 
@@ -73,6 +76,11 @@ and [architecture](./architecture.md) for the normative boundaries.
 - Use contextual first-party visuals with provenance/alt descriptions; label
   generated Crop Health imagery as demo evidence and never treat it as a source
   observation.
+- Provide all eight product areas through the tokenless Next BFF with real
+  loading, empty, degraded, conflict, and forbidden states; Supplier is denied.
+- Package Python, backend, web, and analytics API as independently scanned
+  non-root candidates, with protected serialized immutable publication and no
+  `latest` tag.
 
 ## Phase acceptance status
 
@@ -85,8 +93,10 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
 | 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Core verified; production release gated |
-| 8 | Web Cost Analysis: two lenses, scoped BFF, export and command contracts | Implementation/static gate accepted 2026-07-27; guarded browser E2E pending disk capacity |
-| Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Implementation locally verified 2026-07-23; CK review/docs/frontend handoff gates remain |
+| Web 5–10 | Eight product areas over tokenless BFF and real upstream contracts | Accepted 2026-07-27 |
+| Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
+| Web 12 | Four-image release contract, overlays, docs, and repository metadata | Internal candidate complete; external promotion blocked |
+| Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Accepted and consumed by the web platform |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
@@ -127,9 +137,9 @@ non-production evidence; protected release and recovery approvals remain open.
 ## Explicit non-goals for the current release
 
 Kafka/realtime alerts, ClickHouse/dbt/Airflow, mobile, ML forecasting,
-what-if analysis, AI Text-to-SQL, browser BFF/session handling, and direct Gold
-writes are deferred. Immutable phase images now have Docker Hub/GHCR evidence;
-the protected production release, identity/MFA and backup policy remain deferred.
+what-if analysis, AI Text-to-SQL, and direct Gold writes are deferred. Public
+promotion of the new web/analytics images, production identity/MFA, hostname/
+TLS, observability, and backup policy remain owner-gated.
 
 ## Success metrics
 
@@ -147,13 +157,15 @@ the protected production release, identity/MFA and backup policy remain deferred
 - Keep Web Cost Analysis on exactly two lenses: Spring operating ledger and
   FastAPI procurement Gold. The browser never calls either upstream service
   directly; all reads, commands, and exports cross the opaque-session BFF.
-- Close Phase 7 protected production release and recovery-policy approvals
-  without merging operating cost, procurement spend, or inventory value.
-- Use CK FE/Stitch design artifacts as the frontend source of truth, then build
-  role-aware screens only after API contracts are frozen.
-- Complete Phase 7 approvals before claiming production readiness; the current
-  first-party phase tags remain non-production evidence.
+- Configure the protected four-image release environment and recovery-policy
+  approvals without merging operating cost, procurement spend, or inventory
+  value.
+- Keep CK FE/Stitch design artifacts and the Field Ledger tokens as the
+  frontend source of truth for later route changes.
+- Complete branch/release controls, license, production identity, and
+  operations approvals before claiming production readiness.
 
 Open decisions: production IdP/MFA, audit retention, backup RPO/RTO/off-host
 encryption/restore ownership, protected release secrets/reviewers, credential
-rotation ownership, and GitHub branch-protection policy.
+rotation ownership, repository license/registry visibility, and GitHub
+branch-protection policy.

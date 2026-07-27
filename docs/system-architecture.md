@@ -82,12 +82,13 @@ authorization decision.
 
 ## Web platform
 
-The Next 16 App Router is the browser boundary for `/overview`, `/farms`,
-`/farms/[farmId]`, `/work`, and `/inventory`. The browser holds only an opaque encrypted
-session cookie. OIDC tokens remain in the PostgreSQL-backed server session, and
-the server refreshes Spring `/api/v1/me` before relying on current permissions.
-Exact operation allowlists prevent the browser from turning the BFF into a
-general upstream proxy.
+The Next 16 App Router is the browser boundary for eight product areas:
+`/overview`, `/farms` (including `/farms/[farmId]`), `/work`, `/inventory`,
+`/costs`, `/crop-health`, `/data-quality`, and `/admin`. The browser holds only
+an opaque encrypted session cookie. OIDC tokens remain in the PostgreSQL-backed
+server session, and the server refreshes Spring `/api/v1/me` before relying on
+current permissions. Exact operation allowlists prevent the browser from
+turning the BFF into a general upstream proxy.
 
 Overview and farm routes combine Spring-scoped UUID masters with canonical
 analytics codes before calling the read-only FastAPI plane. Work Operations
@@ -136,6 +137,24 @@ flowchart LR
     A --> P["Tenant/profile scope and FORCE RLS"]
     A --> H["Immutable log/correction lineage"]
 ```
+
+## Container runtime topology
+
+Four first-party images share one serialized protected publication workflow:
+Python pipeline/dashboard, Spring backend, Next web, and FastAPI analytics API.
+The web and analytics images run as UID/GID `10001`, accept a read-only root
+filesystem, and use explicit `/tmp` tmpfs mounts. Semantic-version and full-SHA
+tags are published to Docker Hub and GHCR only after candidate scan/smoke;
+BuildKit SBOM/provenance and exact-digest scan/smoke are mandatory. `latest` is
+not part of the tag model.
+
+`deploy/compose.release-overlay.yaml` replaces local builds with digest-pinned
+first-party images and orders backend/web migrations before readiness. The
+opt-in `deploy/compose.web-demo-overlay.yaml` layers real Keycloak, the guarded
+big-data seed/reconciliation chain, seven personas, FastAPI readiness, and the
+browser app. PostgreSQL and Keycloak remain pinned upstream dependencies, never
+AgriInsight packages. Registry publication and production runtime approval are
+separate controls; a green internal candidate does not imply production.
 
 ## Operational backend
 

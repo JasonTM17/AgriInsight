@@ -1,6 +1,10 @@
 # Deployment Guide
 
-This guide documents the verified local/runtime contracts through Backend Phase 7 core. It is not a production deployment approval: protected registry release, environment review, a scheduled recovery drill, and production release/recovery approvals remain required before production.
+This guide documents the verified runtime contracts through the production-web
+internal release candidate and Backend Phase 7 core. It is not a production
+deployment approval: protected registry release, environment review, a
+scheduled recovery drill, and production release/recovery approvals remain
+required before production.
 
 ## Supported execution boundaries
 
@@ -8,9 +12,10 @@ This guide documents the verified local/runtime contracts through Backend Phase 
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
 | Internal analytics API | FastAPI read-only aggregate surface | Loopback/internal network only; Spring `/api/v1/me` remains the authorization source |
-| Next web platform | Locally verified overview, farm, and Work Operations browser surface | Loopback/private only until Phase 11 quality and Phase 12 protected release gates pass |
+| Next web platform | Eight-area hosted browser gate passed | Loopback/private internal candidate; external promotion remains protected-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
+| Next web + analytics API images | Hosted-CI release candidate | Digest-pinned, loopback-published deployment only; registry publication remains protected-gated |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
 ## Preflight
@@ -40,7 +45,7 @@ passed quality report, 74 checksums, and a 388.2 MB artifact set. Generated
 artifacts are local demo state and must not be committed or exposed as a public
 download.
 
-The dashboard's six generated WebP visuals are first-party application assets,
+The dashboard's eight generated WebP visuals are first-party application assets,
 not Docker images and not real customer evidence. Their provenance, hashes,
 alt descriptions, and Crop Health disclaimer are maintained in
 `dashboard/assets/generated/README.md`. The social-preview source is kept under
@@ -117,6 +122,51 @@ For a narrow local E2E iteration after static gates already passed, use
 contract drift, TypeScript, tests, zero-warning lint, production build, backend
 package, database privilege checks, and real-browser scenarios. Stop heavy work
 when the disk guard fails below 8 GiB on C or 20 GiB on D.
+
+## Web and analytics release candidate
+
+The first-party web and analytics API Dockerfiles are
+`deploy/docker/web.Dockerfile` and
+`deploy/docker/analytics-api.Dockerfile`. Both configure UID/GID `10001`,
+support a read-only root filesystem with an explicit `/tmp` tmpfs, and expose
+process-only liveness probes. CI builds and scans them without registry
+credentials after the complete browser gate.
+
+Deploy only immutable `image@sha256:...` coordinates. Set all required values
+from a protected process environment or secret manager, then validate the
+release topology:
+
+```powershell
+docker compose -f compose.yaml -f compose.backend.yaml `
+  -f deploy/compose.release-overlay.yaml --profile backend config --quiet
+```
+
+The overlay requires digest-pinned values for
+`AGRIINSIGHT_PYTHON_IMAGE`, `AGRIINSIGHT_BACKEND_IMAGE`,
+`AGRIINSIGHT_WEB_IMAGE`, and `AGRIINSIGHT_ANALYTICS_API_IMAGE`. It orders
+backend role bootstrap/migration/readiness, separate web role bootstrap and
+migration, analytics readiness, then web liveness. PostgreSQL remains the
+digest-pinned upstream image and must not be republished.
+
+For the opt-in learning demo on Docker Desktop, include the demo database
+marker and real Keycloak issuer overlays:
+
+```powershell
+docker compose -f compose.yaml -f compose.backend.yaml -f compose.demo.yaml `
+  -f compose.web-e2e.yaml -f deploy/compose.release-overlay.yaml `
+  -f deploy/compose.web-demo-overlay.yaml --profile backend config --quiet
+```
+
+The demo path runs the named `big-data` profile, guarded SQL bundle, database
+seed, one-to-one reconciliation, seven environment-only OIDC persona
+passwords, and service health ordering. `host.docker.internal` is intentional
+for the browser-visible Docker Desktop issuer. Generated artifacts and
+bootstrap reports stay ignored on D; no customer data or committed credential
+is involved.
+
+Do not start either topology until the disk guard passes. On this workstation,
+heavy image/demo execution stays on hosted CI while C or D is below the
+documented warning floor.
 
 ## Backend database settings
 
@@ -244,9 +294,21 @@ inventory/procurement allocation.
 
 No production registry push is authorized by a successful local build. Hosted run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5 at commit `8d8463f`; the Temurin 21.0.11 JRE Noble backend image passed Trivy 0.70.0 with zero HIGH/CRITICAL and pull-by-digest smoke. Docker Hub/GHCR phase tags `0.1.0-phase7` and `sha-8d8463f` resolve to `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. These tags are evidence only: production must still use protected CI, immutable semantic-version/Git-SHA tags, SBOM/provenance, exact-digest scan/smoke, and no automatic `latest`. Do not mirror PostgreSQL or other third-party images.
 
+The same tag-triggered workflow now covers Python, backend, web, and analytics
+API serially (`max-parallel: 1`). It scans and smokes a local candidate before
+registry authentication, then publishes both registries with BuildKit
+provenance/SBOM and repeats scan/smoke against the returned digest. New web and
+analytics packages are release targets only until the `release-images`
+environment, reviewers, `DOCKERHUB_USERNAME`, and `DOCKERHUB_TOKEN` are
+configured and an exact tag is approved. See the
+[repository-owner handoff](../plans/260722-2342-production-web-platform/reports/github-social-preview-owner-handoff.md).
+
 ## Production blockers
 
 - Protected tag-triggered production release environment, secrets, reviewers, and promotion approval
+- Docker Hub/GHCR visibility and protected publication evidence for the new web and analytics API packages
+- Repository license decision; candidate images intentionally omit a license
+  label until a root license is selected
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership
 - Encrypted off-host backup destination, retention/key owner, and approved recurring restore-drill schedule
 

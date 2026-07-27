@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-26
+Verified snapshot: 2026-07-27
 
 ## Repository shape
 
@@ -8,10 +8,11 @@ Verified snapshot: 2026-07-26
 |---|---|
 | `src/agriinsight/` | Deterministic Bronze/Silver/Gold pipeline, quality, warehouse, KPI, insight, and report services |
 | `dashboard/` | Streamlit analytics dashboard composition and contextual visual catalog |
-| `web/` | Next 16 App Router/BFF, opaque session auth, and the `/overview`, `/farms`, `/farms/[farmId]`, `/work`, `/inventory`, `/costs` browser surface |
+| `web/` | Next 16 App Router/BFF, opaque session auth, and eight permission-driven product areas from Overview through Tenant Administration |
 | `tests/` | Python pipeline, KPI, dashboard, export, visual-asset, security-boundary, and disk-guard tests |
 | `backend/` | Java 21 Spring Boot operational backend, PostgreSQL migrations, and transactional outbox |
-| `scripts/` | C/D disk guard, guarded backend verification, and big-data demo runner |
+| `deploy/` | Non-root web/analytics Dockerfiles, digest-pinned release overlay, and real-OIDC container demo overlay |
+| `scripts/` | C/D disk guard, guarded backend/browser verification, big-data demo runner, and image smoke/SBOM helpers |
 | `plans/` | CK phase plans, design contracts, reports, and acceptance evidence |
 | `docs/` | Evergreen architecture, operations, standards, contracts, and roadmap |
 
@@ -39,9 +40,10 @@ design system.
 ## Web surface
 
 The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
-Phase 5-8 browser surface. Product routes are `/overview`, `/farms`,
-`/farms/[farmId]`, `/work`, `/inventory`, and `/costs`; auth/support routes
-such as `/login`, `/protected`, and `/api/auth/*` exist as shell plumbing.
+Phase 5-10 browser surface. Product routes are `/overview`, `/farms`,
+`/farms/[farmId]`, `/work`, `/inventory`, `/costs`, `/crop-health`,
+`/data-quality`, and `/admin`; auth/support routes such as `/login`,
+`/protected`, and `/api/auth/*` exist as shell plumbing.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
 calling the typed FastAPI Gold read layer. The browser receives aggregated
@@ -166,6 +168,12 @@ GETs also expose `ETag`.
 
 ## Verification snapshot
 
+- Production-web candidate gate (2026-07-27): 202 Python tests, 463 Java
+  unit/contract + 100 PostgreSQL integration tests, 308 web tests with 11
+  intentional skips, 9/9 web database privilege tests, and 26/26 real Chrome
+  journeys. The browser gate covers seven real OIDC personas, all eight product
+  areas, five viewport families, axe WCAG, 1,050,000-fact performance budgets,
+  cache/CSRF/token boundaries, and complete owned-runtime cleanup.
 - Web Phase 8 local acceptance (2026-07-27): full Python suite,
   generated-contract drift, TypeScript, zero-warning ESLint, 246 passed web
   tests with 9 intentional skips, Next 16 production build, 9/9 database
@@ -215,12 +223,13 @@ GETs also expose `ETag`.
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
-- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. The final
-  Phase 6 gate recorded C 9.37 GiB and D 20.93 GiB before cleanup; both
-  remained above fail thresholds. Archived Codex sessions, Azure Functions
-  cache, and JetBrains local cache were moved recoverably to D through
-  junctions; a 0.42 GiB inactive Maven-cache archive was also moved from C to
-  D to preserve C-drive headroom.
+- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. Current C
+  headroom remains below the local heavy-work floor, while D is above its
+  warning floor; browser, Big Data, and four-image gates therefore run on
+  guarded hosted storage. Recoverable C relief moved diagnostics, Node compile
+  cache, and the Maven repository to ignored D storage, with a junction
+  preserving Maven behavior. No active training process or project artifact
+  was deleted.
 - Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
   Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
   smoke passed.
@@ -231,13 +240,17 @@ GETs also expose `ETag`.
 
 ## Next boundary
 
-Production-web Phase 6 is completed locally. The next implementation boundary
-is Phase 7 Inventory Control over the frozen Spring inventory contracts.
-Phase 11 browser quality and Phase 12 protected release gates still block
-registry publication and any production-release claim.
+The eight-area production-web implementation and Phase 11 browser gate are
+complete. Phase 12 is an internal container candidate: Dockerfiles, no-push
+build/scan/smoke, release overlays, serialized protected publication contract,
+and owner handoff exist. The next boundary is external promotion setup, not
+more application code. Registry publication and any production-release claim
+remain blocked until the protected environment, reviewers/secrets, license,
+production OIDC/operations, and immutable-digest release evidence are approved.
 
 ## Unresolved questions
 
 - Production IdP/token fixtures and MFA policy.
 - Production audit retention and backup/restore objectives.
 - Protected release environment secrets/reviewers and release-token rotation owner.
+- Repository license and Docker Hub/GHCR visibility policy for the new images.
