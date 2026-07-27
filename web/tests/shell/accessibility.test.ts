@@ -31,10 +31,10 @@ describe("Field Ledger shell accessibility guardrails", () => {
     expect(css).toContain("min-height: 2.75rem");
     expect(css).toContain("outline: 3px solid var(--focus)");
     expect(css).toMatch(
-      /\.app-shell__workspace\s*\{[^}]*overflow-x:\s*clip;/s
+      /\.app-shell__workspace\s*\{[^}]*overflow-x:\s*hidden;/s
     );
     expect(css).toMatch(
-      /\.app-shell__main\s*\{[^}]*overflow-x:\s*clip;/s
+      /\.app-shell__main\s*\{[^}]*overflow-x:\s*hidden;/s
     );
     expect(css).toMatch(
       /@media \(max-width: 48rem\)[\s\S]*?\.navigation-rail\s*\{[^}]*display:\s*none;[\s\S]*?\.navigation-rail--open\s*\{[^}]*display:\s*flex;/s
