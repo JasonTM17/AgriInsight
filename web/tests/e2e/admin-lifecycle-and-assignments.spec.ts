@@ -24,7 +24,7 @@ async function clickAndReload(page: Page, target: Locator) {
   await target.click();
   if (await reload) return;
 
-  const alert = page.getByRole("alert");
+  const alert = page.locator('main [role="alert"]').first();
   if (await alert.isVisible()) {
     throw new Error(`Admin mutation failed: ${await alert.innerText()}`);
   }
@@ -155,7 +155,7 @@ test("@admin tenant administrator completes lifecycle and assignment commands", 
     await grantForm.locator('input[name="employeeKey"]').fill(activity.employeeId);
     await grantForm
       .locator('input[name="version"]')
-      .fill(activity.activityVersion);
+      .fill("0");
     await clickAndReload(
       page,
       grantForm.getByRole("button", { name: "Cấp phân công" })

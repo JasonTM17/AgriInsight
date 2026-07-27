@@ -4,7 +4,6 @@ import { requiredE2eEnvironment } from "./real-oidc-login";
 
 export type ActivityTarget = Readonly<{
   activityId: string;
-  activityVersion: string;
   employeeId: string;
 }>;
 
@@ -22,11 +21,9 @@ export async function findUnassignedFieldWorkerActivity(
 ): Promise<ActivityTarget> {
   const result = await pool.query<{
     activity_id: string;
-    activity_version: string;
     employee_id: string;
   }>(
     `SELECT activity.id::text AS activity_id,
-            activity.version::text AS activity_version,
             employee.id::text AS employee_id
      FROM activities AS activity
      JOIN employees AS employee
@@ -47,7 +44,6 @@ export async function findUnassignedFieldWorkerActivity(
   }
   return {
     activityId: result.rows[0]!.activity_id,
-    activityVersion: result.rows[0]!.activity_version,
     employeeId: result.rows[0]!.employee_id
   };
 }
