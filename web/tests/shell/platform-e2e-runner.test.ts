@@ -12,6 +12,14 @@ const demoBootstrap = readFileSync(
   resolve(repoRoot, "scripts/bootstrap-demo-environment.ps1"),
   "utf8"
 );
+const adminDatabaseHelper = readFileSync(
+  resolve(repoRoot, "web/tests/e2e/helpers/admin-governance-database.ts"),
+  "utf8"
+);
+const adminLifecycle = readFileSync(
+  resolve(repoRoot, "web/tests/e2e/admin-lifecycle-and-assignments.spec.ts"),
+  "utf8"
+);
 
 describe("real-platform E2E runner", () => {
   it("keeps package caches on the workspace drive", () => {
@@ -85,6 +93,13 @@ describe("real-platform E2E runner", () => {
     expect(runner).toContain('"--grep-invert", "@authorization|@work"');
     expect(runner).toContain('"--grep", "@authorization|@work"');
     expect(runner).not.toContain("AGRIINSIGHT_WEB_LOGIN_CLIENT_LIMIT");
+  });
+
+  it("selects only live activities and starts new assignments at version zero", () => {
+    expect(adminDatabaseHelper).toContain(
+      "activity.status IN ('PLANNED', 'STARTED')"
+    );
+    expect(adminLifecycle).toContain('.fill("0")');
   });
 
   it("uses runner.temp only behind the hosted CI guard", () => {

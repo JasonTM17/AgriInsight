@@ -29,7 +29,8 @@ export async function findUnassignedFieldWorkerActivity(
      JOIN employees AS employee
        ON employee.tenant_id = activity.tenant_id
       AND employee.code = 'DEMO-FIELD-WORKER'
-     WHERE NOT EXISTS (
+     WHERE activity.status IN ('PLANNED', 'STARTED')
+       AND NOT EXISTS (
        SELECT 1 FROM activity_assignees AS assignment
        WHERE assignment.tenant_id = activity.tenant_id
          AND assignment.activity_id = activity.id
