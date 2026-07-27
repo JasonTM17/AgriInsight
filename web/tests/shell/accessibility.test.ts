@@ -43,6 +43,15 @@ describe("Field Ledger shell accessibility guardrails", () => {
     expect(read("src/components/app-shell/navigation-rail.tsx")).toContain(
       'window.matchMedia("(max-width: 48rem)")'
     );
+    const administrationCss = read(
+      "src/features/admin/components/tenant-administration.module.css"
+    );
+    expect(administrationCss).toMatch(
+      /\.tabs\s*\{[^}]*width:\s*100%;[^}]*overflow-x:\s*auto;[^}]*contain:\s*inline-size;/s
+    );
+    expect(administrationCss).toMatch(
+      /\.tableScroll\s*\{[^}]*width:\s*100%;[^}]*overflow-x:\s*auto;[^}]*contain:\s*inline-size;/s
+    );
   });
 
   it("does not allow raw Stitch exports or CDN-only runtime dependencies", () => {
