@@ -1,4 +1,5 @@
-.page { display: grid; gap: 1.25rem; }
+.page { display: grid; gap: 1.25rem; min-width: 0; }
+.page > * { min-width: 0; }
 .pageHeading { align-items: end; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) minmax(15rem, 25rem); }
 .pageHeading h1 { font-size: clamp(2rem, 5vw, 4rem); line-height: .98; margin: .3rem 0 .75rem; }
 .pageHeading p { color: var(--color-text-muted); margin: 0; max-width: 52rem; }
@@ -10,7 +11,7 @@
 .contractBanner strong { font-family: var(--font-mono); font-size: .82rem; overflow-wrap: anywhere; }
 .lineage { color: var(--color-text-muted); display: flex; flex-wrap: wrap; font-family: var(--font-mono); font-size: .75rem; gap: .4rem 1.25rem; margin: -.6rem 0 0; overflow-wrap: anywhere; }
 .heroGrid, .detailGrid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.3fr) minmax(16rem, .7fr); }
-.summaryPanel, .panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: clamp(1rem, 3vw, 1.5rem); }
+.summaryPanel, .panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; padding: clamp(1rem, 3vw, 1.5rem); }
 .sectionHeading { align-items: start; display: flex; gap: 1rem; justify-content: space-between; }
 .sectionHeading h2, .panel h2 { margin: .2rem 0 .8rem; }
 .sectionHeading > span, .sectionHeading > code { background: var(--color-surface-strong); border-radius: 999px; color: var(--color-text-muted); font-size: .78rem; padding: .4rem .7rem; white-space: nowrap; }
@@ -31,7 +32,7 @@
 .filterBar input, .filterBar select { background: var(--color-paper); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text); min-height: 2.6rem; padding: .55rem .7rem; }
 .filterBar button, .backLink { background: var(--color-accent); border: 0; border-radius: var(--radius-sm); color: var(--color-accent-contrast); font-weight: 700; min-height: 2.6rem; padding: .65rem 1rem; text-decoration: none; }
 .filterBar > a { color: var(--color-text-muted); padding: .65rem; }
-.tableScroll { overflow-x: auto; }
+.tableScroll { max-width: 100%; min-width: 0; overflow-x: auto; }
 .tableScroll table { border-collapse: collapse; min-width: 60rem; width: 100%; }
 .tableScroll th { color: var(--color-text-muted); font-size: .72rem; letter-spacing: .05em; text-align: left; text-transform: uppercase; }
 .tableScroll th, .tableScroll td { border-bottom: 1px solid var(--color-border); padding: .8rem .65rem; vertical-align: top; }

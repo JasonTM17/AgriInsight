@@ -1,6 +1,11 @@
 .page {
   display: grid;
   gap: var(--space-5);
+  min-width: 0;
+}
+
+.page > * {
+  min-width: 0;
 }
 
 .pageHeading,
@@ -56,12 +61,16 @@
 .tabs {
   display: flex;
   gap: 0.25rem;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
   padding: 0.25rem;
   background: var(--panel-muted);
   border: 1px solid var(--border);
 }
 
 .tabs a {
+  flex: 0 0 auto;
   padding: 0.7rem 0.9rem;
   color: var(--muted);
   text-decoration: none;
