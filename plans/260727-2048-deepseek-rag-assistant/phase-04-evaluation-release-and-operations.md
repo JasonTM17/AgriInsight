@@ -12,8 +12,10 @@ dependencies:
 
 ## Overview
 
-Block release until groundedness, security, cost, latency, observability, and
-container delivery are proven on hosted storage.
+Block production promotion until groundedness, security, cost, latency,
+observability, and container delivery are proven on hosted storage. The
+release candidate itself is now backed by verified hosted CI and protected
+registry evidence.
 
 ## Implementation Steps
 
@@ -33,15 +35,28 @@ container delivery are proven on hosted storage.
 
 ## Release gates
 
-- Retrieval recall@5 >= 0.90 on answerable evaluation cases.
-- Citation precision and grounded factual claims >= 0.98.
-- Cross-scope evidence leakage = 0 and secret/token leakage = 0.
-- Unsupported-question refusal precision >= 0.95.
+### Verified release evidence
+
+- Hosted CI run [30284795208](https://github.com/JasonTM17/AgriInsight/actions/runs/30284795208)
+  succeeded with Python, Java, web, dependency/secret scan, the real
+  seven-person Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome topology, and all
+  four candidate images.
+- Protected v0.2.2 image release
+  [30285933144](https://github.com/JasonTM17/AgriInsight/actions/runs/30285933144)
+  succeeded with owner approvals, provenance/SBOM, exact-digest scanning,
+  explicit pull-by-digest, and non-root/read-only smoke for Python, backend,
+  web, and analytics-api.
+- GitHub Release [v0.2.2](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.2.2)
+  exists.
+
+### Still open
+
 - p95 time-to-first-byte <= 2.5 seconds and p95 completed response <= 12 seconds
   under the accepted hosted load profile.
-- Per-request token/output budgets and the process-local tenant daily quota are
-  enforced; provider-account daily spend alert and owner are required before
-  protected promotion.
+- Production-scale semantic groundedness for answerable cases remains
+  unmeasured.
+- Provider-account daily spend alert ownership remains required before
+  protected production promotion.
 
 ## Rollback
 
@@ -56,7 +71,8 @@ previous immutable image digest.
   static accessibility review, Python/web tests, production web build, bounded
   queue, tenant rate/token quota, strict sentence citation, and pending-request
   cancellation pass.
-- Protected real-OIDC browser capture, hosted latency/load measurement,
-  daily-spend alert ownership, signed image publication, and release approval
-  remain external gates. See
+- Hosted CI, protected image release, digest parity across Docker Hub/GHCR, and
+  the GitHub Release tag are verified for v0.2.2.
+- Hosted latency/load measurement, production-scale semantic groundedness, and
+  provider-account daily-spend alert ownership remain open. See
   [evaluation report](./reports/evaluation-2026-07-27.md).

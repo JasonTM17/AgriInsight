@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Local implementation accepted. Protected production promotion not accepted.
+Local implementation accepted. Protected v0.2.2 release evidence is verified.
 The assistant is fail-closed by default and the release overlay leaves it
 disabled unless runtime secrets explicitly enable it.
 
@@ -14,6 +14,11 @@ disabled unless runtime secrets explicitly enable it.
   ambiguous, injection, or cross-tenant
 - Retrieval: deterministic lexical/structured, top 5, scope filter before rank
 - Provider: DeepSeek V4 Flash adapter, thinking disabled, strict JSON output
+- Release evidence:
+  - Full CI run [30284795208](https://github.com/JasonTM17/AgriInsight/actions/runs/30284795208)
+  - Protected image release [30285933144](https://github.com/JasonTM17/AgriInsight/actions/runs/30285933144)
+  - GitHub Release [v0.2.2](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.2.2)
+  - Docker Hub and GHCR resolve to the same immutable release digest
 
 ## Results
 
@@ -28,6 +33,9 @@ disabled unless runtime secrets explicitly enable it.
 | Tenant request/token quota | Enforced per process | Enforced | Pass |
 | Provider queue wait | 2 s maximum | Bounded | Pass |
 | Hardened live provider smoke | Answered, 1 citation, 302 tokens | Valid bounded response | Pass |
+| Full CI run | Succeeded | Python, Java, web, dependency/secret scan, real seven-person browser topology, all four candidate images | Pass |
+| Protected image release | Succeeded | Owner approvals, provenance/SBOM, exact-digest scan, pull-by-digest, non-root/read-only smoke | Pass |
+| GitHub Release tag | Exists | `v0.2.2` published | Pass |
 | Web production dependency vulnerabilities | 0 | 0 high+ | Pass |
 | Hosted p95 completed response | Not measured | <= 12 s | Open |
 | Semantic grounded-claim rate | Not measured at scale | >= 0.98 | Open |
@@ -69,19 +77,15 @@ is stored in local/session storage or server persistence.
 
 ## Open release gates
 
-- Run the canonical real-Keycloak/PostgreSQL/Spring/FastAPI/Next browser gate
-  on hosted storage. Local C free space was about 5.4 GiB, below the 8 GiB hard
-  floor, so the heavy topology was not started.
 - Measure hosted p50/p95 provider and end-to-end latency under an approved load
   profile; non-streaming V1 has no token-level time-to-first-byte metric.
+- Complete production-scale semantic groundedness measurement for answerable
+  cases.
 - Add provider-account daily spend alerts and an incident owner; the local
   per-process daily token guard is already enforced.
-- Build, scan, sign, attest, and publish the exact immutable image only through
-  the protected registry workflow with reviewer approval.
-- Capture sanitized responsive screenshots/GIF after that real browser gate.
+- Define the retention owner and policy for aggregate assistant telemetry.
 
 ## Unresolved questions
 
 - Who owns the provider daily budget and alert receiver?
-- Which protected environment approves Docker Hub/GHCR promotion?
 - What production retention period applies to aggregate assistant telemetry?
