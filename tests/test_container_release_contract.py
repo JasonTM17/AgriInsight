@@ -11,7 +11,7 @@ ROOT = Path(__file__).parents[1]
     [
         (
             "web.Dockerfile",
-            "node:24.12.0-bookworm-slim@sha256:",
+            "node:24.18.0-bookworm-slim@sha256:",
             "EXPOSE 3100",
         ),
         (
@@ -77,11 +77,16 @@ def test_dockerfile_contexts_are_allowlisted_without_local_state(
 
 
 def test_web_standalone_runtime_exposes_an_unauthenticated_liveness_route() -> None:
+    dockerfile = (
+        ROOT / "deploy" / "docker" / "web.Dockerfile"
+    ).read_text(encoding="utf-8")
     next_config = (ROOT / "web" / "next.config.ts").read_text(encoding="utf-8")
     health_route = (
         ROOT / "web" / "src" / "app" / "api" / "health" / "live" / "route.ts"
     ).read_text(encoding="utf-8")
 
+    assert "rm -rf /usr/local/lib/node_modules/npm" in dockerfile
+    assert "/opt/yarn-v*" in dockerfile
     assert 'output: "standalone"' in next_config
     assert "outputFileTracingRoot: repositoryRoot" in next_config
     assert "export async function GET" in health_route

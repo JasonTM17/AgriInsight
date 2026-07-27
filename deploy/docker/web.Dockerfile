@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:24.12.0-bookworm-slim@sha256:6d8047885b91084ceff824c02950be237dafcbfd3d1b6e69d49c919868e806be AS dependencies
+FROM node:24.18.0-bookworm-slim@sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d AS dependencies
 
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /workspace/web
@@ -15,7 +15,7 @@ COPY dashboard/assets/generated ./dashboard/assets/generated
 WORKDIR /workspace/web
 RUN npm run build
 
-FROM node:24.12.0-bookworm-slim@sha256:6d8047885b91084ceff824c02950be237dafcbfd3d1b6e69d49c919868e806be AS runtime
+FROM node:24.18.0-bookworm-slim@sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d AS runtime
 
 ARG OCI_SOURCE="https://github.com/JasonTM17/AgriInsight"
 ARG OCI_REVISION="unknown"
@@ -34,7 +34,15 @@ ENV HOSTNAME=0.0.0.0 \
     NODE_ENV=production \
     PORT=3100
 
-RUN groupadd --gid 10001 agriinsight \
+RUN rm -rf /usr/local/lib/node_modules/npm \
+        /usr/local/lib/node_modules/corepack \
+        /opt/yarn-v* \
+    && rm -f /usr/local/bin/npm \
+        /usr/local/bin/npx \
+        /usr/local/bin/corepack \
+        /usr/local/bin/yarn \
+        /usr/local/bin/yarnpkg \
+    && groupadd --gid 10001 agriinsight \
     && useradd --uid 10001 --gid 10001 --home-dir /app --no-create-home --shell /usr/sbin/nologin agriinsight
 
 WORKDIR /app
