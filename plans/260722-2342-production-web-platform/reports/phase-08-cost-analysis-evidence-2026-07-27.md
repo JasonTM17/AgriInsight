@@ -22,7 +22,10 @@ below the repository's 8 GiB C: free-space floor.
     idempotency keys.
 - BFF export:
   - `GET /api/costs/export`
-  - allowlisted `csv|pdf|xlsx`, safe stream headers only, no filesystem paths.
+  - allowlisted `csv|pdf|xlsx`, bounded streaming up to 10 MiB, safe
+    filename/metadata headers only, no filesystem paths.
+- Successful operating-cost POST/correction responses are runtime-validated
+  against the generated backend contract before reaching the browser.
 - UI panels with source badges, KPI cards, monthly trends, detail tables,
   supplier drivers, lineage and operating/procurement export links.
 - `COST_READ` navigation now targets `/costs?lens=operating`; no third
@@ -40,7 +43,7 @@ below the repository's 8 GiB C: free-space floor.
 | `npm --prefix web run contracts:check` | PASS |
 | `npm --prefix web run typecheck` | PASS |
 | `npm --prefix web run lint` | PASS |
-| `npm --prefix web run test` | PASS — 239 passed, 9 intentional skips |
+| `npm --prefix web run test` | PASS — 246 passed, 9 intentional skips |
 | `npm --prefix web run build` | PASS — Next 16 production build |
 | Guarded browser E2E | PENDING — C: ~2.8 GiB, guard floor 8 GiB |
 | Docker runtime health | PASS — AgriCore compose services healthy |
@@ -51,6 +54,7 @@ below the repository's 8 GiB C: free-space floor.
 - `f1f9b1a feat(web): ship cost analysis experience`
 - `23b7d63 test(costs): cover browser lens and scope journeys`
 - `5e7ef69 feat(web): add operating cost exports`
+- `186412e fix(web): bound cost export streaming and responses`
 
 ## Storage and rollback
 
@@ -58,7 +62,7 @@ below the repository's 8 GiB C: free-space floor.
   volumes; active containers/images were not removed. Docker reported only 99 B
   reclaimed because the remaining reclaimable bytes are shared/virtualized.
 - Ubuntu/WSL and browser profile data were not deleted.
-- Rollback is commit-scoped: revert the four commits above in reverse order;
+- Rollback is commit-scoped: revert the five commits above in reverse order;
   existing Spring/Gold cost contracts remain untouched.
 
 ## Unresolved

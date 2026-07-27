@@ -40,7 +40,7 @@ Bằng chứng hiện tại:
 - Phase 4 cung cấp field/crop/season, Employee, farm/activity assignment, task lifecycle, log công việc bất biến và harvest ledger. Manager bị giới hạn theo farm assignment; worker chỉ thấy task được giao và chỉ append/correct log của chính mình; harvest chuẩn hóa KG/TONNE về kg và sửa sai bằng bản ghi correction thay vì ghi đè.
 - Local JDK mới hơn biên dịch bằng `--release 21`; multi-stage image dùng Temurin 21, chạy non-root `10001:10001`, chỉ chứa `/app/app.jar` và đã qua smoke test liveness/readiness/fail-closed OIDC.
 - Regression analytics đạt 76 test pass, 3 test PDF skip có chủ đích khi thiếu optional report extras; compileall, Node syntax, Compose config và wheel build đều đạt.
-- Web Cost Analysis đã qua typecheck, lint, production build và 239 unit/contract tests (9 skip có chủ đích). Route `/costs` phân biệt đúng `operating`/`procurement`, BFF không nhận lens `inventory`, mutation dùng CSRF + idempotency, export chỉ forward file/header an toàn.
+- Web Cost Analysis đã qua typecheck, lint, production build và 246 unit/contract tests (9 skip có chủ đích). Route `/costs` phân biệt đúng `operating`/`procurement`, BFF không nhận lens `inventory`, mutation dùng CSRF + idempotency + runtime response validation, export stream bounded 10 MiB và chỉ forward file/header metadata an toàn.
 - Không để lại smoke/Testcontainers PostgreSQL container; các container dự án khác không bị dọn. Upstream `postgres:18.0-alpine` vẫn chỉ là dependency kiểm thử.
 
 Các cổng còn mở thuộc phase sau:
