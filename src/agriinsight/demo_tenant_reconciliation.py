@@ -12,6 +12,7 @@ from agriinsight.demo_tenant_contract import (
     load_demo_contract,
     load_demo_snapshot,
 )
+from agriinsight.repository_tmp_output import validate_repository_tmp_output
 
 _DOMAINS = (
     "farms",
@@ -130,14 +131,10 @@ def write_reconciliation_report(
     actual_path: Path,
     output_path: Path,
 ) -> dict[str, Any]:
-    output = output_path.resolve()
-    expected_root = _REPOSITORY_TMP.resolve()
-    if (
-        output.drive.upper() != "D:"
-        or not output.is_relative_to(expected_root)
-    ):
-        raise ValueError(
-            "Reconciliation output must be under the repository D-local _tmp directory"
+    output = validate_repository_tmp_output(
+        output_path,
+        _REPOSITORY_TMP,
+        description="Reconciliation output",
     )
     try:
         if actual_path.stat().st_size > MAX_CATALOG_BYTES:

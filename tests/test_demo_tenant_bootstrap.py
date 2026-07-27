@@ -137,7 +137,7 @@ def test_demo_bundle_with_zero_samples_has_no_activity_assignments(
     assert "INSERT INTO employees" in bundle.seed_sql
 
 
-def test_demo_bundle_requires_confirmation_and_d_local_tmp(
+def test_demo_bundle_requires_confirmation_and_repository_local_tmp(
     analytics_artifact_root: Path,
     tmp_path: Path,
 ) -> None:
@@ -148,7 +148,7 @@ def test_demo_bundle_requires_confirmation_and_d_local_tmp(
             Path("D:/AgriInsight/_tmp/test-output"),
             confirmed=False,
         )
-    with pytest.raises(ValueError, match="D-local"):
+    with pytest.raises(ValueError, match="repository-local"):
         write_demo_bundle(
             analytics_artifact_root,
             CONTRACT,

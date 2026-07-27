@@ -13,6 +13,7 @@ from agriinsight.demo_tenant_contract import (
     load_demo_snapshot,
     validate_persona_scopes,
 )
+from agriinsight.repository_tmp_output import validate_repository_tmp_output
 
 _REPOSITORY_TMP = Path(__file__).resolve().parents[2] / "_tmp"
 
@@ -76,17 +77,11 @@ def _load_demo_inputs(
 
 
 def _validated_output_directory(path: Path) -> Path:
-    resolved = path.resolve()
-    expected_root = _REPOSITORY_TMP.resolve()
-    if (
-        resolved.drive.upper() != "D:"
-        or resolved == expected_root
-        or not resolved.is_relative_to(expected_root)
-    ):
-        raise ValueError(
-            "Demo bundle output must be below the repository D-local _tmp directory"
-        )
-    return resolved
+    return validate_repository_tmp_output(
+        path,
+        _REPOSITORY_TMP,
+        description="Demo bundle output",
+    )
 
 
 def main(arguments: Sequence[str] | None = None) -> int:
