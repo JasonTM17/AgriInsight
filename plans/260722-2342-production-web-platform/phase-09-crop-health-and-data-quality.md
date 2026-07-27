@@ -163,7 +163,8 @@ npm --prefix web run test
 - Verified: 261 web tests pass with 9 intentional skips; focused component,
   navigation, and Phase 2 contract tests pass; typecheck, zero-warning lint,
   contract drift, Python analytics endpoint/OpenAPI tests, and Next production
-  build pass.
+  build pass. GitHub CI run `30233453422` is green across Python, Java, web,
+  security, and image-build jobs on commit `d5b9a9d`.
 - Pending: guarded real-browser route gate and big-data smoke. The repository
   disk guard currently fails before browser startup because C: has 2.798 GiB
   free (fail threshold 8 GiB); D: has 20.711 GiB (warning, fail threshold 20
