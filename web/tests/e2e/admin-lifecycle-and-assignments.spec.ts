@@ -18,8 +18,10 @@ function section(page: Page, name: string): Locator {
 }
 
 async function clickAndReload(page: Page, target: Locator) {
-  await target.click();
-  await page.waitForLoadState("load");
+  await Promise.all([
+    page.waitForEvent("load"),
+    target.click()
+  ]);
 }
 
 test("@admin tenant administrator completes lifecycle and assignment commands", async ({

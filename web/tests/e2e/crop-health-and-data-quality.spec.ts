@@ -29,7 +29,11 @@ test("@crop-health executive sees scoped evidence and data quality lineage", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page, "/crop-health");
   await expect(page.getByTestId("crop-health-page")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sức khỏe cây trồng" })).toBeVisible();
+  await expect(
+    page
+      .getByTestId("crop-health-page")
+      .getByRole("heading", { name: "Sức khỏe cây trồng" })
+  ).toBeVisible();
   await expect(page.getByTestId("crop-demo-warning")).toContainText("Ảnh minh họa do AI tạo");
   await expect(page.getByText("assessmentMethod=rule-based-heuristic")).toBeVisible();
   await expectNoHorizontalOverflow(page);
