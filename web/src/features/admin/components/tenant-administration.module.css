@@ -1,8 +1,6 @@
 .page {
   display: grid;
   gap: var(--space-5);
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
 }
 
@@ -73,11 +71,9 @@
 .tabs {
   display: flex;
   gap: 0.25rem;
-  width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
-  contain: inline-size;
   padding: 0.25rem;
   background: var(--panel-muted);
   border: 1px solid var(--border);
@@ -182,11 +178,9 @@
 }
 
 .tableScroll {
-  width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
-  contain: inline-size;
 }
 
 .dataTable {
@@ -206,6 +200,10 @@
 .dataTable small {
   color: var(--muted);
   font-size: 0.65rem;
+}
+
+.dataTable thead th {
+  position: relative;
 }
 
 .dataTable td small {

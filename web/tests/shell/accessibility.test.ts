@@ -30,13 +30,6 @@ describe("Field Ledger shell accessibility guardrails", () => {
     const css = read("src/app/globals.css");
     expect(css).toContain("min-height: 2.75rem");
     expect(css).toContain("outline: 3px solid var(--focus)");
-    expect(css).toMatch(/html\s*\{[^}]*overflow-x:\s*hidden;/s);
-    expect(css).toMatch(
-      /\.app-shell__workspace\s*\{[^}]*overflow-x:\s*hidden;/s
-    );
-    expect(css).toMatch(
-      /\.app-shell__main\s*\{[^}]*overflow-x:\s*hidden;/s
-    );
     expect(css).toMatch(
       /@media \(max-width: 48rem\)[\s\S]*?\.navigation-rail\s*\{[^}]*display:\s*none;[\s\S]*?\.navigation-rail--open\s*\{[^}]*display:\s*flex;/s
     );
@@ -47,10 +40,7 @@ describe("Field Ledger shell accessibility guardrails", () => {
       "src/features/admin/components/tenant-administration.module.css"
     );
     expect(administrationCss).toMatch(
-      /\.tabs\s*\{[^}]*width:\s*100%;[^}]*overflow-x:\s*auto;[^}]*contain:\s*inline-size;/s
-    );
-    expect(administrationCss).toMatch(
-      /\.tableScroll\s*\{[^}]*width:\s*100%;[^}]*overflow-x:\s*auto;[^}]*contain:\s*inline-size;/s
+      /\.dataTable thead th\s*\{[^}]*position:\s*relative;/s
     );
   });
 

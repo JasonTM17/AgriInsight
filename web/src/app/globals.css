@@ -14,7 +14,6 @@
 
 html {
   min-width: 320px;
-  overflow-x: hidden;
   background: var(--canvas);
 }
 
@@ -282,9 +281,7 @@ a {
 }
 
 .app-shell__workspace {
-  max-width: 100%;
   min-width: 0;
-  overflow-x: hidden;
 }
 
 .app-header {
@@ -420,9 +417,7 @@ a {
 
 .app-shell__main {
   width: min(100%, 90rem);
-  min-width: 0;
   margin: 0 auto;
-  overflow-x: hidden;
   padding: clamp(1.25rem, 3vw, 3rem);
 }
 
