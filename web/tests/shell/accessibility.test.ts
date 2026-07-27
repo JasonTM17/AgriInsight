@@ -30,7 +30,9 @@ describe("Field Ledger shell accessibility guardrails", () => {
     const css = read("src/app/globals.css");
     expect(css).toContain("min-height: 2.75rem");
     expect(css).toContain("outline: 3px solid var(--focus)");
-    expect(css).toContain("overflow-x: clip");
+    expect(css).toMatch(
+      /\.app-shell__workspace\s*\{[^}]*overflow-x:\s*clip;/s
+    );
   });
 
   it("does not allow raw Stitch exports or CDN-only runtime dependencies", () => {
