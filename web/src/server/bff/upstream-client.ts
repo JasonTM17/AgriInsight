@@ -1,6 +1,9 @@
 import "server-only";
 
-import { boundedUpstreamFetch } from "@/server/bff/bounded-upstream-fetch";
+import {
+  boundedUpstreamFetch,
+  boundedUpstreamStreamFetch
+} from "@/server/bff/bounded-upstream-fetch";
 import {
   resolveAllowedMutation,
   resolveAllowedOperation,
@@ -24,23 +27,30 @@ export async function executeAllowedOperation(
   pathParameters: PathParameters = {}
 ): Promise<Response> {
   const operation = resolveAllowedOperation(operationName);
-  const baseUrl =
-    operation.service === "backend"
-      ? env.backendBaseUrl
-      : env.analyticsBaseUrl;
-  const url = new URL(
-    interpolatePath(
-      operation.path,
-      operation.pathParameters ?? [],
-      pathParameters
-    ),
-    baseUrl
-  );
-  appendQuery(url, query, operation.queryParameters ?? []);
+  const url = buildOperationUrl(env, operation, query, pathParameters);
   return boundedUpstreamFetch(url, {
     method: operation.method,
     headers: {
       Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "X-Correlation-Id": correlationId
+    }
+  });
+}
+
+export async function executeAllowedFileOperation(
+  env: WebEnvironment,
+  operationName: "analyticsCostExport",
+  accessToken: string,
+  correlationId: string,
+  query: Query = {}
+): Promise<Response> {
+  const operation = resolveAllowedOperation(operationName);
+  const url = buildOperationUrl(env, operation, query, {});
+  return boundedUpstreamStreamFetch(url, {
+    method: operation.method,
+    headers: {
+      Accept: "*/*",
       Authorization: `Bearer ${accessToken}`,
       "X-Correlation-Id": correlationId
     }
@@ -87,6 +97,28 @@ export async function executeAllowedMutation(
     body: serializedBody,
     headers
   });
+}
+
+function buildOperationUrl(
+  env: WebEnvironment,
+  operation: ReturnType<typeof resolveAllowedOperation>,
+  query: Query,
+  pathParameters: PathParameters
+): URL {
+  const baseUrl =
+    operation.service === "backend"
+      ? env.backendBaseUrl
+      : env.analyticsBaseUrl;
+  const url = new URL(
+    interpolatePath(
+      operation.path,
+      operation.pathParameters ?? [],
+      pathParameters
+    ),
+    baseUrl
+  );
+  appendQuery(url, query, operation.queryParameters ?? []);
+  return url;
 }
 
 function validateIdempotencyKey(idempotencyKey: string): void {

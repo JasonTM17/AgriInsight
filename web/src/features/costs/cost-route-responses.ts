@@ -8,6 +8,12 @@ import { ZodError } from "zod";
 import { AuthError } from "@/server/auth/auth-error";
 import { authErrorResponse } from "@/server/auth/auth-http";
 import { WorkApiError, workProblemResponse } from "@/features/work/work-api-security";
+import {
+  costCorrectionResponseSchema,
+  operatingCostEntrySchema
+} from "@/features/costs/cost-generated-contract-schemas";
+
+type CostMutationKind = "correction" | "posting";
 
 export class CostApiError extends WorkApiError {
   constructor(code: string, status: number, message: string) {
@@ -46,7 +52,8 @@ export function costRouteErrorResponse(
 
 export function costMutationResponse(
   upstream: Response,
-  correlationId: string
+  correlationId: string,
+  kind: CostMutationKind
 ): Promise<NextResponse> {
   if (!upstream.ok) {
     const status = [400, 401, 403, 409, 422].includes(upstream.status)
@@ -70,15 +77,19 @@ export function costMutationResponse(
       )
     );
   }
-  return parseMutationJson(upstream, correlationId);
+  return parseMutationJson(upstream, correlationId, kind);
 }
 
 async function parseMutationJson(
   upstream: Response,
-  correlationId: string
+  correlationId: string,
+  kind: CostMutationKind
 ): Promise<NextResponse> {
   try {
-    const body = await upstream.json();
+    const rawBody = await upstream.json();
+    const body = kind === "posting"
+      ? operatingCostEntrySchema.parse(rawBody)
+      : costCorrectionResponseSchema.parse(rawBody);
     return NextResponse.json(body, {
       status: upstream.status,
       headers: {

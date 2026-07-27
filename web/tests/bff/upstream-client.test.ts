@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   UpstreamResponseError,
-  boundedUpstreamFetch
+  boundedUpstreamFetch,
+  boundedUpstreamStreamFetch
 } from "@/server/bff/bounded-upstream-fetch";
 import {
+  executeAllowedFileOperation,
   executeAllowedMutation,
   executeAllowedOperation
 } from "@/server/bff/upstream-client";
@@ -372,6 +374,71 @@ describe("bounded upstream client", () => {
         method: "GET"
       })
     ).rejects.toThrow("byte limit");
+  });
+
+  it("streams an allowlisted export without pre-buffering its body", async () => {
+    let pulled = false;
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        void input;
+        void init;
+        return new Response(
+          new ReadableStream<Uint8Array>({
+            pull(controller) {
+              pulled = true;
+              controller.enqueue(new TextEncoder().encode("cost-data"));
+              controller.close();
+            }
+          }),
+          {
+            headers: {
+              "Content-Disposition": 'attachment; filename="cost.csv"',
+              "Content-Type": "text/csv"
+            }
+          }
+        );
+      }
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await executeAllowedFileOperation(
+      env,
+      "analyticsCostExport",
+      "server-held-token",
+      "correlation-1",
+      { format: "csv", scope: "operating" }
+    );
+
+    const [input, init] = fetchMock.mock.calls[0]!;
+    expect(String(input)).toBe(
+      "http://127.0.0.1:8081/internal/v1/costs/export"
+      + "?format=csv&scope=operating"
+    );
+    expect(init?.headers).toEqual({
+      Accept: "*/*",
+      Authorization: "Bearer server-held-token",
+      "X-Correlation-Id": "correlation-1"
+    });
+    expect(await response.text()).toBe("cost-data");
+    expect(pulled).toBe(true);
+  });
+
+  it("rejects an export declared above the ten-megabyte cap", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response("{}", {
+          headers: { "Content-Length": String(10 * 1024 * 1024 + 1) }
+        })
+      )
+    );
+
+    await expect(
+      boundedUpstreamStreamFetch(
+        "http://127.0.0.1:8081/internal/v1/costs/export",
+        { method: "GET" }
+      )
+    ).rejects.toThrow("export byte limit");
   });
 
   it.each([

@@ -9,7 +9,7 @@ import {
   forwardCostExport,
   readCostExportQuery
 } from "@/features/costs/export-cost-view";
-import { executeAllowedOperation } from "@/server/bff/upstream-client";
+import { executeAllowedFileOperation } from "@/server/bff/upstream-client";
 
 export async function GET(request: NextRequest) {
   let correlationId: string | undefined;
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const context = await authorizeCostRead(request);
     correlationId = context.correlationId;
     const query = readCostExportQuery(request);
-    const upstream = await executeAllowedOperation(
+    const upstream = await executeAllowedFileOperation(
       context.env,
       "analyticsCostExport",
       context.accessToken,
@@ -25,16 +25,46 @@ export async function GET(request: NextRequest) {
       query
     );
     if (!upstream.ok) {
-      throw new CostApiError(
-        upstream.status === 403 ? "scope_denied" : "export_unavailable",
-        upstream.status === 403 ? 403 : 502,
-        upstream.status === 403
-          ? "Bản xuất chi phí không nằm trong phạm vi được cấp quyền."
-          : "Bản xuất chi phí tạm thời chưa sẵn sàng."
-      );
+      throw exportUpstreamError(upstream.status);
     }
     return forwardCostExport(upstream, context.correlationId);
   } catch (error) {
     return costRouteErrorResponse(error, correlationId);
   }
+}
+
+function exportUpstreamError(status: number): CostApiError {
+  if (status === 401) {
+    return new CostApiError(
+      "session_expired",
+      401,
+      "Phiên làm việc đã hết hạn."
+    );
+  }
+  if (status === 403) {
+    return new CostApiError(
+      "scope_denied",
+      403,
+      "Bản xuất chi phí không nằm trong phạm vi được cấp quyền."
+    );
+  }
+  if (status === 400 || status === 422) {
+    return new CostApiError(
+      "export_rejected",
+      status,
+      "Bản xuất vượt giới hạn hoặc bộ lọc chưa hợp lệ. Hãy thu hẹp phạm vi."
+    );
+  }
+  if (status === 503) {
+    return new CostApiError(
+      "export_format_unavailable",
+      503,
+      "Định dạng xuất này tạm thời chưa sẵn sàng."
+    );
+  }
+  return new CostApiError(
+    "export_unavailable",
+    502,
+    "Bản xuất chi phí tạm thời chưa sẵn sàng."
+  );
 }

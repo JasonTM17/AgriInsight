@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 
 import { CostApiError } from "./cost-route-responses";
 
@@ -8,6 +9,17 @@ const VALUE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 const FORMATS = new Set(["csv", "pdf", "xlsx"]);
 const SCOPES = new Set(["all", "operating", "procurement"]);
+const exportMetadataSchema = z.object({
+  asOf: z.iso.date(),
+  byteSize: z.number().int().nonnegative().max(10 * 1024 * 1024),
+  checksumSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  contractVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+  filename: z.string().regex(/^[A-Za-z0-9._-]{1,120}$/),
+  filterHash: z.string().regex(/^[0-9a-f]{12}$/),
+  format: z.enum(["csv", "pdf", "xlsx"]),
+  rowCount: z.number().int().nonnegative().max(25_000),
+  runId: z.string().regex(/^[A-Za-z0-9._-]{1,128}$/)
+}).strict();
 
 export type CostExportQuery = Readonly<Record<string, string | number>>;
 
@@ -81,10 +93,58 @@ export function forwardCostExport(
       "Máy chủ xuất trả về định dạng không hợp lệ."
     );
   }
+  const contentDisposition = headers.get("Content-Disposition");
+  if (
+    !contentDisposition
+    || !/^attachment; filename="[A-Za-z0-9._-]{1,120}"$/.test(contentDisposition)
+  ) {
+    throw new CostApiError(
+      "invalid_upstream_response",
+      502,
+      "Máy chủ xuất trả về tên tệp không hợp lệ."
+    );
+  }
+  const metadata = readExportMetadata(
+    headers.get("X-AgriInsight-Export-Metadata")
+  );
+  const filename = contentDisposition.slice(
+    'attachment; filename="'.length,
+    -1
+  );
+  const contentLength = Number(headers.get("Content-Length") ?? "-1");
+  if (
+    metadata.filename !== filename
+    || metadata.byteSize !== contentLength
+  ) {
+    throw invalidExportMetadata();
+  }
+  headers.set(
+    "X-AgriInsight-Export-Metadata",
+    JSON.stringify(metadata)
+  );
   return new Response(upstream.body, {
     status: upstream.status,
     headers
   });
+}
+
+function readExportMetadata(
+  value: string | null
+): z.output<typeof exportMetadataSchema> {
+  if (!value || value.length > 2_048) throw invalidExportMetadata();
+  try {
+    return exportMetadataSchema.parse(JSON.parse(value));
+  } catch {
+    throw invalidExportMetadata();
+  }
+}
+
+function invalidExportMetadata(): CostApiError {
+  return new CostApiError(
+    "invalid_upstream_response",
+    502,
+    "Máy chủ xuất trả về metadata không hợp lệ."
+  );
 }
 
 function optionalValue(value: string | null, name: string): string | undefined {

@@ -5,6 +5,18 @@ import { NextRequest } from "next/server";
 import { forwardCostExport, readCostExportQuery } from "@/features/costs/export-cost-view";
 import { CostApiError } from "@/features/costs/cost-route-responses";
 
+const VALID_METADATA = JSON.stringify({
+  asOf: "2026-07-27",
+  byteSize: 11,
+  checksumSha256: "a".repeat(64),
+  contractVersion: "1.0.0",
+  filename: "cost.csv",
+  filterHash: "b".repeat(12),
+  format: "csv",
+  rowCount: 1,
+  runId: "run-20260727"
+});
+
 describe("cost export BFF contract", () => {
   it("normalizes only allowlisted filters", () => {
     const request = new NextRequest(
@@ -39,7 +51,7 @@ describe("cost export BFF contract", () => {
         "Content-Disposition": 'attachment; filename="cost.csv"',
         "Content-Length": "11",
         "Content-Type": "text/csv; charset=utf-8",
-        "X-AgriInsight-Export-Metadata": "{\"format\":\"csv\"}",
+        "X-AgriInsight-Export-Metadata": VALID_METADATA,
         "X-Internal-Path": "must-not-forward"
       }
     });
@@ -47,5 +59,29 @@ describe("cost export BFF contract", () => {
     expect(response.headers.get("X-Correlation-Id")).toBe("corr-cost-001");
     expect(response.headers.get("X-Internal-Path")).toBeNull();
     expect(await response.text()).toBe("csv-content");
+  });
+
+  it.each([
+    {
+      "Content-Disposition": 'inline; filename="cost.csv"',
+      "X-AgriInsight-Export-Metadata": VALID_METADATA
+    },
+    {
+      "Content-Disposition": 'attachment; filename="../cost.csv"',
+      "X-AgriInsight-Export-Metadata": VALID_METADATA
+    },
+    {
+      "Content-Disposition": 'attachment; filename="cost.csv"',
+      "X-AgriInsight-Export-Metadata": "not-json"
+    }
+  ])("rejects unsafe upstream file metadata %#", (unsafeHeaders) => {
+    const upstream = new Response("csv-content", {
+      headers: {
+        "Content-Type": "text/csv",
+        ...unsafeHeaders
+      }
+    });
+    expect(() => forwardCostExport(upstream, "corr-cost-001"))
+      .toThrowError(CostApiError);
   });
 });

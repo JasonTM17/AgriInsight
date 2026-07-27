@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       context,
       await readBoundedCostJson(request)
     );
-    return costMutationResponse(upstream, context.correlationId);
+    return costMutationResponse(upstream, context.correlationId, "posting");
   } catch (error) {
     return costRouteErrorResponse(error, correlationId);
   }

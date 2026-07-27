@@ -24,7 +24,7 @@ export async function POST(
       ...(typeof input === "object" && input !== null ? input : {}),
       entryId
     });
-    return costMutationResponse(upstream, context.correlationId);
+    return costMutationResponse(upstream, context.correlationId, "correction");
   } catch (error) {
     return costRouteErrorResponse(error, correlationId);
   }

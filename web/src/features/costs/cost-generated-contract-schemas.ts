@@ -6,6 +6,8 @@ type GeneratedOperatingCost = BackendComponents["schemas"]["OperatingCostRespons
 type GeneratedOperatingCostPage =
   BackendComponents["schemas"]["OperatingCostPageResponse"];
 type GeneratedCostSummary = BackendComponents["schemas"]["CostSummaryResponse"];
+type GeneratedCostCorrection =
+  BackendComponents["schemas"]["CostCorrectionResponse"];
 
 const uuidSchema = z.string().regex(
   /^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$/
@@ -46,6 +48,12 @@ const operatingCostShape = {
 } satisfies Record<keyof Required<GeneratedOperatingCost>, z.ZodType>;
 export const operatingCostEntrySchema =
   z.object(operatingCostShape).strict().readonly();
+const costCorrectionShape = {
+  replacement: operatingCostEntrySchema,
+  reversal: operatingCostEntrySchema
+} satisfies Record<keyof Required<GeneratedCostCorrection>, z.ZodType>;
+export const costCorrectionResponseSchema =
+  z.object(costCorrectionShape).strict().readonly();
 
 const operatingSummaryItemSchema = z.object({
   budgetVarianceVnd: z.number().finite().nullish(),
