@@ -98,11 +98,9 @@ public class PostgresActivityAssignmentStore implements ActivityAssignmentStore 
                    AND employee.active
                  WHERE activity.tenant_id = ?
                    AND activity.id = ?
-                   AND activity.farm_id = ?
-                RETURNING id, tenant_id, activity_id, employee_id, revoked_at, version
-                """, MAPPER,
-                value.id(), value.employeeId(), value.tenantId(), value.activityId(),
-                required.resourceId().orElseThrow()));
+                """ + farmPredicate(required)
+                + " RETURNING id, tenant_id, activity_id, employee_id, revoked_at, version",
+                MAPPER, createParameters(required, value)));
     }
 
     @Override
@@ -133,23 +131,26 @@ public class PostgresActivityAssignmentStore implements ActivityAssignmentStore 
 
     private ScopeContext requireScope(ScopeContext scope) {
         ScopeContext required = Objects.requireNonNull(scope, "scope is required");
+        if (required.type() == ScopeContext.Type.TENANT && required.resourceId().isEmpty()) {
+            return required;
+        }
         if (required.type() != ScopeContext.Type.FARM || required.resourceId().isEmpty()) {
-            throw new IllegalArgumentException("Activity assignment store requires target farm scope");
+            throw new IllegalArgumentException(
+                    "Activity assignment store requires tenant-wide or target farm scope");
         }
         return required;
     }
 
     private boolean lockLiveActivity(ScopeContext scope, UUID activityId) {
         return !jdbcTemplate.query("""
-                SELECT id FROM activities
-                 WHERE tenant_id = ?
-                   AND id = ?
-                   AND farm_id = ?
-                   AND status IN ('PLANNED', 'STARTED')
+                SELECT activity.id FROM activities AS activity
+                 WHERE activity.tenant_id = ?
+                   AND activity.id = ?
+                   AND activity.status IN ('PLANNED', 'STARTED')
+                """ + farmPredicate(scope) + """
                  FOR SHARE
                 """, (result, rowNumber) -> result.getObject("id", UUID.class),
-                scope.tenantId(), Objects.requireNonNull(activityId, "activityId is required"),
-                scope.resourceId().orElseThrow()).isEmpty();
+                parameters(scope, Objects.requireNonNull(activityId, "activityId is required"))).isEmpty();
     }
 
     private ScopeContext requireLookupScope(ScopeContext scope) {
@@ -175,6 +176,26 @@ public class PostgresActivityAssignmentStore implements ActivityAssignmentStore 
             parameters[parameters.length - 1] = scope.resourceId().orElseThrow();
         }
         return parameters;
+    }
+
+    private Object[] createParameters(
+            ScopeContext scope,
+            ActivityAssignment assignment) {
+        if (scope.type() == ScopeContext.Type.FARM) {
+            return new Object[] {
+                assignment.id(),
+                assignment.employeeId(),
+                assignment.tenantId(),
+                assignment.activityId(),
+                scope.resourceId().orElseThrow()
+            };
+        }
+        return new Object[] {
+            assignment.id(),
+            assignment.employeeId(),
+            assignment.tenantId(),
+            assignment.activityId()
+        };
     }
 
     private <T> Optional<T> exactlyOneOrEmpty(List<T> rows) {

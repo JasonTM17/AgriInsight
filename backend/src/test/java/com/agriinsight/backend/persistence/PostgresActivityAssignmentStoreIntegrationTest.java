@@ -65,21 +65,23 @@ class PostgresActivityAssignmentStoreIntegrationTest {
                     principal, ScopeContext.Type.FARM, Optional.of(FARM_ID));
             ScopeContext wrongFarmScope = ScopeContext.domain(
                     principal, ScopeContext.Type.FARM, Optional.of(OTHER_FARM_ID));
+            ScopeContext tenantScope = ScopeContext.tenant(principal);
 
             harness.withinTenant(() -> {
                 assertThat(store.findById(farmScope, ASSIGNMENT_ID)).get()
                         .extracting(assignment -> assignment.active()).isEqualTo(true);
                 assertThat(store.findById(wrongFarmScope, ASSIGNMENT_ID)).isEmpty();
-                assertThat(store.activeEmployeeExists(farmScope, EMPLOYEE_ID)).isTrue();
+                assertThat(store.findById(tenantScope, ASSIGNMENT_ID)).isPresent();
+                assertThat(store.activeEmployeeExists(tenantScope, EMPLOYEE_ID)).isTrue();
 
-                var revoked = store.revoke(farmScope, ASSIGNMENT_ID, 0).orElseThrow();
+                var revoked = store.revoke(tenantScope, ASSIGNMENT_ID, 0).orElseThrow();
                 assertThat(revoked.active()).isFalse();
                 assertThat(revoked.version()).isEqualTo(1);
 
-                var regranted = store.create(farmScope, new ActivityAssignment(
+                var regranted = store.create(tenantScope, new ActivityAssignment(
                         NEW_ASSIGNMENT_ID, TENANT_ID, ACTIVITY_ID, EMPLOYEE_ID)).orElseThrow();
                 assertThat(regranted.active()).isTrue();
-                assertThat(store.findActive(farmScope, ACTIVITY_ID, EMPLOYEE_ID))
+                assertThat(store.findActive(tenantScope, ACTIVITY_ID, EMPLOYEE_ID))
                         .contains(regranted);
                 var page = reads.findAll(
                         ScopeContext.domain(
