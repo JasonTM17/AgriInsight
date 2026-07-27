@@ -10,6 +10,14 @@ const MANIFEST = resolve(
   "../../../artifacts/big-data/manifest.json"
 );
 
+const performanceViewports = [
+  { name: "mobile", width: 375, height: 812 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "compact-desktop", width: 1024, height: 768 },
+  { name: "desktop", width: 1440, height: 900 },
+  { name: "mobile-landscape", width: 844, height: 390 }
+] as const;
+
 test("@performance verified big-data routes meet browser budgets", async ({
   page
 }) => {
@@ -70,28 +78,31 @@ test("@performance verified big-data routes meet browser budgets", async ({
     );
   }
 
-  await page.goto("/overview");
-  await expect(page.locator("main")).toBeVisible();
-  await page.getByRole("button", { name: "Mở thông báo" }).click();
-  await page.waitForTimeout(1_000);
-  const vitals = await page.evaluate(
-    () =>
-      (
-        window as typeof window & {
-          __agriInsightVitals: {
-            cls: number;
-            eventTimingSupported: boolean;
-            inp: number;
-            lcp: number;
-          };
-        }
-      ).__agriInsightVitals
-  );
-  expect(vitals.lcp).toBeGreaterThan(0);
-  expect(vitals.lcp).toBeLessThanOrEqual(2_500);
-  expect(vitals.eventTimingSupported).toBe(true);
-  expect(vitals.inp).toBeLessThanOrEqual(200);
-  expect(vitals.cls).toBeLessThanOrEqual(0.1);
+  for (const viewport of performanceViewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/overview");
+    await expect(page.locator("main")).toBeVisible();
+    await page.getByRole("button", { name: "Mở thông báo" }).click();
+    await page.waitForTimeout(1_000);
+    const vitals = await page.evaluate(
+      () =>
+        (
+          window as typeof window & {
+            __agriInsightVitals: {
+              cls: number;
+              eventTimingSupported: boolean;
+              inp: number;
+              lcp: number;
+            };
+          }
+        ).__agriInsightVitals
+    );
+    expect(vitals.lcp, `${viewport.name} LCP`).toBeGreaterThan(0);
+    expect(vitals.lcp, `${viewport.name} LCP`).toBeLessThanOrEqual(2_500);
+    expect(vitals.eventTimingSupported, `${viewport.name} Event Timing`).toBe(true);
+    expect(vitals.inp, `${viewport.name} INP`).toBeLessThanOrEqual(200);
+    expect(vitals.cls, `${viewport.name} CLS`).toBeLessThanOrEqual(0.1);
+  }
 });
 
 test("@performance data-quality route meets the big-data render budget", async ({
