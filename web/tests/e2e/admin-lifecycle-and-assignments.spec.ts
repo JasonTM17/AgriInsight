@@ -102,7 +102,7 @@ test("@admin tenant administrator completes lifecycle and assignment commands", 
       .fill(`${subject}-secondary`);
     await clickAndReload(
       page,
-      identitySection.getByRole("button", { name: "Liên kết" })
+      identitySection.getByRole("button", { name: "Liên kết", exact: true })
     );
     identitySection = section(page, "Liên kết đăng nhập OIDC");
     await expect(

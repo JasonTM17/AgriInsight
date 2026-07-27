@@ -38,7 +38,11 @@ test("@crop-health executive sees scoped evidence and data quality lineage", asy
   await expect(page.getByText("assessmentMethod=rule-based-heuristic")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  await page.getByRole("link", { name: /Khu Bắc/ }).click();
+  await page
+    .getByTestId("crop-health-page")
+    .locator('a[href^="/crop-health/"]')
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/crop-health\/[A-Za-z0-9_-]+$/);
   await expect(page.getByTestId("crop-health-detail-page")).toBeVisible();
   await expect(page.getByTestId("crop-demo-warning")).toContainText("không phải bằng chứng thực địa");

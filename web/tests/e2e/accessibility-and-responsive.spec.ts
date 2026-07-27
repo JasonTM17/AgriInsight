@@ -21,9 +21,30 @@ const executiveRoutes = [
 ] as const;
 
 async function expectAccessible(page: Page, route: string) {
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .analyze();
+  let results;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await page.waitForLoadState("domcontentloaded");
+      await expect(page.locator("main")).toBeVisible();
+      results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      break;
+    } catch (error) {
+      const navigationReset =
+        error instanceof Error &&
+        error.message.includes("Execution context was destroyed");
+      if (!navigationReset || attempt === 3) {
+        throw error;
+      }
+    }
+  }
+
+  if (!results) {
+    throw new Error(`Accessibility scan did not complete for ${route}`);
+  }
+
   const blockers = results.violations.filter((violation) =>
     ["critical", "serious"].includes(violation.impact ?? "")
   );
