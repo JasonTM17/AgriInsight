@@ -1,0 +1,62 @@
+{
+  "contractVersion": "1.0.0",
+  "tenant": {
+    "code": "AGRIINSIGHT_DEMO",
+    "displayName": "AgriInsight Learning Demo",
+    "id": "20000000-0000-4000-8000-000000000001"
+  },
+  "issuer": "http://host.docker.internal:58080/realms/agriinsight-demo",
+  "personas": [
+    {
+      "displayName": "Tenant Admin",
+      "email": "tenant-admin@demo.invalid",
+      "profileId": "20000000-0000-4000-8000-000000000011",
+      "role": "TENANT_ADMIN",
+      "subject": "10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "displayName": "Demo Executive",
+      "email": "executive@demo.invalid",
+      "profileId": "20000000-0000-4000-8000-000000000012",
+      "role": "EXECUTIVE",
+      "subject": "10000000-0000-4000-8000-000000000002"
+    },
+    {
+      "displayName": "Farm Manager",
+      "email": "farm-manager@demo.invalid",
+      "farmCodes": ["FARM-001", "FARM-002"],
+      "profileId": "20000000-0000-4000-8000-000000000013",
+      "role": "FARM_MANAGER",
+      "subject": "10000000-0000-4000-8000-000000000003"
+    },
+    {
+      "displayName": "Inventory Manager",
+      "email": "inventory-manager@demo.invalid",
+      "profileId": "20000000-0000-4000-8000-000000000014",
+      "role": "INVENTORY_MANAGER",
+      "subject": "10000000-0000-4000-8000-000000000004",
+      "warehouseCodes": ["WH-001", "WH-002"]
+    },
+    {
+      "displayName": "Demo Data Analyst",
+      "email": "analyst@demo.invalid",
+      "profileId": "20000000-0000-4000-8000-000000000015",
+      "role": "DATA_ANALYST",
+      "subject": "10000000-0000-4000-8000-000000000005"
+    },
+    {
+      "displayName": "Field Worker",
+      "email": "field-worker@demo.invalid",
+      "profileId": "20000000-0000-4000-8000-000000000016",
+      "role": "FIELD_WORKER",
+      "subject": "10000000-0000-4000-8000-000000000006"
+    },
+    {
+      "displayName": "Demo Supplier",
+      "email": "supplier@demo.invalid",
+      "profileId": "20000000-0000-4000-8000-000000000017",
+      "role": "SUPPLIER",
+      "subject": "10000000-0000-4000-8000-000000000007"
+    }
+  ]
+}

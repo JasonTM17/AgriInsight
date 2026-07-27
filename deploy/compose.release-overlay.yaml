@@ -1,0 +1,174 @@
+name: agriinsight-release
+
+services:
+  pipeline:
+    image: ${AGRIINSIGHT_PYTHON_IMAGE:?set digest-pinned Python image}
+    pull_policy: always
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+
+  dashboard:
+    image: ${AGRIINSIGHT_PYTHON_IMAGE:?set digest-pinned Python image}
+    pull_policy: always
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+
+  backend-migrate:
+    image: ${AGRIINSIGHT_BACKEND_IMAGE:?set digest-pinned backend image}
+    pull_policy: always
+
+  backend:
+    image: ${AGRIINSIGHT_BACKEND_IMAGE:?set digest-pinned backend image}
+    pull_policy: always
+    environment:
+      AGRIINSIGHT_SERVER_ADDRESS: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - /bin/bash
+        - -ec
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8080;
+          printf 'GET /actuator/health/readiness HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3;
+          head -n 1 <&3 | grep -q ' 200 '
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 30s
+
+  web-role-bootstrap:
+    image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+    pull_policy: always
+    environment:
+      PGDATABASE: ${AGRIINSIGHT_DATABASE_NAME:-agriinsight}
+      PGHOST: postgres
+      PGPASSWORD: ${AGRIINSIGHT_POSTGRES_OPERATOR_PASSWORD:?set operator password}
+      PGUSER: postgres
+      AGRIINSIGHT_WEB_MIGRATOR_PASSWORD: ${AGRIINSIGHT_WEB_MIGRATOR_PASSWORD:?set web migrator password}
+      AGRIINSIGHT_WEB_RUNTIME_PASSWORD: ${AGRIINSIGHT_WEB_RUNTIME_PASSWORD:?set web runtime password}
+    volumes:
+      - ./web/db:/ops:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - >-
+        psql -v ON_ERROR_STOP=1
+        -v web_migrator_password="$${AGRIINSIGHT_WEB_MIGRATOR_PASSWORD}"
+        -v web_runtime_password="$${AGRIINSIGHT_WEB_RUNTIME_PASSWORD}"
+        -f /ops/bootstrap-roles.sql
+    depends_on:
+      backend-role-bootstrap:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  web-migrate:
+    image: ${AGRIINSIGHT_WEB_IMAGE:?set digest-pinned web image}
+    pull_policy: always
+    environment:
+      AGRIINSIGHT_WEB_MIGRATOR_DATABASE_URL: ${AGRIINSIGHT_WEB_MIGRATOR_DATABASE_URL:?set web migrator database URL}
+    command: ["node", "web/db/migrate.mjs"]
+    depends_on:
+      web-role-bootstrap:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  analytics:
+    image: ${AGRIINSIGHT_ANALYTICS_API_IMAGE:?set digest-pinned analytics API image}
+    pull_policy: always
+    environment:
+      AGRIINSIGHT_ANALYTICS_ARTIFACT_ROOT: /data
+      AGRIINSIGHT_ANALYTICS_DEMO_TENANT_ID: ${AGRIINSIGHT_ANALYTICS_DEMO_TENANT_ID:?set reconciled tenant ID}
+      AGRIINSIGHT_ANALYTICS_RECONCILIATION_REPORT: /data/${AGRIINSIGHT_ANALYTICS_RECONCILIATION_FILE:?set reconciliation filename}
+      AGRIINSIGHT_ANALYTICS_SPRING_BASE_URL: http://backend:8080
+    ports:
+      - "127.0.0.1:${AGRIINSIGHT_ANALYTICS_PORT:-8081}:8081"
+    volumes:
+      - ${AGRIINSIGHT_ANALYTICS_DATA_DIR:?set verified analytics data directory}:/data:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import sys,urllib.request;
+          sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8081/health/ready',timeout=3).status==200 else 1)
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 20s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  web:
+    image: ${AGRIINSIGHT_WEB_IMAGE:?set digest-pinned web image}
+    pull_policy: always
+    environment:
+      AGRIINSIGHT_ANALYTICS_BASE_URL: http://analytics:8081
+      AGRIINSIGHT_BACKEND_BASE_URL: http://backend:8080
+      AGRIINSIGHT_WEB_ALLOWED_HOSTS: ${AGRIINSIGHT_WEB_ALLOWED_HOSTS:?set allowed web hosts}
+      AGRIINSIGHT_WEB_BASE_URL: ${AGRIINSIGHT_WEB_BASE_URL:?set public web origin}
+      AGRIINSIGHT_WEB_CSRF_KEY_BASE64: ${AGRIINSIGHT_WEB_CSRF_KEY_BASE64:?set 32-byte base64 CSRF key}
+      AGRIINSIGHT_WEB_OIDC_CLIENT_ID: ${AGRIINSIGHT_WEB_OIDC_CLIENT_ID:?set OIDC client ID}
+      AGRIINSIGHT_WEB_OIDC_CLIENT_SECRET: ${AGRIINSIGHT_WEB_OIDC_CLIENT_SECRET:?set OIDC client secret}
+      AGRIINSIGHT_WEB_OIDC_ISSUER: ${AGRIINSIGHT_WEB_OIDC_ISSUER:?set public OIDC issuer}
+      AGRIINSIGHT_WEB_SESSION_DATABASE_URL: ${AGRIINSIGHT_WEB_SESSION_DATABASE_URL:?set web runtime database URL}
+      AGRIINSIGHT_WEB_SESSION_ENCRYPTION_KEY_BASE64: ${AGRIINSIGHT_WEB_SESSION_ENCRYPTION_KEY_BASE64:?set 32-byte base64 session key}
+      AGRIINSIGHT_WEB_SESSION_PREVIOUS_KEYS_JSON: ${AGRIINSIGHT_WEB_SESSION_PREVIOUS_KEYS_JSON:?set prior-key JSON or empty object}
+      AGRIINSIGHT_WEB_TOKEN_KEY_ID: ${AGRIINSIGHT_WEB_TOKEN_KEY_ID:?set active session key ID}
+      AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS: ${AGRIINSIGHT_WEB_TRUST_FORWARDED_HEADERS:-false}
+    ports:
+      - "127.0.0.1:${AGRIINSIGHT_WEB_PORT:-3100}:3100"
+    depends_on:
+      analytics:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      web-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3100/api/health/live')
+          .then(response=>process.exit(response.status===200?0:1))
+          .catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 20s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

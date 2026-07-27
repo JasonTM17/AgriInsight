@@ -144,3 +144,54 @@ def test_release_helpers_enforce_read_only_non_root_smoke_and_sbom() -> None:
     assert "/health/live" in smoke
     assert "--format" in sbom
     assert "cyclonedx" in sbom.lower()
+
+
+def test_release_overlay_uses_immutable_images_and_hardened_runtime_defaults() -> None:
+    compose = (
+        ROOT / "deploy" / "compose.release-overlay.yaml"
+    ).read_text(encoding="utf-8")
+
+    for variable in (
+        "AGRIINSIGHT_PYTHON_IMAGE",
+        "AGRIINSIGHT_BACKEND_IMAGE",
+        "AGRIINSIGHT_WEB_IMAGE",
+        "AGRIINSIGHT_ANALYTICS_API_IMAGE",
+    ):
+        assert f"${{{variable}:?" in compose
+    assert compose.count("read_only: true") >= 6
+    assert compose.count('cap_drop: ["ALL"]') >= 6
+    assert compose.count("no-new-privileges:true") >= 6
+    assert "web-role-bootstrap:" in compose
+    assert "web-migrate:" in compose
+    assert "condition: service_healthy" in compose
+    assert "/api/health/live" in compose
+    assert "/health/ready" in compose
+
+
+def test_demo_overlay_orders_real_oidc_big_data_seed_and_reconciliation() -> None:
+    compose = (
+        ROOT / "deploy" / "compose.web-demo-overlay.yaml"
+    ).read_text(encoding="utf-8")
+    upstream = (
+        (ROOT / "compose.backend.yaml").read_text(encoding="utf-8")
+        + (ROOT / "compose.web-e2e.yaml").read_text(encoding="utf-8")
+    )
+
+    for service in (
+        "oidc-configure",
+        "demo-bundle",
+        "demo-seed",
+        "demo-reconcile",
+        "analytics",
+        "web",
+    ):
+        assert f"{service}:" in compose
+    assert "--profile" in compose and "big-data" in compose
+    assert "--confirm-local-demo" in compose
+    assert "demo_tenant_reconciliation" in compose
+    assert "${AGRIINSIGHT_DEMO_OIDC_CLIENT_SECRET:?" in compose
+    assert "condition: service_completed_successfully" in compose
+    assert "postgres:18.0-alpine@sha256:" in upstream
+    assert "quay.io/keycloak/keycloak:26.7.0@sha256:" in upstream
+    assert "agriinsight-postgres" not in compose
+    assert "agriinsight-keycloak" not in compose

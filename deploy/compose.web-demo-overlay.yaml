@@ -1,0 +1,196 @@
+name: agriinsight-container-demo
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: agriinsight_demo
+
+  keycloak:
+    environment:
+      KC_HOSTNAME: http://host.docker.internal:${AGRIINSIGHT_DEMO_KEYCLOAK_PORT:-58080}
+      KC_HOSTNAME_STRICT: "true"
+
+  oidc-configure:
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0
+    pull_policy: always
+    environment:
+      KC_ADMIN_PASSWORD: ${AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_PASSWORD:?set demo Keycloak admin password}
+      KC_ADMIN_USER: ${AGRIINSIGHT_DEMO_KEYCLOAK_ADMIN_USERNAME:?set demo Keycloak admin username}
+      KC_CLIENT_SECRET: ${AGRIINSIGHT_DEMO_OIDC_CLIENT_SECRET:?set demo OIDC client secret}
+      KC_TENANT_ADMIN_PASSWORD: ${AGRIINSIGHT_DEMO_TENANT_ADMIN_PASSWORD:?set tenant admin password}
+      KC_EXECUTIVE_PASSWORD: ${AGRIINSIGHT_DEMO_EXECUTIVE_PASSWORD:?set executive password}
+      KC_FARM_MANAGER_PASSWORD: ${AGRIINSIGHT_DEMO_FARM_MANAGER_PASSWORD:?set farm manager password}
+      KC_INVENTORY_MANAGER_PASSWORD: ${AGRIINSIGHT_DEMO_INVENTORY_MANAGER_PASSWORD:?set inventory manager password}
+      KC_ANALYST_PASSWORD: ${AGRIINSIGHT_DEMO_ANALYST_PASSWORD:?set analyst password}
+      KC_FIELD_WORKER_PASSWORD: ${AGRIINSIGHT_DEMO_FIELD_WORKER_PASSWORD:?set field worker password}
+      KC_SUPPLIER_PASSWORD: ${AGRIINSIGHT_DEMO_SUPPLIER_PASSWORD:?set supplier password}
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        K="/opt/keycloak/bin/kcadm.sh --config /tmp/kcadm.config"
+        $$K config credentials --server http://keycloak:8080 --realm master \
+          --user "$${KC_ADMIN_USER}" --password "$${KC_ADMIN_PASSWORD}"
+        $$K update clients/10000000-0000-4000-8000-000000000008 \
+          -r agriinsight-demo -s "secret=$${KC_CLIENT_SECRET}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000001 --new-password "$${KC_TENANT_ADMIN_PASSWORD}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000002 --new-password "$${KC_EXECUTIVE_PASSWORD}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000003 --new-password "$${KC_FARM_MANAGER_PASSWORD}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000004 --new-password "$${KC_INVENTORY_MANAGER_PASSWORD}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000005 --new-password "$${KC_ANALYST_PASSWORD}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000006 --new-password "$${KC_FIELD_WORKER_PASSWORD}"
+        $$K set-password -r agriinsight-demo --userid 10000000-0000-4000-8000-000000000007 --new-password "$${KC_SUPPLIER_PASSWORD}"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  pipeline:
+    command:
+      - run
+      - --profile
+      - big-data
+      - --output
+      - /app/artifacts
+    volumes:
+      - ${AGRIINSIGHT_DEMO_ARTIFACT_DIR:-./artifacts/big-data}:/app/artifacts
+
+  backend-role-bootstrap:
+    environment:
+      PGDATABASE: agriinsight_demo
+
+  backend-migrate:
+    environment:
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight_demo
+      AGRIINSIGHT_FLYWAY_URL: jdbc:postgresql://postgres:5432/agriinsight_demo
+
+  backend:
+    environment:
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight_demo
+      AGRIINSIGHT_OIDC_ISSUER_URI: http://host.docker.internal:${AGRIINSIGHT_DEMO_KEYCLOAK_PORT:-58080}/realms/agriinsight-demo
+      AGRIINSIGHT_OIDC_JWK_SET_URI: http://keycloak:8080/realms/agriinsight-demo/protocol/openid-connect/certs
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      demo-reconcile:
+        condition: service_completed_successfully
+      oidc-configure:
+        condition: service_completed_successfully
+
+  web-role-bootstrap:
+    environment:
+      PGDATABASE: agriinsight_demo
+
+  demo-bundle:
+    image: ${AGRIINSIGHT_PYTHON_IMAGE:?set digest-pinned Python image}
+    pull_policy: always
+    environment:
+      PYTHONPATH: /app/src
+    entrypoint: ["python", "-m", "agriinsight.demo_tenant_bootstrap"]
+    command:
+      - --artifact-root
+      - /app/artifacts
+      - --contract
+      - /contracts/demo-container-tenant.json
+      - --output-directory
+      - /app/_tmp/demo-container-bootstrap
+      - --confirm-local-demo
+    volumes:
+      - ${AGRIINSIGHT_DEMO_ARTIFACT_DIR:-./artifacts/big-data}:/app/artifacts:ro
+      - ${AGRIINSIGHT_DEMO_BOOTSTRAP_DIR:-./_tmp/demo-container-bootstrap}:/app/_tmp/demo-container-bootstrap
+      - ./deploy/demo/demo-container-tenant.json:/contracts/demo-container-tenant.json:ro
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      pipeline:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  demo-seed:
+    image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+    pull_policy: always
+    environment:
+      PGDATABASE: agriinsight_demo
+      PGHOST: postgres
+      PGPASSWORD: ${AGRIINSIGHT_DB_MIGRATOR_PASSWORD:?set backend migrator password}
+      PGUSER: agriinsight_migrator
+    volumes:
+      - ${AGRIINSIGHT_DEMO_BOOTSTRAP_DIR:-./_tmp/demo-container-bootstrap}:/bootstrap
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - >-
+        psql -X --no-psqlrc -v ON_ERROR_STOP=1 -f /bootstrap/seed.sql
+        && psql -X --no-psqlrc --quiet --tuples-only --no-align
+        -f /bootstrap/inspect.sql > /bootstrap/actual-catalog.json
+    depends_on:
+      demo-bundle:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  demo-reconcile:
+    image: ${AGRIINSIGHT_PYTHON_IMAGE:?set digest-pinned Python image}
+    pull_policy: always
+    environment:
+      PYTHONPATH: /app/src
+    entrypoint: ["python", "-m", "agriinsight.demo_tenant_reconciliation"]
+    command:
+      - --artifact-root
+      - /app/artifacts
+      - --contract
+      - /contracts/demo-container-tenant.json
+      - --actual-json
+      - /app/_tmp/demo-container-bootstrap/actual-catalog.json
+      - --output
+      - /app/_tmp/demo-container-bootstrap/reconciliation.json
+    volumes:
+      - ${AGRIINSIGHT_DEMO_ARTIFACT_DIR:-./artifacts/big-data}:/app/artifacts:ro
+      - ${AGRIINSIGHT_DEMO_BOOTSTRAP_DIR:-./_tmp/demo-container-bootstrap}:/app/_tmp/demo-container-bootstrap
+      - ./deploy/demo/demo-container-tenant.json:/contracts/demo-container-tenant.json:ro
+    depends_on:
+      demo-seed:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  analytics:
+    environment:
+      AGRIINSIGHT_ANALYTICS_ARTIFACT_ROOT: /data
+      AGRIINSIGHT_ANALYTICS_DEMO_TENANT_ID: 20000000-0000-4000-8000-000000000001
+      AGRIINSIGHT_ANALYTICS_RECONCILIATION_REPORT: /bootstrap/reconciliation.json
+    volumes:
+      - ${AGRIINSIGHT_DEMO_ARTIFACT_DIR:-./artifacts/big-data}:/data:ro
+      - ${AGRIINSIGHT_DEMO_BOOTSTRAP_DIR:-./_tmp/demo-container-bootstrap}:/bootstrap:ro
+    depends_on:
+      demo-reconcile:
+        condition: service_completed_successfully
+
+  web:
+    environment:
+      AGRIINSIGHT_WEB_OIDC_ISSUER: http://host.docker.internal:${AGRIINSIGHT_DEMO_KEYCLOAK_PORT:-58080}/realms/agriinsight-demo
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      oidc-configure:
+        condition: service_completed_successfully
