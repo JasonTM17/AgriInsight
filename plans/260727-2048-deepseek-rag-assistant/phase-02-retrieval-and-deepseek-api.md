@@ -45,11 +45,11 @@ testable ports.
 
 ## Success Criteria
 
-- [ ] Same corpus/query/scope produces the same ordered evidence.
-- [ ] Every factual answer sentence maps to returned evidence IDs.
-- [ ] Provider receives no bearer token, email, display name, or hidden
+- [x] Same corpus/query/scope produces the same ordered evidence.
+- [x] Every factual answer sentence maps to returned evidence IDs.
+- [x] Provider receives no bearer token, email, display name, or hidden
       out-of-scope fact.
-- [ ] Usage reports cache hit/miss, prompt, completion, and total token counts
+- [x] Usage reports cache hit/miss, prompt, completion, and total token counts
       without recording prompt text.
 
 ## Rollback

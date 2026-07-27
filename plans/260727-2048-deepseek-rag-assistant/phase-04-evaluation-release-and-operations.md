@@ -39,7 +39,9 @@ container delivery are proven on hosted storage.
 - Unsupported-question refusal precision >= 0.95.
 - p95 time-to-first-byte <= 2.5 seconds and p95 completed response <= 12 seconds
   under the accepted hosted load profile.
-- Per-request token/output budgets and daily spend alert are enforced.
+- Per-request token/output budgets and the process-local tenant daily quota are
+  enforced; provider-account daily spend alert and owner are required before
+  protected promotion.
 
 ## Rollback
 
@@ -51,7 +53,9 @@ previous immutable image digest.
 - Versioned 15-case Vietnamese/English retrieval evaluation is green:
   recall@5 `1.00`, refusal precision `1.00`, cross-scope leakage `0`.
 - Redacted telemetry, dependency audit, secret boundary, contract drift,
-  static accessibility review, Python/web tests, and production web build pass.
+  static accessibility review, Python/web tests, production web build, bounded
+  queue, tenant rate/token quota, strict sentence citation, and pending-request
+  cancellation pass.
 - Protected real-OIDC browser capture, hosted latency/load measurement,
   daily-spend alert ownership, signed image publication, and release approval
   remain external gates. See

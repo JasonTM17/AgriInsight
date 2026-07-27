@@ -33,12 +33,12 @@ prompts, model output, and secrets may flow.
 
 ## Success Criteria
 
-- [ ] Contract rejects unknown fields, empty/oversized questions, client-supplied
+- [x] Contract rejects unknown fields, empty/oversized questions, client-supplied
       tenant/scope, arbitrary model/base URL, and unbounded history.
-- [ ] Threat-model tests and review prove scope is resolved server-side before
+- [x] Threat-model tests and review prove scope is resolved server-side before
       retrieval.
-- [ ] `.env` stays ignored and a repository secret scan finds no key material.
-- [ ] Provider/model configuration validates fail-closed when assistant is
+- [x] `.env` stays ignored and a repository secret scan finds no key material.
+- [x] Provider/model configuration validates fail-closed when assistant is
       enabled.
 
 ## Rollback

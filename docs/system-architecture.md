@@ -263,9 +263,14 @@ LLM call.
 
 DeepSeek receives only bounded, already-authorized evidence and an opaque
 one-way tenant hash. Thinking is disabled, redirects are rejected, output must
-be JSON, and every answered response must cite an evidence ID available in the
-retrieval result. The UI renders answer/citations as text rather than HTML.
-Telemetry records operational counters only and no conversation content.
+be complete JSON, and every factual sentence must cite an evidence ID available
+in the retrieval result. Truncation, undeclared markers, uncited claims, and
+invalid usage accounting fail closed. A bounded provider queue plus per-process
+tenant request/token reservations limits abuse and concurrent budget
+oversubscription; provider-account controls remain the authoritative
+cross-replica spend boundary. The UI renders answer/citations as text rather
+than HTML and exposes a real request-cancellation action. Telemetry records
+operational counters only and no conversation content.
 
 ## Transactional outbox
 

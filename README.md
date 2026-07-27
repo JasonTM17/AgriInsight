@@ -42,7 +42,8 @@ Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã đư�
 - Retriever lexical/structured chạy trên Gold snapshot đã xác minh, lọc scope
   trước khi xếp hạng và dùng evidence ID ổn định.
 - DeepSeek V4 Flash chạy phía FastAPI với thinking tắt, JSON output, giới hạn
-  timeout/token/concurrency và trích dẫn nội tuyến bắt buộc.
+  timeout/token/concurrency, quota theo tenant và trích dẫn ở mọi câu khẳng
+  định; phản hồi bị cắt hoặc có marker ngoài corpus bị từ chối.
 - Next BFF giữ bearer token phía máy chủ, kiểm tra host/origin/session/CSRF,
   giới hạn body/response và không chuyển tiếp lỗi nhà cung cấp.
 - Hội thoại chỉ ở bộ nhớ component; không dùng `localStorage`, không ghi

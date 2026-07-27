@@ -98,8 +98,14 @@ The provider contract is intentionally fixed to
 `AGRIINSIGHT_LLM_PROVIDER`, `AGRIINSIGHT_LLM_BASE_URL`,
 `AGRIINSIGHT_LLM_MODEL`, and `AGRIINSIGHT_LLM_THINKING_ENABLED` fail closed if
 changed. Runtime budgets are documented in `.env.example`: 3-second connect,
-25-second provider read, 1,200 output tokens, 8 evidence items, 12,000 evidence
-characters, and 8 concurrent provider calls by default.
+25-second provider read, 2-second queue wait, 1,200 output tokens, 8 evidence
+items, 12,000 evidence characters, and 8 concurrent provider calls by default.
+The process-local tenant guard defaults to 30 requests per minute and
+1,000,000 tokens per UTC day, reserving 10,000 tokens for each in-flight
+provider call so concurrent requests cannot oversubscribe the budget. This
+guard is defense in depth, not distributed billing: every multi-replica
+deployment must also configure a provider-account spend limit and an
+environment-owned alert receiver.
 
 Never pass the key as a Docker build argument, checked-in Compose literal,
 browser environment variable, screenshot, test fixture, log, or CI artifact.
@@ -118,6 +124,8 @@ $env:AGRIINSIGHT_ASSISTANT_ENABLED = "false"
 
 Restart the analytics service after changing the flag. The route then returns
 404 because it is not registered; no conversation data requires cleanup.
+Process-local quota counters reset on restart, so do not treat them as the
+authoritative cross-replica spend ledger.
 
 The explicit local demo overlay isolates its Compose project as
 `agriinsight-demo`, uses `backend/.runtime/postgres-demo`, and starts PostgreSQL
