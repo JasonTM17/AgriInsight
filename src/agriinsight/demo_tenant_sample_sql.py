@@ -63,8 +63,9 @@ def activity_sample_sql(
     ]
     supported = snapshot.csv["activities"]
     supported = supported[supported["activity_type"].isin(ACTIVITY_TYPES)].head(limit)
-    for row in supported.itertuples(index=False):
+    for position, row in enumerate(supported.itertuples(index=False)):
         occurred = pd.Timestamp(row.occurred_at)
+        is_assignable_demo_activity = position == WORK_ASSIGNMENT_LIMIT
         lines.append(
             master_upsert(
                 "activities",
@@ -79,10 +80,18 @@ def activity_sample_sql(
                     "description": row.notes,
                     "planned_start_at": occurred.isoformat(),
                     "due_at": (occurred + timedelta(hours=8)).isoformat(),
-                    "started_at": occurred.isoformat(),
-                    "completed_at": (occurred + timedelta(hours=4)).isoformat(),
+                    "started_at": (
+                        None if is_assignable_demo_activity else occurred.isoformat()
+                    ),
+                    "completed_at": (
+                        None
+                        if is_assignable_demo_activity
+                        else (occurred + timedelta(hours=4)).isoformat()
+                    ),
                     "cancelled_at": None,
-                    "status": "COMPLETED",
+                    "status": (
+                        "PLANNED" if is_assignable_demo_activity else "COMPLETED"
+                    ),
                 },
             )
         )

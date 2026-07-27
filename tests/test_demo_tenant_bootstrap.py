@@ -120,7 +120,23 @@ def test_demo_bundle_links_field_worker_and_assigns_exact_sample_prefix(
         "activity-assignment",
         f"{employee_id}:{unassigned.activity_id}",
     )
+    unassigned_activity_id = deterministic_id(
+        "activities",
+        str(unassigned.activity_id),
+    )
     assert str(unassigned_id) not in bundle.seed_sql
+    assert (
+        f"'{unassigned_activity_id}'::uuid, '{contract.tenant_id}'::uuid"
+        in bundle.seed_sql
+    )
+    unassigned_activity_sql = next(
+        line
+        for line in bundle.seed_sql.splitlines()
+        if line.startswith("INSERT INTO activities")
+        and str(unassigned_activity_id) in line
+    )
+    assert "'PLANNED'" in unassigned_activity_sql
+    assert unassigned_activity_sql.count("NULL") >= 3
 
 
 def test_demo_bundle_with_zero_samples_has_no_activity_assignments(
