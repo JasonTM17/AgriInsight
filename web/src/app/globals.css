@@ -627,13 +627,12 @@ a {
     position: fixed;
     z-index: 30;
     inset: 0 auto 0 0;
+    display: none;
     width: min(18rem, calc(100vw - 2.5rem));
-    transform: translateX(-105%);
-    transition: transform 180ms ease-out;
   }
 
   .navigation-rail--open {
-    transform: translateX(0);
+    display: flex;
   }
 
   .mobile-menu-button {
