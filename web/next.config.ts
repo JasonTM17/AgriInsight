@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   experimental: {
     authInterrupts: true
   },
+  output: "standalone",
+  outputFileTracingRoot: repositoryRoot,
   poweredByHeader: false,
   reactStrictMode: true,
   turbopack: {
