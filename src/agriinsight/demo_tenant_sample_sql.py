@@ -61,8 +61,11 @@ def activity_sample_sql(
         )
         for label, code in sorted(ACTIVITY_TYPES.items())
     ]
-    supported = snapshot.csv["activities"]
-    supported = supported[supported["activity_type"].isin(ACTIVITY_TYPES)].head(limit)
+    supported = select_activity_samples(
+        snapshot.csv["activities"],
+        snapshot.csv["seasons"],
+        limit,
+    )
     for position, row in enumerate(supported.itertuples(index=False)):
         occurred = pd.Timestamp(row.occurred_at)
         is_assignable_demo_activity = position == WORK_ASSIGNMENT_LIMIT
@@ -97,6 +100,33 @@ def activity_sample_sql(
         )
     lines.extend(_activity_assignment_sql(contract, supported))
     return lines, len(supported)
+
+
+def select_activity_samples(
+    activities: pd.DataFrame,
+    seasons: pd.DataFrame,
+    limit: int,
+) -> pd.DataFrame:
+    supported = activities[activities["activity_type"].isin(ACTIVITY_TYPES)]
+    if limit <= WORK_ASSIGNMENT_LIMIT:
+        return supported.head(limit).reset_index(drop=True)
+
+    assigned = supported.head(WORK_ASSIGNMENT_LIMIT)
+    assigned_ids = set(assigned["activity_id"])
+    live_season_codes = set(
+        seasons.loc[
+            seasons["status"].astype(str).str.upper().isin({"PLANNED", "ACTIVE"}),
+            "season_code",
+        ]
+    )
+    remaining = supported[~supported["activity_id"].isin(assigned_ids)]
+    assignable = remaining[remaining["season_code"].isin(live_season_codes)].head(1)
+    if assignable.empty:
+        raise ValueError("demo snapshot needs one activity under a live season")
+
+    selected_ids = assigned_ids | set(assignable["activity_id"])
+    tail = supported[~supported["activity_id"].isin(selected_ids)]
+    return pd.concat([assigned, assignable, tail], ignore_index=True).head(limit)
 
 
 def _activity_assignment_sql(

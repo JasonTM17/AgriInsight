@@ -14,6 +14,7 @@ from agriinsight.demo_tenant_sample_sql import (
     ACTIVITY_TYPES,
     FIELD_WORKER_EMPLOYEE_CODE,
     WORK_ASSIGNMENT_LIMIT,
+    select_activity_samples,
 )
 from agriinsight.demo_tenant_sql_primitives import deterministic_id, master_upsert
 
@@ -88,9 +89,10 @@ def test_demo_bundle_links_field_worker_and_assigns_exact_sample_prefix(
     activities = (
         analytics_artifact_root / "silver" / "activities.csv"
     )
-    rows = pd.read_csv(activities)
-    supported = rows[rows["activity_type"].isin(ACTIVITY_TYPES)].head(
-        WORK_ASSIGNMENT_LIMIT + 1
+    supported = select_activity_samples(
+        pd.read_csv(activities),
+        pd.read_csv(analytics_artifact_root / "silver" / "seasons.csv"),
+        WORK_ASSIGNMENT_LIMIT + 1,
     )
     assigned = supported.head(WORK_ASSIGNMENT_LIMIT)
     for row in assigned.itertuples(index=False):
@@ -137,6 +139,14 @@ def test_demo_bundle_links_field_worker_and_assigns_exact_sample_prefix(
     )
     assert "'PLANNED'" in unassigned_activity_sql
     assert unassigned_activity_sql.count("NULL") >= 3
+    live_seasons = pd.read_csv(
+        analytics_artifact_root / "silver" / "seasons.csv"
+    )
+    parent_status = live_seasons.loc[
+        live_seasons["season_code"] == unassigned.season_code,
+        "status",
+    ].iloc[0]
+    assert str(parent_status).upper() in {"PLANNED", "ACTIVE"}
 
 
 def test_demo_bundle_with_zero_samples_has_no_activity_assignments(
