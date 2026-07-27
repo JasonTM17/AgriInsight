@@ -187,8 +187,130 @@ describe("exact upstream allowlist", () => {
     });
   });
 
+  it("contains only the frozen tenant-administration resource families", () => {
+    expect(ALLOWED_OPERATIONS.adminUsers).toEqual({
+      method: "GET",
+      path: "/api/v1/users",
+      queryParameters: ["active", "limit", "offset", "search"],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.adminUserById).toEqual({
+      method: "GET",
+      path: "/api/v1/users/{id}",
+      pathParameters: ["id"],
+      service: "backend"
+    });
+    expect(ALLOWED_OPERATIONS.adminUserRoles.path).toBe(
+      "/api/v1/users/{id}/roles"
+    );
+    expect(ALLOWED_OPERATIONS.adminUserExternalIdentities.path).toBe(
+      "/api/v1/users/{id}/external-identities"
+    );
+    expect(ALLOWED_OPERATIONS.adminFarmAssignments.path).toBe(
+      "/api/v1/farm-assignments"
+    );
+    expect(ALLOWED_OPERATIONS.adminWarehouseAssignments.path).toBe(
+      "/api/v1/warehouse-assignments"
+    );
+    expect(ALLOWED_OPERATIONS.adminAuditEvents.path).toBe(
+      "/api/v1/audit-events"
+    );
+    expect(Object.values(ALLOWED_OPERATIONS).map(({ path }) => path)).not.toContain(
+      expect.stringContaining("/api/v1/admin")
+    );
+  });
+
   it("keeps POST operations in a separate exact allowlist", () => {
     expect(ALLOWED_MUTATIONS).toEqual({
+      adminActivityAssignmentGrant: {
+        method: "POST",
+        path: "/api/v1/activities/{id}/assignments",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminActivityAssignmentRevoke: {
+        method: "POST",
+        path: "/api/v1/activities/{id}/assignments/{assignmentId}/revoke",
+        pathParameters: ["id", "assignmentId"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminFarmAssignmentGrant: {
+        method: "POST",
+        path: "/api/v1/farm-assignments",
+        pathParameters: [],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminFarmAssignmentRevoke: {
+        method: "POST",
+        path: "/api/v1/farm-assignments/{id}/revoke",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminRoleGrant: {
+        method: "POST",
+        path: "/api/v1/users/{id}/roles",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminRoleRevoke: {
+        method: "POST",
+        path: "/api/v1/users/{id}/roles/{roleCode}/revoke",
+        pathParameterKinds: { id: "uuid", roleCode: "role-code" },
+        pathParameters: ["id", "roleCode"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminUserCreate: {
+        method: "POST",
+        path: "/api/v1/users",
+        pathParameters: [],
+        service: "backend"
+      },
+      adminUserDeactivate: {
+        method: "POST",
+        path: "/api/v1/users/{id}/deactivate",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminUserLinkIdentity: {
+        method: "POST",
+        path: "/api/v1/users/{id}/external-identities",
+        pathParameters: ["id"],
+        service: "backend"
+      },
+      adminUserReactivate: {
+        method: "POST",
+        path: "/api/v1/users/{id}/reactivate",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminUserUnlinkIdentity: {
+        method: "POST",
+        path: "/api/v1/users/{id}/external-identities/{identityId}/unlink",
+        pathParameters: ["id", "identityId"],
+        service: "backend"
+      },
+      adminWarehouseAssignmentGrant: {
+        method: "POST",
+        path: "/api/v1/warehouse-assignments",
+        pathParameters: [],
+        requiresIfMatch: true,
+        service: "backend"
+      },
+      adminWarehouseAssignmentRevoke: {
+        method: "POST",
+        path: "/api/v1/warehouse-assignments/{id}/revoke",
+        pathParameters: ["id"],
+        requiresIfMatch: true,
+        service: "backend"
+      },
       activityLogAppend: {
         method: "POST",
         path: "/api/v1/activities/{id}/logs",

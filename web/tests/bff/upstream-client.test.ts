@@ -185,6 +185,44 @@ describe("bounded upstream client", () => {
     expect(fetchMock.mock.calls[0]![1]?.method).toBe("POST");
   });
 
+  it("allows only a fixed role code in the admin role-revoke path", async () => {
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request) => {
+        void input;
+        return Response.json({ active: false, roleCode: "DATA_ANALYST" });
+      }
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const profileId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+
+    await executeAllowedMutation(
+      env,
+      "adminRoleRevoke",
+      "server-held-token",
+      "correlation-1",
+      "revoke-role-1",
+      { reasonCode: "ADMIN_ROLE_REVOKE" },
+      { id: profileId, roleCode: "DATA_ANALYST" },
+      "\"2\""
+    );
+
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      `http://127.0.0.1:8080/api/v1/users/${profileId}/roles/DATA_ANALYST/revoke`
+    );
+    await expect(
+      executeAllowedMutation(
+        env,
+        "adminRoleRevoke",
+        "server-held-token",
+        "correlation-1",
+        "revoke-role-2",
+        { reasonCode: "ADMIN_ROLE_REVOKE" },
+        { id: profileId, roleCode: "../audit-events" },
+        "\"2\""
+      )
+    ).rejects.toThrow("path parameter");
+  });
+
   it("forwards a validated If-Match only for inventory reversal", async () => {
     const fetchMock = vi.fn(
       async (input: string | URL | Request, init?: RequestInit) => {

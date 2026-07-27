@@ -2,6 +2,7 @@ import type { paths as AnalyticsPaths } from "@/server/generated/analytics/schem
 import type { paths as BackendPaths } from "@/server/generated/backend/schema";
 
 export type UpstreamService = "analytics" | "backend";
+export type PathParameterKind = "role-code" | "uuid";
 
 type GetPath<ContractPaths> = Extract<
   {
@@ -30,6 +31,7 @@ type AllowedReadOperation =
       method: "GET";
       path: GetPath<AnalyticsPaths>;
       pathParameters?: readonly string[];
+      pathParameterKinds?: Readonly<Record<string, PathParameterKind>>;
       queryParameters?: readonly string[];
       service: "analytics";
     }>
@@ -37,6 +39,7 @@ type AllowedReadOperation =
       method: "GET";
       path: GetPath<BackendPaths>;
       pathParameters?: readonly string[];
+      pathParameterKinds?: Readonly<Record<string, PathParameterKind>>;
       queryParameters?: readonly string[];
       service: "backend";
     }>;
@@ -45,6 +48,7 @@ type AllowedMutation = Readonly<{
   method: "POST";
   path: PostPath<BackendPaths>;
   pathParameters: readonly string[];
+  pathParameterKinds?: Readonly<Record<string, PathParameterKind>>;
   requiresIfMatch?: boolean;
   service: "backend";
 }>;
@@ -173,6 +177,70 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     path: "/api/v1/activities/{id}/logs",
     pathParameters: ["id"],
     queryParameters: ["limit", "offset"],
+    service: "backend"
+  },
+  adminAuditEvents: {
+    method: "GET",
+    path: "/api/v1/audit-events",
+    queryParameters: [
+      "action",
+      "actorProfileId",
+      "limit",
+      "offset",
+      "outcome",
+      "targetId",
+      "targetType"
+    ],
+    service: "backend"
+  },
+  adminFarmAssignments: {
+    method: "GET",
+    path: "/api/v1/farm-assignments",
+    queryParameters: [
+      "active",
+      "farmId",
+      "limit",
+      "offset",
+      "userProfileId"
+    ],
+    service: "backend"
+  },
+  adminUserById: {
+    method: "GET",
+    path: "/api/v1/users/{id}",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  adminUserExternalIdentities: {
+    method: "GET",
+    path: "/api/v1/users/{id}/external-identities",
+    pathParameters: ["id"],
+    queryParameters: ["active", "limit", "offset"],
+    service: "backend"
+  },
+  adminUserRoles: {
+    method: "GET",
+    path: "/api/v1/users/{id}/roles",
+    pathParameters: ["id"],
+    queryParameters: ["active", "limit", "offset"],
+    service: "backend"
+  },
+  adminUsers: {
+    method: "GET",
+    path: "/api/v1/users",
+    queryParameters: ["active", "limit", "offset", "search"],
+    service: "backend"
+  },
+  adminWarehouseAssignments: {
+    method: "GET",
+    path: "/api/v1/warehouse-assignments",
+    queryParameters: [
+      "active",
+      "limit",
+      "offset",
+      "userProfileId",
+      "warehouseId"
+    ],
     service: "backend"
   },
   currentUser: {
@@ -307,6 +375,95 @@ export const ALLOWED_OPERATIONS = Object.freeze({
 } as const satisfies Record<string, AllowedReadOperation>);
 
 export const ALLOWED_MUTATIONS = Object.freeze({
+  adminActivityAssignmentGrant: {
+    method: "POST",
+    path: "/api/v1/activities/{id}/assignments",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminActivityAssignmentRevoke: {
+    method: "POST",
+    path: "/api/v1/activities/{id}/assignments/{assignmentId}/revoke",
+    pathParameters: ["id", "assignmentId"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminFarmAssignmentGrant: {
+    method: "POST",
+    path: "/api/v1/farm-assignments",
+    pathParameters: [],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminFarmAssignmentRevoke: {
+    method: "POST",
+    path: "/api/v1/farm-assignments/{id}/revoke",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminRoleGrant: {
+    method: "POST",
+    path: "/api/v1/users/{id}/roles",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminRoleRevoke: {
+    method: "POST",
+    path: "/api/v1/users/{id}/roles/{roleCode}/revoke",
+    pathParameterKinds: { id: "uuid", roleCode: "role-code" },
+    pathParameters: ["id", "roleCode"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminUserCreate: {
+    method: "POST",
+    path: "/api/v1/users",
+    pathParameters: [],
+    service: "backend"
+  },
+  adminUserDeactivate: {
+    method: "POST",
+    path: "/api/v1/users/{id}/deactivate",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminUserLinkIdentity: {
+    method: "POST",
+    path: "/api/v1/users/{id}/external-identities",
+    pathParameters: ["id"],
+    service: "backend"
+  },
+  adminUserReactivate: {
+    method: "POST",
+    path: "/api/v1/users/{id}/reactivate",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminUserUnlinkIdentity: {
+    method: "POST",
+    path: "/api/v1/users/{id}/external-identities/{identityId}/unlink",
+    pathParameters: ["id", "identityId"],
+    service: "backend"
+  },
+  adminWarehouseAssignmentGrant: {
+    method: "POST",
+    path: "/api/v1/warehouse-assignments",
+    pathParameters: [],
+    requiresIfMatch: true,
+    service: "backend"
+  },
+  adminWarehouseAssignmentRevoke: {
+    method: "POST",
+    path: "/api/v1/warehouse-assignments/{id}/revoke",
+    pathParameters: ["id"],
+    requiresIfMatch: true,
+    service: "backend"
+  },
   activityLogAppend: {
     method: "POST",
     path: "/api/v1/activities/{id}/logs",

@@ -7,12 +7,24 @@ import {
 import {
   resolveAllowedMutation,
   resolveAllowedOperation,
+  type PathParameterKind,
   type AllowedMutationName,
   type AllowedOperationName
 } from "@/server/bff/allowed-operation";
 import type { WebEnvironment } from "@/server/config/environment";
 
 const MAX_UPSTREAM_REQUEST_BYTES = 64 * 1024;
+const UUID_PATH_PARAMETER =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ROLE_CODE_PATH_VALUES = new Set([
+  "DATA_ANALYST",
+  "EXECUTIVE",
+  "FARM_MANAGER",
+  "FIELD_WORKER",
+  "INVENTORY_MANAGER",
+  "SUPPLIER",
+  "TENANT_ADMIN"
+]);
 
 type QueryValue = boolean | number | string | null;
 type Query = Readonly<Record<string, QueryValue | readonly QueryValue[] | undefined>>;
@@ -78,7 +90,8 @@ export async function executeAllowedMutation(
     interpolatePath(
       operation.path,
       operation.pathParameters,
-      pathParameters
+      pathParameters,
+      operation.pathParameterKinds
     ),
     env.backendBaseUrl
   );
@@ -113,7 +126,8 @@ function buildOperationUrl(
     interpolatePath(
       operation.path,
       operation.pathParameters ?? [],
-      pathParameters
+      pathParameters,
+      operation.pathParameterKinds
     ),
     baseUrl
   );
@@ -157,7 +171,8 @@ function serializeBoundedJsonBody(body: unknown): string {
 function interpolatePath(
   template: string,
   expectedParameters: readonly string[],
-  suppliedParameters: PathParameters
+  suppliedParameters: PathParameters,
+  parameterKinds: Readonly<Record<string, PathParameterKind>> = {}
 ): string {
   const suppliedNames = Object.keys(suppliedParameters).sort();
   const expectedNames = [...expectedParameters].sort();
@@ -170,10 +185,7 @@ function interpolatePath(
   let resolved = template;
   for (const name of expectedNames) {
     const value = suppliedParameters[name];
-    if (
-      !value
-      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
-    ) {
+    if (!isValidPathParameter(value, parameterKinds[name] ?? "uuid")) {
       throw new Error("Invalid upstream path parameter value");
     }
     resolved = resolved.replace(`{${name}}`, encodeURIComponent(value));
@@ -182,6 +194,15 @@ function interpolatePath(
     throw new Error("Unresolved upstream path parameter");
   }
   return resolved;
+}
+
+function isValidPathParameter(
+  value: string | undefined,
+  kind: PathParameterKind
+): value is string {
+  if (!value) return false;
+  if (kind === "role-code") return ROLE_CODE_PATH_VALUES.has(value);
+  return UUID_PATH_PARAMETER.test(value);
 }
 
 function appendQuery(
