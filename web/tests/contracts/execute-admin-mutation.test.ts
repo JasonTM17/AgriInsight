@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AdminMutationCommand } from "@/features/admin/admin-mutation-contract";
 import { executeAdminMutation } from "@/features/admin/execute-admin-mutation";
 import { executeAllowedMutation } from "@/server/bff/upstream-client";
 import type { WebEnvironment } from "@/server/config/environment";
@@ -82,4 +83,71 @@ describe("tenant administration mutation dispatcher", () => {
       roleCode: "DATA_ANALYST"
     });
   });
+
+  it.each([
+    [{
+      displayName: "Nguyễn An",
+      issuer: "https://identity.example.test",
+      kind: "createUser",
+      subject: "opaque-subject"
+    }, "adminUserCreate", undefined],
+    [{
+      kind: "reactivateUser",
+      userKey: "21000000-0000-4000-8000-000000000002"
+    }, "adminUserReactivate", "\"3\""],
+    [{
+      kind: "grantRole",
+      roleCode: "FIELD_WORKER",
+      userKey: "21000000-0000-4000-8000-000000000002"
+    }, "adminRoleGrant", "\"0\""],
+    [{
+      identityKey: "22000000-0000-4000-8000-000000000002",
+      kind: "unlinkIdentity",
+      userKey: "21000000-0000-4000-8000-000000000002"
+    }, "adminUserUnlinkIdentity", undefined],
+    [{
+      farmKey: "31000000-0000-4000-8000-000000000001",
+      kind: "grantFarm",
+      userKey: "21000000-0000-4000-8000-000000000002"
+    }, "adminFarmAssignmentGrant", "\"0\""],
+    [{
+      assignmentKey: "32000000-0000-4000-8000-000000000001",
+      kind: "revokeFarm"
+    }, "adminFarmAssignmentRevoke", "\"2\""],
+    [{
+      kind: "grantWarehouse",
+      userKey: "21000000-0000-4000-8000-000000000002",
+      warehouseKey: "41000000-0000-4000-8000-000000000001"
+    }, "adminWarehouseAssignmentGrant", "\"0\""],
+    [{
+      assignmentKey: "42000000-0000-4000-8000-000000000001",
+      kind: "revokeWarehouse"
+    }, "adminWarehouseAssignmentRevoke", "\"2\""],
+    [{
+      activityKey: "51000000-0000-4000-8000-000000000001",
+      employeeKey: "21000000-0000-4000-8000-000000000002",
+      kind: "grantActivity"
+    }, "adminActivityAssignmentGrant", "\"0\""],
+    [{
+      activityKey: "51000000-0000-4000-8000-000000000001",
+      assignmentKey: "52000000-0000-4000-8000-000000000001",
+      kind: "revokeActivity"
+    }, "adminActivityAssignmentRevoke", "\"2\""]
+  ] as const)(
+    "maps %s to exact operation %s",
+    async (command, operation, ifMatch) => {
+      await executeAdminMutation(
+        context,
+        command as AdminMutationCommand,
+        ifMatch
+      );
+
+      expect(vi.mocked(executeAllowedMutation).mock.calls[0]?.[1]).toBe(
+        operation
+      );
+      expect(vi.mocked(executeAllowedMutation).mock.calls[0]?.[7]).toBe(
+        ifMatch
+      );
+    }
+  );
 });
