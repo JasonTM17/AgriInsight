@@ -45,6 +45,8 @@ admin-segment forbidden boundary. Runtime confirmation remains blocked.
 - `npm --prefix web run lint` — pass, zero warnings
 - `npm --prefix web run typecheck` — pass
 - `npm --prefix web run contracts:check` — pass
+- GitHub CI `30236258854` — pass across Java, Next production build, Python,
+  secret/config scan, and both no-push image builds
 
 ## Informational Follow-up
 

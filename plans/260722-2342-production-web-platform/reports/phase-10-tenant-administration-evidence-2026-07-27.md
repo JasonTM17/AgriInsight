@@ -42,9 +42,9 @@ Status: static implementation complete; guarded browser gate pending disk recove
 | Typecheck | PASS |
 | Zero-warning lint | PASS |
 | Secret-pattern review | PASS; no credential or private-key material |
-| Next production build | NOT RUN locally: disk guard |
+| Next production build | PASS on GitHub CI; not run locally because of disk guard |
 | Guarded real browser | NOT RUN: disk guard |
-| GitHub CI | Pending push of Phase 10 commit series |
+| GitHub CI `30236258854` | PASS; Java, Next, Python, secret scan, and both no-push image builds green |
 
 ## Security Review
 
