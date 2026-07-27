@@ -364,6 +364,7 @@ try {
     $env:AGRIINSIGHT_ANALYTICS_BASE_URL = "http://127.0.0.1:58082"
     $env:AGRIINSIGHT_WEB_E2E_USERNAME = "executive"
     $env:AGRIINSIGHT_WEB_E2E_PASSWORD = $personaPassword
+    $env:AGRIINSIGHT_WEB_E2E_PERSONA_PASSWORD = $personaPassword
     $env:AGRIINSIGHT_WEB_E2E_WORK_USERNAME = "field-worker"
     $env:AGRIINSIGHT_WEB_E2E_WORK_PASSWORD = $personaPassword
     $env:AGRIINSIGHT_WEB_E2E_DENIED_USERNAME = "supplier"
