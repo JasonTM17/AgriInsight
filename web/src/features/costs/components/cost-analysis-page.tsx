@@ -49,6 +49,7 @@ export function CostAnalysisPage({
       {viewModel.filters.lens === "operating" && viewModel.operating ? (
         <CostOperatingPanel
           dateRange={viewModel.dateRange}
+          farmCode={viewModel.selectedFarm?.code}
           source={viewModel.operating}
         />
       ) : null}

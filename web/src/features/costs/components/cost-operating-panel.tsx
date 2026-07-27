@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { StatePanel } from "@/components/app-shell/state-panels";
 
 import type {
@@ -18,10 +20,12 @@ const dateTime = new Intl.DateTimeFormat("vi-VN", {
 
 export function CostOperatingPanel({
   source,
-  dateRange
+  dateRange,
+  farmCode
 }: Readonly<{
   source: CostSourceResult<OperatingCostBundle>;
   dateRange: Readonly<{ from: string; to: string }>;
+  farmCode?: string;
 }>) {
   if (source.status === "failed") {
     return (
@@ -55,6 +59,14 @@ export function CostOperatingPanel({
     1,
     ...summary.items.map((item) => Math.abs(item.netOperatingCostVnd))
   );
+  const exportQuery = new URLSearchParams({
+    format: "csv",
+    month_from: dateRange.from.slice(0, 7),
+    month_to: dateRange.to.slice(0, 7),
+    scope: "operating"
+  });
+  if (farmCode) exportQuery.set("farm", farmCode);
+  const exportHref = `/api/costs/export?${exportQuery.toString()}`;
   return (
     <div className={styles.panelStack}>
       <section aria-label="KPI chi phí vận hành" className={styles.kpiGrid}>
@@ -110,6 +122,17 @@ export function CostOperatingPanel({
           </p>
         </section>
       </div>
+      <section className={styles.panelToolbar}>
+        <div>
+          <p className="eyebrow">EVIDENCE EXPORT</p>
+          <strong>Xuất sổ vận hành đã lọc</strong>
+          <span>File được render server-side từ request đã chuẩn hóa.</span>
+        </div>
+        <div className={styles.exportActions}>
+          <Link className={styles.primaryButton} href={exportHref} prefetch={false}>Tải CSV</Link>
+          <Link className={styles.secondaryButton} href={exportHref.replace("format=csv", "format=pdf")} prefetch={false}>Tải PDF</Link>
+        </div>
+      </section>
       <section className={styles.panel} aria-labelledby="operating-entries-title">
         <PanelHeading
           eyebrow="OPERATIONAL EVIDENCE"
