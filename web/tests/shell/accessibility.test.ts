@@ -33,6 +33,9 @@ describe("Field Ledger shell accessibility guardrails", () => {
     expect(css).toMatch(
       /\.app-shell__workspace\s*\{[^}]*overflow-x:\s*clip;/s
     );
+    expect(css).toMatch(
+      /\.app-shell__main\s*\{[^}]*overflow-x:\s*clip;/s
+    );
   });
 
   it("does not allow raw Stitch exports or CDN-only runtime dependencies", () => {
