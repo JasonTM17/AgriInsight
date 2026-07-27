@@ -307,14 +307,18 @@
 }
 
 @media (max-width: 62rem) {
+  .pageHeading,
+  .subjectHeading {
+    display: grid;
+    align-items: start;
+  }
+
   .filterForm {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 48rem) {
-  .pageHeading,
-  .subjectHeading,
   .pagination {
     display: grid;
     align-items: start;
