@@ -1336,6 +1336,7 @@
             "type": "string"
           },
           "lastReadingAt": {
+            "format": "date-time",
             "title": "Lastreadingat",
             "type": "string"
           },
@@ -2234,6 +2235,7 @@
             "type": "string"
           },
           "week": {
+            "format": "date",
             "title": "Week",
             "type": "string"
           }

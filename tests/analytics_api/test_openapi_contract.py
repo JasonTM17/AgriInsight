@@ -59,6 +59,11 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "evidenceSignals",
         "severity",
     }
+    assert (
+        schemas["FieldHealthModel"]["properties"]["lastReadingAt"]["format"]
+        == "date-time"
+    )
+    assert schemas["PestIncidentModel"]["properties"]["week"]["format"] == "date"
     assert set(schemas["DataQualityPayload"]["properties"]) >= {
         "assessmentMethod",
         "evidenceSignals",

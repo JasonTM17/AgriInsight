@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 
 import pytest
@@ -41,7 +41,15 @@ def test_all_read_endpoints_return_typed_bounded_envelopes(api_factory) -> None:
     assert responses[2].json()["payload"]["page"]["limit"] == 2
     assert len(responses[2].json()["payload"]["items"]) <= 2
     assert len(responses[3].json()["payload"]["items"]) <= 2
-    assert len(responses[4].json()["payload"]["fields"]) <= 2
+    crop_payload = responses[4].json()["payload"]
+    assert len(crop_payload["fields"]) <= 2
+    for field in crop_payload["fields"]:
+        last_reading = datetime.fromisoformat(
+            field["lastReadingAt"].replace("Z", "+00:00")
+        )
+        assert last_reading.utcoffset() is not None
+    for incident in crop_payload["pestIncidentsWeekly"]:
+        assert date.fromisoformat(incident["week"])
     assert spring.closed is True
 
 

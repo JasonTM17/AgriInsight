@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal
+from datetime import date, datetime, timezone
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator
 
 
 def _camel(value: str) -> str:
@@ -221,7 +222,7 @@ class FieldHealthModel(RecordModel):
     soil_ph: float
     battery_pct: float
     reading_count_7d: int
-    last_reading_at: str
+    last_reading_at: AwareDatetime
     sensor_age_days: float
     pest_cases_90d: int
     max_affected_area_pct: float
@@ -231,14 +232,30 @@ class FieldHealthModel(RecordModel):
     risk_status: str
     recommended_action: str
 
+    @field_validator("last_reading_at", mode="before")
+    @classmethod
+    def normalize_last_reading_at(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if isinstance(value, datetime) and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+
 
 class PestIncidentModel(RecordModel):
-    week: str
+    week: date
     pest_code: str
     pest_name: str
     case_count: int
     average_affected_area_pct: float
     max_affected_area_pct: float
+
+    @field_validator("week", mode="before")
+    @classmethod
+    def normalize_week_start(cls, value: Any) -> Any:
+        if isinstance(value, str) and "-W" in value:
+            return datetime.strptime(f"{value}-1", "%Y-W%W-%w").date()
+        return value
 
 
 class CropHealthSummaryModel(RecordModel):

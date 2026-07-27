@@ -646,7 +646,10 @@ export interface components {
             readonly fieldCode: string;
             /** Fieldname */
             readonly fieldName: string;
-            /** Lastreadingat */
+            /**
+             * Lastreadingat
+             * Format: date-time
+             */
             readonly lastReadingAt: string;
             /** Latitude */
             readonly latitude: number;
@@ -941,7 +944,10 @@ export interface components {
             readonly pestCode: string;
             /** Pestname */
             readonly pestName: string;
-            /** Week */
+            /**
+             * Week
+             * Format: date
+             */
             readonly week: string;
         };
         /** ProcurementCostCapabilitiesModel */
