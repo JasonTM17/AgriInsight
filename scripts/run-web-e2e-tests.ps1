@@ -397,11 +397,13 @@ try {
 
     Invoke-WorkspaceDiskGuard
 
-    if ((& node --version) -ne "v24.12.0") {
-        throw "Web E2E requires Node v24.12.0"
+    $nodeVersion = [version]((& node --version).TrimStart("v"))
+    if ($nodeVersion.Major -ne 24 -or $nodeVersion -lt [version]"24.12.0") {
+        throw "Web E2E requires Node >=24.12.0 <25"
     }
-    if ((& npm --version) -ne "11.6.2") {
-        throw "Web E2E requires npm 11.6.2"
+    $npmVersion = [version](& npm --version)
+    if ($npmVersion.Major -ne 11 -or $npmVersion -lt [version]"11.6.2") {
+        throw "Web E2E requires npm >=11.6.2 <12"
     }
     Invoke-Checked "docker" @("info") "Docker daemon is required for web E2E"
     Assert-TcpPortAvailable 58081

@@ -113,6 +113,17 @@ describe("real-platform E2E runner", () => {
     expect(runner).toContain("Invoke-WorkspaceDiskGuard");
   });
 
+  it("accepts the supported Node 24 and npm 11 toolchain ranges", () => {
+    expect(runner).toContain('$nodeVersion = [version]((& node --version).TrimStart("v"))');
+    expect(runner).toContain(
+      '$nodeVersion.Major -ne 24 -or $nodeVersion -lt [version]"24.12.0"'
+    );
+    expect(runner).toContain('$npmVersion = [version](& npm --version)');
+    expect(runner).toContain(
+      '$npmVersion.Major -ne 11 -or $npmVersion -lt [version]"11.6.2"'
+    );
+  });
+
   it("reclaims root-owned hosted bind mounts only after safe-path validation", () => {
     const cleanup = runner.slice(
       runner.indexOf("function Remove-SafeRuntimeDirectory"),
