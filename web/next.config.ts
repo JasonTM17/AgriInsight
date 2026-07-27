@@ -14,6 +14,9 @@ const securityHeaders = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  experimental: {
+    authInterrupts: true
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   turbopack: {

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 import { z } from "zod";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
@@ -19,9 +19,7 @@ export default async function AdminUserPage({
 }: Readonly<{ params: Promise<{ userKey: string }> }>) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/admin");
-  if (!canAccessAdministration(context.identity)) {
-    return <StatePanel correlationId={context.correlationId} message="Phiên hiện tại không có quyền đọc hồ sơ quản trị." state="denied" />;
-  }
+  if (!canAccessAdministration(context.identity)) forbidden();
   const userKey = z.uuid().safeParse((await params).userKey);
   if (!userKey.success) {
     return <StatePanel actionHref="/admin" actionLabel="Về danh sách" correlationId={context.correlationId} message="Mã hồ sơ không đúng định dạng UUID." state="failed" />;
@@ -48,6 +46,6 @@ function adminSubjectFailure(
   if (error instanceof AdminReadError && error.kind === "not_found") {
     return <StatePanel actionHref="/admin" actionLabel="Về danh sách" correlationId={correlationId} message="Hồ sơ không tồn tại trong tenant hiện tại." state="empty" />;
   }
-  const denied = error instanceof AdminReadError && error.kind === "denied";
-  return <StatePanel actionHref={denied ? null : `/admin/users/${userKey}`} correlationId={correlationId} message={denied ? "Dịch vụ từ chối phạm vi quản trị của phiên hiện tại." : "Không thể tải hồ sơ quản trị trong lần thử này."} state={denied ? "denied" : "failed"} />;
+  if (error instanceof AdminReadError && error.kind === "denied") forbidden();
+  return <StatePanel actionHref={`/admin/users/${userKey}`} correlationId={correlationId} message="Không thể tải hồ sơ quản trị trong lần thử này." state="failed" />;
 }

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { canAccessAdministration } from "@/features/admin/admin-access";
@@ -17,9 +17,7 @@ export default async function AdminAuditRoute({
 }: Readonly<{ searchParams: Promise<SearchParams> }>) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/admin/audit");
-  if (!canAccessAdministration(context.identity)) {
-    return <StatePanel correlationId={context.correlationId} message="Phiên hiện tại không có quyền đọc nhật ký quản trị." state="denied" />;
-  }
+  if (!canAccessAdministration(context.identity)) forbidden();
   const filters = parseAdminAuditState(await searchParams);
   if (!filters) {
     return <StatePanel actionHref="/admin/audit" actionLabel="Đặt lại bộ lọc" correlationId={context.correlationId} message="Bộ lọc kiểm toán không đúng contract an toàn." state="failed" />;
@@ -34,6 +32,6 @@ export default async function AdminAuditRoute({
 }
 
 function adminAuditFailure(error: unknown, correlationId: string) {
-  const denied = error instanceof AdminReadError && error.kind === "denied";
-  return <StatePanel actionHref={denied ? null : "/admin/audit"} correlationId={correlationId} message={denied ? "Dịch vụ từ chối phạm vi nhật ký của phiên hiện tại." : "Không thể tải nhật ký quản trị trong lần thử này."} state={denied ? "denied" : "failed"} />;
+  if (error instanceof AdminReadError && error.kind === "denied") forbidden();
+  return <StatePanel actionHref="/admin/audit" correlationId={correlationId} message="Không thể tải nhật ký quản trị trong lần thử này." state="failed" />;
 }
