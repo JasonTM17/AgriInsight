@@ -317,7 +317,7 @@
   padding: var(--space-4);
 }
 
-@media (max-width: 62rem) {
+@media (max-width: 66rem) {
   .pageHeading,
   .subjectHeading {
     display: grid;
