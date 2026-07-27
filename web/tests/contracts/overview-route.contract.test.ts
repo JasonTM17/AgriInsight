@@ -91,4 +91,21 @@ describe("overview and farm route contracts", () => {
       "/overview"
     );
   });
+
+  it("preserves only implemented administration return paths", () => {
+    const userId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+
+    expect(allowlistedReturnPath("/admin?status=active")).toBe(
+      "/admin?status=active"
+    );
+    expect(allowlistedReturnPath("/admin/audit?event=role-granted")).toBe(
+      "/admin/audit?event=role-granted"
+    );
+    expect(allowlistedReturnPath(`/admin/users/${userId}`)).toBe(
+      `/admin/users/${userId}`
+    );
+    expect(allowlistedReturnPath("/admin/users/not-a-uuid")).toBe(
+      "/overview"
+    );
+  });
 });

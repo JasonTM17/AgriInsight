@@ -60,6 +60,23 @@ describe("web proxy security policy", () => {
     );
   });
 
+  it("protects the implemented administration path", () => {
+    process.env.AGRIINSIGHT_WEB_ALLOWED_HOSTS = "localhost:3100";
+    process.env.AGRIINSIGHT_WEB_BASE_URL = "http://localhost:3100";
+    const response = proxy(
+      new NextRequest("http://localhost:3100/admin?status=active", {
+        headers: { Host: "localhost:3100" }
+      })
+    );
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location")!);
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("returnTo")).toBe(
+      "/admin?status=active"
+    );
+  });
+
   it("accepts matching framework forwarded metadata and rejects conflicts", () => {
     process.env.AGRIINSIGHT_WEB_ALLOWED_HOSTS = "localhost:3100";
     process.env.AGRIINSIGHT_WEB_BASE_URL = "http://localhost:3100";

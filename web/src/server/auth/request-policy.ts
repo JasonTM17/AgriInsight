@@ -8,11 +8,14 @@ const ALLOWED_RETURN_PATHS = new Set([
   "/costs",
   "/crop-health",
   "/data-quality",
-  "/administration"
+  "/admin",
+  "/admin/audit"
 ]);
 
 const FARM_DETAIL_RETURN_PATH =
   /^\/farms\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ADMIN_USER_RETURN_PATH =
+  /^\/admin\/users\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function allowlistedReturnPath(candidate: string | null | undefined): string {
   if (!candidate || candidate.includes("\\") || candidate.startsWith("//")) {
@@ -23,7 +26,8 @@ export function allowlistedReturnPath(candidate: string | null | undefined): str
     if (
       parsed.origin !== "https://return-path.invalid" ||
       (!ALLOWED_RETURN_PATHS.has(parsed.pathname) &&
-        !FARM_DETAIL_RETURN_PATH.test(parsed.pathname))
+        !FARM_DETAIL_RETURN_PATH.test(parsed.pathname) &&
+        !ADMIN_USER_RETURN_PATH.test(parsed.pathname))
     ) {
       return "/overview";
     }

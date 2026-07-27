@@ -14,7 +14,7 @@ const PROTECTED_PREFIXES = [
   "/costs",
   "/crop-health",
   "/data-quality",
-  "/administration"
+  "/admin"
 ];
 
 export function proxy(request: NextRequest) {
