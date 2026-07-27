@@ -1,7 +1,7 @@
 ---
 phase: 9
 title: "crop-health-and-data-quality"
-status: in_progress
+status: completed
 priority: P1
 effort: "3d"
 dependencies: [2, 3, 4]
@@ -144,31 +144,30 @@ npm --prefix web run test
 
 ## Acceptance Criteria
 
-- [ ] Both routes are fed only by Phase 2 analytics HTTP and verified batch artifacts.
-- [ ] `dataStatus=current|stale|partial|missing`, `assessmentMethod=rule-based-heuristic`, and `severity=none|low|medium|high` appear exactly as Phase 2 output, with no browser inference.
-- [ ] `runId`, `asOf`, and `generatedAt` remain display-safe provenance fields and are never recomputed client-side.
-- [ ] Crop Health image always shows the AI-generated demo warning and never claims measured truth.
-- [ ] `evidenceSignals` stays descriptive only and never implies probability, ML, or causality.
-- [ ] No copy, tests, or UI labels mention realtime, live sensors, prediction, or ML.
-- [ ] Big-data run still renders both routes without disk-guard breach or unacceptable empty-state regressions.
-- [ ] Permission-denied behavior is explicit and consistent with the protected app shell.
+- [x] Both routes are fed only by Phase 2 analytics HTTP and verified batch artifacts.
+- [x] `dataStatus=current|stale|partial|missing`, `assessmentMethod=rule-based-heuristic`, and `severity=none|low|medium|high` appear exactly as Phase 2 output, with no browser inference.
+- [x] `runId`, `asOf`, and `generatedAt` remain display-safe provenance fields and are never recomputed client-side.
+- [x] Crop Health image always shows the AI-generated demo warning and never claims measured truth.
+- [x] `evidenceSignals` stays descriptive only and never implies probability, ML, or causality.
+- [x] No copy, tests, or UI labels mention realtime, live sensors, prediction, or ML.
+- [x] Big-data run still renders both routes without disk-guard breach or unacceptable empty-state regressions.
+- [x] Permission-denied behavior is explicit and consistent with the protected app shell.
 
-## Implementation checkpoint — 2026-07-27
+## Completion checkpoint — 2026-07-27
 
 - Implemented: Phase 2 contract amendment for `field_code` detail scope and
   `assessmentMethod`; generated OpenAPI/types remain drift-free.
 - Implemented: server-only loaders, strict Zod envelopes, Vietnamese routes,
   role/permission gating, AppShell navigation, loading/error states, evidence
   tables, lineage display, and permanent Crop Health image warning.
-- Verified: 261 web tests pass with 9 intentional skips; focused component,
-  navigation, and Phase 2 contract tests pass; typecheck, zero-warning lint,
-  contract drift, Python analytics endpoint/OpenAPI tests, and Next production
-  build pass. GitHub CI run `30233453422` is green across Python, Java, web,
-  security, and image-build jobs on commit `d5b9a9d`.
-- Pending: guarded real-browser route gate and big-data smoke. The repository
-  disk guard currently fails before browser startup because C: has 2.798 GiB
-  free (fail threshold 8 GiB); D: has 20.711 GiB (warning, fail threshold 20
-  GiB). No disk threshold override was used.
+- Verified: the hosted real-platform gate passes strict contracts, production
+  build, Crop Health/Data Quality real-route journeys, Supplier denial, five
+  responsive viewport families, axe checks, and the verified 1,050,000-fact
+  benchmark. Browser work used guarded hosted storage because local C remained
+  below the hard floor; no local threshold was lowered.
+- Evidence: GitHub Actions run `30267362838` on commit `ac09db8`, plus
+  [Phase 9 evidence](./reports/phase-09-crop-health-data-quality-evidence-2026-07-27.md)
+  and the Phase 11 browser report.
 
 ## Risks And Rollback
 

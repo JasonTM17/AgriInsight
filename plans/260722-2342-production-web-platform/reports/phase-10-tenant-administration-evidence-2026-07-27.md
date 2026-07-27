@@ -1,7 +1,7 @@
 # Phase 10 Tenant Administration Evidence
 
 Date: 2026-07-27
-Status: static implementation complete; guarded browser gate pending disk recovery
+Status: completed on hosted real-platform gate
 
 ## Scope
 
@@ -35,7 +35,7 @@ Status: static implementation complete; guarded browser gate pending disk recove
 
 | Gate | Result |
 |---|---|
-| Web full suite after final command-matrix expansion | 302 passed, 9 intentional skips |
+| Web full suite after final hardening | 308 passed, 11 intentional skips |
 | Exact admin command dispatcher matrix | 13 passed |
 | Focused admin/navigation suite | 34 passed |
 | Contract drift | PASS |
@@ -43,8 +43,8 @@ Status: static implementation complete; guarded browser gate pending disk recove
 | Zero-warning lint | PASS |
 | Secret-pattern review | PASS; no credential or private-key material |
 | Next production build | PASS on GitHub CI; not run locally because of disk guard |
-| Guarded real browser | NOT RUN: disk guard |
-| GitHub CI `30236258854` | PASS; Java, Next, Python, secret scan, and both no-push image builds green |
+| Guarded real browser | PASS; tenant-admin lifecycle/assignment, exact seven-persona authorization, and Supplier denial |
+| GitHub CI `30267362838` | PASS; Java, Next, Python, secret scan, browser, and four no-push image jobs green |
 
 ## Security Review
 
@@ -57,15 +57,15 @@ Status: static implementation complete; guarded browser gate pending disk recove
 - Backend `400`, `401`, `403`, `404`, and `409` are mapped distinctly.
 - Denied server pages use Next 16 `forbidden()` with `authInterrupts`, plus a
   segment-level forbidden boundary intended to preserve the protected shell.
-- Full runtime proof of HTTP 403 remains a browser-gate item.
+- Real Chrome proves the forbidden shell, exact route matrix, authorized
+  lifecycle/assignment journey, and unconditional Supplier denial.
 
 ## Disk Observation
 
-- C: 1.75 GiB free after static gates; below the 8 GiB hard floor.
-- D: 20.56 GiB free; above the 20 GiB hard floor, below the 25 GiB warning
-  threshold.
-- npm cache and temporary test files were redirected to `D:\AgriInsight\.cache`.
-- No browser, local production build, Docker build, or big-data job was started.
+- C remained below the 8 GiB local hard floor, while D remained the cache and
+  recovery target. No local browser, Docker, or Big Data workload was started.
+- The accepted browser/image evidence used guarded ephemeral hosted storage;
+  no local threshold was lowered.
 
 ## Commits
 
@@ -79,5 +79,4 @@ Status: static implementation complete; guarded browser gate pending disk recove
 
 ## Unresolved Questions
 
-- When can C: be recovered above 8 GiB so real-browser HTTP 403, lifecycle,
-  conflict, and Supplier-denial journeys can run?
+- None inside Phase 10. External release controls remain tracked in Phase 12.

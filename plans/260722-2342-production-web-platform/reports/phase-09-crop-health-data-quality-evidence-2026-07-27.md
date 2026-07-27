@@ -1,7 +1,7 @@
 # Phase 9 Crop Health and Data Quality Evidence
 
 Date: 2026-07-27  
-Status: implementation complete; guarded browser/big-data gate pending disk recovery
+Status: completed on hosted real-platform gate
 
 ## Scope
 
@@ -18,27 +18,23 @@ Status: implementation complete; guarded browser/big-data gate pending disk reco
 
 | Gate | Result |
 |---|---|
-| Web full suite | 261 passed, 9 intentional skips |
+| Web full suite | 308 passed, 11 intentional skips |
 | Focused Crop/Data Quality components and navigation | 8 passed |
 | Phase 2 analytics endpoint/OpenAPI tests | 17 passed |
 | Contract drift | PASS |
 | Typecheck | PASS |
 | Zero-warning lint | PASS |
 | Next production build | PASS; 8 reviewed visuals synced |
-| GitHub CI `30233453422` | PASS on `d5b9a9d`; Python, Java, web, security, and image-build jobs green |
-| Guarded real browser | NOT RUN: disk guard stopped before startup |
-| Big-data smoke | NOT RUN: same disk guard prerequisite |
+| GitHub CI `30267362838` | PASS on `ac09db8`; Python, Java, web, security, browser, and four no-push image jobs green |
+| Guarded real browser | PASS; Crop/Data Quality allowed and Supplier-denied journeys included in 26/26 suite |
+| Big-data smoke | PASS; 1,050,000 facts and route/render budgets verified |
 
 ## Disk observation
 
-The default `scripts/check-workspace-disk.ps1` policy was run without an
-override:
-
-- C: 2.798 GiB free; status FAIL (fail below 8 GiB).
-- D: 20.711 GiB free; status WARN (fail below 20 GiB).
-
-The browser runner was not bypassed and no threshold was lowered. Docker build
-cache was reclaimed; project containers, volumes, and images were preserved.
+The workstation remained below the C-drive hard floor, so no local browser,
+image, or Big Data workload was started. The accepted gate used ephemeral
+hosted runner storage and its own disk guard. No threshold was lowered; project
+artifacts and active training processes were preserved.
 
 ## Review notes
 
@@ -48,10 +44,9 @@ cache was reclaimed; project containers, volumes, and images were preserved.
   `runId`, `asOf`, and `generatedAt` sourced from the upstream envelope.
 - Crop Health demo visuals are captioned with the permanent warning on both list
   and detail routes and are not used as measured field data.
-- The phase must not be marked accepted until the same guarded browser and
-  big-data gates pass after C/D recovery.
+- The guarded hosted browser and Big Data gates now pass; this phase is
+  accepted independently from Phase 12 external registry promotion.
 
 ## Unresolved questions
 
-- When can C: be recovered above the 8 GiB fail floor without changing the
-  operator's intended Windows paging/hibernation policy?
+- None inside Phase 9. External release controls remain tracked in Phase 12.

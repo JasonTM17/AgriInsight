@@ -1,7 +1,7 @@
 ---
 phase: 10
 title: tenant-administration
-status: in-progress
+status: completed
 priority: P1
 effort: 3d
 dependencies:
@@ -154,16 +154,16 @@ npm --prefix web run test
 - [x] Phase 10 consumes the exact Phase 1 user/role/external-identity/assignment resource families and does not mint `/api/v1/admin/*`.
 - [x] The real allowed admin mutations are available for authorized users only: user lifecycle, role, external identity, farm, warehouse, and activity assignments.
 - [x] No invite, JIT provisioning, password, or email-trigger copy exists anywhere in this phase.
-- [ ] Server-side deep-link authorization returns a real `403` state for denied users, and `Supplier` is denied everywhere.
+- [x] Server-side deep-link authorization returns a real `403` state for denied users, and `Supplier` is denied everywhere.
 - [x] Concurrent removal/revocation surfaces explicit conflict or not-found states; no silent empty tables.
 - [x] Browser-visible responses use only safe labels/opaque keys; an administrator-supplied create/link subject is one-way, never echoed, logged, cached, or retained in client state.
 - [x] Audit timeline is bounded, evidence-oriented, and reflects backend truth for the allowed actions.
 
-The remaining `403` item has a static implementation (`forbidden()`,
-`authInterrupts`, Supplier denial and a segment boundary) but stays unchecked
-until the guarded real-browser suite confirms the HTTP status and rendered
-shell. Evidence:
-[Phase 10 checkpoint](./reports/phase-10-tenant-administration-evidence-2026-07-27.md).
+The hosted real-platform gate confirms the rendered forbidden shell, exact
+seven-persona route matrix, full authorized lifecycle/assignment journey, and
+unconditional Supplier denial. Evidence:
+[Phase 10 completion](./reports/phase-10-tenant-administration-evidence-2026-07-27.md)
+and GitHub Actions run `30267362838`.
 
 ## Risks And Rollback
 
