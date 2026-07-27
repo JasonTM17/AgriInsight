@@ -146,6 +146,7 @@ class CropHealthPayload(ApiModel):
 
 
 class DataQualityPayload(ApiModel):
+    assessment_method: Literal["rule-based-heuristic"] = "rule-based-heuristic"
     checks: QualityChecksModel
     evidence_signals: list[EvidenceSignalModel]
     remediation_actions: QualityRemediationModel

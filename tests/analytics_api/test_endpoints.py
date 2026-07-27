@@ -161,6 +161,45 @@ def test_farm_filter_also_scopes_crop_profitability(api_factory) -> None:
     assert {item["cropCode"] for item in payload["cropProfitability"]} == expected_crops
 
 
+def test_crop_health_field_filter_is_exact_and_records_scope(api_factory) -> None:
+    app, client, _spring = api_factory()
+    fields = app.state.snapshot_cache.current().csv["field_health_status"]
+    selected = fields.iloc[0]
+
+    with client:
+        response = client.get(
+            "/internal/v1/crop-health",
+            params={
+                "farm_code": selected["farm_code"],
+                "field_code": selected["field_code"],
+            },
+            headers=HEADERS,
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["scope"]["appliedFilter"]["fieldCode"] == selected["field_code"]
+    assert body["payload"]["page"]["total"] == 1
+    assert {item["fieldCode"] for item in body["payload"]["fields"]} == {
+        selected["field_code"]
+    }
+    assert {item["fieldCode"] for item in body["payload"]["alerts"]} <= {
+        selected["field_code"]
+    }
+
+
+def test_data_quality_declares_its_rule_based_assessment(api_factory) -> None:
+    _app, client, _spring = api_factory()
+
+    with client:
+        response = client.get("/internal/v1/data-quality", headers=HEADERS)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["payload"]["assessmentMethod"] == (
+        "rule-based-heuristic"
+    )
+
+
 @pytest.mark.parametrize("role", ["FIELD_WORKER", "SUPPLIER"])
 def test_non_analytics_personas_are_denied(api_factory, role) -> None:
     _app, client, _spring = api_factory(

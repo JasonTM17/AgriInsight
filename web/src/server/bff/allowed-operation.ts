@@ -92,7 +92,7 @@ export const ALLOWED_OPERATIONS = Object.freeze({
   analyticsCropHealth: {
     method: "GET",
     path: "/internal/v1/crop-health",
-    queryParameters: ["farm_code", "limit", "offset"],
+    queryParameters: ["farm_code", "field_code", "limit", "offset"],
     service: "analytics"
   },
   analyticsDataQuality: {

@@ -8,6 +8,7 @@ from agriinsight.analytics_api.dependencies import (
     request_scope_resolver,
 )
 from agriinsight.analytics_api.domain_read_models import crop_health_payload
+from agriinsight.analytics_api.filter_scope import resolve_analytics_filter
 from agriinsight.analytics_api.models import AnalyticsEnvelope, CropHealthPayload
 from agriinsight.analytics_api.response_envelope import envelope
 from agriinsight.analytics_api.routers.common import (
@@ -27,6 +28,7 @@ router = APIRouter(tags=["analytics-crop-health"])
 async def get_crop_health(
     request: Request,
     farm_code: str | None = Query(default=None, max_length=64),
+    field_code: str | None = Query(default=None, max_length=64),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=10_000),
     resolver: RequestScopeResolver = Depends(request_scope_resolver),
@@ -34,10 +36,20 @@ async def get_crop_health(
     scope = await resolver.authorize(AnalyticsArea.CROP_HEALTH)
     require_farm_filter(scope, farm_code)
     snapshot = verified_snapshot(request, scope)
+    applied_filter = resolve_analytics_filter(
+        snapshot,
+        scope,
+        farm_code=farm_code,
+        field_code=field_code,
+        crop_code=None,
+        season_code=None,
+        date_preset="all",
+    )
     payload, partial = crop_health_payload(
         snapshot,
         scope,
         farm_code=farm_code,
+        field_code=field_code,
         limit=limit,
         offset=offset,
     )
@@ -48,6 +60,7 @@ async def get_crop_health(
         request.app.state.settings.max_artifact_age_hours,
         partial=partial,
         missing=payload.page.total == 0,
+        applied_filter=applied_filter.response_model(),
     )
     assert_snapshot_current(request, snapshot)
     return response

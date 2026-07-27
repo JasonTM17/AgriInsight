@@ -53,6 +53,7 @@ def crop_health_payload(
     scope: AuthorizedScope,
     *,
     farm_code: str | None,
+    field_code: str | None,
     limit: int,
     offset: int,
 ) -> tuple[CropHealthPayload, bool]:
@@ -63,13 +64,20 @@ def crop_health_payload(
     if farm_code:
         fields = fields[fields["farm_code"] == farm_code]
         alerts = alerts[alerts["farm_code"] == farm_code]
+    if field_code:
+        fields = fields[fields["field_code"] == field_code]
+        alerts = alerts[alerts["field_code"] == field_code]
     fields = fields.sort_values(
         ["risk_score", "field_code"],
         ascending=[False, True],
         kind="stable",
     )
     page = fields.iloc[offset : offset + limit]
-    tenant_wide = scope.farm_tenant_wide and farm_code is None
+    tenant_wide = (
+        scope.farm_tenant_wide
+        and farm_code is None
+        and field_code is None
+    )
     pest = (
         records(snapshot.csv["pest_incidents_weekly"])
         if tenant_wide
@@ -187,4 +195,3 @@ def _crop_evidence(fields: pd.DataFrame) -> list[EvidenceSignalModel]:
             value=summary["offline_sensors"],
         ),
     ]
-

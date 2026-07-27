@@ -60,10 +60,15 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "severity",
     }
     assert set(schemas["DataQualityPayload"]["properties"]) >= {
+        "assessmentMethod",
         "evidenceSignals",
         "remediationActions",
         "severity",
     }
+    crop_parameters = contract["paths"]["/internal/v1/crop-health"]["get"][
+        "parameters"
+    ]
+    assert "field_code" in {item["name"] for item in crop_parameters}
     assert set(schemas["AppliedFilterModel"]["properties"]) == {
         "cropCode",
         "dateFrom",

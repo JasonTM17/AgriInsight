@@ -977,6 +977,12 @@
       "DataQualityPayload": {
         "additionalProperties": false,
         "properties": {
+          "assessmentMethod": {
+            "const": "rule-based-heuristic",
+            "default": "rule-based-heuristic",
+            "title": "Assessmentmethod",
+            "type": "string"
+          },
           "checks": {
             "$ref": "#/components/schemas/QualityChecksModel"
           },
@@ -3394,6 +3400,23 @@
                 }
               ],
               "title": "Farm Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "field_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Field Code"
             }
           },
           {

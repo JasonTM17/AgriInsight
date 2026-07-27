@@ -508,6 +508,12 @@ export interface components {
         };
         /** DataQualityPayload */
         readonly DataQualityPayload: {
+            /**
+             * Assessmentmethod
+             * @default rule-based-heuristic
+             * @constant
+             */
+            readonly assessmentMethod: "rule-based-heuristic";
             readonly checks: components["schemas"]["QualityChecksModel"];
             /** Evidencesignals */
             readonly evidenceSignals: readonly components["schemas"]["EvidenceSignalModel"][];
@@ -1539,6 +1545,7 @@ export interface operations {
         readonly parameters: {
             readonly query?: {
                 readonly farm_code?: string | null;
+                readonly field_code?: string | null;
                 readonly limit?: number;
                 readonly offset?: number;
             };
