@@ -1,10 +1,11 @@
 ---
 phase: 2
-title: "Outbox Kafka publisher"
-status: pending
+title: Outbox Kafka publisher
+status: in-progress
 priority: P1
-effort: "1.5-2d"
-dependencies: [1]
+effort: 1.5-2d
+dependencies:
+  - 1
 ---
 
 # Phase 2: Outbox Kafka publisher

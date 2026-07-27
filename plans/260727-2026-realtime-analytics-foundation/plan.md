@@ -58,8 +58,8 @@ Python artifacts, and browser routes remain compatible.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Contract and worker boundary](./phase-01-contract-and-worker-boundary.md) | In Progress |
-| 2 | [Outbox Kafka publisher](./phase-02-outbox-kafka-publisher.md) | Pending |
+| 1 | [Contract and worker boundary](./phase-01-contract-and-worker-boundary.md) | Completed |
+| 2 | [Outbox Kafka publisher](./phase-02-outbox-kafka-publisher.md) | In Progress |
 | 3 | [Replay-safe consumer and summary API](./phase-03-replay-safe-consumer-and-summary-api.md) | Pending |
 | 4 | [Hosted integration and handoff](./phase-04-hosted-integration-and-handoff.md) | Pending |
 

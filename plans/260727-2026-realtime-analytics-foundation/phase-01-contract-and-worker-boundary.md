@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Contract and worker boundary
-status: in-progress
+status: completed
 priority: P1
 effort: 1.5-2d
 dependencies: []

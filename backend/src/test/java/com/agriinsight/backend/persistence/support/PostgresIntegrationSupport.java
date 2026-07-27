@@ -13,8 +13,10 @@ public final class PostgresIntegrationSupport {
     public static final String MIGRATOR = "agriinsight_migrator";
     public static final String RUNTIME = "agriinsight_runtime";
     public static final String IDENTITY_DEFINER = "agriinsight_identity_definer";
+    public static final String REALTIME = "agriinsight_realtime";
     public static final String MIGRATOR_PASSWORD = "migrator-integration-only";
     public static final String RUNTIME_PASSWORD = "runtime-integration-only";
+    public static final String REALTIME_PASSWORD = "realtime-integration-only";
 
     private PostgresIntegrationSupport() {
     }
@@ -31,6 +33,7 @@ public final class PostgresIntegrationSupport {
             execute(connection, SqlTestResources.projectFile("backend/ops/postgres/bootstrap-roles.sql"));
             execute(connection, "ALTER ROLE " + MIGRATOR + " PASSWORD '" + MIGRATOR_PASSWORD + "'");
             execute(connection, "ALTER ROLE " + RUNTIME + " PASSWORD '" + RUNTIME_PASSWORD + "'");
+            execute(connection, "ALTER ROLE " + REALTIME + " PASSWORD '" + REALTIME_PASSWORD + "'");
         }
     }
 
@@ -64,6 +67,11 @@ public final class PostgresIntegrationSupport {
     public static Connection runtimeConnection(PostgreSQLContainer container, String database)
             throws SQLException {
         return connection(container, database, RUNTIME, RUNTIME_PASSWORD);
+    }
+
+    public static Connection realtimeConnection(PostgreSQLContainer container, String database)
+            throws SQLException {
+        return connection(container, database, REALTIME, REALTIME_PASSWORD);
     }
 
     public static Connection connection(

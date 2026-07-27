@@ -32,6 +32,24 @@ spring:
     url: ${AGRIINSIGHT_FLYWAY_URL:${AGRIINSIGHT_DB_URL:jdbc:postgresql://localhost:5432/agriinsight}}
     user: ${AGRIINSIGHT_FLYWAY_USERNAME:agriinsight_migrator}
     password: ${AGRIINSIGHT_FLYWAY_PASSWORD:}
+  kafka:
+    bootstrap-servers: ${AGRIINSIGHT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        "[enable.idempotence]": true
+        "[max.in.flight.requests.per.connection]": 5
+    consumer:
+      group-id: ${AGRIINSIGHT_KAFKA_CONSUMER_GROUP:agriinsight-realtime-v1}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
+      missing-topics-fatal: true
 
 server:
   address: ${AGRIINSIGHT_SERVER_ADDRESS:127.0.0.1}
@@ -75,6 +93,19 @@ agriinsight:
     cors-allowed-origins: ${AGRIINSIGHT_CORS_ALLOWED_ORIGINS:}
   schema:
     expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:19}
+  realtime:
+    publisher-enabled: ${AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED:false}
+    consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:false}
+    worker-id: ${AGRIINSIGHT_REALTIME_WORKER_ID:realtime-worker-1}
+    batch-size: ${AGRIINSIGHT_REALTIME_BATCH_SIZE:20}
+    lease-duration: ${AGRIINSIGHT_REALTIME_LEASE_DURATION:30s}
+    poll-delay: ${AGRIINSIGHT_REALTIME_POLL_DELAY:1s}
+    send-timeout: ${AGRIINSIGHT_REALTIME_SEND_TIMEOUT:20s}
+    topic: ${AGRIINSIGHT_REALTIME_TOPIC:agriinsight.operational.v1}
+    dead-letter-topic: ${AGRIINSIGHT_REALTIME_DLT_TOPIC:agriinsight.operational.v1.dlt}
+    partitions: ${AGRIINSIGHT_REALTIME_PARTITIONS:6}
+    replication-factor: ${AGRIINSIGHT_REALTIME_REPLICATION_FACTOR:1}
+    max-record-bytes: ${AGRIINSIGHT_REALTIME_MAX_RECORD_BYTES:262144}
 
 springdoc:
   api-docs:

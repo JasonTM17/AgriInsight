@@ -25,13 +25,19 @@ BEGIN
             NOLOGIN NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
     END IF;
 
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'agriinsight_realtime') THEN
+        CREATE ROLE agriinsight_realtime
+            LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+    END IF;
+
     FOR role_row IN
         SELECT *
         FROM (VALUES
             ('agriinsight_migrator'::NAME, TRUE, TRUE),
             ('agriinsight_runtime'::NAME, TRUE, TRUE),
             ('agriinsight_identity_definer'::NAME, FALSE, FALSE),
-            ('agriinsight_integration'::NAME, FALSE, FALSE)
+            ('agriinsight_integration'::NAME, FALSE, FALSE),
+            ('agriinsight_realtime'::NAME, TRUE, TRUE)
         ) AS expected(role_name, can_login, inherits)
     LOOP
         IF NOT EXISTS (
@@ -57,8 +63,7 @@ BEGIN
         JOIN pg_catalog.pg_roles AS member_role ON member_role.oid = membership.member
         WHERE member_role.rolname IN (
                   'agriinsight_runtime', 'agriinsight_identity_definer', 'agriinsight_integration')
-           OR granted_role.rolname IN (
-                  'agriinsight_runtime', 'agriinsight_migrator', 'agriinsight_integration')
+           OR granted_role.rolname IN ('agriinsight_runtime', 'agriinsight_migrator')
            OR (
                member_role.rolname = 'agriinsight_migrator'
                AND granted_role.rolname <> 'agriinsight_identity_definer'
@@ -66,6 +71,14 @@ BEGIN
            OR (
                granted_role.rolname = 'agriinsight_identity_definer'
                AND member_role.rolname <> 'agriinsight_migrator'
+           )
+           OR (
+               granted_role.rolname = 'agriinsight_integration'
+               AND member_role.rolname <> 'agriinsight_realtime'
+           )
+           OR (
+               member_role.rolname = 'agriinsight_realtime'
+               AND granted_role.rolname <> 'agriinsight_integration'
            )
     ) THEN
         RAISE EXCEPTION 'AgriInsight roles have a forbidden role membership';
@@ -75,6 +88,8 @@ $bootstrap$;
 
 GRANT agriinsight_identity_definer TO agriinsight_migrator
     WITH INHERIT FALSE, SET TRUE;
+GRANT agriinsight_integration TO agriinsight_realtime
+    WITH INHERIT TRUE, SET TRUE;
 
 DO $membership_gate$
 BEGIN
@@ -94,6 +109,24 @@ BEGIN
 END
 $membership_gate$;
 
+DO $realtime_membership_gate$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_auth_members AS membership
+        JOIN pg_catalog.pg_roles AS granted_role ON granted_role.oid = membership.roleid
+        JOIN pg_catalog.pg_roles AS member_role ON member_role.oid = membership.member
+        WHERE granted_role.rolname = 'agriinsight_integration'
+          AND member_role.rolname = 'agriinsight_realtime'
+          AND membership.admin_option = FALSE
+          AND membership.inherit_option = TRUE
+          AND membership.set_option = TRUE
+    ) THEN
+        RAISE EXCEPTION 'Realtime login cannot safely inherit the integration role';
+    END IF;
+END
+$realtime_membership_gate$;
+
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO agriinsight_migrator;
 GRANT USAGE ON SCHEMA public TO agriinsight_runtime;
@@ -103,7 +136,7 @@ GRANT USAGE ON SCHEMA public TO agriinsight_identity_definer;
 DO $database_access$
 BEGIN
         EXECUTE pg_catalog.format(
-        'GRANT CONNECT ON DATABASE %I TO agriinsight_migrator, agriinsight_runtime, agriinsight_integration',
+        'GRANT CONNECT ON DATABASE %I TO agriinsight_migrator, agriinsight_runtime, agriinsight_integration, agriinsight_realtime',
         pg_catalog.current_database()
     );
     EXECUTE pg_catalog.format(

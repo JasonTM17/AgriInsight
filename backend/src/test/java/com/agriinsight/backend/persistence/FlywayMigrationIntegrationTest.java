@@ -4,6 +4,7 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.MIGRATOR;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.MIGRATOR_PASSWORD;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.RUNTIME;
+import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.REALTIME;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.bootstrapRoles;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.count;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.execute;
@@ -109,6 +110,7 @@ class FlywayMigrationIntegrationTest {
             assertSafeRole(operator, MIGRATOR, true, true);
             assertSafeRole(operator, RUNTIME, true, true);
             assertSafeRole(operator, IDENTITY_DEFINER, false, false);
+            assertSafeRole(operator, REALTIME, true, true);
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_auth_members membership
                     JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
@@ -117,6 +119,16 @@ class FlywayMigrationIntegrationTest {
                       AND member_role.rolname = 'agriinsight_migrator'
                       AND NOT membership.admin_option
                       AND NOT membership.inherit_option
+                      AND membership.set_option
+                    """)).isEqualTo(1);
+            assertThat(count(operator, """
+                    SELECT count(*) FROM pg_auth_members membership
+                    JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
+                    JOIN pg_roles member_role ON member_role.oid = membership.member
+                    WHERE granted_role.rolname = 'agriinsight_integration'
+                      AND member_role.rolname = 'agriinsight_realtime'
+                      AND NOT membership.admin_option
+                      AND membership.inherit_option
                       AND membership.set_option
                     """)).isEqualTo(1);
             assertThat(scalar(operator, """
