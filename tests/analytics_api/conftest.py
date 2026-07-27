@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from agriinsight.analytics_api.app import create_app
+from agriinsight.analytics_api.assistant_settings import AssistantSettings
 from agriinsight.analytics_api.settings import AnalyticsSettings
 from agriinsight.analytics_api.spring_scope_client import (
     CurrentUser,
@@ -121,6 +122,8 @@ def api_factory(
         permissions: set[str] | None = None,
         selected_farms: list[FarmItem] | None = None,
         selected_warehouses: list[WarehouseItem] | None = None,
+        assistant_settings: AssistantSettings | None = None,
+        assistant_service=None,
     ):
         spring = FakeSpringClient(
             tenant_id=tenant_id,
@@ -138,8 +141,13 @@ def api_factory(
             demo_tenant_id=TENANT_ID,
             reconciliation_report=report_path,
             spring_base_url="http://spring.test",
+            assistant=assistant_settings or AssistantSettings(),
         )
-        app = create_app(settings, spring_client=spring)
+        app = create_app(
+            settings,
+            spring_client=spring,
+            assistant_service=assistant_service,
+        )
         client = TestClient(app, raise_server_exceptions=False)
         return app, client, spring
 

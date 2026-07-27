@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from uuid import UUID
 
 from fastapi import Depends, Request
@@ -10,6 +11,7 @@ from agriinsight.analytics_api.auth_scope import (
     AuthorizedScope,
     plan_scope,
 )
+from agriinsight.analytics_api.assistant_models import EvidenceSource
 from agriinsight.analytics_api.errors import ApiProblem, correlation_id
 from agriinsight.analytics_api.spring_scope_client import (
     CurrentUser,
@@ -101,6 +103,63 @@ class RequestScopeResolver:
     async def warehouse_items(self) -> list[WarehouseItem]:
         return await self._warehouse_catalog()
 
+    async def authorize_assistant(self) -> AssistantAuthorization:
+        user = await self._current_user()
+        principal = principal_from(user, self._demo_tenant_id)
+        roles = principal.roles
+        permissions = principal.permissions
+        tenant_wide = bool(
+            roles & {"TENANT_ADMIN", "EXECUTIVE", "DATA_ANALYST"}
+        )
+        farm_access = "FARM_READ" in permissions and bool(
+            tenant_wide or "FARM_MANAGER" in roles
+        )
+        cost_access = farm_access and "COST_READ" in permissions
+        inventory_access = "INVENTORY_READ" in permissions and bool(
+            tenant_wide or "INVENTORY_MANAGER" in roles
+        )
+        if not farm_access and not inventory_access:
+            raise _assistant_denied()
+
+        farms = await self._farm_catalog() if farm_access else []
+        warehouses = (
+            await self._warehouse_catalog() if inventory_access else []
+        )
+        _require_unique_active_catalog(farms, "farm")
+        _require_unique_active_catalog(warehouses, "warehouse")
+        farm_codes = frozenset(item.code for item in farms if item.active)
+        warehouse_codes = frozenset(
+            item.code for item in warehouses if item.active
+        )
+        if farm_access and not tenant_wide and not farm_codes:
+            raise _empty_scope()
+        if inventory_access and not tenant_wide and not warehouse_codes:
+            raise _empty_scope()
+
+        sources: set[EvidenceSource] = set()
+        if farm_access:
+            sources.update({"farm-performance", "crop-health"})
+        if cost_access:
+            sources.update({"cost", "overview"})
+        if inventory_access:
+            sources.add("inventory")
+        return AssistantAuthorization(
+            scope=AuthorizedScope(
+                farm_codes=farm_codes,
+                farm_tenant_wide=farm_access and tenant_wide,
+                tenant_id=principal.tenant_id,
+                warehouse_codes=warehouse_codes,
+                warehouse_tenant_wide=inventory_access and tenant_wide,
+            ),
+            sources=frozenset(sources),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AssistantAuthorization:
+    scope: AuthorizedScope
+    sources: frozenset[EvidenceSource]
+
 
 async def request_scope_resolver(
     request: Request,
@@ -120,11 +179,25 @@ async def request_scope_resolver(
     )
 
 
+async def assistant_authorization(
+    resolver: RequestScopeResolver = Depends(request_scope_resolver),
+) -> AssistantAuthorization:
+    return await resolver.authorize_assistant()
+
+
 def _empty_scope() -> ApiProblem:
     return ApiProblem(
         403,
         "analytics_scope_empty",
         "No active operational scope is assigned for this analytics area.",
+    )
+
+
+def _assistant_denied() -> ApiProblem:
+    return ApiProblem(
+        403,
+        "analytics_forbidden",
+        "The authenticated principal cannot access this analytics area.",
     )
 
 

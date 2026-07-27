@@ -280,6 +280,106 @@
         "title": "AppliedFilterModel",
         "type": "object"
       },
+      "AssistantAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceCitation"
+            },
+            "maxItems": 20,
+            "title": "Citations",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "answered",
+              "insufficient_evidence"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/AssistantUsage"
+          }
+        },
+        "required": [
+          "status",
+          "answer",
+          "usage"
+        ],
+        "title": "AssistantAnswer",
+        "type": "object"
+      },
+      "AssistantQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationTurn"
+            },
+            "maxItems": 6,
+            "title": "History",
+            "type": "array"
+          },
+          "question": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "AssistantQuery",
+        "type": "object"
+      },
+      "AssistantUsage": {
+        "additionalProperties": false,
+        "properties": {
+          "completionTokens": {
+            "minimum": 0.0,
+            "title": "Completiontokens",
+            "type": "integer"
+          },
+          "promptCacheHitTokens": {
+            "minimum": 0.0,
+            "title": "Promptcachehittokens",
+            "type": "integer"
+          },
+          "promptCacheMissTokens": {
+            "minimum": 0.0,
+            "title": "Promptcachemisstokens",
+            "type": "integer"
+          },
+          "promptTokens": {
+            "minimum": 0.0,
+            "title": "Prompttokens",
+            "type": "integer"
+          },
+          "totalTokens": {
+            "minimum": 0.0,
+            "title": "Totaltokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "promptTokens",
+          "completionTokens",
+          "totalTokens",
+          "promptCacheHitTokens",
+          "promptCacheMissTokens"
+        ],
+        "title": "AssistantUsage",
+        "type": "object"
+      },
       "CatalogFarmModel": {
         "additionalProperties": false,
         "properties": {
@@ -368,6 +468,31 @@
           "id"
         ],
         "title": "CatalogWarehouseModel",
+        "type": "object"
+      },
+      "ConversationTurn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ConversationTurn",
         "type": "object"
       },
       "CostBreakdownModel": {
@@ -1064,6 +1189,57 @@
           "error"
         ],
         "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EvidenceCitation": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "evidenceId": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "title": "Evidenceid",
+            "type": "string"
+          },
+          "excerpt": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "sourceType": {
+            "enum": [
+              "overview",
+              "farm-performance",
+              "inventory",
+              "crop-health",
+              "data-quality",
+              "cost",
+              "procurement"
+            ],
+            "title": "Sourcetype",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidenceId",
+          "title",
+          "excerpt",
+          "sourceType",
+          "asOf"
+        ],
+        "title": "EvidenceCitation",
         "type": "object"
       },
       "EvidenceSignalModel": {
@@ -2812,6 +2988,102 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/internal/v1/assistant/query": {
+      "post": {
+        "operationId": "queryAnalyticsAssistant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantAnswer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Query Assistant",
+        "tags": [
+          "analytics-assistant"
+        ]
       }
     },
     "/internal/v1/catalog": {

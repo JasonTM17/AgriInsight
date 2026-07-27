@@ -7,6 +7,7 @@ from typing import Sequence
 from uuid import UUID
 
 from agriinsight.analytics_api.app import create_app
+from agriinsight.analytics_api.assistant_settings import AssistantSettings
 from agriinsight.analytics_api.settings import AnalyticsSettings
 
 
@@ -21,10 +22,15 @@ def canonical_openapi_bytes() -> bytes:
         demo_tenant_id=UUID("20000000-0000-4000-8000-000000000001"),
         reconciliation_report=Path("reconciliation.json").resolve(),
         spring_base_url="http://spring.invalid",
+        assistant=AssistantSettings(
+            enabled=True,
+            api_key="contract-only-key-material-000000",
+        ),
     )
     contract = create_app(
         settings,
         spring_client=_ContractSpringClient(),
+        assistant_service=object(),
     ).openapi()
     return (
         json.dumps(

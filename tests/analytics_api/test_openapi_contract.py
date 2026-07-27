@@ -23,8 +23,14 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "/internal/v1/farms",
         "/internal/v1/inventory",
         "/internal/v1/overview",
+        "/internal/v1/assistant/query",
     }
-    assert all(set(path_item) == {"get"} for path_item in contract["paths"].values())
+    assert set(contract["paths"]["/internal/v1/assistant/query"]) == {"post"}
+    assert all(
+        set(path_item) == {"get"}
+        for path, path_item in contract["paths"].items()
+        if path != "/internal/v1/assistant/query"
+    )
     farm_parameters = contract["paths"]["/internal/v1/farms"]["get"]["parameters"]
     limit = next(item for item in farm_parameters if item["name"] == "limit")
     assert limit["schema"]["maximum"] == 100
@@ -85,11 +91,19 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
     }
     assert "appliedFilter" in schemas["ScopeModel"]["properties"]
     for path, path_item in contract["paths"].items():
-        operation = path_item["get"]
+        operation = (
+            path_item["post"]
+            if path == "/internal/v1/assistant/query"
+            else path_item["get"]
+        )
         if path.startswith("/internal/v1/"):
             assert operation["security"] == [{"HTTPBearer": []}]
             assert "401" in operation["responses"]
             assert "503" in operation["responses"]
+    assistant_query = schemas["AssistantQuery"]
+    assert assistant_query["additionalProperties"] is False
+    assert assistant_query["properties"]["question"]["maxLength"] == 1_200
+    assert assistant_query["properties"]["history"]["maxItems"] == 6
 
 
 def test_checked_in_openapi_has_no_drift() -> None:

@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
+import httpx
 from fastapi import APIRouter, FastAPI, Request
 
+from agriinsight.analytics_api.assistant_retrieval import EvidenceRetriever
+from agriinsight.analytics_api.assistant_service import AssistantService
+from agriinsight.analytics_api.deepseek_assistant_client import (
+    DeepSeekAssistantClient,
+)
 from agriinsight.analytics_api.errors import install_error_boundary
 from agriinsight.analytics_api.models import ErrorEnvelope
 from agriinsight.analytics_api.reconciliation_gate import require_reconciliation
 from agriinsight.analytics_api.routers import (
+    assistant,
     catalog,
     cost_exports,
     costs,
@@ -32,14 +39,36 @@ def create_app(
     settings: AnalyticsSettings | None = None,
     *,
     spring_client: SpringScopeClient | None = None,
+    assistant_service: Any | None = None,
 ) -> FastAPI:
     resolved = (settings or AnalyticsSettings.from_environment()).validated()
     spring = spring_client or SpringScopeClient(resolved)
+    assistant_http_client: httpx.AsyncClient | None = None
+    resolved_assistant_service = assistant_service
+    if resolved.assistant.enabled and resolved_assistant_service is None:
+        assistant_http_client = httpx.AsyncClient(
+            base_url=resolved.assistant.base_url,
+            follow_redirects=False,
+        )
+        resolved_assistant_service = AssistantService(
+            EvidenceRetriever(
+                max_items=resolved.assistant.max_evidence_items,
+                max_characters=resolved.assistant.max_evidence_chars,
+            ),
+            DeepSeekAssistantClient(
+                resolved.assistant,
+                assistant_http_client,
+            ),
+        )
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         yield
-        await spring.close()
+        try:
+            await spring.close()
+        finally:
+            if assistant_http_client is not None:
+                await assistant_http_client.aclose()
 
     app = FastAPI(
         title="AgriInsight Internal Analytics API",
@@ -56,13 +85,14 @@ def create_app(
     app.state.settings = resolved
     app.state.snapshot_cache = SnapshotCache(resolved.artifact_root)
     app.state.spring_client = spring
+    app.state.assistant_service = resolved_assistant_service
     install_error_boundary(app)
 
     internal = APIRouter(
         prefix="/internal/v1",
         responses=_ERROR_RESPONSES,
     )
-    for route in (
+    routes = (
         catalog.router,
         overview.router,
         farms.router,
@@ -71,7 +101,10 @@ def create_app(
         data_quality.router,
         costs.router,
         cost_exports.router,
-    ):
+    )
+    if resolved.assistant.enabled:
+        routes += (assistant.router,)
+    for route in routes:
         internal.include_router(route)
     app.include_router(internal)
 
