@@ -169,7 +169,8 @@ test("@inventory supplier receives a generic denied scope", async ({ page }) => 
   );
   await page.locator("#kc-login").click();
   await expect(page).toHaveURL("http://localhost:3100/inventory");
-  await expect(page.getByText("Phiên hiện tại không có quyền đọc tồn kho.")).toBeVisible();
+  await expect(page.getByText("Truy cập bị từ chối")).toBeVisible();
+  expect((await page.request.get("/inventory")).status()).toBe(403);
   await expect(page.locator("body")).not.toContainText(/access_token|refresh_token|Bearer\s/i);
   await expectNoHorizontalOverflow(page);
   await expectNoCspViolations(page);

@@ -53,9 +53,11 @@ test("@crop-health supplier receives denied states for both analytics areas", as
     "AGRIINSIGHT_WEB_E2E_DENIED_USERNAME",
     "AGRIINSIGHT_WEB_E2E_DENIED_PASSWORD"
   );
-  await expect(page.getByText("Phiên hiện tại không có quyền xem sức khỏe cây trồng.")).toBeVisible();
+  await expect(page.getByText("Truy cập bị từ chối")).toBeVisible();
+  expect((await page.request.get("/crop-health")).status()).toBe(403);
   await page.goto("/data-quality");
-  await expect(page.getByText("Phiên hiện tại không có quyền xem chất lượng dữ liệu.")).toBeVisible();
+  await expect(page.getByText("Truy cập bị từ chối")).toBeVisible();
+  expect((await page.request.get("/data-quality")).status()).toBe(403);
   await expect(page.locator("body")).not.toContainText(/access_token|refresh_token|Bearer\s/i);
   await expectNoHorizontalOverflow(page);
 });

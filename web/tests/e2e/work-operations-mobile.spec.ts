@@ -182,8 +182,8 @@ test("@work supplier receives a generic denied scope", async ({ page }) => {
     "AGRIINSIGHT_WEB_E2E_DENIED_PASSWORD"
   );
 
-  await expect(page.getByText("Phiên hiện tại không có quyền đọc công việc."))
-    .toBeVisible();
+  await expect(page.getByText("Truy cập bị từ chối")).toBeVisible();
+  expect((await page.request.get("/work")).status()).toBe(403);
   await expect(page.getByTestId("work-activity-queue")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(/employeeId|Bearer\s/i);
   await expectNoHorizontalOverflow(page);

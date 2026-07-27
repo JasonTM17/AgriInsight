@@ -49,7 +49,8 @@ test("@costs supplier receives a generic denied scope", async ({ page }) => {
   await page.locator("#password").fill(required("AGRIINSIGHT_WEB_E2E_DENIED_PASSWORD"));
   await page.locator("#kc-login").click();
   await expect(page).toHaveURL("http://localhost:3100/costs?lens=operating");
-  await expect(page.getByText("Phiên hiện tại không có quyền đọc dữ liệu chi phí.")).toBeVisible();
+  await expect(page.getByText("Truy cập bị từ chối")).toBeVisible();
+  expect((await page.request.get("/costs?lens=operating")).status()).toBe(403);
   await expect(page.locator("body")).not.toContainText(/access_token|refresh_token|Bearer\s/i);
   await expectNoHorizontalOverflow(page);
 });
