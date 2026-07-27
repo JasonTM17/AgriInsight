@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { InventoryControlPage } from "@/features/inventory/components/inventory-control-page";
@@ -18,15 +18,7 @@ export default async function InventoryPage({
 }: Readonly<{ searchParams: Promise<InventorySearchParams> }>) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/inventory");
-  if (!context.identity.permissions.has("INVENTORY_READ")) {
-    return (
-      <StatePanel
-        correlationId={context.correlationId}
-        message="Phiên hiện tại không có quyền đọc tồn kho."
-        state="denied"
-      />
-    );
-  }
+  if (!context.identity.permissions.has("INVENTORY_READ")) forbidden();
   const routeState = parseInventoryRouteState(await searchParams);
   if (!routeState) {
     return (

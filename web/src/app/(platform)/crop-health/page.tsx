@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { CropHealthPage } from "@/features/crop-quality/components/crop-health-page";
@@ -20,15 +20,7 @@ export default async function CropHealthRoute({
 }: Readonly<{ searchParams: Promise<CropHealthSearchParams> }>) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/crop-health");
-  if (!canAccessCropHealth(context.identity)) {
-    return (
-      <StatePanel
-        correlationId={context.correlationId}
-        message="Phiên hiện tại không có quyền xem sức khỏe cây trồng."
-        state="denied"
-      />
-    );
-  }
+  if (!canAccessCropHealth(context.identity)) forbidden();
 
   const routeState = parseCropHealthRouteState(await searchParams);
   if (!routeState) {

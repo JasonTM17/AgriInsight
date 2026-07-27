@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { loadWorkViewModel } from "@/features/work/load-work-view-model";
@@ -20,15 +20,7 @@ export default async function WorkPage({
 }: Readonly<{ searchParams: Promise<WorkSearchParams> }>) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/work");
-  if (!context.identity.permissions.has("ACTIVITY_READ")) {
-    return (
-      <StatePanel
-        correlationId={context.correlationId}
-        message="Phiên hiện tại không có quyền đọc công việc."
-        state="denied"
-      />
-    );
-  }
+  if (!context.identity.permissions.has("ACTIVITY_READ")) forbidden();
   const routeState = parseWorkRouteState(await searchParams);
   if (!routeState) {
     return (

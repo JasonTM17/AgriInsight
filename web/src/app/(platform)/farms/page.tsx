@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { FarmList } from "@/features/farms/components/farm-list";
@@ -21,6 +21,7 @@ export default async function FarmsPage({
 }) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/farms");
+  if (!context.identity.permissions.has("FARM_READ")) forbidden();
   let filters: OverviewFilters | null = null;
   try {
     filters = parseOverviewFilters(await searchParams);

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { OverviewDashboard } from "@/features/overview/components/overview-dashboard";
@@ -20,6 +20,7 @@ export default async function OverviewPage({
 }) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/overview");
+  if (!context.identity.permissions.has("FARM_READ")) forbidden();
   let filters: OverviewFilters | null = null;
   try {
     filters = parseOverviewFilters(await searchParams);

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { CostAnalysisPage } from "@/features/costs/components/cost-analysis-page";
@@ -18,15 +18,7 @@ export default async function CostsPage({
 }: Readonly<{ searchParams: Promise<CostSearchParams> }>) {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/costs");
-  if (!context.identity.permissions.has("COST_READ")) {
-    return (
-      <StatePanel
-        correlationId={context.correlationId}
-        message="Phiên hiện tại không có quyền đọc dữ liệu chi phí."
-        state="denied"
-      />
-    );
-  }
+  if (!context.identity.permissions.has("COST_READ")) forbidden();
   const filters = parseCostFilterState(await searchParams);
   if (!filters) {
     return (

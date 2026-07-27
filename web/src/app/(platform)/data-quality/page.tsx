@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { DataQualityPage } from "@/features/crop-quality/components/data-quality-page";
@@ -12,15 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function DataQualityRoute() {
   const context = await loadPlatformPageContext();
   if (!context) redirect("/login?returnTo=/data-quality");
-  if (!canAccessDataQuality(context.identity)) {
-    return (
-      <StatePanel
-        correlationId={context.correlationId}
-        message="Phiên hiện tại không có quyền xem chất lượng dữ liệu."
-        state="denied"
-      />
-    );
-  }
+  if (!canAccessDataQuality(context.identity)) forbidden();
   let envelope: Awaited<ReturnType<typeof loadDataQualityViewModel>>;
   try {
     envelope = await loadDataQualityViewModel({

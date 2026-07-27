@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { CropHealthFieldDetail } from "@/features/crop-quality/components/crop-health-field-detail";
@@ -17,13 +17,14 @@ export default async function CropHealthFieldRoute({
   const fieldCode = parseFieldCode(rawFieldCode);
   const context = await loadPlatformPageContext();
   if (!context) redirect(`/login?returnTo=/crop-health/${encodeURIComponent(rawFieldCode)}`);
-  if (!fieldCode || !canAccessCropHealth(context.identity)) {
+  if (!canAccessCropHealth(context.identity)) forbidden();
+  if (!fieldCode) {
     return (
       <StatePanel
         actionHref="/crop-health"
         correlationId={context.correlationId}
-        message={!fieldCode ? "Mã khu vực không đúng định dạng an toàn." : "Phiên hiện tại không có quyền xem khu vực này."}
-        state="denied"
+        message="Mã khu vực không đúng định dạng an toàn."
+        state="failed"
       />
     );
   }

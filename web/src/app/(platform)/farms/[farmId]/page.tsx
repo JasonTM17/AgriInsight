@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { forbidden, notFound, redirect } from "next/navigation";
 
 import { StatePanel } from "@/components/app-shell/state-panels";
 import { FarmDetail } from "@/features/farms/components/farm-detail";
@@ -24,6 +24,7 @@ export default async function FarmDetailPage({
   const { farmId } = await params;
   const context = await loadPlatformPageContext();
   if (!context) redirect(`/login?returnTo=/farms/${farmId}`);
+  if (!context.identity.permissions.has("FARM_READ")) forbidden();
   let viewModel: Awaited<ReturnType<typeof loadFarmDetailViewModel>> | null = null;
   let backHref = "/farms";
   try {
