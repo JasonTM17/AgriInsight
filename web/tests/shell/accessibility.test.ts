@@ -37,7 +37,7 @@ describe("Field Ledger shell accessibility guardrails", () => {
       /\.app-shell__main\s*\{[^}]*overflow-x:\s*clip;/s
     );
     expect(css).toMatch(
-      /@media \(max-width: 47\.999rem\)[\s\S]*?\.navigation-rail\s*\{[^}]*display:\s*none;[\s\S]*?\.navigation-rail--open\s*\{[^}]*display:\s*flex;/s
+      /@media \(max-width: 48rem\)[\s\S]*?\.navigation-rail\s*\{[^}]*display:\s*none;[\s\S]*?\.navigation-rail--open\s*\{[^}]*display:\s*flex;/s
     );
   });
 

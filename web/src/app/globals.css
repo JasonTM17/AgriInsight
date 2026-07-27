@@ -618,7 +618,7 @@ a {
   }
 }
 
-@media (max-width: 47.999rem) {
+@media (max-width: 48rem) {
   .app-shell {
     display: block;
   }
