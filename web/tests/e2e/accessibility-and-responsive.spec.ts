@@ -72,12 +72,9 @@ async function expectResponsive(page: Page, route: string) {
             return await page.evaluate(() => {
               const root = document.documentElement;
               const fits = root.scrollWidth <= root.clientWidth + 1;
-              return {
+              const diagnostics = {
                 clientWidth: root.clientWidth,
-                fits,
-                offenders: fits
-                  ? []
-                  : [...document.querySelectorAll<HTMLElement>("body *")]
+                offenders: [...document.querySelectorAll<HTMLElement>("body *")]
                       .map((element) => ({
                         className: element.className,
                         id: element.id,
@@ -90,14 +87,15 @@ async function expectResponsive(page: Page, route: string) {
                       .slice(0, 8),
                 scrollWidth: root.scrollWidth
               };
+              return fits ? "fits" : JSON.stringify(diagnostics);
             });
           } catch {
-            return { fits: false };
+            return "page-evaluation-failed";
           }
         },
         { message: `${viewport.name} ${route} has horizontal overflow` }
       )
-      .toMatchObject({ fits: true });
+      .toBe("fits");
   }
 }
 
