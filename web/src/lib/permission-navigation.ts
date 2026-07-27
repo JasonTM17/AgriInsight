@@ -63,7 +63,7 @@ const NAVIGATION_DEFINITIONS: Readonly<Record<NavigationKey, NavigationItem>> = 
     key: "costs",
     label: NAVIGATION_LABELS.costs,
     description: NAVIGATION_DESCRIPTIONS.costs,
-    href: "/protected?module=costs",
+    href: "/costs?lens=operating",
     icon: "receipt",
     requiredPermissions: ["COST_READ"]
   },
@@ -119,6 +119,9 @@ export function getActiveNavigationKey(
   if (pathname === "/work") return "work";
   if (pathname === "/inventory" || pathname.startsWith("/inventory/")) {
     return "inventory";
+  }
+  if (pathname === "/costs" || pathname.startsWith("/costs/")) {
+    return "costs";
   }
   if (pathname !== "/protected") return "overview";
   const moduleKey = searchParams instanceof URLSearchParams
