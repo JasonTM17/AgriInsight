@@ -18,10 +18,17 @@ function section(page: Page, name: string): Locator {
 }
 
 async function clickAndReload(page: Page, target: Locator) {
-  await Promise.all([
-    page.waitForEvent("load"),
-    target.click()
-  ]);
+  const reload = page.waitForEvent("load", { timeout: 20_000 }).catch(
+    () => null
+  );
+  await target.click();
+  if (await reload) return;
+
+  const alert = page.getByRole("alert");
+  if (await alert.isVisible()) {
+    throw new Error(`Admin mutation failed: ${await alert.innerText()}`);
+  }
+  throw new Error("Admin mutation did not reload the page");
 }
 
 test("@admin tenant administrator completes lifecycle and assignment commands", async ({

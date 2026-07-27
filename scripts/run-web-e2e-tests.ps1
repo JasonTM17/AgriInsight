@@ -689,8 +689,17 @@ try {
     Write-Output "ANALYTICS_HOST_READY port=58082"
     Write-Output "PLAYWRIGHT_E2E_START base_url=http://localhost:3100"
     try {
-        Invoke-Checked "npm" @("--prefix", "web", "run", "test:e2e") (
-            "Real Keycloak/PostgreSQL/Spring/Chrome web E2E failed"
+        Invoke-Checked "npm" @(
+            "--prefix", "web", "run", "test:e2e", "--",
+            "--grep-invert", "@authorization|@work"
+        ) (
+            "Real platform core browser E2E failed"
+        )
+        Invoke-Checked "npm" @(
+            "--prefix", "web", "run", "test:e2e", "--",
+            "--grep", "@authorization|@work"
+        ) (
+            "Real platform authorization/work browser E2E failed"
         )
     } catch {
         foreach ($logPath in @(

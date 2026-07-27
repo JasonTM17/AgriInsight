@@ -69,18 +69,35 @@ async function expectResponsive(page: Page, route: string) {
       .poll(
         async () => {
           try {
-            return await page.evaluate(
-              () =>
-                document.documentElement.scrollWidth <=
-                document.documentElement.clientWidth + 1
-            );
+            return await page.evaluate(() => {
+              const root = document.documentElement;
+              const fits = root.scrollWidth <= root.clientWidth + 1;
+              return {
+                clientWidth: root.clientWidth,
+                fits,
+                offenders: fits
+                  ? []
+                  : [...document.querySelectorAll<HTMLElement>("body *")]
+                      .map((element) => ({
+                        className: element.className,
+                        id: element.id,
+                        rect: element.getBoundingClientRect().toJSON(),
+                        tagName: element.tagName
+                      }))
+                      .filter(({ rect }) =>
+                        rect.left < -1 || rect.right > root.clientWidth + 1
+                      )
+                      .slice(0, 8),
+                scrollWidth: root.scrollWidth
+              };
+            });
           } catch {
-            return false;
+            return { fits: false };
           }
         },
         { message: `${viewport.name} ${route} has horizontal overflow` }
       )
-      .toBe(true);
+      .toMatchObject({ fits: true });
   }
 }
 

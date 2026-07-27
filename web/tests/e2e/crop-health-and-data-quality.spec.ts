@@ -52,7 +52,7 @@ test("@crop-health analyst sees scoped evidence and data quality lineage", async
   await page.goto("/data-quality");
   await expect(page.getByTestId("data-quality-page")).toBeVisible();
   await expect(page.getByText("assessmentMethod=rule-based-heuristic")).toBeVisible();
-  await expect(page.getByText("Dòng cách ly")).toBeVisible();
+  await expect(page.getByText("Dòng cách ly").first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

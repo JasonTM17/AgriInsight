@@ -81,6 +81,12 @@ describe("real-platform E2E runner", () => {
     expect(platformPass).toBeGreaterThan(cleanupFailureGate);
   });
 
+  it("restarts the web runtime before the suite reaches the production login limit", () => {
+    expect(runner).toContain('"--grep-invert", "@authorization|@work"');
+    expect(runner).toContain('"--grep", "@authorization|@work"');
+    expect(runner).not.toContain("AGRIINSIGHT_WEB_LOGIN_CLIENT_LIMIT");
+  });
+
   it("uses runner.temp only behind the hosted CI guard", () => {
     expect(runner).toContain("[switch] $HostedCi");
     expect(runner).toContain('$env:CI -ne "true"');
