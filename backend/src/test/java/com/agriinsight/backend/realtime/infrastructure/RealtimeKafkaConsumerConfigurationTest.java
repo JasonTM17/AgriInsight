@@ -37,8 +37,9 @@ class RealtimeKafkaConsumerConfigurationTest {
                 new byte[] {3, 2, 1});
         DeadLetterPublishingRecoverer recoverer =
                 RealtimeKafkaConsumerConfiguration.deadLetterRecoverer(template, properties);
+        Consumer<byte[], byte[]> consumer = consumerWithDeadLetterPartition();
 
-        recoverer.accept(source, mock(Consumer.class), new IllegalStateException("invalid"));
+        recoverer.accept(source, consumer, new IllegalStateException("invalid"));
 
         ArgumentCaptor<ProducerRecord<byte[], byte[]>> recovered = ArgumentCaptor.forClass(ProducerRecord.class);
         verify(template).send(recovered.capture());
@@ -55,9 +56,15 @@ class RealtimeKafkaConsumerConfigurationTest {
             CompletableFuture<SendResult<byte[], byte[]>> result) {
         KafkaTemplate<byte[], byte[]> template = mock(KafkaTemplate.class);
         when(template.send(any(ProducerRecord.class))).thenReturn(result);
-        when(template.partitionsFor("agriinsight.operational.v1.dlt")).thenReturn(List.of(
-                new PartitionInfo("agriinsight.operational.v1.dlt", 4, null, null, null)));
         return template;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Consumer<byte[], byte[]> consumerWithDeadLetterPartition() {
+        Consumer<byte[], byte[]> consumer = mock(Consumer.class);
+        when(consumer.partitionsFor("agriinsight.operational.v1.dlt", Duration.ofSeconds(5))).thenReturn(List.of(
+                new PartitionInfo("agriinsight.operational.v1.dlt", 4, null, null, null)));
+        return consumer;
     }
 
     private static RealtimeWorkerProperties properties() {
