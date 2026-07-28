@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-27
+Verified snapshot: 2026-07-28 (alert-worker hardening source/Compose only; not released)
 
 ## Repository shape
 
@@ -107,7 +107,8 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `inventory/infrastructure` | PostgreSQL ledger/projections, deterministic locks/FEFO, reconciliation, warehouse scope SQL |
 | `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
 | `integration` | Transactional outbox event model, writer port, drain service, and PostgreSQL outbox store |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox and release boundary |
+| `realtime` | Tenant summary read model plus in-progress metadata-only operational alert evaluator, scanner/cursor store, and distinct DLT observer |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V26 one concurrent scan index each (expected schema version 26) |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal
@@ -173,6 +174,40 @@ GETs also expose `ETag`.
   development profile or authenticated non-development configuration.
 - All unregistered business mappings are denied.
 
+## Realtime alert-worker hardening (in progress)
+
+`V22` remains immutable. The private `realtime-alert-worker` service uses the
+non-web `realtime-worker` profile and a separate no-inheritance
+`agriinsight_alert_worker` database login. Local Compose requires
+`AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; it maps that secret into the worker
+datasource only. The service has no HTTP listener. Only this worker disables
+the legacy publisher/consumer settings; the established `realtime-worker`
+service remains the separate legacy path, and the alert DLT observer is a
+distinct path.
+
+The worker's database grants permit only selected tenant/outbox/receipt
+metadata plus alert projection/cursor state. It cannot retain raw Kafka values,
+outbox payloads, `last_error`, framework headers, or business-table data. The
+scanner stores per-policy cursors for fair pages, defaults to 500 candidates
+plus a continuation probe and 20-second query budget (configuration cap: 60
+seconds), and evaluates in `REPEATABLE_READ` under a policy lock. Recovery
+rechecks the current condition in the same snapshot, applies hysteresis, and
+reports saturation rather than performing unbounded scans.
+
+This is not a public alert feed/API/UI, a semantic agriculture-alert product,
+a hosted acceptance, a new Docker Hub/GHCR package, or an external deployment.
+Those actions wait for the hardening migration, focused tests, review, merge,
+and the protected release workflow.
+
+The confirmed hardening split is V23-V26. V23 adds `NOT VALID` source/evidence
+checks and cursor/worker isolation without a table-wide legacy-row update.
+Before enabling the worker, an operator repeats the V23 backfill in at-most
+500-row idempotent batches until both remaining-row checks are false. V24, V25,
+and V26 create the backlog, delivery-lag, and unrecovered-DLT scan indexes
+concurrently; a failed invalid index must be dropped concurrently before the
+approved Flyway repair/retry, while a valid existing index requires history
+reconciliation instead of retry. Readiness expects schema version 26.
+
 ## Verification snapshot
 
 - Production-web candidate gate (2026-07-27): 202 Python tests, 463 Java
@@ -214,9 +249,11 @@ GETs also expose `ETag`.
 - Hosted GitHub Actions run `29932250984` passed 5/5 jobs for commit
   `8d8463f9fe576aa98498125ae3dc845d9b432d82`. That run covered Java, Python,
   dependency/configuration/secret scan, and image scan/smoke gates.
-- Phase 7 manual registry digests were published for evidence only: backend
+- Historical Phase 7 manual registry digests were published for earlier
+  evidence only: backend
   `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`
   and Python `sha256:ee4090812a36c48f180ee74aaa16995c79eabfedb6821d9764319643d06ba2f6`.
+  They are not a new alert-worker image/tag/digest or release claim.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
@@ -250,10 +287,12 @@ GETs also expose `ETag`.
 The eight-area production-web implementation and Phase 11 browser gate are
 complete. Phase 12 is an internal container candidate: Dockerfiles, no-push
 build/scan/smoke, release overlays, serialized protected publication contract,
-and owner handoff exist. The next boundary is external promotion setup, not
-more application code. Registry publication and any production-release claim
-remain blocked until the protected environment, reviewers/secrets, license,
-production OIDC/operations, and immutable-digest release evidence are approved.
+and owner handoff exist. The alert-worker hardening is a separate in-progress
+boundary: migration, focused tests, review, and merge must complete before any
+protected backend image/package publication. Registry publication and any
+production-release claim remain blocked until the protected environment,
+reviewers/secrets, license, production OIDC/operations, and immutable-digest
+release evidence are approved.
 
 ## Unresolved questions
 

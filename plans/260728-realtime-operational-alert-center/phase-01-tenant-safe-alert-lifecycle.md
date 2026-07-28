@@ -17,6 +17,12 @@ Create the durable, metadata-only alert lifecycle before exposing any new UI.
 It evaluates only transport evidence already owned by the outbox/realtime
 system, persists concise tenant alerts under FORCE RLS, and records a current
 profile's acknowledgement without changing the underlying operational fact.
+`V22` is immutable. The current V23-V26 worker hardening is in progress and
+readiness expects schema version 26. V23 adds `NOT VALID` source/evidence
+checks, so an operator must complete its idempotent 500-row source-evidence
+backfill before worker enablement. V24-V26 create one index concurrently each
+and use migration-specific invalid-index recovery. Phase 2/3 public API, BFF,
+and UI work has not started.
 
 ## Context links
 
@@ -31,9 +37,10 @@ profile's acknowledgement without changing the underlying operational fact.
 - The v1 Kafka envelope proves tenant/event/aggregate metadata but intentionally
   discards business payload. It must not be stretched into stock, crop, or work
   rules.
-- The existing integration worker can read outbox and realtime metadata across
-  tenants. It cannot gain access to operational business tables or profile
-  assignment data.
+- The existing integration worker remains the legacy publisher/consumer path.
+  The follow-on alert worker must not inherit it: it reads only selected
+  cross-tenant transport metadata and cannot access operational business tables,
+  profile assignment data, payloads, or errors.
 - Existing metric rows are aggregate-only. A true actionable alert needs a
   separate durable projection, a stable dedupe key, and a lifecycle that can
   resolve after recovery.
@@ -42,8 +49,10 @@ profile's acknowledgement without changing the underlying operational fact.
 
 ### Functional
 
-1. Add an immutable V22 migration with `realtime_operational_alerts` and
-   `realtime_alert_acknowledgement_revisions`.
+1. Preserve immutable V22 `realtime_operational_alerts` and
+   `realtime_alert_acknowledgement_revisions`; add V23-V26 without rewriting
+   applied history. V23 must stay additive/`NOT VALID` and V24-V26 must retain
+   one concurrent index per migration.
 2. Implement exactly three first-policy codes:
    `OUTBOX_PUBLISH_BACKLOG`, `REALTIME_DELIVERY_LAG`, and
    `REALTIME_DLT_RECORD`.
@@ -79,21 +88,22 @@ profile's acknowledgement without changing the underlying operational fact.
   process profile is enabled. The worker profile sets
   `spring.main.web-application-type=none`; the default web profile starts no
   evaluator or DLT observer.
-- Worker startup must verify the expected restricted
-  `agriinsight_realtime`/integration-capable database login. It fails closed if
-  alert evaluation is enabled under the runtime/web credential. The worker has
-  no HTTP exposure and no business-table grants.
+- Worker startup must verify the restricted no-inheritance
+  `agriinsight_alert_worker` database login. It fails closed if alert evaluation
+  is enabled under another credential or if legacy publisher/consumer behavior
+  is enabled in the alert-worker service. The worker has no HTTP exposure and
+  no business-table, raw-payload, or error-text grants.
 - Evaluation is idempotent under retry/concurrency and emits bounded aggregate
   rows rather than one alert per retry attempt.
-- All operational runtime paths use tenant/profile context and FORCE RLS;
-  only the existing integration login receives narrowly scoped cross-tenant
-  metadata grants.
+- All operational runtime paths use tenant/profile context and FORCE RLS. The
+  alert worker receives only selected cross-tenant metadata grants needed for
+  scanning and recovery; it does not inherit the integration role.
 
 ## Architecture
 
 ```text
-outbox_events + realtime_event_receipts + realtime_tenant_metrics
-                │ (metadata-only integration worker)
+tenants + outbox_events + realtime_event_receipts + alert metadata
+                │ (metadata-only restricted alert worker)
                 ▼
   RealtimeOperationalAlertEvaluator / DLT observer
                 │ stable policy + tenant + dedupe key
@@ -110,15 +120,20 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 |---|---|
 | `realtime_operational_alerts` | UUID primary key; tenant ID; validated policy/severity/state enums; SHA-256 dedupe key; optional only validated event UUID/correlation ID; one identity per tenant/policy/dedupe key; UTC timestamps; version; `clean_since`, clean streak, and evaluation watermark for recovery hysteresis. |
 | `realtime_alert_acknowledgement_revisions` | tenant-aware alert/profile composite references; immutable UUID revision; `acknowledged_observation_at` copied under the alert lock; unique `(tenant, alert, profile, observation)`; no user text or destructive mutation path. |
-| Worker evaluation | compares only rows it already has a grant to read in a bounded repeatable-read snapshot, uses an advisory/lease guard per policy, upserts/reopens deterministically, and does not call business APIs, fetch URLs, or issue database scope from a Kafka header. |
+| Worker evaluation | compares only granted tenant/outbox/receipt/alert metadata in a bounded repeatable-read snapshot, uses a policy advisory lock and durable cursor per policy, upserts/reopens deterministically, checks current conditions before recovery, and does not call business APIs, fetch URLs, or issue database scope from a Kafka header. |
 | DLT observer | separate consumer group with its own non-recursive error policy; validates a bounded value/envelope while allowing extra DLT framework headers; never trusts those headers for tenant scope and cannot publish back to its observed DLT topic. |
 
 ## Related code files
 
 | Path | Action | Purpose |
 |---|---|---|
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V22__create_realtime_operational_alerts.sql` | Create | Alert/revision tables, composite tenant/profile FKs, hysteresis fields, indexes, FORCE RLS policies, permission/role seeds. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql` | Modify | Revoke public/runtime/integration access first, then grant minimum columns to runtime and integration roles. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V22__create_realtime_operational_alerts.sql` | Immutable baseline | Alert/revision tables, composite tenant/profile FKs, hysteresis fields, indexes, FORCE RLS policies, permission/role seeds. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V23__harden_realtime_operational_alert_worker.sql` | In progress | Additive `NOT VALID` source/evidence checks, restricted worker RLS/grants, and durable scan cursors; no table-wide legacy-row update/validation. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V24__add_realtime_alert_indexes_concurrently.sql` | In progress | One concurrent backlog scan index with named absent/invalid-index precondition. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V25__add_realtime_alert_delivery_lag_index_concurrently.sql` | In progress | One concurrent delivery-lag scan index with named absent/invalid-index precondition. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql` | In progress | One concurrent unrecovered-DLT scan index with named absent/invalid-index precondition; application readiness expects 26. |
+| `D:\AgriInsight\backend\ops\postgres\backfill-realtime-alert-source-evidence.sql` | Run before worker enablement | Idempotent `agriinsight_migrator` backfill, at most 500 valid legacy rows per run; do not enable until both remaining-row checks are false. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql` | Modify | Revoke broad access first, then grant minimum columns to runtime, integration, and the separate alert-worker login without inheritance. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Permission.java` | Modify | Add explicit alert read/ack permissions. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Role.java` | Modify | Keep role catalog/permission expectations aligned with SQL seeds. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\RealtimeAlertWorkerProperties.java` | Create | Keep bounded alert/DLT observer/hysteresis settings separate from the established v1 worker contract. |
@@ -148,36 +163,45 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 2. Define compact immutable application records/enums for policy, severity,
    state, evidence reference, and alert mutation. Reject unknown values before
    persistence. Use explicit `Instant` values supplied by a testable clock.
-3. Draft V22 as additive history: alert/revision tables, composite tenant-aware
-   alert/profile foreign keys, enum/check constraints, unique dedupe and
-   acknowledgement-observation identities, recovery-hysteresis fields,
-   retrieval indexes, and ENABLE/FORCE RLS. Seed only reviewed permissions and
-   roles.
-4. Extend the repeatable grants after all revokes. Runtime receives tenant-only
+3. Preserve V22 as applied history. V23 must add metadata evidence shape as
+   `NOT VALID` plus durable cursors and worker isolation without table-wide
+   legacy updates/validation. Before enablement, run the V23 operator backfill
+   as `agriinsight_migrator` in repeatable at-most-500-row batches until both
+   remaining-row checks are false; invalid source shape requires correction or
+   retirement, never `source_event_id` rewriting. V24-V26 each create one scan
+   index concurrently. If one fails with an invalid index, drop that named index
+   concurrently and repair/retry Flyway; a valid pre-existing index requires
+   history reconciliation rather than retry.
+4. Extend repeatable grants after all revokes. Runtime receives tenant-only
    alert select plus acknowledgement revision select/insert constrained by both
    `app_current_tenant_id()` and `app_current_profile_id()`; it never gets
-   revision update/delete. Integration gets only required outbox/receipt/metric
-   alert projection columns. Verify no grant touches inventory, work, farm,
-   cost, or identity tables.
+   revision update/delete. The dedicated alert worker gets only selected
+   tenant/outbox/receipt metadata plus alert/cursor grants; verify it neither
+   inherits integration nor touches inventory, work, farm, cost, identity,
+   payload, or error columns.
 5. Implement policy inputs through parameterized, bounded metadata SQL:
    pending-publish age, published-without-receipt age, and valid DLT event
    identity. Map condition facts to a stable policy/dedupe key rather than raw
    free-form messages.
 6. Implement an isolated `realtime-worker` profile with
-   `spring.main.web-application-type=none`, explicit worker-login verification,
-   and listener/scheduler conditional configuration. The default web profile
-   must have zero evaluator/observer listeners. Prove worker HTTP endpoints are
-   absent and no business-table grant is needed.
+   `spring.main.web-application-type=none`, explicit
+   `agriinsight_alert_worker` login verification, and listener/scheduler
+   conditional configuration. The default web profile must have zero
+   evaluator/observer listeners. Only `realtime-alert-worker` disables legacy
+   publisher/consumer behavior; prove worker HTTP endpoints are absent and no
+   business-table grant is needed.
 7. Implement a DLT observer in a distinct consumer group. Its value-only
    validator permits extra framework headers but never trusts them. Classify
    malformed/unattributable messages as a committed bounded metric, and route
    transient observer failures after bounded retry to a distinct terminal
    observer-failure topic with no observer attached; it must never republish to
    the DLT topic it consumes.
-8. Implement idempotent upsert/reopen/resolve with a per-policy advisory/lease
-   guard and a stored evaluation watermark. Require `healthy_for` plus at least
-   two successful clean scans before resolution; reset clear state on a fresh
-   condition and test worker restart/takeover.
+8. Implement idempotent upsert/reopen/resolve with a per-policy advisory guard,
+   a durable scan cursor, and a stored evaluation watermark. Require
+   `healthy_for` plus at least two successful clean scans before resolution;
+   recheck the current condition in the same snapshot, reset clean state on a
+   fresh condition, record saturation at the configured bound, and test worker
+   restart/takeover.
 9. Implement immutable acknowledgement revision semantics. Lock the alert,
    copy its current observation time, insert its unique revision, and calculate
    current acknowledgement from the maximum revision. A concurrent evaluation
@@ -204,15 +228,16 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 ## Todo list
 
 - [x] Freeze policy vocabulary and exclude semantic domain policies.
-- [x] Create V22 alert/revision tables, profile RLS, grants, permissions, and role tests.
-- [x] Implement metadata-only evaluator, hysteresis, worker topology, and non-recursive DLT observer.
-- [ ] Prove deterministic dedupe, recovery, concurrent acknowledgement revision, and profile isolation semantics.
-- [ ] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible.
+- [x] Preserve V22 alert/revision baseline, profile RLS, grants, and permissions as immutable history.
+- [ ] Complete and verify V23-V26: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V26 one concurrent index each, expected schema version 26, and named invalid-index recovery.
+- [ ] Prove deterministic dedupe, current-condition recovery, concurrent acknowledgement revision, profile isolation, fair continuation, and saturation semantics.
+- [ ] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible; complete migration/test/review/merge before any protected publication.
 
 ## Success criteria
 
-- [ ] V22 migration/upgrade/rollback safety is proven on fresh and existing
-  schema paths; no applied migration is rewritten.
+- [ ] V23-V26 are proven on fresh and existing schema paths; V22 and every
+  applied migration remain untouched. V23 backfill completes before worker
+  enablement, and V24-V26 recovery never blindly retries an index migration.
 - [ ] Every alert is deterministically attributable to a valid tenant and
   source condition, with no payload/error/body retention; valid DLT values
   survive extra framework headers and malformed values stay unattributable.
@@ -220,7 +245,8 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
   same-tenant profile isolation and context reset.
 - [ ] Duplicate/retry/concurrent evaluation cannot create duplicate alerts;
   healthy-duration/clean-streak rules prevent false recovery flapping.
-- [ ] Existing outbox/Kafka DLT behavior remains green.
+- [ ] Existing outbox/Kafka DLT behavior remains green; no raw payload/error is
+  retained by the alert worker.
 
 ## Risk assessment
 
@@ -244,5 +270,6 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 
 ## Next steps
 
-Phase 2 may begin only when migration, grants, and worker lifecycle tests prove
-the alert projection is durable and tenant-safe.
+Phase 2 may begin only when the confirmed migration, grants, and worker
+lifecycle tests prove the alert projection is durable and tenant-safe. Until
+then there is no public alert API, BFF route, or UI.

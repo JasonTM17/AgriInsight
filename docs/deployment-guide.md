@@ -15,7 +15,7 @@ required before production.
 | Next web platform | Eight-area hosted browser gate passed | Loopback/private internal candidate; external promotion remains protected-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
-| Realtime worker | Disabled by default; internally accepted hosted outbox→Kafka→PostgreSQL read-model slice | Private only; compose overlay binds broker to loopback, runs the consumer internally, and exposes no broker/public worker API; production broker ownership remains gated |
+| Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback, runs the alert observer internally, and exposes no broker/public worker API; production broker ownership remains gated |
 | Next web + analytics API images | Hosted-CI release candidate | Digest-pinned, loopback-published deployment only; registry publication remains protected-gated |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
@@ -234,7 +234,50 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current schema is Flyway V1-V21 plus repeatable least-privilege helpers/grants; application readiness expects schema version `21`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. V16 creates the append-only operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. V18 creates the outbox tables and V19 adds outbox RLS/index policies. V20 adds tenant-scoped realtime read models plus the `REALTIME_READ` permission/role grants, and V21 adds the tenant summary index. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables. `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is a deployment contract check, not a bypass for unmigrated databases.
+The current expected schema is Flyway V26 plus repeatable least-privilege
+helpers/grants. V7-V11 install fail-closed farm, field/crop/season, Employee,
+farm-assignment, and activity-season lifecycle guards. V12 creates inventory
+tables, V13 adds tenant RLS, V14 serializes active profile/warehouse
+assignments, and V15 adds role-aware inventory read/write RLS plus
+tenant-leading indexes. V16 creates the append-only operating-cost ledger and
+V17 adds role/farm-aware cost RLS plus indexes. V18 creates the outbox tables,
+V19 adds outbox RLS/index policies, V20 adds tenant-scoped realtime read
+models, and V21 adds the tenant summary index.
+
+`V22__create_realtime_operational_alerts.sql` is immutable. `V23` is additive
+only: it adds the metadata evidence checks as `NOT VALID`, durable alert scan
+cursors, and the restricted worker policies; it deliberately does not run a
+table-wide update, validate legacy rows, or make `source_occurred_at` `NOT
+NULL`. `V24`, `V25`, and `V26` each create exactly one alert scan index with
+`CREATE INDEX CONCURRENTLY`, respectively for outbox backlog,
+published-without-receipt delivery lag, and open unrecovered DLT alerts. The
+default `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `26`; it is a readiness
+contract check, never a bypass for unmigrated databases.
+
+### Alert-worker pre-enable and concurrent-index recovery
+
+After V23 is applied and before enabling `realtime-alert-worker`, an operator
+must run `backend/ops/postgres/backfill-realtime-alert-source-evidence.sql` as
+`agriinsight_migrator` through a protected `psql` session. Each idempotent
+invocation locks at most 500 valid legacy rows with `SKIP LOCKED`, sets only a
+missing `source_occurred_at` from `opened_at`, and reports `rows_backfilled`.
+Run it until no rows are backfilled and both final checks are `false`:
+`legacy_source_occurred_at_rows_remain` and
+`invalid_source_evidence_shape_rows_remain`. A true invalid-shape result needs
+operator correction or retirement; the script intentionally never rewrites
+`source_event_id`. Do not enable the worker earlier.
+
+V24-V26 run outside a Flyway transaction. For each migration, its named index
+must be absent first. If a failed build leaves that index invalid, run the
+matching `DROP INDEX CONCURRENTLY` below, then repair/retry Flyway in the
+approved migration workflow. If the index is already valid, reconcile Flyway
+history with the operator; do not retry the migration.
+
+| Migration | Index | Invalid-index recovery command |
+|---|---|---|
+| V24 | `ix_outbox_events_alert_backlog` | `DROP INDEX CONCURRENTLY ix_outbox_events_alert_backlog` |
+| V25 | `ix_outbox_events_alert_delivery_lag` | `DROP INDEX CONCURRENTLY ix_outbox_events_alert_delivery_lag` |
+| V26 | `ix_realtime_operational_alerts_unrecovered_dlt` | `DROP INDEX CONCURRENTLY ix_realtime_operational_alerts_unrecovered_dlt` |
 
 Required deployment inputs:
 
@@ -244,6 +287,8 @@ Required deployment inputs:
 | `AGRIINSIGHT_DB_OPERATOR_USERNAME`, `AGRIINSIGHT_DB_OPERATOR_PASSWORD` | Short-lived role bootstrap credential; must not be the migrator |
 | `AGRIINSIGHT_FLYWAY_URL`, `AGRIINSIGHT_FLYWAY_USERNAME`, `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration connection; username must be `agriinsight_migrator` |
 | `AGRIINSIGHT_DB_ADOPTION_USERNAME`, `AGRIINSIGHT_DB_ADOPTION_PASSWORD` | Required only for the explicit Phase 1/2 legacy-owner adoption path |
+| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `26` unless a later reviewed migration changes the readiness contract |
+| `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD` | Compose-only password input for the separate `agriinsight_alert_worker` login; never commit or expose it |
 
 Fresh database:
 
@@ -334,7 +379,7 @@ The realtime contract is also included when API docs are enabled: `GET /api/v1/r
 ## Health and logs
 
 - Liveness measures process state only.
-- Readiness includes database reachability and expected Flyway schema version (`21` by default).
+- Readiness includes database reachability and the expected Flyway schema boundary.
 - Public health responses use `show-details=never`.
 - Security responses are generic Problem Details with correlation IDs.
 - Authentication logs contain correlation ID, method, path, reason/fingerprint where available; never Authorization headers, tokens, private keys, or provider diagnostics.
