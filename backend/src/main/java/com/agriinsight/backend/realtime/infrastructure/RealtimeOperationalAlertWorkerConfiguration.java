@@ -10,8 +10,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -187,10 +190,22 @@ public class RealtimeOperationalAlertWorkerConfiguration {
             KafkaOperations<byte[], byte[]> kafkaOperations,
             RealtimeWorkerProperties workerProperties,
             RealtimeAlertWorkerProperties alertProperties) {
+        RealtimeTerminalObserverFailureRecordFactory failureRecordFactory =
+                new RealtimeTerminalObserverFailureRecordFactory(alertProperties.observerFailureTopic());
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaOperations,
                 (record, exception) -> new TopicPartition(
-                        alertProperties.observerFailureTopic(), record.partition()));
+                        alertProperties.observerFailureTopic(), -1)) {
+            @Override
+            protected ProducerRecord<Object, Object> createProducerRecord(
+                    ConsumerRecord<?, ?> ignoredRecord,
+                    TopicPartition ignoredDestination,
+                    Headers ignoredHeaders,
+                    byte[] ignoredKey,
+                    byte[] ignoredValue) {
+                return failureRecordFactory.create();
+            }
+        };
         recoverer.setFailIfSendResultIsError(true);
         recoverer.setWaitForSendResultTimeout(workerProperties.sendTimeout());
         return recoverer;
