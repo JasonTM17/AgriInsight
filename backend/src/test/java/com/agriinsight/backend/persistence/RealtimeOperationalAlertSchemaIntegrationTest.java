@@ -2,6 +2,7 @@ package com.agriinsight.backend.persistence;
 
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.migrateAndSeed;
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.tenantRuntimeConnection;
+import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.alertWorkerConnection;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.count;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.execute;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.operatorConnection;
@@ -30,7 +31,7 @@ class RealtimeOperationalAlertSchemaIntegrationTest {
     }
 
     @Test
-    void alertProjectionUsesForceRlsAndMinimalRuntimeIntegrationGrants() throws Exception {
+    void alertProjectionUsesForceRlsAndMinimalRuntimeAndWorkerGrants() throws Exception {
         try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(count(operator, """
                     SELECT count(*)
@@ -39,10 +40,11 @@ class RealtimeOperationalAlertSchemaIntegrationTest {
                      WHERE namespace.nspname = 'public'
                        AND relation.relname IN (
                            'realtime_operational_alerts',
-                           'realtime_alert_acknowledgement_revisions')
+                           'realtime_alert_acknowledgement_revisions',
+                           'realtime_operational_alert_scan_cursors')
                        AND relation.relrowsecurity
                        AND relation.relforcerowsecurity
-                    """)).isEqualTo(2);
+                    """)).isEqualTo(3);
             assertThat(count(operator, """
                     SELECT count(*)
                       FROM (
@@ -59,14 +61,38 @@ class RealtimeOperationalAlertSchemaIntegrationTest {
                     SELECT count(*)
                       FROM (
                           VALUES
-                              ('public.realtime_operational_alerts', TRUE, TRUE, TRUE, FALSE),
-                              ('public.realtime_alert_acknowledgement_revisions', FALSE, FALSE, FALSE, FALSE)
+                              ('public.realtime_operational_alerts', FALSE, FALSE, FALSE, FALSE),
+                              ('public.realtime_alert_acknowledgement_revisions', FALSE, FALSE, FALSE, FALSE),
+                              ('public.realtime_operational_alert_scan_cursors', FALSE, FALSE, FALSE, FALSE)
                       ) AS scoped(table_name, select_allowed, insert_allowed, update_allowed, delete_allowed)
                      WHERE has_table_privilege('agriinsight_realtime', table_name, 'SELECT') = select_allowed
                        AND has_table_privilege('agriinsight_realtime', table_name, 'INSERT') = insert_allowed
                        AND has_table_privilege('agriinsight_realtime', table_name, 'UPDATE') = update_allowed
                        AND has_table_privilege('agriinsight_realtime', table_name, 'DELETE') = delete_allowed
+                    """)).isEqualTo(3);
+            assertThat(count(operator, """
+                    SELECT count(*)
+                      FROM (
+                          VALUES
+                              ('public.realtime_operational_alerts', TRUE, TRUE, FALSE),
+                              ('public.realtime_operational_alert_scan_cursors', TRUE, TRUE, TRUE)
+                      ) AS scoped(table_name, select_allowed, insert_allowed, delete_allowed)
+                     WHERE has_table_privilege('agriinsight_alert_worker', table_name, 'SELECT') = select_allowed
+                       AND has_table_privilege('agriinsight_alert_worker', table_name, 'INSERT') = insert_allowed
+                       AND has_table_privilege('agriinsight_alert_worker', table_name, 'DELETE') = delete_allowed
                     """)).isEqualTo(2);
+            assertThat(count(operator, """
+                    SELECT count(*)
+                      FROM (
+                          VALUES
+                              ('public.realtime_operational_alerts', 'severity', TRUE),
+                              ('public.realtime_operational_alerts', 'dedupe_key', FALSE),
+                              ('public.realtime_operational_alert_scan_cursors', 'cursor_tenant_id', TRUE),
+                              ('public.realtime_operational_alert_scan_cursors', 'policy_code', FALSE)
+                      ) AS scoped(table_name, column_name, update_allowed)
+                     WHERE has_column_privilege(
+                               'agriinsight_alert_worker', table_name, column_name, 'UPDATE') = update_allowed
+                    """)).isEqualTo(4);
             assertThat(count(operator, """
                     SELECT count(*)
                       FROM role_permissions
@@ -92,15 +118,20 @@ class RealtimeOperationalAlertSchemaIntegrationTest {
                         'Another operator');
                     """);
         }
-        try (var realtime = realtimeConnection(POSTGRESQL, "agriinsight")) {
-            execute(realtime, alertInsert(
+        try (var alertWorker = alertWorkerConnection(POSTGRESQL, "agriinsight")) {
+            execute(alertWorker, alertInsert(
                     "61000000-0000-0000-0000-000000000001",
                     "10000000-0000-0000-0000-000000000041",
                     'a'));
-            execute(realtime, alertInsert(
+            execute(alertWorker, alertInsert(
                     "62000000-0000-0000-0000-000000000001",
                     "10000000-0000-0000-0000-000000000042",
                     'b'));
+        }
+
+        try (var realtime = realtimeConnection(POSTGRESQL, "agriinsight")) {
+            assertThatThrownBy(() -> count(realtime, "SELECT count(*) FROM realtime_operational_alerts"))
+                    .isInstanceOf(SQLException.class);
         }
 
         try (var runtime = tenantRuntimeConnection(POSTGRESQL)) {
@@ -178,8 +209,9 @@ class RealtimeOperationalAlertSchemaIntegrationTest {
         return """
                 INSERT INTO realtime_operational_alerts (
                     id, tenant_id, policy_code, dedupe_key, severity, state,
-                    opened_at, last_observed_at, last_evaluated_at)
+                    source_occurred_at, opened_at, last_observed_at, last_evaluated_at)
                 VALUES ('%s', '%s', 'OUTBOX_PUBLISH_BACKLOG', repeat('%s', 64), 'WARNING', 'OPEN',
+                        TIMESTAMPTZ '2027-09-01T00:00:00Z',
                         TIMESTAMPTZ '2027-09-01T00:00:00Z',
                         TIMESTAMPTZ '2027-09-01T00:00:00Z',
                         TIMESTAMPTZ '2027-09-01T00:00:00Z');
