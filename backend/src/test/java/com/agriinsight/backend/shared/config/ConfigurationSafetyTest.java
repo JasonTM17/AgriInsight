@@ -69,10 +69,14 @@ class ConfigurationSafetyTest {
                 Path.of("src", "main", "resources", "application-realtime-worker.yml"));
 
         assertThat(defaultConfiguration)
-                .contains("enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:false}");
+                .contains("enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:false}")
+                .contains("maximum-query-duration: ${AGRIINSIGHT_REALTIME_ALERT_MAXIMUM_QUERY_DURATION:20s}");
         assertThat(workerConfiguration)
                 .contains("web-application-type: none")
-                .contains("username: ${AGRIINSIGHT_REALTIME_DB_USERNAME:agriinsight_realtime}")
+                .contains("username: ${AGRIINSIGHT_ALERT_WORKER_DB_USERNAME:agriinsight_alert_worker}")
+                .contains("password: ${AGRIINSIGHT_ALERT_WORKER_DB_PASSWORD:}")
+                .contains("publisher-enabled: ${AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED:false}")
+                .contains("consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:false}")
                 .contains("enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:true}");
     }
 
