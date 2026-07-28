@@ -30,6 +30,17 @@ BEGIN
             LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
     END IF;
 
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'agriinsight_alert_worker') THEN
+        CREATE ROLE agriinsight_alert_worker
+            LOGIN NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+    END IF;
+
+    -- This login may predate the isolated-worker rollout. Normalize the fixed
+    -- safe attributes before validating the role catalog; membership remains a
+    -- separate hard failure below and is never repaired implicitly.
+    ALTER ROLE agriinsight_alert_worker
+        LOGIN NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+
     FOR role_row IN
         SELECT *
         FROM (VALUES
@@ -37,7 +48,8 @@ BEGIN
             ('agriinsight_runtime'::NAME, TRUE, TRUE),
             ('agriinsight_identity_definer'::NAME, FALSE, FALSE),
             ('agriinsight_integration'::NAME, FALSE, FALSE),
-            ('agriinsight_realtime'::NAME, TRUE, TRUE)
+            ('agriinsight_realtime'::NAME, TRUE, TRUE),
+            ('agriinsight_alert_worker'::NAME, TRUE, FALSE)
         ) AS expected(role_name, can_login, inherits)
     LOOP
         IF NOT EXISTS (
@@ -62,8 +74,10 @@ BEGIN
         JOIN pg_catalog.pg_roles AS granted_role ON granted_role.oid = membership.roleid
         JOIN pg_catalog.pg_roles AS member_role ON member_role.oid = membership.member
         WHERE member_role.rolname IN (
-                  'agriinsight_runtime', 'agriinsight_identity_definer', 'agriinsight_integration')
-           OR granted_role.rolname IN ('agriinsight_runtime', 'agriinsight_migrator')
+                  'agriinsight_runtime', 'agriinsight_identity_definer', 'agriinsight_integration',
+                  'agriinsight_alert_worker')
+           OR granted_role.rolname IN (
+                  'agriinsight_runtime', 'agriinsight_migrator', 'agriinsight_alert_worker')
            OR (
                member_role.rolname = 'agriinsight_migrator'
                AND granted_role.rolname <> 'agriinsight_identity_definer'
@@ -132,11 +146,12 @@ GRANT USAGE, CREATE ON SCHEMA public TO agriinsight_migrator;
 GRANT USAGE ON SCHEMA public TO agriinsight_runtime;
 GRANT USAGE ON SCHEMA public TO agriinsight_integration;
 GRANT USAGE ON SCHEMA public TO agriinsight_identity_definer;
+GRANT USAGE ON SCHEMA public TO agriinsight_alert_worker;
 
 DO $database_access$
 BEGIN
         EXECUTE pg_catalog.format(
-        'GRANT CONNECT ON DATABASE %I TO agriinsight_migrator, agriinsight_runtime, agriinsight_integration, agriinsight_realtime',
+        'GRANT CONNECT ON DATABASE %I TO agriinsight_migrator, agriinsight_runtime, agriinsight_integration, agriinsight_realtime, agriinsight_alert_worker',
         pg_catalog.current_database()
     );
     EXECUTE pg_catalog.format(

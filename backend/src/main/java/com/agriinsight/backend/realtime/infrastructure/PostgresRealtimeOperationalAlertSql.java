@@ -3,46 +3,19 @@ package com.agriinsight.backend.realtime.infrastructure;
 /** Parameterized SQL used by the worker-owned operational alert projection. */
 final class PostgresRealtimeOperationalAlertSql {
 
-    static final String FIND_PUBLISH_BACKLOG = """
-            SELECT tenant_id, MIN(occurred_at) AS source_occurred_at
-              FROM outbox_events
-             WHERE status IN ('PENDING', 'LEASED')
-               AND occurred_at <= ?
-             GROUP BY tenant_id
-             ORDER BY MIN(occurred_at), tenant_id
-             LIMIT ?
-            """;
-    static final String FIND_DELIVERY_LAG = """
-            SELECT event.tenant_id, event.id AS source_event_id,
-                   event.occurred_at AS source_occurred_at
-              FROM outbox_events event
-              LEFT JOIN realtime_event_receipts receipt
-                ON receipt.tenant_id = event.tenant_id
-               AND receipt.event_id = event.id
-             WHERE event.status = 'PUBLISHED'
-               AND event.published_at <= ?
-               AND receipt.event_id IS NULL
-             ORDER BY event.published_at, event.id
-            LIMIT ?
-            """;
-    static final String FIND_UNRECOVERED_DLT = """
-            SELECT alert.tenant_id, alert.source_event_id,
-                   alert.source_occurred_at
-              FROM realtime_operational_alerts alert
-              LEFT JOIN realtime_event_receipts receipt
-                ON receipt.tenant_id = alert.tenant_id
-               AND receipt.event_id = alert.source_event_id
-             WHERE alert.policy_code = 'REALTIME_DLT_RECORD'
-               AND alert.state = 'OPEN'
-               AND alert.source_event_id IS NOT NULL
-               AND receipt.event_id IS NULL
-             ORDER BY alert.last_observed_at, alert.id
-             LIMIT ?
-            """;
     static final String FIND_OPEN_ALERTS = """
             SELECT id, dedupe_key, clean_since, clean_scan_count
               FROM realtime_operational_alerts
              WHERE policy_code = ? AND state = 'OPEN'
+             ORDER BY last_evaluated_at, id
+             LIMIT ?
+            """;
+    static final String FIND_STALE_OPEN_ALERTS = """
+            SELECT id, dedupe_key, clean_since, clean_scan_count
+              FROM realtime_operational_alerts
+             WHERE policy_code = ?
+               AND state = 'OPEN'
+               AND last_evaluated_at < ?
              ORDER BY last_evaluated_at, id
              LIMIT ?
             """;
@@ -63,7 +36,9 @@ final class PostgresRealtimeOperationalAlertSql {
                                 IS DISTINCT FROM EXCLUDED.source_event_id
                          OR realtime_operational_alerts.source_occurred_at
                                 IS DISTINCT FROM EXCLUDED.source_occurred_at
-                       THEN EXCLUDED.last_observed_at
+                       THEN GREATEST(
+                           realtime_operational_alerts.last_observed_at,
+                           EXCLUDED.last_observed_at)
                        ELSE realtime_operational_alerts.last_observed_at
                    END,
                    resolved_at = NULL,
@@ -82,7 +57,9 @@ final class PostgresRealtimeOperationalAlertSql {
                    resolved_at = CASE WHEN ? THEN ? ELSE resolved_at END,
                    last_evaluated_at = GREATEST(last_evaluated_at, ?),
                    version = version + 1
-             WHERE id = ? AND state = 'OPEN'
+             WHERE id = ?
+               AND state = 'OPEN'
+               AND last_evaluated_at < ?
             """;
 
     private PostgresRealtimeOperationalAlertSql() {

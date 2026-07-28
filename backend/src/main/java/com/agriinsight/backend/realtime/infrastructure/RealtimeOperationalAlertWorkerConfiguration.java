@@ -3,21 +3,29 @@ package com.agriinsight.backend.realtime.infrastructure;
 import com.agriinsight.backend.integration.infrastructure.RealtimeWorkerProperties;
 import com.agriinsight.backend.realtime.application.RealtimeDeadLetterEnvelopeValidator;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertEvaluator;
+import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertScanStore;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertStore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.Map;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -47,23 +55,34 @@ public class RealtimeOperationalAlertWorkerConfiguration {
     @Bean
     RealtimeOperationalAlertEvaluator realtimeOperationalAlertEvaluator(
             RealtimeOperationalAlertStore store,
+            RealtimeOperationalAlertScanStore scanStore,
             PlatformTransactionManager transactionManager,
             @Qualifier("realtimeAlertClock") Clock clock,
-            RealtimeAlertWorkerProperties properties) {
+            RealtimeAlertWorkerProperties properties,
+            MeterRegistry meterRegistry) {
         TransactionTemplate transaction = new TransactionTemplate(transactionManager);
         transaction.setName("realtime-operational-alerts");
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         transaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
-        return new RealtimeOperationalAlertEvaluator(store, transaction, clock, properties);
+        transaction.setTimeout(Math.toIntExact(properties.maximumQueryDuration().toSeconds()));
+        TransactionTemplate deadLetterTransaction = new TransactionTemplate(transactionManager);
+        deadLetterTransaction.setName("realtime-operational-alert-dlt");
+        deadLetterTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        deadLetterTransaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        deadLetterTransaction.setTimeout(Math.toIntExact(properties.maximumQueryDuration().toSeconds()));
+        return new RealtimeOperationalAlertEvaluator(
+                store, scanStore, transaction, deadLetterTransaction, clock, properties, meterRegistry);
     }
 
     @Bean("realtimeAlertWorkerRoleVerifier")
     RealtimeWorkerRoleVerifier realtimeAlertWorkerRoleVerifier(
             org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
             RealtimeWorkerProperties workerProperties,
-            RealtimeAlertWorkerProperties alertProperties) {
+            RealtimeAlertWorkerProperties alertProperties,
+            KafkaProperties kafkaProperties) {
         RealtimeWorkerRoleVerifier verifier =
-                new RealtimeWorkerRoleVerifier(jdbcTemplate, workerProperties, alertProperties);
+                new RealtimeWorkerRoleVerifier(
+                        jdbcTemplate, workerProperties, alertProperties, kafkaProperties);
         verifier.verify();
         return verifier;
     }
@@ -74,8 +93,23 @@ public class RealtimeOperationalAlertWorkerConfiguration {
     }
 
     @Bean
+    ProducerFactory<byte[], byte[]> realtimeAlertObserverProducerFactory(KafkaProperties kafkaProperties) {
+        Map<String, Object> configuration = new HashMap<>(kafkaProperties.buildProducerProperties());
+        configuration.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        configuration.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        return new DefaultKafkaProducerFactory<>(configuration);
+    }
+
+    @Bean("realtimeAlertObserverKafkaTemplate")
+    KafkaTemplate<byte[], byte[]> realtimeAlertObserverKafkaTemplate(
+            @Qualifier("realtimeAlertObserverProducerFactory")
+                    ProducerFactory<byte[], byte[]> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
     DefaultErrorHandler realtimeDeadLetterAlertErrorHandler(
-            @Qualifier("realtimeDeadLetterKafkaTemplate") KafkaTemplate<byte[], byte[]> kafkaTemplate,
+            @Qualifier("realtimeAlertObserverKafkaTemplate") KafkaTemplate<byte[], byte[]> kafkaTemplate,
             RealtimeWorkerProperties workerProperties,
             RealtimeAlertWorkerProperties alertProperties) {
         return observerErrorHandler(kafkaTemplate, workerProperties, alertProperties);
@@ -96,14 +130,32 @@ public class RealtimeOperationalAlertWorkerConfiguration {
     }
 
     @Bean
+    org.apache.kafka.clients.admin.NewTopic realtimeObservedDeadLetterTopic(
+            RealtimeWorkerProperties workerProperties) {
+        return topic(
+                workerProperties.deadLetterTopic(),
+                workerProperties.partitions(),
+                workerProperties.replicationFactor(),
+                workerProperties.maxRecordBytes());
+    }
+
+    @Bean
     org.apache.kafka.clients.admin.NewTopic realtimeAlertObserverFailureTopic(
             RealtimeWorkerProperties workerProperties,
             RealtimeAlertWorkerProperties alertProperties) {
-        return TopicBuilder.name(alertProperties.observerFailureTopic())
-                .partitions(workerProperties.partitions())
-                .replicas(workerProperties.replicationFactor())
-                .configs(Map.of(
-                        "max.message.bytes", Integer.toString(workerProperties.maxRecordBytes())))
+        return topic(
+                alertProperties.observerFailureTopic(),
+                workerProperties.partitions(),
+                workerProperties.replicationFactor(),
+                workerProperties.maxRecordBytes());
+    }
+
+    private static org.apache.kafka.clients.admin.NewTopic topic(
+            String name, int partitions, short replicationFactor, int maxRecordBytes) {
+        return TopicBuilder.name(name)
+                .partitions(partitions)
+                .replicas(replicationFactor)
+                .configs(Map.of("max.message.bytes", Integer.toString(maxRecordBytes)))
                 .build();
     }
 

@@ -553,6 +553,7 @@ REVOKE ALL ON realtime_aggregate_progress FROM PUBLIC;
 REVOKE ALL ON realtime_tenant_metrics FROM PUBLIC;
 REVOKE ALL ON realtime_operational_alerts FROM PUBLIC;
 REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM PUBLIC;
+REVOKE ALL ON realtime_operational_alert_scan_cursors FROM PUBLIC;
 REVOKE ALL ON flyway_schema_history FROM PUBLIC;
 
 REVOKE ALL ON tenants FROM agriinsight_runtime;
@@ -591,6 +592,7 @@ REVOKE ALL ON realtime_aggregate_progress FROM agriinsight_runtime;
 REVOKE ALL ON realtime_tenant_metrics FROM agriinsight_runtime;
 REVOKE ALL ON realtime_operational_alerts FROM agriinsight_runtime;
 REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM agriinsight_runtime;
+REVOKE ALL ON realtime_operational_alert_scan_cursors FROM agriinsight_runtime;
 REVOKE ALL ON flyway_schema_history FROM agriinsight_runtime;
 
 REVOKE ALL ON realtime_event_receipts FROM agriinsight_integration;
@@ -598,11 +600,16 @@ REVOKE ALL ON realtime_aggregate_progress FROM agriinsight_integration;
 REVOKE ALL ON realtime_tenant_metrics FROM agriinsight_integration;
 REVOKE ALL ON realtime_operational_alerts FROM agriinsight_integration;
 REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM agriinsight_integration;
+REVOKE ALL ON realtime_operational_alert_scan_cursors FROM agriinsight_integration;
 REVOKE ALL ON realtime_event_receipts FROM agriinsight_realtime;
 REVOKE ALL ON realtime_aggregate_progress FROM agriinsight_realtime;
 REVOKE ALL ON realtime_tenant_metrics FROM agriinsight_realtime;
 REVOKE ALL ON realtime_operational_alerts FROM agriinsight_realtime;
 REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM agriinsight_realtime;
+REVOKE ALL ON realtime_operational_alert_scan_cursors FROM agriinsight_realtime;
+
+-- The alert worker must never inherit the legacy integration reader's payload access.
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM agriinsight_alert_worker;
 
 GRANT SELECT ON tenants TO agriinsight_runtime;
 GRANT SELECT, INSERT, UPDATE ON user_profiles TO agriinsight_runtime;
@@ -693,11 +700,24 @@ GRANT UPDATE (last_version, last_event_id, updated_at)
 GRANT SELECT, INSERT ON realtime_tenant_metrics TO agriinsight_integration;
 GRANT UPDATE (event_count, last_occurred_at, last_processed_at)
     ON realtime_tenant_metrics TO agriinsight_integration;
-GRANT SELECT, INSERT ON realtime_operational_alerts TO agriinsight_integration;
+
+GRANT SELECT (
+    id, tenant_id, occurred_at, status, published_at)
+    ON outbox_events TO agriinsight_alert_worker;
+GRANT SELECT (event_id, tenant_id)
+    ON realtime_event_receipts TO agriinsight_alert_worker;
+GRANT SELECT (id)
+    ON tenants TO agriinsight_alert_worker;
+GRANT SELECT, INSERT ON realtime_operational_alerts TO agriinsight_alert_worker;
 GRANT UPDATE (
     severity, state, source_event_id, source_occurred_at, last_observed_at,
     resolved_at, clean_since, clean_scan_count, last_evaluated_at, version)
-    ON realtime_operational_alerts TO agriinsight_integration;
+    ON realtime_operational_alerts TO agriinsight_alert_worker;
+GRANT SELECT, INSERT, DELETE
+    ON realtime_operational_alert_scan_cursors TO agriinsight_alert_worker;
+GRANT UPDATE (
+    cursor_tenant_id, cursor_ordered_at, cursor_ordered_id, cycle_started_at, updated_at)
+    ON realtime_operational_alert_scan_cursors TO agriinsight_alert_worker;
 
 GRANT SELECT (id, tenant_id, user_profile_id, issuer, subject, active)
     ON external_identities TO agriinsight_identity_definer;

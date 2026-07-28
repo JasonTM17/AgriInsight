@@ -2,11 +2,12 @@ spring:
   main:
     web-application-type: none
   datasource:
-    username: ${AGRIINSIGHT_REALTIME_DB_USERNAME:agriinsight_realtime}
-    password: ${AGRIINSIGHT_REALTIME_DB_PASSWORD:}
+    username: ${AGRIINSIGHT_ALERT_WORKER_DB_USERNAME:agriinsight_alert_worker}
+    password: ${AGRIINSIGHT_ALERT_WORKER_DB_PASSWORD:}
 
 agriinsight:
   realtime:
-    consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:true}
+    publisher-enabled: ${AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED:false}
+    consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:false}
     alerts:
       enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:true}

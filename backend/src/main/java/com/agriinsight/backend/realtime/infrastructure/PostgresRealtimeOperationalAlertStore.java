@@ -42,60 +42,57 @@ public class PostgresRealtimeOperationalAlertStore implements RealtimeOperationa
     }
 
     @Override
-    public List<RealtimeOperationalAlertCondition> findConditions(
-            RealtimeOperationalAlertPolicy policy, Instant threshold, int limit) {
+    public void acquirePolicyLock(RealtimeOperationalAlertPolicy policy) {
         requireTransaction();
-        RealtimeOperationalAlertPolicy required = Objects.requireNonNull(policy, "policy is required");
-        Instant requiredThreshold = Objects.requireNonNull(threshold, "threshold is required");
-        if (limit < 1) {
-            throw new IllegalArgumentException("limit must be positive");
-        }
-        return switch (required) {
-            case OUTBOX_PUBLISH_BACKLOG -> jdbcTemplate.query(
-                    PostgresRealtimeOperationalAlertSql.FIND_PUBLISH_BACKLOG,
-                    (result, rowNumber) -> new RealtimeOperationalAlertCondition(
-                            required,
-                            result.getObject("tenant_id", UUID.class),
-                            null,
-                            result.getTimestamp("source_occurred_at").toInstant()),
-                    Timestamp.from(requiredThreshold),
-                    limit);
-            case REALTIME_DELIVERY_LAG -> jdbcTemplate.query(
-                    PostgresRealtimeOperationalAlertSql.FIND_DELIVERY_LAG,
-                    (result, rowNumber) -> new RealtimeOperationalAlertCondition(
-                            required,
-                            result.getObject("tenant_id", UUID.class),
-                            result.getObject("source_event_id", UUID.class),
-                            result.getTimestamp("source_occurred_at").toInstant()),
-                    Timestamp.from(requiredThreshold),
-                    limit);
-            case REALTIME_DLT_RECORD -> jdbcTemplate.query(
-                    PostgresRealtimeOperationalAlertSql.FIND_UNRECOVERED_DLT,
-                    (result, rowNumber) -> new RealtimeOperationalAlertCondition(
-                            required,
-                            result.getObject("tenant_id", UUID.class),
-                            result.getObject("source_event_id", UUID.class),
-                            result.getTimestamp("source_occurred_at").toInstant()),
-                    limit);
-        };
+        jdbcTemplate.queryForObject(
+                "SELECT pg_advisory_xact_lock(hashtext(?))",
+                (result, rowNumber) -> Boolean.TRUE,
+                Objects.requireNonNull(policy, "policy is required").name());
     }
 
     @Override
     public List<RealtimeOpenOperationalAlert> findOpenAlerts(
             RealtimeOperationalAlertPolicy policy, int limit) {
+        return findOpenAlerts(
+                PostgresRealtimeOperationalAlertSql.FIND_OPEN_ALERTS,
+                Objects.requireNonNull(policy, "policy is required").name(),
+                limit);
+    }
+
+    @Override
+    public List<RealtimeOpenOperationalAlert> findStaleOpenAlerts(
+            RealtimeOperationalAlertPolicy policy, Instant cycleStartedAt, int limit) {
         requireTransaction();
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be positive");
         }
         return jdbcTemplate.query(
-                PostgresRealtimeOperationalAlertSql.FIND_OPEN_ALERTS,
-                (result, rowNumber) -> new RealtimeOpenOperationalAlert(
-                        result.getObject("id", UUID.class),
-                        result.getString("dedupe_key"),
-                        timestampOrNull(result.getTimestamp("clean_since")),
-                        result.getInt("clean_scan_count")),
+                PostgresRealtimeOperationalAlertSql.FIND_STALE_OPEN_ALERTS,
+                (result, rowNumber) -> mapOpenAlert(result),
                 Objects.requireNonNull(policy, "policy is required").name(),
+                Timestamp.from(Objects.requireNonNull(cycleStartedAt, "cycleStartedAt is required")),
                 limit);
+    }
+
+    private List<RealtimeOpenOperationalAlert> findOpenAlerts(String sql, String policy, int limit) {
+        requireTransaction();
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be positive");
+        }
+        return jdbcTemplate.query(
+                sql,
+                (result, rowNumber) -> mapOpenAlert(result),
+                policy,
+                limit);
+    }
+
+    private static RealtimeOpenOperationalAlert mapOpenAlert(java.sql.ResultSet result)
+            throws java.sql.SQLException {
+        return new RealtimeOpenOperationalAlert(
+                result.getObject("id", UUID.class),
+                result.getString("dedupe_key"),
+                timestampOrNull(result.getTimestamp("clean_since")),
+                result.getInt("clean_scan_count"));
     }
 
     @Override
@@ -125,12 +122,14 @@ public class PostgresRealtimeOperationalAlertStore implements RealtimeOperationa
     public void recordClean(
             RealtimeOpenOperationalAlert alert,
             RealtimeAlertRecoveryTransition transition,
+            Instant staleBefore,
             Instant evaluatedAt) {
         requireTransaction();
         RealtimeOpenOperationalAlert requiredAlert = Objects.requireNonNull(alert, "alert is required");
         RealtimeAlertRecoveryTransition requiredTransition =
                 Objects.requireNonNull(transition, "transition is required");
         Timestamp evaluated = Timestamp.from(Objects.requireNonNull(evaluatedAt, "evaluatedAt is required"));
+        Timestamp stale = Timestamp.from(Objects.requireNonNull(staleBefore, "staleBefore is required"));
         int updated = jdbcTemplate.update(
                 PostgresRealtimeOperationalAlertSql.RECORD_CLEAN,
                 Timestamp.from(requiredTransition.cleanSince()),
@@ -139,9 +138,10 @@ public class PostgresRealtimeOperationalAlertStore implements RealtimeOperationa
                 requiredTransition.resolve(),
                 requiredTransition.resolve() ? evaluated : null,
                 evaluated,
-                requiredAlert.id());
-        if (updated != 1) {
-            throw new IllegalStateException("open alert recovery update did not report exactly one row");
+                requiredAlert.id(),
+                stale);
+        if (updated > 1) {
+            throw new IllegalStateException("open alert recovery update affected multiple rows");
         }
     }
 

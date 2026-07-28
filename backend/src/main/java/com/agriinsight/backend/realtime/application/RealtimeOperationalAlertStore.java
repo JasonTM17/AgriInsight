@@ -8,16 +8,19 @@ public interface RealtimeOperationalAlertStore {
 
     boolean tryAcquirePolicyLock(RealtimeOperationalAlertPolicy policy);
 
-    List<RealtimeOperationalAlertCondition> findConditions(
-            RealtimeOperationalAlertPolicy policy, Instant threshold, int limit);
+    void acquirePolicyLock(RealtimeOperationalAlertPolicy policy);
 
     List<RealtimeOpenOperationalAlert> findOpenAlerts(
             RealtimeOperationalAlertPolicy policy, int limit);
+
+    List<RealtimeOpenOperationalAlert> findStaleOpenAlerts(
+            RealtimeOperationalAlertPolicy policy, Instant cycleStartedAt, int limit);
 
     void upsert(RealtimeOperationalAlertCondition condition, Instant observedAt);
 
     void recordClean(
             RealtimeOpenOperationalAlert alert,
             RealtimeAlertRecoveryTransition transition,
+            Instant staleBefore,
             Instant evaluatedAt);
 }
