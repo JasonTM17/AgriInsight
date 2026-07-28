@@ -234,7 +234,7 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current expected schema is Flyway V26 plus repeatable least-privilege
+The current expected schema is Flyway V27 plus repeatable least-privilege
 helpers/grants. V7-V11 install fail-closed farm, field/crop/season, Employee,
 farm-assignment, and activity-season lifecycle guards. V12 creates inventory
 tables, V13 adds tenant RLS, V14 serializes active profile/warehouse
@@ -270,11 +270,14 @@ operator correction or retirement; the script intentionally never rewrites
 backfill or validate the constraints; it only adds the readiness index over
 invalid source-evidence rows.
 
-V24-V27 run outside a Flyway transaction. For each migration, its named index
-must be absent first. If a failed build leaves that index invalid, run the
-matching `DROP INDEX CONCURRENTLY` below, then repair/retry Flyway in the
-approved migration workflow. If the index is already valid, reconcile Flyway
-history with the operator; do not retry the migration.
+V24-V27 run outside a Flyway transaction through their adjacent versioned
+`.sql.conf` files (`executeInTransaction=false`); the checked-in migration
+workflow also disables PostgreSQL's transactional advisory lock for these
+concurrent-index migrations. For each migration, its named index must be absent
+first. If a failed build leaves that index invalid, run the matching `DROP INDEX
+CONCURRENTLY` below, then repair/retry Flyway in the approved migration
+workflow. If the index is already valid, reconcile Flyway history with the
+operator; do not retry the migration.
 
 | Migration | Index | Invalid-index recovery command |
 |---|---|---|
