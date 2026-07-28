@@ -1,6 +1,7 @@
 package com.agriinsight.backend.integration.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agriinsight.backend.integration.domain.OutboxEvent;
@@ -58,7 +59,29 @@ class OperationalEventRecordTest {
                 .hasMessageContaining("maximum");
     }
 
+    @Test
+    void acceptsLegacyPayloadTimestampsAtPostgresResolution() {
+        Instant persistedOccurredAt = Instant.parse("2026-07-27T13:30:00.123457Z");
+        String legacyPayload = validEnvelope().replace(
+                "\"occurred_at\":\"2026-07-27T13:30:00Z\"",
+                "\"occurred_at\":\"2026-07-27T13:30:00.123456789Z\"");
+
+        assertThatCode(() -> OperationalEventRecord.from(
+                        event(legacyPayload, persistedOccurredAt), new JsonMapper(), 262_144))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> OperationalEventRecord.from(
+                        event(legacyPayload.replace("123456789", "123459000"), persistedOccurredAt),
+                        new JsonMapper(),
+                        262_144))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("occurred_at");
+    }
+
     private static OutboxEvent event(String payload) {
+        return event(payload, OCCURRED_AT);
+    }
+
+    private static OutboxEvent event(String payload, Instant occurredAt) {
         return new OutboxEvent(
                 EVENT_ID,
                 TENANT_ID,
@@ -69,12 +92,12 @@ class OperationalEventRecordTest {
                 3,
                 "AGRIINSIGHT.OPERATIONAL.FARM.COMMITTED",
                 1,
-                OCCURRED_AT,
+                occurredAt,
                 payload,
                 OutboxStatus.PENDING,
                 0,
                 5,
-                OCCURRED_AT,
+                occurredAt,
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),

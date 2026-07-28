@@ -2,6 +2,10 @@ package com.agriinsight.backend.integration.application;
 
 import com.agriinsight.backend.integration.domain.OutboxEvent;
 import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,7 +57,7 @@ public record OperationalEventRecord(String key, String valueJson, Map<String, S
         requireEqual(root, "aggregate", required.aggregateType());
         requireEqual(root, "aggregate_id", required.aggregateId().toString());
         requireEqual(root, "event_type", required.eventType());
-        requireEqual(root, "occurred_at", required.occurredAt().toString());
+        requireOccurredAt(root, required.occurredAt());
         requireNumber(root, "event_ordinal", required.eventOrdinal());
         requireNumber(root, "aggregate_version", required.aggregateVersion());
         requireNumber(root, "schema_version", required.schemaVersion());
@@ -99,6 +103,36 @@ public record OperationalEventRecord(String key, String valueJson, Map<String, S
         JsonNode value = root.get(field);
         if (value == null || !value.isIntegralNumber() || value.asLong() != expected) {
             throw new IllegalArgumentException("event " + field + " does not match the outbox row");
+        }
+    }
+
+    private static void requireOccurredAt(JsonNode root, Instant expected) {
+        JsonNode value = root.get("occurred_at");
+        if (value == null || !value.isString()) {
+            throw new IllegalArgumentException("event occurred_at does not match the outbox row");
+        }
+        try {
+            Instant actual = Instant.parse(value.asString());
+            if (!matchesPostgresTimestampPrecision(expected, actual)) {
+                throw new IllegalArgumentException("event occurred_at does not match the outbox row");
+            }
+        } catch (DateTimeParseException exception) {
+            throw new IllegalArgumentException("event occurred_at does not match the outbox row", exception);
+        }
+    }
+
+    private static boolean matchesPostgresTimestampPrecision(Instant expected, Instant actual) {
+        // Legacy payloads retained source nanoseconds while PostgreSQL stored microseconds.
+        return expected.equals(actual)
+                || expected.equals(actual.truncatedTo(ChronoUnit.MICROS))
+                || roundsToPostgresTimestampPrecision(expected, actual);
+    }
+
+    private static boolean roundsToPostgresTimestampPrecision(Instant expected, Instant actual) {
+        try {
+            return expected.equals(actual.plusNanos(500).truncatedTo(ChronoUnit.MICROS));
+        } catch (DateTimeException exception) {
+            return false;
         }
     }
 
