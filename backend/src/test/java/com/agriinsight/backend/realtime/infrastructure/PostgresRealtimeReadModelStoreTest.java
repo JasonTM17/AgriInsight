@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -57,6 +60,15 @@ class PostgresRealtimeReadModelStoreTest {
 
         assertThat(new PostgresRealtimeReadModelStore(jdbcTemplate).apply(event(0)))
                 .isEqualTo(ApplyResult.APPLIED);
+
+        InOrder receiptOrdering = inOrder(jdbcTemplate);
+        receiptOrdering.verify(jdbcTemplate).queryForObject(
+                contains("pg_advisory_xact_lock"),
+                eq(Object.class),
+                eq(event(0).eventId().toString()));
+        receiptOrdering.verify(jdbcTemplate).update(
+                contains("INSERT INTO realtime_event_receipts"),
+                any(Object[].class));
 
         ArgumentCaptor<String> statements = ArgumentCaptor.forClass(String.class);
         verify(jdbcTemplate, times(3)).update(statements.capture(), any(Object[].class));

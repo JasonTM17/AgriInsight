@@ -70,9 +70,11 @@ public class PostgresRealtimeReadModelStore implements RealtimeReadModelStore {
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final PostgresRealtimeEventReceiptLock receiptLock;
 
     public PostgresRealtimeReadModelStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+        this.receiptLock = new PostgresRealtimeEventReceiptLock(this.jdbcTemplate);
     }
 
     @Override
@@ -90,6 +92,7 @@ public class PostgresRealtimeReadModelStore implements RealtimeReadModelStore {
     }
 
     private ReceiptResult recordReceipt(RealtimeOperationalEvent event) {
+        receiptLock.acquire(event.eventId());
         int inserted;
         try {
             inserted = jdbcTemplate.update(

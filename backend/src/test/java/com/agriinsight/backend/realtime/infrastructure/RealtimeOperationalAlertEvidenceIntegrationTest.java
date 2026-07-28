@@ -15,12 +15,16 @@ import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertCond
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertPolicy;
 import com.agriinsight.backend.realtime.application.RealtimeOpenOperationalAlert;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalEvent;
+import com.agriinsight.backend.realtime.application.RealtimeReadModelStore.ApplyResult;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,6 +44,8 @@ class RealtimeOperationalAlertEvidenceIntegrationTest {
             UUID.fromString("79000000-0000-0000-0000-000000000001");
     private static final UUID DELIVERED_EVENT_ID =
             UUID.fromString("79000000-0000-0000-0000-000000000002");
+    private static final UUID RACING_EVENT_ID =
+            UUID.fromString("79000000-0000-0000-0000-000000000010");
     private static final Instant SOURCE_OCCURRED_AT = NOW.minus(Duration.ofMinutes(20));
     private static final Instant INITIAL_OBSERVED_AT = NOW.minus(Duration.ofMinutes(10));
     private static final Instant RESOLVED_AT = NOW.minus(Duration.ofMinutes(5));
@@ -124,6 +130,58 @@ class RealtimeOperationalAlertEvidenceIntegrationTest {
         }
     }
 
+    @Test
+    void waitsForAConcurrentReceiptAndDoesNotOpenAnAlertAfterDeliveryCommits() throws Exception {
+        seedUndeliveredSourceForRace();
+        JdbcTemplate realtime = jdbcTemplate(
+                PostgresIntegrationSupport.REALTIME, PostgresIntegrationSupport.REALTIME_PASSWORD);
+        JdbcTemplate alertWorker = jdbcTemplate(
+                PostgresIntegrationSupport.ALERT_WORKER,
+                PostgresIntegrationSupport.ALERT_WORKER_PASSWORD);
+        CountDownLatch receiptRecorded = new CountDownLatch(1);
+        CountDownLatch allowReceiptCommit = new CountDownLatch(1);
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var receiptFuture = executor.submit(() -> transaction(realtime).executeWithoutResult(status -> {
+                assertThat(new PostgresRealtimeReadModelStore(realtime).apply(racingSourceEvent()))
+                        .isEqualTo(ApplyResult.APPLIED);
+                receiptRecorded.countDown();
+                awaitLatch(allowReceiptCommit, "receipt commit was not released");
+            }));
+            assertThat(receiptRecorded.await(5, TimeUnit.SECONDS)).isTrue();
+
+            var observationFuture = executor.submit(() -> evaluator(alertWorker)
+                    .observeDeadLetter(deadLetterEvent(
+                            RACING_EVENT_ID, NOW.plus(Duration.ofDays(1)))));
+            try {
+                assertThat(alertWorkerIsWaitingForTheReceiptLock())
+                        .as("DLT attribution must block on the receipt transaction")
+                        .isTrue();
+            } finally {
+                allowReceiptCommit.countDown();
+            }
+
+            receiptFuture.get(5, TimeUnit.SECONDS);
+            observationFuture.get(5, TimeUnit.SECONDS);
+        }
+
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            assertThat(count(operator, """
+                    SELECT count(*)
+                      FROM realtime_event_receipts
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND event_id = '79000000-0000-0000-0000-000000000010'
+                    """)).isEqualTo(1);
+            assertThat(count(operator, """
+                    SELECT count(*)
+                      FROM realtime_operational_alerts
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND policy_code = 'REALTIME_DLT_RECORD'
+                       AND source_event_id = '79000000-0000-0000-0000-000000000010'
+                    """)).isZero();
+        }
+    }
+
     private static void seedDeliveredSource() throws Exception {
         try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
             execute(operator, """
@@ -161,7 +219,79 @@ class RealtimeOperationalAlertEvidenceIntegrationTest {
                 "b".repeat(64),
                 "agriinsight.operational.v1",
                 0,
-                707));
+                 707));
+    }
+
+    private static void seedUndeliveredSourceForRace() throws Exception {
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            execute(operator, """
+                    INSERT INTO api_command_records (
+                        id, tenant_id, principal_id, http_method, route_template,
+                        idempotency_key_digest, canonical_schema_version, command_hash, state)
+                    VALUES
+                        ('79000000-0000-0000-0000-000000000011',
+                         '10000000-0000-0000-0000-000000000041',
+                         '41000000-0000-0000-0000-000000000005', 'POST',
+                         '/api/v1/realtime-dlt-race', repeat('3', 64), 1, repeat('4', 64), 'IN_PROGRESS');
+                    INSERT INTO outbox_events (
+                        id, tenant_id, command_id, event_ordinal, aggregate_type,
+                        aggregate_id, aggregate_version, event_type, schema_version,
+                        occurred_at, payload, status, published_at)
+                    VALUES
+                        ('79000000-0000-0000-0000-000000000010',
+                         '10000000-0000-0000-0000-000000000041',
+                         '79000000-0000-0000-0000-000000000011', 0, 'FARM',
+                         '71000000-0000-0000-0000-000000000001', 1,
+                         'AGRIINSIGHT.OPERATIONAL.FARM.COMMITTED', 1,
+                         TIMESTAMPTZ '2027-09-01T11:40:00Z', '{}'::jsonb,
+                         'PUBLISHED', TIMESTAMPTZ '2027-09-01T11:41:00Z');
+                    """);
+        }
+    }
+
+    private static RealtimeOperationalEvent racingSourceEvent() {
+        return new RealtimeOperationalEvent(
+                RACING_EVENT_ID,
+                TENANT_A,
+                "FARM",
+                UUID.fromString("71000000-0000-0000-0000-000000000001"),
+                1,
+                "AGRIINSIGHT.OPERATIONAL.FARM.COMMITTED",
+                SOURCE_OCCURRED_AT,
+                "c".repeat(64),
+                "agriinsight.operational.v1",
+                0,
+                708);
+    }
+
+    private static boolean alertWorkerIsWaitingForTheReceiptLock() throws Exception {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(5));
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            do {
+                if (count(operator, """
+                        SELECT count(*)
+                          FROM pg_catalog.pg_stat_activity
+                         WHERE usename = 'agriinsight_alert_worker'
+                           AND wait_event_type = 'Lock'
+                           AND wait_event = 'advisory'
+                        """) > 0) {
+                    return true;
+                }
+                Thread.sleep(25);
+            } while (Instant.now().isBefore(deadline));
+        }
+        return false;
+    }
+
+    private static void awaitLatch(CountDownLatch latch, String failureMessage) {
+        try {
+            if (!latch.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException(failureMessage);
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(failureMessage, exception);
+        }
     }
 
     private static RealtimeOperationalEvent deadLetterEvent(UUID eventId, Instant occurredAt) {
