@@ -64,6 +64,10 @@ public final class RealtimeWorkerRoleVerifier {
                     SELECT 1
                       FROM realtime_operational_alerts
                      WHERE source_occurred_at IS NULL
+                        OR (policy_code = 'OUTBOX_PUBLISH_BACKLOG'
+                            AND source_event_id IS NOT NULL)
+                        OR (policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')
+                            AND source_event_id IS NULL)
                 )
                 """,
                 Boolean.class);
