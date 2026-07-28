@@ -226,7 +226,7 @@ class FlywayMigrationIntegrationTest {
                     FROM pg_index index_metadata
                     JOIN pg_class index_relation ON index_relation.oid = index_metadata.indexrelid
                     WHERE index_relation.relname = 'ix_realtime_operational_alerts_invalid_source_evidence'
-                    ""))
+                    """))
                     .contains(
                             "source_occurred_at IS NULL",
                             "OUTBOX_PUBLISH_BACKLOG",
