@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.agriinsight.backend.integration.infrastructure.RealtimeWorkerProperties;
@@ -27,13 +28,13 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.PartitionInfo;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.SendResult;
@@ -45,23 +46,83 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 class RealtimeOperationalAlertWorkerConfigurationTest {
 
     @Test
-    void sendsObserverFailuresToTheDistinctTerminalTopic() {
+    void sendsCompactObserverFailuresToTheDistinctTerminalTopicWithoutPartitionAffinity() {
         KafkaTemplate<byte[], byte[]> template = template();
         RealtimeWorkerProperties workerProperties = workerProperties(false, false);
         RealtimeAlertWorkerProperties alertProperties = alertProperties();
         ConsumerRecord<byte[], byte[]> source = new ConsumerRecord<>(
                 workerProperties.deadLetterTopic(), 2, 7, new byte[] {1}, new byte[] {2});
+        Consumer<byte[], byte[]> consumer = consumer();
         DeadLetterPublishingRecoverer recoverer =
                 RealtimeOperationalAlertWorkerConfiguration.observerFailureRecoverer(
                         template, workerProperties, alertProperties);
 
-        recoverer.accept(source, consumer(), new IllegalStateException("observer failure"));
+        recoverer.accept(source, consumer, new IllegalStateException("observer failure"));
 
         ArgumentCaptor<ProducerRecord<byte[], byte[]>> recovered = ArgumentCaptor.forClass(ProducerRecord.class);
         verify(template).send(recovered.capture());
         assertThat(recovered.getValue().topic()).isEqualTo(alertProperties.observerFailureTopic());
         assertThat(recovered.getValue().topic()).isNotEqualTo(workerProperties.deadLetterTopic());
-        assertThat(recovered.getValue().partition()).isEqualTo(2);
+        assertThat(recovered.getValue().partition()).isNull();
+        assertThat(recovered.getValue().key()).isNull();
+        assertThat(recovered.getValue().headers().toArray()).isEmpty();
+        assertThat(recovered.getValue().value())
+                .containsExactly("terminal-observer-failure".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        verifyNoInteractions(consumer);
+        assertThat(RealtimeOperationalAlertWorkerConfiguration
+                        .observerErrorHandler(template, workerProperties, alertProperties)
+                        .isAckAfterHandle())
+                .isTrue();
+    }
+
+    @Test
+    void discardsNearLimitSourcePayloadHeadersAndFailureTextForTerminalObserverFailures() {
+        KafkaTemplate<byte[], byte[]> template = template();
+        RealtimeWorkerProperties workerProperties = workerProperties(false, false);
+        RealtimeAlertWorkerProperties alertProperties = alertProperties();
+        ConsumerRecord<byte[], byte[]> source = new ConsumerRecord<>(
+                workerProperties.deadLetterTopic(),
+                2,
+                7,
+                "sensitive-key".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                new byte[workerProperties.maxRecordBytes()]);
+        source.headers().add("untrusted-source-header", new byte[workerProperties.maxRecordBytes()]);
+        DeadLetterPublishingRecoverer recoverer =
+                RealtimeOperationalAlertWorkerConfiguration.observerFailureRecoverer(
+                        template, workerProperties, alertProperties);
+
+        recoverer.accept(source, consumer(), new IllegalStateException("sensitive observer failure text"));
+
+        ArgumentCaptor<ProducerRecord<byte[], byte[]>> recovered = ArgumentCaptor.forClass(ProducerRecord.class);
+        verify(template).send(recovered.capture());
+        ProducerRecord<byte[], byte[]> terminalRecord = recovered.getValue();
+        assertThat(terminalRecord.topic()).isEqualTo(alertProperties.observerFailureTopic());
+        assertThat(terminalRecord.partition()).isNull();
+        assertThat(terminalRecord.key()).isNull();
+        assertThat(terminalRecord.headers().toArray()).isEmpty();
+        assertThat(terminalRecord.value()).hasSizeLessThan(workerProperties.maxRecordBytes());
+        assertThat(terminalRecord.value())
+                .containsExactly("terminal-observer-failure".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+    }
+
+    @Test
+    void propagatesTerminalPublishFailures() {
+        KafkaTemplate<byte[], byte[]> template = templateWith(
+                CompletableFuture.failedFuture(new IllegalStateException("terminal publish failed")));
+        RealtimeWorkerProperties workerProperties = workerProperties(false, false);
+        RealtimeAlertWorkerProperties alertProperties = alertProperties();
+        DeadLetterPublishingRecoverer recoverer =
+                RealtimeOperationalAlertWorkerConfiguration.observerFailureRecoverer(
+                        template, workerProperties, alertProperties);
+        ConsumerRecord<byte[], byte[]> source = new ConsumerRecord<>(
+                workerProperties.deadLetterTopic(), 2, 7, new byte[] {1}, new byte[] {2});
+
+        assertThatThrownBy(() -> recoverer.accept(source, consumer(), new IllegalStateException("observer failure")))
+                .isInstanceOf(KafkaException.class);
+        assertThat(RealtimeOperationalAlertWorkerConfiguration
+                        .observerErrorHandler(template, workerProperties, alertProperties)
+                        .isAckAfterHandle())
+                .isTrue();
     }
 
     @Test
@@ -202,19 +263,20 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
 
     @SuppressWarnings("unchecked")
     private static KafkaTemplate<byte[], byte[]> template() {
+        return templateWith(CompletableFuture.completedFuture(mock(SendResult.class)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static KafkaTemplate<byte[], byte[]> templateWith(
+            CompletableFuture<SendResult<byte[], byte[]>> result) {
         KafkaTemplate<byte[], byte[]> template = mock(KafkaTemplate.class);
-        when(template.send(any(ProducerRecord.class)))
-                .thenReturn(CompletableFuture.completedFuture(mock(SendResult.class)));
+        when(template.send(any(ProducerRecord.class))).thenReturn(result);
         return template;
     }
 
     @SuppressWarnings("unchecked")
     private static Consumer<byte[], byte[]> consumer() {
-        Consumer<byte[], byte[]> consumer = mock(Consumer.class);
-        when(consumer.partitionsFor("agriinsight.operational.v1.alert-observer-failure", Duration.ofSeconds(5)))
-                .thenReturn(List.of(new PartitionInfo(
-                        "agriinsight.operational.v1.alert-observer-failure", 2, null, null, null)));
-        return consumer;
+        return mock(Consumer.class);
     }
 
     private static RealtimeWorkerProperties workerProperties(
