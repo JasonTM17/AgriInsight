@@ -154,8 +154,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 mock(JdbcTemplate.class),
                 workerProperties(false, true),
                 alertProperties(),
-                kafkaProperties(),
-                EXPECTED_SCHEMA_VERSION);
+                kafkaProperties());
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -171,6 +170,11 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                         eq(EXPECTED_SCHEMA_VERSION)))
                 .thenReturn(true);
         when(jdbcTemplate.queryForObject(
+                        contains("ORDER BY installed_rank DESC"),
+                        eq(Boolean.class),
+                        eq("R__tenant_rls_helpers_and_grants.sql")))
+                .thenReturn(true);
+        when(jdbcTemplate.queryForObject(
                         contains("current_user = CAST"),
                         eq(Boolean.class),
                         eq("agriinsight_alert_worker")))
@@ -179,8 +183,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 jdbcTemplate,
                 workerProperties(false, false),
                 alertProperties(),
-                kafkaProperties(),
-                EXPECTED_SCHEMA_VERSION);
+                kafkaProperties());
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -196,6 +199,11 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                         eq(EXPECTED_SCHEMA_VERSION)))
                 .thenReturn(true);
         when(jdbcTemplate.queryForObject(
+                        contains("ORDER BY installed_rank DESC"),
+                        eq(Boolean.class),
+                        eq("R__tenant_rls_helpers_and_grants.sql")))
+                .thenReturn(true);
+        when(jdbcTemplate.queryForObject(
                         contains("current_user = CAST"),
                         eq(Boolean.class),
                         eq("agriinsight_alert_worker")))
@@ -205,8 +213,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 jdbcTemplate,
                 workerProperties(false, false),
                 alertProperties(),
-                kafkaProperties(),
-                EXPECTED_SCHEMA_VERSION);
+                kafkaProperties());
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -220,8 +227,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 mock(JdbcTemplate.class),
                 workerProperties(false, false),
                 alertProperties("agriinsight.operational.v1"),
-                kafkaProperties(),
-                EXPECTED_SCHEMA_VERSION);
+                kafkaProperties());
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -229,7 +235,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
     }
 
     @Test
-    void wiresTheConfiguredSchemaVersionIntoTheStartupVerifier() {
+    void usesTheImmutableReleasedSchemaVersionForWorkerStartup() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         when(jdbcTemplate.queryForObject(
                         contains("FROM public.flyway_schema_history"),
@@ -242,8 +248,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                                 jdbcTemplate,
                                 workerProperties(false, false),
                                 alertProperties(),
-                                kafkaProperties(),
-                                EXPECTED_SCHEMA_VERSION))
+                                kafkaProperties()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("operational alert worker expected schema version is not installed");
         verify(jdbcTemplate)
