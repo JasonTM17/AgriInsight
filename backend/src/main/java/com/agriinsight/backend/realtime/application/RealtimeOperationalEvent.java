@@ -3,6 +3,7 @@ package com.agriinsight.backend.realtime.application;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Metadata retained from a validated operational event; the source payload is intentionally omitted. */
@@ -21,7 +22,7 @@ public record RealtimeOperationalEvent(
 
     private static final Pattern AGGREGATE_TYPE = Pattern.compile("[A-Z][A-Z0-9_]{0,63}");
     private static final Pattern EVENT_TYPE = Pattern.compile(
-            "AGRIINSIGHT\\.OPERATIONAL\\.[A-Z][A-Z0-9_]{0,63}\\.COMMITTED");
+            "AGRIINSIGHT\\.OPERATIONAL\\.([A-Z][A-Z0-9_]{0,63})\\.COMMITTED");
     private static final Pattern CHECKSUM = Pattern.compile("[0-9a-f]{64}");
 
     public RealtimeOperationalEvent {
@@ -32,7 +33,7 @@ public record RealtimeOperationalEvent(
         if (aggregateVersion < 0) {
             throw new IllegalArgumentException("aggregateVersion must not be negative");
         }
-        eventType = requirePattern(eventType, EVENT_TYPE, "eventType");
+        eventType = requireEventType(eventType, aggregateType);
         Objects.requireNonNull(occurredAt, "occurredAt is required");
         checksum = requirePattern(checksum, CHECKSUM, "checksum");
         topic = requireTopic(topic);
@@ -45,6 +46,15 @@ public record RealtimeOperationalEvent(
         String required = Objects.requireNonNull(value, field + " is required");
         if (!pattern.matcher(required).matches()) {
             throw new IllegalArgumentException(field + " has an invalid format");
+        }
+        return required;
+    }
+
+    private static String requireEventType(String value, String aggregateType) {
+        String required = requirePattern(value, EVENT_TYPE, "eventType");
+        Matcher matcher = EVENT_TYPE.matcher(required);
+        if (!matcher.matches() || !matcher.group(1).equals(aggregateType)) {
+            throw new IllegalArgumentException("eventType must match aggregateType");
         }
         return required;
     }
