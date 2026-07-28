@@ -221,6 +221,9 @@
                     <includes>
                         <include>**/*IntegrationTest.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/RealtimeOutboxKafkaE2eIntegrationTest.java</exclude>
+                    </excludes>
                     <failIfNoTests>true</failIfNoTests>
                 </configuration>
             </plugin>

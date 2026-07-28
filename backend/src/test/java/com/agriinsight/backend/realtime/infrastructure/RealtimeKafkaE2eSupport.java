@@ -31,7 +31,8 @@ final class RealtimeKafkaE2eSupport {
     static final String CONSUMER_GROUP = "agriinsight-realtime-e2e";
     static final int MAX_RECORD_BYTES = 262_144;
     private static final DockerImageName KAFKA_IMAGE = DockerImageName.parse(
-            "apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837");
+                    "apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837")
+            .asCompatibleSubstituteFor("apache/kafka");
 
     private RealtimeKafkaE2eSupport() {}
 
