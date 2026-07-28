@@ -6,7 +6,7 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `21` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, and realtime read models |
+| Flyway schema history | expected version `26` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, realtime read models, immutable V22 alert storage, V23 metadata/cursor hardening, and V24-V26 concurrent scan indexes |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
@@ -162,7 +162,45 @@ The contract is versioned by `backend/src/main/resources/contracts/agriinsight-o
 
 The outbox is at-least-once and does not imply a broker, scheduler, public route, or exact-once delivery. Runtime code may insert events in the domain transaction; the integration role may only read/lease the fenced columns that the drain service needs. A dead-lettered predecessor blocks later versions for the same aggregate.
 
-Source coverage for the realtime slice includes authenticated summary-route coverage and tenant-scoped RLS-boundary coverage. Hosted job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) additionally passed the real PostgreSQL/Kafka replay, outage/recovery and DLT gate; this is internal technical acceptance, not a production delivery guarantee.
+## Backend realtime alert contract
+
+The operational alert slice is metadata-only and bounded. `V22` remains
+immutable; current hardening is V23-V26 and remains in progress. These are worker/data
+contracts, not a released public alert feed, acknowledgement API, or browser
+alert center. It uses three table families:
+
+| Table | Contract |
+|---|---|
+| `realtime_operational_alerts` | One row per tenant/policy/dedupe key; validated policy/severity/state enums; SHA-256 dedupe key; validated source evidence only; UTC timestamps; recovery hysteresis fields; versioned update state. |
+| `realtime_alert_acknowledgement_revisions` | Immutable current-profile acknowledgement observations; tenant/alert/profile keyed; copies the exact current observation timestamp under alert lock; no destructive update path. |
+| `realtime_operational_alert_scan_cursors` | Policy cursor and cycle state for bounded scans; separate backlog, lag, and DLT cursor shapes; no raw payload retention. |
+
+Runtime may read tenant alerts and insert current-profile acknowledgements only
+through tenant/profile scope. The isolated worker login
+`agriinsight_alert_worker` has no inheritance and no business-table access: its
+source reads are limited to tenant IDs, selected outbox identifiers/timestamps/
+status, and receipt identifiers. It cannot retain raw Kafka values, outbox
+payloads, `last_error`, or framework-header data.
+
+The worker's durable policy cursor supports fair pages bounded by the default
+500 candidates plus a continuation probe. The evaluator uses repeatable-read
+transactions, policy locks, a current-condition check before recovery,
+hysteresis, and saturation indicators. Default query duration is 20 seconds;
+configuration cannot exceed 60 seconds. The DLT observer is a distinct path,
+not the legacy publisher/consumer path, and treats Kafka headers as untrusted.
+
+Source coverage includes authenticated summary-route and tenant-scoped
+RLS-boundary tests. Existing realtime runner/workflow artifacts are not hosted
+acceptance, Docker Hub/GHCR publication, or external deployment evidence for
+the in-progress hardening.
+
+V23 adds its source/evidence constraints as `NOT VALID`, so it neither rewrites
+legacy rows nor validates them globally. Before enabling the worker, repeat the
+idempotent V23 operator backfill in `backend/ops/postgres/` (at most 500 valid
+rows per invocation) until both remaining-row checks are false. V24-V26 each
+create one index concurrently; a failed invalid index must be dropped
+concurrently before Flyway repair/retry, while a valid existing index requires
+operator history reconciliation. Expected schema version is 26.
 
 ## Operational identifiers
 
@@ -258,4 +296,8 @@ giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm p
 
 Analytics contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đổi breaking phải tạo version mới, migration warehouse tương ứng và regression test cho Gold consumers.
 
-Backend operational API dùng `/api/v1`; Flyway migration number là backend schema history. Current schema history is V21, with V18 creating outbox tables, V19 adding outbox RLS/index policies, V20 adding realtime read models plus `REALTIME_READ`, và V21 adding the tenant summary index. Các giá trị này không đổi analytics version.
+Backend operational API dùng `/api/v1`; Flyway migration history is the backend
+schema history. It includes outbox tables, realtime read models, tenant summary
+support, immutable V22 alert storage, V23 metadata/cursor hardening, and V24-V26
+concurrent scan indexes; expected schema version is 26. Các giá trị này không
+đổi analytics version.

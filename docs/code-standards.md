@@ -52,15 +52,18 @@ This repository contains a Python analytics plane and a Java operational backend
 - Use UUIDs for operational identifiers and canonical ASCII business codes where needed.
 - Persist timestamps in UTC.
 - Keep Open Session in View disabled.
-- Use Flyway for schema changes and treat applied migrations as immutable history.
+- Use Flyway for schema changes and treat applied migrations as immutable history. `V22` is immutable; alert-worker hardening is V23-V26 with readiness expected at version 26. V23 must remain additive with `NOT VALID` source/evidence constraints and its required bounded backfill before worker enablement. V24-V26 must remain one concurrent index per migration with their named invalid-index recovery preconditions.
 - Keep backend runtime data out of `artifacts/`.
+- Keep the isolated realtime alert worker metadata-only. `realtime-alert-worker` runs under the non-web `realtime-worker` profile with the no-inheritance `agriinsight_alert_worker` login; Compose receives its password only through `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`. Disable the legacy publisher/consumer path only in that service, retain the distinct DLT observer, and never grant it business tables, raw outbox payload, or error text. Its evaluator must keep REPEATABLE_READ, policy locks, durable cursors, bounded fair pages, current-condition recovery, hysteresis, and saturation safety.
+- Do not describe source/Compose behavior as a public alert API/UI, semantic agriculture alert product, hosted acceptance, image publication, or external deployment before migration, tests, review, merge, and the protected release workflow complete.
 
 ## Inventory and migration standards
 
-- Treat V12-V19 as immutable applied history: V12 inventory tables, V13 tenant
-  RLS, V14 active profile/warehouse assignment lifecycle, V15 role-aware
-  inventory read/write policies plus indexes, V16 operating-cost ledger, V17
-  cost RLS and indexes, V18 outbox tables, and V19 outbox RLS/index policies.
+- Treat the applied migration history as immutable: inventory tables, tenant
+  RLS, active profile/warehouse assignment lifecycle, role-aware inventory
+  read/write policies plus indexes, operating-cost ledger, cost RLS and
+  indexes, outbox tables, realtime read models, immutable V22 alert storage,
+  and the in-progress follow-on isolated alert-worker hardening.
 - Inventory tables use tenant-aware composite foreign keys, active warehouse and
   material/supplier checks, and PostgreSQL ENABLE/FORCE RLS. Warehouse-scoped
   queries must carry both tenant and profile context and evaluate active
