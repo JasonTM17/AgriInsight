@@ -58,13 +58,15 @@ public class PostgresRealtimeReadModelStore implements RealtimeReadModelStore {
             INSERT INTO realtime_tenant_metrics (
                 tenant_id, event_type, aggregate_type, event_count,
                 last_occurred_at, last_processed_at)
-            VALUES (?, ?, ?, 1, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, 1, ?, clock_timestamp())
             ON CONFLICT (tenant_id, event_type) DO UPDATE
                SET event_count = realtime_tenant_metrics.event_count + 1,
                    last_occurred_at = GREATEST(
-                       realtime_tenant_metrics.last_occurred_at,
-                       EXCLUDED.last_occurred_at),
-                   last_processed_at = CURRENT_TIMESTAMP
+                        realtime_tenant_metrics.last_occurred_at,
+                        EXCLUDED.last_occurred_at),
+                   last_processed_at = GREATEST(
+                        realtime_tenant_metrics.last_processed_at,
+                        clock_timestamp())
             """;
 
     private final JdbcTemplate jdbcTemplate;

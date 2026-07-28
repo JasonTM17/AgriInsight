@@ -64,6 +64,9 @@ class PostgresRealtimeReadModelStoreTest {
                 .anySatisfy(statement -> assertThat(statement).contains("realtime_event_receipts"))
                 .anySatisfy(statement -> assertThat(statement).contains("realtime_aggregate_progress"))
                 .anySatisfy(statement -> assertThat(statement).contains("realtime_tenant_metrics"))
+                .anySatisfy(statement -> assertThat(statement)
+                        .contains("last_processed_at = GREATEST(")
+                        .contains("clock_timestamp()"))
                 .allSatisfy(statement -> assertThat(statement).doesNotContainIgnoringCase("payload"));
     }
 
