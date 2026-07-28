@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
 Version: 0.9
-Updated: 2026-07-27
-Status: backend core, Analytics Phase 2, and eight-area web internal candidate verified; protected production release/recovery approvals remain open
+Updated: 2026-07-28
+Status: backend core, Analytics Phase 2, eight-area web, and Phase 7 realtime technical slice internally verified; protected production release/recovery approvals remain open
 
 ## Product goal
 
@@ -93,7 +93,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
-| 7 | Outbox, realtime read-model foundation, CI/images, SBOM/provenance, backup/restore, V18-V21 | V18-V19 core verified; hosted realtime acceptance and production release gated |
+| 7 | Outbox, realtime read-model foundation, CI/images, SBOM/provenance, backup/restore, V18-V21 | Internally accepted: hosted workflow `30337950699` and realtime job `90207600976` passed real PostgreSQL/Kafka recovery, replay, RLS, and summary coverage; production release remains gated |
 | Web 5–10 | Eight product areas over tokenless BFF and real upstream contracts | Accepted 2026-07-27 |
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Internal candidate complete; external promotion blocked |
@@ -113,9 +113,12 @@ Phase 6 acceptance evidence is recorded in
 26 focused cost tests, guarded backend `442 Surefire + 96 Failsafe` with zero
 failures/errors/skips, fresh PostgreSQL V17/RLS/concurrency/query-plan checks,
 and Python `75 passed, 3 skipped` unchanged at that checkpoint. Phase 7
-evidence now includes 622 backend tests (98 Failsafe), hosted CI run
-`29932250984` passing 5/5, and published backend/Python digests used as
-non-production evidence; protected release and recovery approvals remain open.
+technical acceptance is recorded in
+[`acceptance-2026-07-28-realtime-foundation.md`](../plans/260727-2026-realtime-analytics-foundation/reports/acceptance-2026-07-28-realtime-foundation.md):
+622 backend tests (98 Failsafe) at the prior core checkpoint, hosted CI run
+`29932250984` passing 5/5 for the image path, and successful full workflow
+`30337950699` with realtime job `90207600976` logging
+`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. Published backend/Python digests remain non-production evidence; protected release and recovery approvals remain open.
 
 ## Non-functional requirements
 
@@ -128,7 +131,8 @@ non-production evidence; protected release and recovery approvals remain open.
   deterministic locks, and no unbounded per-row database loop in public paths.
 - **Reliability:** command reservation, domain write, projection update, and
   future outbox event share one transaction; replay reconstructs a safe current
-  representation.
+  representation. Realtime consumer/read-model replay is tested against the
+  accepted gate job with bounded recovery and freshness evidence.
 - **Operability:** C/D disk guard before heavy work; Maven/temp/cache on D;
   readiness includes database/schema; local binds remain loopback-only.
 - **Maintainability:** focused modules, conventional commits, tests at the

@@ -70,17 +70,21 @@ Kafka record -> aggregate key + exact schema-v1 JSON + bounded headers
 
 ## Todo
 
-- [ ] Write configuration, role, and record-mapping tests.
-- [ ] Add managed dependencies and bounded properties.
-- [ ] Add least-privilege realtime login contract.
-- [ ] Prove ordinary backend startup is broker-independent.
+- [x] Write configuration, role, and record-mapping tests.
+- [x] Add managed dependencies and bounded properties.
+- [x] Add least-privilege realtime login contract.
+- [x] Prove ordinary backend startup is broker-independent.
 
 ## Success Criteria
 
-- [ ] Contract fixtures accept current v1 events and reject drift/oversize.
-- [ ] Worker role can lease outbox rows but cannot read tenant business tables.
-- [ ] Runtime cannot lease/update outbox rows or write realtime tables.
-- [ ] No enabled Kafka property or credential appears in checked-in defaults.
+- [x] Contract fixtures accept current v1 events and reject drift/oversize.
+- [x] Worker role can lease outbox rows but cannot read tenant business tables.
+- [x] Runtime cannot lease/update outbox rows or write realtime tables.
+- [x] No enabled Kafka property or credential appears in checked-in defaults.
+
+## Completion evidence
+
+The final hosted E2E job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) exercised the production worker wiring and least-privilege data path. See the [plan acceptance report](./reports/acceptance-2026-07-28-realtime-foundation.md).
 
 ## Risk assessment
 

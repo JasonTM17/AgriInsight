@@ -1,6 +1,6 @@
 # Backend deployment and recovery
 
-Phase 7 supplies a local/staging delivery contract. It is not a production approval: production still needs an OIDC issuer/audience decision, approved RPO/RTO, retention, encrypted off-host backup, a named restore owner, and the protected release/recovery environment. The realtime CI gate is wired, but the first hosted `realtime-e2e` green run is still pending.
+Phase 7 supplies a local/staging delivery contract. It is not a production approval: production still needs an OIDC issuer/audience decision, approved RPO/RTO, retention, encrypted off-host backup, a named restore owner, and the protected release/recovery environment. The realtime CI gate achieved internal hosted acceptance in workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699), but that evidence does not bypass those owner gates.
 
 ## Optional local Compose profile
 
@@ -24,7 +24,7 @@ docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.
   -f compose.realtime.yaml --profile backend --profile realtime up --build
 ```
 
-Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password setup và service `realtime-worker` non-web. Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD`, bind broker ra `127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored `backend/.runtime/kafka` trên D. Worker dùng `agriinsight_realtime`, bật cả `AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=true` lẫn `AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=true` để materialize read model. Local runner mode stays D-local; hosted mode stays runner-local through `RUNNER_TEMP`. Do not treat the wired CI job as completed hosted acceptance until a green run exists.
+Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password setup và service `realtime-worker` non-web. Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD`, bind broker ra `127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored `backend/.runtime/kafka` trên D. Worker dùng `agriinsight_realtime`, bật cả `AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=true` lẫn `AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=true` để materialize read model. Local runner mode stays D-local; hosted mode stays runner-local through `RUNNER_TEMP`. The hosted gate succeeded in job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976); it is not registry publication or production approval.
 
 Compose role passwords are environment inputs only. Do not put real values in `.env.example`, images, command history or logs. The backend image is read-only with a `/tmp` tmpfs, drops Linux capabilities and runs as UID/GID `10001:10001`.
 

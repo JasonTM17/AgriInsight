@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Replay-safe consumer and summary API"
-status: pending
+status: completed
 priority: P1
 effort: "2-3d"
 dependencies: [2]
@@ -83,19 +83,23 @@ failure -> bounded retry -> DLT -> source offset commit only after DLT confirm
 
 ## Todo
 
-- [ ] Write parser/dedupe/order tests.
-- [ ] Add V20 and least-privilege grants/RLS.
-- [ ] Implement consumer and DLT behavior.
-- [ ] Implement authenticated summary API.
-- [ ] Regenerate and verify public contracts.
+- [x] Write parser/dedupe/order tests.
+- [x] Add V20 and least-privilege grants/RLS.
+- [x] Implement consumer and DLT behavior.
+- [x] Implement authenticated summary API.
+- [x] Regenerate and verify public contracts.
 
 ## Success Criteria
 
-- [ ] Duplicate and replay behavior is deterministic and durable.
-- [ ] Gaps/conflicts fail closed and become observable in DLT evidence.
-- [ ] Raw event values are not copied into the read model or API.
-- [ ] Route registry, permission matrix, RLS, and OpenAPI remain aligned.
-- [ ] Summary query remains index-backed and bounded at scale.
+- [x] Duplicate and replay behavior is deterministic and durable.
+- [x] Gaps/conflicts fail closed and become observable in DLT evidence.
+- [x] Raw event values are not copied into the read model or API.
+- [x] Route registry, permission matrix, RLS, and OpenAPI remain aligned.
+- [x] Summary query remains index-backed and bounded at scale.
+
+## Completion evidence
+
+Hosted job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) passed real PostgreSQL/Kafka publish, replay, DLT, recovery, tenant RLS, and authenticated summary coverage. See the [plan acceptance report](./reports/acceptance-2026-07-28-realtime-foundation.md).
 
 ## Risk assessment
 

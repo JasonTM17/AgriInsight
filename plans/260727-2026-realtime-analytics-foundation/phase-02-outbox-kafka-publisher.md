@@ -69,17 +69,21 @@ scheduled poll -> lease fenced rows -> Kafka send confirmation
 
 ## Todo
 
-- [ ] Write publisher failure-matrix tests.
-- [ ] Implement conditional publisher and schedule.
-- [ ] Add explicit topic configuration.
-- [ ] Add optional local topology and config validation.
+- [x] Write publisher failure-matrix tests.
+- [x] Implement conditional publisher and schedule.
+- [x] Add explicit topic configuration.
+- [x] Add optional local topology and config validation.
 
 ## Success Criteria
 
-- [ ] Kafka confirmation precedes fenced outbox acknowledgement.
-- [ ] Timeout/error preserves replay and redacts operational error text.
-- [ ] Same aggregate uses the same key; different aggregates may publish in parallel.
-- [ ] Existing backend profile works without Kafka.
+- [x] Kafka confirmation precedes fenced outbox acknowledgement.
+- [x] Timeout/error preserves replay and redacts operational error text.
+- [x] Same aggregate uses the same key; different aggregates may publish in parallel.
+- [x] Existing backend profile works without Kafka.
+
+## Completion evidence
+
+Hosted job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) verified real Kafka confirmation, broker interruption/recovery, and durable replay behavior after the bounded-metadata-wait fix. See the [plan acceptance report](./reports/acceptance-2026-07-28-realtime-foundation.md).
 
 ## Risk assessment
 

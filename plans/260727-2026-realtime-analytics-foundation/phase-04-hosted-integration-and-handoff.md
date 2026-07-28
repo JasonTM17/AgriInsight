@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Hosted integration and handoff"
-status: pending
+status: completed
 priority: P1
 effort: "1-2d"
 dependencies: [3]
@@ -19,10 +19,9 @@ dependencies: [3]
 
 Prove the complete outbox-to-Kafka-to-read-model path on hosted storage, review
 security/failure modes, update operations/docs, and hand off the next UI/alerts
-phase without mislabeling internal evidence as production. The source already
-contains the guarded realtime runner, hosted CI job, authenticated MockMvc
-summary-route test, and RLS schema coverage; hosted CI has not yet produced a
-green realtime run, so this phase stays pending.
+phase without mislabeling internal evidence as production. The guarded runner,
+hosted CI job, authenticated MockMvc summary-route test, RLS schema coverage,
+and real broker/consumer recovery gate all passed in hosted workflow `30337950699`.
 
 ## Requirements
 
@@ -31,7 +30,7 @@ green realtime run, so this phase stays pending.
   aggregate ordering, tenant denial, and measured freshness.
 - Preserve existing Python/web/image gates and keep C/D disk policy explicit.
 - No registry push or production claim without protected owner approval.
-- Do not mark the slice accepted until the first hosted realtime run lands.
+- Record internal technical acceptance only after the hosted realtime gate and full workflow pass.
 
 ## Related code files
 
@@ -68,18 +67,24 @@ green realtime run, so this phase stays pending.
 ## Todo
 
 - [x] Add deterministic E2E runner and CI job.
-- [ ] Capture freshness/replay/failure evidence.
-- [ ] Run security and code review with zero unresolved critical/high issues.
+- [x] Capture freshness/replay/failure evidence.
+- [x] Run security and code review with zero unresolved critical/high issues.
 - [x] Sync docs, roadmap, and plan status.
-- [ ] Push and verify hosted CI.
+- [x] Push and verify hosted CI.
 
 ## Success Criteria
 
-- [ ] Real outbox event reaches the authorized summary through Kafka.
-- [ ] Replay increments zero extra metrics; malformed input lands in DLT.
-- [ ] Broker/consumer recovery loses no accepted event.
-- [ ] Existing CI jobs remain green and owned resources clean up.
-- [ ] Evidence distinguishes internal acceptance from external production.
+- [x] Real outbox event reaches the authorized summary through Kafka.
+- [x] Replay increments zero extra metrics; malformed input lands in DLT.
+- [x] Broker/consumer recovery loses no accepted event.
+- [x] Existing CI jobs remain green and owned resources clean up.
+- [x] Evidence distinguishes internal acceptance from external production.
+
+## Hosted evidence
+
+- Full workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) succeeded at commit `90131d26da8694e63899183ebe20b1866943f657`.
+- Realtime job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) passed with `freshness_p95_millis=130`, `recovery_millis=5094`, and 20 samples.
+- The result is an internal technical acceptance; production Kafka operation, protected registry release, and Docker Hub promotion remain owner-gated.
 
 ## Risk assessment
 

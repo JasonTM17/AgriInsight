@@ -162,7 +162,7 @@ The contract is versioned by `backend/src/main/resources/contracts/agriinsight-o
 
 The outbox is at-least-once and does not imply a broker, scheduler, public route, or exact-once delivery. Runtime code may insert events in the domain transaction; the integration role may only read/lease the fenced columns that the drain service needs. A dead-lettered predecessor blocks later versions for the same aggregate.
 
-Source coverage for the realtime slice now includes authenticated summary-route coverage and tenant-scoped RLS-boundary coverage. Those tests are code-level evidence only; hosted CI evidence for the realtime gate is still pending.
+Source coverage for the realtime slice includes authenticated summary-route coverage and tenant-scoped RLS-boundary coverage. Hosted job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) additionally passed the real PostgreSQL/Kafka replay, outage/recovery and DLT gate; this is internal technical acceptance, not a production delivery guarantee.
 
 ## Operational identifiers
 

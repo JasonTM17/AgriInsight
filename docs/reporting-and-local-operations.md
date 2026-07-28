@@ -59,9 +59,11 @@ outbox-to-authenticated-summary samples. The test logs `freshness_p95_millis`;
 an individual green source run is not a production latency claim.
 
 Hosted mode uses `-HostedCi`, requires the GitHub-hosted Linux markers and
-`RUNNER_TEMP`, and keeps the runtime under the hosted runner temp path. The workflow job is wired, but
-the first hosted green run has not landed yet, so do not read the job as
-hosted acceptance evidence.
+`RUNNER_TEMP`, and keeps the runtime under the hosted runner temp path. Hosted
+workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699)
+passed job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976)
+with 20 samples, `freshness_p95_millis=130`, and `recovery_millis=5094`. This
+is internal acceptance evidence only; it is not a production latency promise or release approval.
 
 If C or D is below the documented floor, keep local realtime Docker work off
 the workstation and wait for hosted CI or restored headroom. WARN is not a
@@ -132,7 +134,7 @@ Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTim
 |---|---|
 | Local guarded verify | Chỉ chạy khi `DISK_GUARD overall=PASS`; WARN không đủ |
 | Docker daemon | Required cho `verify`, realtime Compose và image build |
-| Testcontainers + Flyway PostgreSQL | Historical Phase 7 evidence có PASS; realtime/current branch cần evidence riêng |
+| Testcontainers + Flyway PostgreSQL | Historical Phase 7 evidence có PASS; realtime internal acceptance passed real PostgreSQL/Kafka in hosted job `90207600976` |
 | Java 21 CI | Dùng hosted GitHub Actions làm source of truth khi local disk không đủ an toàn |
 | Compose + backend image build | Temurin 21.0.11 JRE Noble, UID/GID 10001; không tự coi image build local là release evidence |
 | Registry image verification | Chỉ semantic-tag protected workflow mới đủ thẩm quyền publish/verify Docker Hub + GHCR |

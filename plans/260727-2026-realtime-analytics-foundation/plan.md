@@ -3,7 +3,7 @@ title: Realtime analytics foundation
 description: >-
   Publish the existing transactional outbox to Kafka and materialize a
   replay-safe, tenant-scoped realtime summary API.
-status: pending
+status: completed
 priority: P1
 effort: 7-9d
 branch: main
@@ -60,8 +60,8 @@ Python artifacts, and browser routes remain compatible.
 |-------|------|--------|
 | 1 | [Contract and worker boundary](./phase-01-contract-and-worker-boundary.md) | Completed |
 | 2 | [Outbox Kafka publisher](./phase-02-outbox-kafka-publisher.md) | Completed |
-| 3 | [Replay-safe consumer and summary API](./phase-03-replay-safe-consumer-and-summary-api.md) | Pending |
-| 4 | [Hosted integration and handoff](./phase-04-hosted-integration-and-handoff.md) | Pending |
+| 3 | [Replay-safe consumer and summary API](./phase-03-replay-safe-consumer-and-summary-api.md) | Completed |
+| 4 | [Hosted integration and handoff](./phase-04-hosted-integration-and-handoff.md) | Completed |
 
 ## Dependencies
 
@@ -90,6 +90,12 @@ Python artifacts, and browser routes remain compatible.
   image, and hosted disk gates pass.
 - Docs state measured freshness, replay behavior, operations/rollback, and all
   deferred scope without making a production-release claim.
+
+## Acceptance evidence
+
+- Hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) completed successfully at commit `90131d26da8694e63899183ebe20b1866943f657`.
+- Real PostgreSQL/Kafka job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) logged `REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`.
+- The [acceptance report](./reports/acceptance-2026-07-28-realtime-foundation.md) records the scope, rollback boundary, review basis, and production-owner gates.
 
 ## Unresolved questions
 

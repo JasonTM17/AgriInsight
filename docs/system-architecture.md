@@ -274,7 +274,7 @@ operational counters only and no conversation content.
 
 ## Transactional outbox
 
-Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration. Source now includes the opt-in Kafka publisher path, tenant realtime read models, and tenant summary API, while hosted acceptance for the full realtime slice remains pending.
+Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration. Source includes the opt-in Kafka publisher path, tenant realtime read models, and tenant summary API. Hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) internally accepted the full realtime slice against real PostgreSQL and Apache Kafka 4.3.1; production deployment ownership remains separate.
 
 - `outbox_events` is committed in the same transaction as the domain command.
 - `agriinsight_integration` is a NOLOGIN role used for claim/read/update fencing.
@@ -303,8 +303,8 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
-| Backend phase 7 release boundary | Core verified 2026-07-22 for V18-V19 outbox/image/recovery evidence; source since then also includes V20-V21 realtime read models and summary API, but hosted acceptance/review for that slice remains open |
-| Realtime hosted gate | Wired in `.github/workflows/ci.yml` via `realtime-e2e`; authenticated summary-route and RLS schema tests are in source, but the first hosted green run is still pending |
+| Backend phase 7 release boundary | V18-V19 core verified; V20-V21 read models and summary API internally accepted by hosted workflow `30337950699`; protected production release/recovery remains open |
+| Realtime hosted gate | `realtime-e2e` job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) passed real PostgreSQL/Kafka publish, replay, DLT, recovery, RLS, and authenticated summary evidence; no production claim |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
@@ -312,4 +312,4 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Phase image publication | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
-The right way to read the repo is: analytics and backend phases 1-6 are accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI artifact, and Phase 7 has verified outbox/image/recovery evidence plus newer realtime source implementation that still needs its own hosted acceptance record. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.
+The right way to read the repo is: analytics and backend phases 1-6 are accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI artifact, and Phase 7 has verified outbox/image/recovery evidence plus an internally accepted realtime transport slice. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.

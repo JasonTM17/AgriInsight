@@ -1,23 +1,23 @@
 # Phase 4 Docs Sync Report
 
 ## Current State Assessment
-- Repo docs now separate source-level realtime evidence from hosted acceptance evidence.
-- Phase 4 plan is still pending, with the first hosted realtime CI run not yet recorded.
+- Repo docs distinguish source-level evidence, internal hosted technical acceptance, and production-owner gates.
+- Phase 4 is completed after hosted workflow `30337950699` and realtime job `90207600976` passed.
 
 ## Changes Made
-- Updated `README.md` to mention the guarded realtime runner, hosted CI job, authenticated MockMvc route test, and RLS schema tests without claiming hosted acceptance.
-- Updated `docs/architecture.md`, `docs/backend-development.md`, `docs/backend-deployment.md`, `docs/data-contracts.md`, `docs/deployment-guide.md`, `docs/project-overview-pdr.md`, `docs/project-roadmap.md`, `docs/reporting-and-local-operations.md`, and `docs/system-architecture.md` to align the realtime slice, C/D policy, Compose worker topology, and hosted-evidence boundary.
-- Updated `plans/260727-2026-realtime-analytics-foundation/phase-04-hosted-integration-and-handoff.md` to state that source wiring exists but hosted CI green evidence does not yet.
+- Updated `README.md` with the current full workflow and real PostgreSQL/Kafka job evidence.
+- Updated architecture, development, deployment, contract, PDR, roadmap, and operations docs to align the realtime slice, C/D policy, Compose worker topology, measured evidence, and production boundary.
+- Updated plan phases and added a dedicated acceptance report plus recovery compatibility review.
 
-## Gaps Identified
-- No hosted `realtime-e2e` green run yet.
-- No production, registry, or external promotion claim is justified for the realtime slice.
+## Remaining owner gates
+- Production Kafka topology, SASL/TLS, retention, monitoring, and on-call ownership.
+- Protected release/recovery environment, production OIDC, RPO/RTO, and external registry promotion.
 
 ## Recommendations
-1. Run the hosted `realtime-e2e` job and capture the first green run.
-2. Keep docs and plan status pinned to pending until that evidence exists.
-3. Mirror any future hosted evidence back into roadmap, deployment, and architecture docs.
+1. Keep the technical acceptance evidence linked when realtime behavior changes.
+2. Do not infer production approval from the hosted gate.
+3. Schedule the development-tool dependency advisory migration separately.
 
-Status: DONE_WITH_CONCERNS
-Summary: docs synced; hosted realtime CI evidence still pending.
-Concerns/Blockers: first hosted realtime green run not yet recorded; no production or registry claim should be made.
+Status: DONE
+Summary: docs, plan, and acceptance evidence synchronized after full hosted CI success.
+Concerns/Blockers: production and registry approvals intentionally remain owner-gated.

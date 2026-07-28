@@ -15,7 +15,7 @@ required before production.
 | Next web platform | Eight-area hosted browser gate passed | Loopback/private internal candidate; external promotion remains protected-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
-| Realtime worker | Disabled by default; optional local/staging outbox→Kafka→PostgreSQL read-model slice | Private only; compose overlay binds broker to loopback, runs the consumer internally, and exposes no broker/public worker API |
+| Realtime worker | Disabled by default; internally accepted hosted outbox→Kafka→PostgreSQL read-model slice | Private only; compose overlay binds broker to loopback, runs the consumer internally, and exposes no broker/public worker API; production broker ownership remains gated |
 | Next web + analytics API images | Hosted-CI release candidate | Digest-pinned, loopback-published deployment only; registry publication remains protected-gated |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 

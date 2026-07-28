@@ -23,11 +23,12 @@
 - Verifies broker pause/recovery, duplicate replay, listener stop/start with a unique event while stopped, aggregate ordering, poison DLT coordinates, authenticated tenant summary, and tenant denial.
 - Collects 20 sequential end-to-end samples from durable outbox append to authenticated summary and asserts per-run `p95 <= 30s`; writes `freshness_p95_millis` to the test log.
 
-## Remaining evidence
+## Hosted completion
 
-- The first hosted `realtime-e2e` CI run is still required.
-- Do not mark Phase 4 accepted, production-ready, or registry-publishable until that run is green.
+- Hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) succeeded on the current source commit.
+- Realtime job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) logged `REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`.
+- Phase 4 is internally accepted; this does not make it production-ready or registry-publishable.
 
 ## Unresolved questions
 
-- None in source validation; hosted execution remains pending.
+- None in source validation. Production owner decisions remain outside this phase.

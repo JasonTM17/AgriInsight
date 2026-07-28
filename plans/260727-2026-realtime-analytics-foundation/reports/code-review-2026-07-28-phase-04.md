@@ -29,10 +29,10 @@ The review verified that the test now uses production worker wiring rather than 
 - Documentation internal links: PASS.
 - `git diff --check`: PASS.
 
-## Remaining acceptance gate
+## Hosted completion
 
-No local Docker E2E was started while D is WARN. Require the first hosted `realtime-e2e` green run before Phase 4 acceptance; this is an evidence gap, not a source defect.
+No local Docker E2E was started while D is WARN. Hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) completed successfully; realtime job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) passed the real PostgreSQL/Kafka recovery, replay, DLT, RLS, and authenticated-summary gate. Phase 4 is internally accepted.
 
 ## Unresolved questions
 
-- Hosted CI result pending.
+- No source-level blocker. Production Kafka operations, protected registry release, and Docker Hub publication remain owner-gated.
