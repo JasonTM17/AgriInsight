@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.modulith.NamedInterface;
 
+@NamedInterface("realtime-worker")
 @ConfigurationProperties("agriinsight.realtime")
 public record RealtimeWorkerProperties(
         boolean publisherEnabled,
