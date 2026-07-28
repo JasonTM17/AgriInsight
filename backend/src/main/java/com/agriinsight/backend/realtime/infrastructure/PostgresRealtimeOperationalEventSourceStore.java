@@ -35,19 +35,24 @@ public class PostgresRealtimeOperationalEventSourceStore implements RealtimeOper
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final PostgresRealtimeEventReceiptLock receiptLock;
 
     public PostgresRealtimeOperationalEventSourceStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate is required");
+        this.receiptLock = new PostgresRealtimeEventReceiptLock(this.jdbcTemplate);
     }
 
     @Override
     public Optional<Instant> findOccurredAt(UUID tenantId, UUID eventId) {
         requireTransaction();
+        UUID requiredTenantId = Objects.requireNonNull(tenantId, "tenantId is required");
+        UUID requiredEventId = Objects.requireNonNull(eventId, "eventId is required");
+        receiptLock.acquire(requiredEventId);
         List<Instant> occurredAt = jdbcTemplate.query(
                 FIND_SOURCE_OCCURRED_AT,
                 (result, rowNumber) -> result.getTimestamp("occurred_at").toInstant(),
-                Objects.requireNonNull(tenantId, "tenantId is required"),
-                Objects.requireNonNull(eventId, "eventId is required"));
+                requiredTenantId,
+                requiredEventId);
         return occurredAt.stream().findFirst();
     }
 
