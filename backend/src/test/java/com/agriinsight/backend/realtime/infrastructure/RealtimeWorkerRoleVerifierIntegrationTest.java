@@ -38,8 +38,8 @@ class RealtimeWorkerRoleVerifierIntegrationTest {
     @Test
     void rejectsAnUnsuccessfulReleasedSchemaVersion() throws Exception {
         assertRejectedDuringDrift(
-                "UPDATE flyway_schema_history SET success = FALSE WHERE version = '27'",
-                "UPDATE flyway_schema_history SET success = TRUE WHERE version = '27'",
+                "UPDATE flyway_schema_history SET success = FALSE WHERE version = '28'",
+                "UPDATE flyway_schema_history SET success = TRUE WHERE version = '28'",
                 "operational alert worker expected schema version is not installed");
     }
 

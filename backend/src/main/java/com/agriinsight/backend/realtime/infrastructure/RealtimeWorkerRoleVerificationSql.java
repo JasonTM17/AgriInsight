@@ -3,7 +3,7 @@ package com.agriinsight.backend.realtime.infrastructure;
 /** SQL contracts that prove the alert worker can use only its required metadata topology. */
 final class RealtimeWorkerRoleVerificationSql {
 
-    static final String REQUIRED_SCHEMA_VERSION = "27";
+    static final String REQUIRED_SCHEMA_VERSION = "28";
     static final String REQUIRED_GRANTS_MIGRATION = "R__tenant_rls_helpers_and_grants.sql";
 
     static final String EXPECTED_SCHEMA_VERSION_QUERY = """

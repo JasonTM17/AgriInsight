@@ -50,15 +50,15 @@ class FlywayMigrationIntegrationTest {
     @Test
     void freshPostgresqlAppliesAllMigrationsAndValidates() throws Exception {
         assertThat(initialMigration.success).isTrue();
-        assertThat(initialMigration.migrationsExecuted).isEqualTo(28);
+        assertThat(initialMigration.migrationsExecuted).isEqualTo(29);
         assertThat(migrate(POSTGRESQL, "agriinsight").migrationsExecuted).isZero();
         try (var connection = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(scalar(connection, """
                     SELECT version FROM flyway_schema_history
                     WHERE success AND version IS NOT NULL
                     ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("27");
-            assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(20);
+                    """)).isEqualTo("28");
+            assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(22);
             assertThat(count(connection, "SELECT count(*) FROM roles")).isEqualTo(7);
         }
     }
@@ -94,7 +94,7 @@ class FlywayMigrationIntegrationTest {
                     """);
         }
 
-        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(24);
+        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(25);
         try (var operator = operatorConnection(POSTGRESQL, database)) {
             assertThat(count(operator, """
                     SELECT count(*) FROM activity_types
@@ -112,7 +112,7 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void officialV22DatabaseUpgradesThroughTheCurrentV27ReleaseLine() throws Exception {
+    void officialV22DatabaseUpgradesThroughTheCurrentV28ReleaseLine() throws Exception {
         String database = "agriinsight_official_v22_upgrade";
         try {
             try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
@@ -156,7 +156,7 @@ class FlywayMigrationIntegrationTest {
 
             MigrateResult upgrade = migrate(POSTGRESQL, database);
             assertThat(upgrade.success).isTrue();
-            assertThat(upgrade.migrationsExecuted).isEqualTo(6);
+            assertThat(upgrade.migrationsExecuted).isEqualTo(7);
             assertThat(flyway(POSTGRESQL, database, MIGRATOR, MIGRATOR_PASSWORD, "classpath:db/migration")
                             .validateWithResult()
                             .validationSuccessful)
@@ -241,10 +241,13 @@ class FlywayMigrationIntegrationTest {
         assertThat(normalizedSha256(
                         migrations.resolve("V27__add_realtime_alert_evidence_readiness_index_concurrently.sql")))
                 .isEqualTo("e683d2daca4104a5f488c0f623830eb74d351c18b128780bbac1fc729a5cac55");
+        assertThat(normalizedSha256(
+                        migrations.resolve("V28__fix_realtime_alert_acknowledgement_function.sql")))
+                .isEqualTo("7e110923617b9aa888d4e5f8c92535037d7afbd792cc320d6745e801a8727164");
     }
 
     @Test
-    void v23ToV27ForwardMigrationSqlIsAdditiveAndUsesRestartSafeOnlineIndexes() throws Exception {
+    void v23ToV28ForwardMigrationSqlIsAdditiveAndUsesRestartSafeOnlineIndexes() throws Exception {
         Path migrations = Path.of("src", "main", "resources", "db", "migration");
 
         String v23 = Files.readString(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql"));
@@ -278,6 +281,15 @@ class FlywayMigrationIntegrationTest {
                 migrations,
                 "V27__add_realtime_alert_evidence_readiness_index_concurrently.sql",
                 "ix_realtime_operational_alerts_invalid_source_evidence");
+        assertThat(Files.readString(
+                        migrations.resolve("V28__fix_realtime_alert_acknowledgement_function.sql")))
+                .contains(
+                        "CREATE OR REPLACE FUNCTION "
+                                + "agriinsight_security.acknowledge_realtime_operational_alert(",
+                        "ON CONFLICT ON CONSTRAINT "
+                                + "ux_realtime_alert_acknowledgement_revisions_observation")
+                .doesNotContain(
+                        "ON CONFLICT (tenant_id, alert_id, profile_id, acknowledged_observation_at)");
     }
 
     @Test
@@ -317,11 +329,11 @@ class FlywayMigrationIntegrationTest {
                 SELECT version FROM flyway_schema_history
                 WHERE success AND version IS NOT NULL
                 ORDER BY installed_rank DESC LIMIT 1
-                """)).isEqualTo("27");
+                """)).isEqualTo("28");
         assertThat(count(operator, """
                 SELECT count(*) FROM flyway_schema_history
-                WHERE success AND version IN ('23', '24', '25', '26', '27')
-                """)).isEqualTo(5);
+                WHERE success AND version IN ('23', '24', '25', '26', '27', '28')
+                """)).isEqualTo(6);
         assertThat(count(operator, """
                 SELECT count(*) FROM flyway_schema_history
                 WHERE success AND script = 'R__tenant_rls_helpers_and_grants.sql'

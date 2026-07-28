@@ -45,7 +45,7 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class RealtimeOperationalAlertWorkerConfigurationTest {
 
-    private static final String EXPECTED_SCHEMA_VERSION = "27";
+    private static final String EXPECTED_SCHEMA_VERSION = "28";
 
     @Test
     void sendsCompactObserverFailuresToTheDistinctTerminalTopicWithoutPartitionAffinity() {
