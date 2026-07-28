@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
@@ -121,8 +122,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                         eq(Boolean.class),
                         eq("agriinsight_alert_worker")))
                 .thenReturn(true);
-        when(jdbcTemplate.queryForObject(contains("source_occurred_at IS NULL"), eq(Boolean.class)))
-                .thenReturn(false);
+        when(jdbcTemplate.execute(any(ConnectionCallback.class))).thenReturn(true);
         RealtimeWorkerRoleVerifier verifier = new RealtimeWorkerRoleVerifier(
                 jdbcTemplate,
                 workerProperties(false, false),
@@ -132,14 +132,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("operational alert worker source evidence backfill is incomplete");
-        ArgumentCaptor<String> sourceEvidenceQuery = ArgumentCaptor.forClass(String.class);
-        verify(jdbcTemplate).queryForObject(sourceEvidenceQuery.capture(), eq(Boolean.class));
-        assertThat(sourceEvidenceQuery.getValue()).contains(
-                "source_occurred_at IS NULL",
-                "policy_code = 'OUTBOX_PUBLISH_BACKLOG'",
-                "source_event_id IS NOT NULL",
-                "policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')",
-                "source_event_id IS NULL");
+        verify(jdbcTemplate).execute(any(ConnectionCallback.class));
     }
 
     @Test
