@@ -98,8 +98,9 @@ class RealtimeOperationalAlertScanStoreIntegrationTest {
 
         transaction.executeWithoutResult(
                 status -> store.clearProgress(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD));
-        assertThat(transaction.execute(
-                status -> store.findProgress(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD))).isEmpty();
+        Optional<RealtimeOperationalAlertScanProgress> clearedProgress = transaction.execute(
+                status -> store.findProgress(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD));
+        assertThat(clearedProgress).isEmpty();
     }
 
     @Test
