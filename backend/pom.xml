@@ -162,6 +162,11 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>${flyway.version}</version>
+                <configuration>
+                    <pluginConfiguration>
+                        <postgresqlTransactionalLock>false</postgresqlTransactionalLock>
+                    </pluginConfiguration>
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.flywaydb</groupId>
