@@ -106,7 +106,8 @@ class RealtimeOperationalAlertStoreIntegrationTest {
     }
 
     @Test
-    void acknowledgementCopiesTheCurrentObservationAndAllowsALaterRecurrence() throws Exception {
+    void acknowledgementCopiesTheCurrentObservationWithoutCreatingAPhantomRevisionForRepeatedEvidence()
+            throws Exception {
         JdbcTemplate alertWorker = jdbcTemplate(
                 PostgresIntegrationSupport.ALERT_WORKER,
                 PostgresIntegrationSupport.ALERT_WORKER_PASSWORD);
@@ -188,23 +189,29 @@ class RealtimeOperationalAlertStoreIntegrationTest {
         assertThat(first.created()).isTrue();
         assertThat(duplicate.created()).isFalse();
 
-        Instant laterObservation = OBSERVED_AT.plusSeconds(300);
-        alertWorkerTransaction.executeWithoutResult(status -> workerStore.upsert(condition, laterObservation));
-        RealtimeAlertAcknowledgement recurrence = runtimeTransaction.execute(status -> {
+        Instant laterEvaluation = OBSERVED_AT.plusSeconds(300);
+        alertWorkerTransaction.executeWithoutResult(status -> workerStore.upsert(condition, laterEvaluation));
+        RealtimeAlertAcknowledgement repeatedEvidence = runtimeTransaction.execute(status -> {
             bindRuntimeScope(runtime);
-            return acknowledgements.acknowledge(TENANT_A, PROFILE_A, alertId, laterObservation.plusSeconds(5));
+            return acknowledgements.acknowledge(TENANT_A, PROFILE_A, alertId, laterEvaluation.plusSeconds(5));
         });
 
-        assertThat(recurrence.acknowledgedObservationAt()).isEqualTo(laterObservation);
-        assertThat(recurrence.created()).isTrue();
+        assertThat(repeatedEvidence.acknowledgedObservationAt()).isEqualTo(OBSERVED_AT);
+        assertThat(repeatedEvidence.created()).isFalse();
         try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            assertThat(scalar(operator, """
+                    SELECT to_char(last_observed_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') || ':' ||
+                           to_char(last_evaluated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                      FROM realtime_operational_alerts
+                     WHERE id = '%s'
+                    """.formatted(alertId))).isEqualTo("2027-09-01T00:00:00Z:2027-09-01T00:05:00Z");
             assertThat(count(operator, """
                     SELECT count(*)
                       FROM realtime_alert_acknowledgement_revisions
                      WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
                        AND alert_id = '%s'
                        AND profile_id = '41000000-0000-0000-0000-000000000005'
-                    """.formatted(alertId))).isEqualTo(2);
+                    """.formatted(alertId))).isEqualTo(1);
         }
     }
 
