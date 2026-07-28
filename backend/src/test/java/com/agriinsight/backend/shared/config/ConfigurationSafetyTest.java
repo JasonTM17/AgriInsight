@@ -75,6 +75,7 @@ class ConfigurationSafetyTest {
                 .contains("web-application-type: none")
                 .contains("username: ${AGRIINSIGHT_ALERT_WORKER_DB_USERNAME:agriinsight_alert_worker}")
                 .contains("password: ${AGRIINSIGHT_ALERT_WORKER_DB_PASSWORD:}")
+                .contains("socketTimeout: 65")
                 .contains("publisher-enabled: ${AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED:false}")
                 .contains("consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:false}")
                 .contains("enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:true}");
