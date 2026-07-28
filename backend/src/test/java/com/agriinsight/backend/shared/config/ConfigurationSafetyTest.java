@@ -61,6 +61,21 @@ class ConfigurationSafetyTest {
                 .run(context -> assertThat(context).doesNotHaveBean(SecurityFilterChain.class));
     }
 
+    @Test
+    void realtimeAlertWorkerIsDisabledByDefaultAndUsesARestrictedNonWebProfile() throws IOException {
+        String defaultConfiguration =
+                Files.readString(Path.of("src", "main", "resources", "application.yml"));
+        String workerConfiguration = Files.readString(
+                Path.of("src", "main", "resources", "application-realtime-worker.yml"));
+
+        assertThat(defaultConfiguration)
+                .contains("enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:false}");
+        assertThat(workerConfiguration)
+                .contains("web-application-type: none")
+                .contains("username: ${AGRIINSIGHT_REALTIME_DB_USERNAME:agriinsight_realtime}")
+                .contains("enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:true}");
+    }
+
     private void assertSecretValuesAreEnvironmentBacked(Path file, String content) {
         String[] lines = content.split("\\R");
         for (int index = 0; index < lines.length; index++) {

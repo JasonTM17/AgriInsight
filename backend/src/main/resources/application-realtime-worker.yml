@@ -1,0 +1,12 @@
+spring:
+  main:
+    web-application-type: none
+  datasource:
+    username: ${AGRIINSIGHT_REALTIME_DB_USERNAME:agriinsight_realtime}
+    password: ${AGRIINSIGHT_REALTIME_DB_PASSWORD:}
+
+agriinsight:
+  realtime:
+    consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:true}
+    alerts:
+      enabled: ${AGRIINSIGHT_REALTIME_ALERTS_ENABLED:true}

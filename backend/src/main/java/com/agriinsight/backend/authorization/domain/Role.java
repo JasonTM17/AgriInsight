@@ -13,7 +13,9 @@ public enum Role {
             Permission.HARVEST_READ,
             Permission.INVENTORY_READ,
             Permission.COST_READ,
-            Permission.REALTIME_READ)),
+            Permission.REALTIME_READ,
+            Permission.REALTIME_ALERT_READ,
+            Permission.REALTIME_ALERT_ACKNOWLEDGE)),
     FARM_MANAGER(false, EnumSet.of(
             Permission.FARM_READ,
             Permission.FARM_MANAGE,
@@ -37,7 +39,9 @@ public enum Role {
             Permission.HARVEST_READ,
             Permission.INVENTORY_READ,
             Permission.COST_READ,
-            Permission.REALTIME_READ)),
+            Permission.REALTIME_READ,
+            Permission.REALTIME_ALERT_READ,
+            Permission.REALTIME_ALERT_ACKNOWLEDGE)),
     FIELD_WORKER(false, EnumSet.of(
             Permission.ACTIVITY_READ,
             Permission.ACTIVITY_LOG_APPEND)),
