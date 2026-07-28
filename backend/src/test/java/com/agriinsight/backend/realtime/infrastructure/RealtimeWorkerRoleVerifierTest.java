@@ -169,6 +169,7 @@ class RealtimeWorkerRoleVerifierTest {
                         "relation.relname <> ALL",
                         "has_table_privilege",
                         "has_any_column_privilege",
+                        "pg_catalog.pg_attribute AS attribute_row",
                         "'INSERT, UPDATE, REFERENCES'",
                         "allowed_metadata_column",
                         "'outbox_events'::NAME, 'id'::NAME",
@@ -178,7 +179,7 @@ class RealtimeWorkerRoleVerifierTest {
                         "relation.relrowsecurity",
                         "relation.relforcerowsecurity",
                         "pg_catalog.pg_get_expr")
-                .doesNotContain("'payload'::NAME", "'last_error'::NAME");
+                .doesNotContain("'payload'::NAME", "'last_error'::NAME", " AS column");
     }
 
     @SuppressWarnings("unchecked")

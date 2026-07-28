@@ -184,17 +184,17 @@ final class RealtimeWorkerRoleVerificationSql {
                         ON namespace.oid = relation.relnamespace
                       JOIN metadata_relation AS metadata
                         ON metadata.relation_name = relation.relname
-                      JOIN pg_catalog.pg_attribute AS column
-                        ON column.attrelid = relation.oid
-                       AND column.attnum > 0
-                       AND NOT column.attisdropped
+                      JOIN pg_catalog.pg_attribute AS attribute_row
+                        ON attribute_row.attrelid = relation.oid
+                       AND attribute_row.attnum > 0
+                       AND NOT attribute_row.attisdropped
                       LEFT JOIN allowed_metadata_column AS allowed
                         ON allowed.relation_name = relation.relname
-                       AND allowed.column_name = column.attname
+                       AND allowed.column_name = attribute_row.attname
                      WHERE namespace.nspname = 'public'
                        AND relation.relkind IN ('r', 'p')
                        AND has_column_privilege(
-                            current_user, relation.oid, column.attname, 'SELECT')
+                            current_user, relation.oid, attribute_row.attname, 'SELECT')
                        AND allowed.column_name IS NULL
                )
                AND (
@@ -235,20 +235,20 @@ final class RealtimeWorkerRoleVerificationSql {
                         ON namespace.oid = relation.relnamespace
                       JOIN worker_state_table AS state_relation
                         ON state_relation.relation_name = relation.relname
-                      JOIN pg_catalog.pg_attribute AS column
-                        ON column.attrelid = relation.oid
-                       AND column.attnum > 0
-                       AND NOT column.attisdropped
+                      JOIN pg_catalog.pg_attribute AS attribute_row
+                        ON attribute_row.attrelid = relation.oid
+                       AND attribute_row.attnum > 0
+                       AND NOT attribute_row.attisdropped
                       LEFT JOIN allowed_worker_state_update_column AS allowed
                         ON allowed.relation_name = relation.relname
-                       AND allowed.column_name = column.attname
+                       AND allowed.column_name = attribute_row.attname
                      WHERE namespace.nspname = 'public'
                        AND relation.relkind IN ('r', 'p')
                        AND (
                             has_column_privilege(
-                                current_user, relation.oid, column.attname, 'UPDATE')
+                                current_user, relation.oid, attribute_row.attname, 'UPDATE')
                             OR has_column_privilege(
-                                current_user, relation.oid, column.attname, 'REFERENCES')
+                                current_user, relation.oid, attribute_row.attname, 'REFERENCES')
                        )
                        AND allowed.column_name IS NULL
                )
