@@ -4,6 +4,10 @@ spring:
   datasource:
     username: ${AGRIINSIGHT_ALERT_WORKER_DB_USERNAME:agriinsight_alert_worker}
     password: ${AGRIINSIGHT_ALERT_WORKER_DB_PASSWORD:}
+    hikari:
+      data-source-properties:
+        # Must outlive the alert worker's configuration-capped 60-second query timeout.
+        socketTimeout: 65
 
 agriinsight:
   realtime:
