@@ -11,6 +11,7 @@ AgriInsight is split into two planes.
 - [Inventory and procurement plane](#inventory-and-procurement-plane) - PostgreSQL operational ledger and RLS.
 - [Operating-cost and reporting plane](#operating-cost-and-reporting-plane) - separate finance lens and summaries.
 - [Transactional outbox](#transactional-outbox) - machine-integration handoff used by the backend only.
+- [Realtime operational alert center](#realtime-operational-alert-center) - metadata-only alert projection and isolated worker boundary.
 - [Boundaries](#boundaries) - what each plane owns and what it must not touch.
 - [Current status](#current-status) - what is verified today and what is still blocked.
 
@@ -144,9 +145,11 @@ Four first-party images share one serialized protected publication workflow:
 Python pipeline/dashboard, Spring backend, Next web, and FastAPI analytics API.
 The web and analytics images run as UID/GID `10001`, accept a read-only root
 filesystem, and use explicit `/tmp` tmpfs mounts. Semantic-version and full-SHA
-tags are published to Docker Hub and GHCR only after candidate scan/smoke;
+tags may be published to Docker Hub and GHCR only after candidate scan/smoke;
 BuildKit SBOM/provenance and exact-digest scan/smoke are mandatory. `latest` is
-not part of the tag model.
+not part of the tag model. The in-progress alert-worker hardening reuses the
+backend image and does not yet have a new tag, digest, package visibility, or
+external deployment.
 
 `deploy/compose.release-overlay.yaml` replaces local builds with digest-pinned
 first-party images and orders backend/web migrations before readiness. The
@@ -173,7 +176,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V21 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, and the tenant summary index
+- liveness/readiness split and Flyway V1-V26 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, and V24-V26 concurrent scan indexes; expected schema version is 26
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 - Phase 1 contract freeze adds eight additive bounded GET reads:
   activity assignments, activity logs, activity log correction history, user
@@ -274,13 +277,50 @@ operational counters only and no conversation content.
 
 ## Transactional outbox
 
-Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration. Source includes the opt-in Kafka publisher path, tenant realtime read models, and tenant summary API. Hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) internally accepted the full realtime slice against real PostgreSQL and Apache Kafka 4.3.1; production deployment ownership remains separate.
+Phase 7 adds the `integration` module transactional outbox boundary. It is the
+persisted handoff for machine integration. Source includes the opt-in Kafka
+publisher path, tenant realtime read models, and tenant summary API. Historical
+realtime runner/workflow evidence belongs to that foundation; it is not hosted
+acceptance, image publication, or deployment evidence for the current
+in-progress alert-worker hardening.
 
 - `outbox_events` is committed in the same transaction as the domain command.
 - `agriinsight_integration` is a NOLOGIN role used for claim/read/update fencing.
 - The outbox uses at-least-once delivery, bounded leases, and dead-lettering for stale or failed work.
 - Claim/ack/retry ordering is keyed by aggregate version and guarded by `(tenant_id, command_id, event_ordinal)` plus `(tenant_id, aggregate_type, aggregate_id, aggregate_version)`.
 - The schema contract is versioned by `backend/src/main/resources/contracts/agriinsight-operational-events-v1.schema.json`.
+
+## Realtime operational alert center
+
+`V22` alert storage is immutable. The current isolated operational alert
+hardening is in progress and remains metadata-only: it does not add a public
+REST/API or UI alert center, and it does not define semantic agriculture alerts.
+It hardens the backend worker boundary around transport-health evidence already
+owned by the realtime system.
+
+The hardening schema is V23-V26 and readiness expects 26. V23 leaves legacy
+source/evidence constraints `NOT VALID`; a repeatable 500-row operator
+backfill must finish with no legacy or invalid-shape rows before the worker is
+enabled. V24-V26 each build one scan index concurrently; invalid-index recovery
+must follow the migration-specific precondition rather than rerunning blindly.
+
+- The private `realtime-alert-worker` Compose service uses the non-web
+  `realtime-worker` profile and the restricted, no-inheritance
+  `agriinsight_alert_worker` login. Compose requires
+  `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; it supplies no public worker port.
+- Only that alert-worker service disables the legacy Kafka publisher/consumer
+  path. The existing `realtime-worker` retains the legacy path, while the alert
+  DLT observer is a distinct observer path with an independent group/failure
+  topic and untrusted framework headers.
+- The worker can use only tenant IDs, narrow outbox/receipt metadata, alert
+  projection, and cursor state. It never receives business-table access, raw
+  Kafka values, outbox payloads, or error text.
+- Scans use durable per-policy cursors and fair pages bounded to the default
+  500 candidates plus a continuation probe. `REPEATABLE_READ`, a policy-level
+  advisory lock, current-condition recovery, hysteresis, and saturation
+  signalling protect against overlap, stale resolution, flapping, and
+  unbounded outage work. Default query time is 20 seconds; configuration is
+  capped at 60 seconds.
 
 ## Boundaries
 
@@ -303,13 +343,18 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
-| Backend phase 7 release boundary | V18-V19 core verified; V20-V21 read models and summary API internally accepted by hosted workflow `30337950699`; protected production release/recovery remains open |
-| Realtime hosted gate | `realtime-e2e` job [`90207600976`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699/job/90207600976) passed real PostgreSQL/Kafka publish, replay, DLT, recovery, RLS, and authenticated summary evidence; no production claim |
+| Backend phase 7 release boundary | Outbox/realtime foundation has historical evidence; isolated alert-worker hardening is in progress and still needs migration, focused tests, review, merge, and protected release/recovery gates |
+| Realtime alert worker | Source/Compose topology is private and non-web; no public alert API/UI, semantic agriculture policy, hosted acceptance, image publication, or external deployment is claimed |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
 | Hosted CI | Run `29932250984` passed Java, Python, secret/dependency, and both image scan/smoke gates 5/5 at commit `8d8463f` |
-| Phase image publication | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
+| Protected image workflow | Historical Phase 7 tags are separate evidence; any new backend image/package publication for this slice waits for migration, tests, review, merge, protected environment approval, and an exact returned digest |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
-The right way to read the repo is: analytics and backend phases 1-6 are accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI artifact, and Phase 7 has verified outbox/image/recovery evidence plus an internally accepted realtime transport slice. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.
+The right way to read the repo is: analytics and backend phases 1-6 are
+accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI
+artifact, and Phase 7 has historical outbox/image/recovery evidence. The
+isolated alert-worker hardening is a separate in-progress private slice.
+Production identity configuration, protected release approval, recovery-policy
+ownership, and all external promotion remain open.

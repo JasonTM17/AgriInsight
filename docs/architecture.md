@@ -128,7 +128,12 @@ Cost Analysis pre-aggregate `fact_crop_activity` và `fact_harvest` độc lập
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke. Phase 7 có historical evidence cho outbox/image/recovery V18-V19 và technical acceptance nội bộ cho realtime V20-V21 từ hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699); protected production release/recovery approvals vẫn mở:
+Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL
+18/Flyway integration, analytics regression và local image smoke. Phase 7 có
+historical evidence cho outbox/image/recovery. Isolated alert-worker hardening
+hiện đang in progress; existing runner/workflow artifacts không phải hosted
+acceptance, image publication, hoặc external deployment của slice này.
+Protected production release/recovery approvals vẫn mở:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
@@ -140,8 +145,9 @@ Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway V1-V21 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models và lifecycle guards,
+- Flyway migrations cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models, immutable V22 alert storage, và follow-on alert-worker hardening đang in progress,
 - `integration` module owns the transactional outbox writer/drain/store boundary; the opt-in worker publishes and consumes the bounded realtime envelope,
+- `realtime-alert-worker` dùng non-web profile và login `agriinsight_alert_worker`; chỉ service này tắt legacy publisher/consumer, scanner/observer chỉ đọc metadata được grant, lưu cursor durable, và không giữ raw payload/error,
 - activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 - hosted CI run `29932250984` xanh 5/5; backend Temurin 21.0.11 JRE Noble
@@ -156,9 +162,33 @@ Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 
 Phase 5 keeps the operational inventory ledger in PostgreSQL: warehouses, materials, suppliers, and profile-to-warehouse assignments feed immutable transactions; receipts create lots, issues allocate lots by deterministic FEFO, and balances are projections reconciled from signed ledger effects. Reversals are linked, bounded, and service-generated. V15 binds tenant and profile context transaction-locally and separates read/write RLS by role and assignment. This plane does not mutate the Python Gold inventory contract or write `artifacts/`.
 
-Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger V16-V17, correction lineage, bounded summaries và role/farm-aware RLS. Phase 7 có V18-V19 outbox/image/recovery evidence, rồi V20-V21 thêm read model, summary API và optional Compose worker publish+consume; hosted workflow `30337950699` đã technical-accept slice này với real PostgreSQL/Kafka, recovery và replay evidence. Docker Hub/GHCR phase tags cùng trỏ tới backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. Backend inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract. Phase digest và technical acceptance là non-production evidence; production approval remains open.
+Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots,
+allocations, balances, reversals, warehouse assignments, role-aware RLS và
+OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger,
+correction lineage, bounded summaries và role/farm-aware RLS. Phase 7 có
+historical outbox/image/recovery evidence. `V22` alert storage là immutable;
+V23-V26 là hardening sequence với expected schema version 26. V23 cần bounded
+source-evidence backfill trước worker enablement; V24-V26 mỗi migration tạo một
+concurrent scan index với invalid-index recovery riêng. Follow-on alert-worker
+hardening hiện là private source/Compose work: restricted login, metadata-only
+scanner/observer, durable cursors, bounded pages, current-condition recovery,
+hysteresis, và saturation safety. Không có public
+alert API/UI, broad semantic agriculture alert, hosted acceptance, new Docker
+Hub/GHCR package, image digest, hay external deployment cho slice này. Backend
+inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value
+và operating cost không gộp. Identity mặc định vẫn tắt cho đến khi deployment
+cung cấp đầy đủ OIDC contract.
 
-Outbox write nằm trong transaction của command record; event envelope được serialize trước commit và rollback-safe. Outbox drain vẫn không có public HTTP route; optional non-web worker schedule publisher, Kafka consumer và PostgreSQL read-model materialization. Aggregate version là ordering key; `occurred_at` chỉ là metadata. Chi tiết role/lease/schema nằm ở [backend-development.md](backend-development.md), còn Compose, image, backup/restore và production approval nằm ở [backend-deployment.md](backend-deployment.md).
+Outbox write nằm trong transaction của command record; event envelope được
+serialize trước commit và rollback-safe. Outbox drain vẫn không có public HTTP
+route; optional non-web legacy worker schedule publisher, Kafka consumer và
+PostgreSQL read-model materialization. Alert-worker là service riêng: Compose
+requires `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`, service giữ legacy
+publisher/consumer disabled, DLT observer vẫn distinct, và không có HTTP port.
+Aggregate version là ordering key; `occurred_at` chỉ là metadata. Chi tiết
+role/lease/schema nằm ở [backend-development.md](backend-development.md), còn
+Compose, image, backup/restore và production approval nằm ở
+[backend-deployment.md](backend-deployment.md).
 
 ## Đường mở rộng
 

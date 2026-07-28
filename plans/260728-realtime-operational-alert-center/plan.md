@@ -37,22 +37,30 @@ source-side evaluation or a new versioned semantic event. The existing Gold
 alert feeds remain batch analytics with snapshot lineage and keep their own UI
 locations.
 
+Current execution status: Phase 1 worker hardening is in progress. Its confirmed
+migration sequence is V23-V26 with expected schema version 26: V23 remains
+additive with `NOT VALID` source/evidence checks and requires bounded operator
+backfill before worker enablement; V24-V26 each create one index concurrently.
+Phases 2 and 3 are planned only; no public alert API, acknowledgement route,
+BFF route, or UI is complete.
+
 ## Scope challenge
 
-- Existing code: V18-V21 outbox/realtime data, an internally accepted real
-  PostgreSQL/Kafka worker, `GET /api/v1/realtime/summary`, a hardened tokenless
-  Next BFF, batch Gold alert panels, and an inert header bell.
-- Minimum change: a durable transport-health alert projection plus per-profile
-  acknowledgement, two exact backend operations, two same-origin BFF routes,
-  and an accessible header panel. No new broker protocol or domain payload.
+- Existing code: V18-V22 outbox/realtime and immutable alert storage,
+  `GET /api/v1/realtime/summary`, a hardened tokenless Next BFF, batch Gold
+  alert panels, and an inert header bell. The current source/Compose change is
+  the private worker hardening only.
+- Current in-progress change: a dedicated non-web alert worker with restricted
+  login, metadata-only scanner/observer, durable cursors, bounded recovery, and
+  no raw payload/error retention. No new broker protocol or domain payload.
 - Complexity: three phases and more than eight files are justified by the
   database/RLS, worker, HTTP/BFF, and browser trust boundaries. Splitting the
   lifecycle, contract, and panel avoids duplicate ownership of a migration or
   public route.
-- Selected scope: HOLD. The user's request to finish carefully and quickly
-  means a verified operations alert center first; domain alert semantics,
-  WebSocket/SSE, email/SMS/push, and a public deployment remain explicitly
-  deferred.
+- Selected scope: Phase 1 remains in progress. A public operations alert center
+  is planned only for later phases after the worker hardening is verified;
+  domain alert semantics, WebSocket/SSE, email/SMS/push, and public deployment
+  remain explicitly deferred.
 
 ## Design decisions
 
@@ -60,7 +68,7 @@ locations.
 |---|---|
 | Alert source | Metadata-only realtime transport evidence: aged unprocessed outbox events, published-but-unreceived events, and parseable DLT records. |
 | Domain boundary | Do not inspect inventory/work/farm tables from the cross-tenant realtime worker. Do not enrich the v1 event envelope. |
-| Lifecycle | Worker upserts a stable `(tenant, policy, dedupe key)` alert, uses a persisted clean-evaluation hysteresis before resolution, and never records raw error text or payload. |
+| Lifecycle | The in-progress worker hardening upserts a stable `(tenant, policy, dedupe key)` alert, uses a durable cursor plus clean-evaluation hysteresis before resolution, and never records raw error text or payload. |
 | User state | Acknowledgement is an immutable per-profile observation revision. A newer observation makes older revisions stale; the same profile can acknowledge the new observation without rewriting history. |
 | Authorization | Introduce dedicated read and acknowledgement permissions rather than silently broadening `REALTIME_READ`. Tenant scope derives only from the authenticated database profile. |
 | API | Exact, bounded backend operations: latest 50 open-alert feed (no history/cursor in v1) and idempotent acknowledgement. Existing `/api/v1/realtime/summary` stays compatible. |
@@ -73,8 +81,9 @@ locations.
 - Alert policies `OUTBOX_PUBLISH_BACKLOG`, `REALTIME_DELIVERY_LAG`, and
   `REALTIME_DLT_RECORD`, including deterministic severity thresholds from
   worker configuration.
-- V22-style immutable migration, FORCE RLS, least-privilege grants, a new
-  worker-only evaluator, and a distinct DLT observer consumer group. The
+- Preserve immutable V22 alert storage; add V23-V26 hardening, FORCE RLS,
+  least-privilege grants, a new worker-only evaluator, and a distinct DLT
+  observer consumer group. The
   observer validates a bounded envelope value while treating framework headers
   as untrusted and has a terminal failure path that cannot republish to its
   own DLT topic.
@@ -94,6 +103,8 @@ locations.
   the v1 operational event schema.
 - Public VPS deployment, registry promotion, and production readiness claims
   until a real target host plus protected environment ownership exist.
+- The public alert feed/API, acknowledgement UI, and browser alert center until
+  Phase 1 worker hardening is verified and Phase 2/3 are implemented.
 
 ## Phases
 
@@ -107,8 +118,8 @@ locations.
 
 - Uses the internally accepted transport/read-model work in
   [`260727-2026-realtime-analytics-foundation`](../260727-2026-realtime-analytics-foundation/plan.md).
-  Its external Kafka/release-owner gates do not block source implementation or
-  hosted technical acceptance here.
+  Its external Kafka/release-owner gates do not block source implementation,
+  but must not be treated as acceptance or release evidence for this hardening.
 - Reuses the current opaque-session web candidate in
   [`260722-2342-production-web-platform`](../260722-2342-production-web-platform/plan.md)
   but does not claim its protected external promotion is complete.
@@ -127,8 +138,9 @@ locations.
   alert. Recovery resolves the same alert record and preserves its history.
 - Runtime access is tenant/profile-scoped through FORCE RLS. Alert rows are
   tenant-readable only; acknowledgement revisions are both tenant- and
-  current-profile-restricted under SQL policy. The integration worker has only
-  the columns it needs and never gains business-table access.
+  current-profile-restricted under SQL policy. The isolated alert worker has
+  only selected metadata columns plus alert/cursor state and never gains
+  business-table, raw-payload, or error-text access.
 - Only the new exact permissions can read/acknowledge the feed. Every mutation
   is idempotent, captures the locked current observation timestamp, and returns
   a currently authorized representation.
@@ -139,14 +151,15 @@ locations.
   PostgreSQL/Kafka/browser verification runs in guarded CI while C/D remain
   below the local heavy-work floor.
 - Documentation differentiates this operational alert source from batch Gold
-  analytics and records real deployment constraints without a false VPS or
-  production-release claim.
+  analytics and records source/Compose behavior separately from unfinished
+  migration, release, Docker Hub/GHCR publication, VPS, and production claims.
 
 ## Risks and rollback
 
-- A permissive integration worker policy is acceptable only for the new
-  metadata tables and only under the existing least-privilege login. Reuse of
-  `USING (TRUE)` for runtime access is a release blocker.
+- The isolated alert worker may receive only its reviewed metadata RLS policies
+  and selected columns under the separate no-inheritance login. Reuse of
+  `USING (TRUE)` for runtime access, inheritance from integration, payload/error
+  access, or business-table access is a release blocker.
 - Alert fan-out may grow during an outage. Policies must aggregate by bounded
   dedupe key, use a server-fixed latest-50 open-alert window, and avoid
   retaining raw payload/error text.

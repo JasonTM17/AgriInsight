@@ -54,12 +54,39 @@ manager, không sửa `.env.example` và không commit khóa. Xem
 [deployment guide](docs/deployment-guide.md#deepseek-rag-assistant) và
 [kế hoạch/evaluation](plans/260727-2048-deepseek-rag-assistant/plan.md).
 
-Phase 7 bổ sung V18-V21 backend realtime foundation: `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, login role `agriinsight_realtime`, PostgreSQL realtime read models, tenant summary API `GET /api/v1/realtime/summary`, optional backend+realtime Compose topology, pinned non-root images, CI image gate, và D-local backup/restore wrappers. Source implementation có guarded realtime runner, hosted CI job, authenticated MockMvc route test, RLS schema tests, và publisher/read-model/API path. Hosted full workflow tại commit `90131d26da8694e63899183ebe20b1866943f657` đã xanh; realtime job là bằng chứng technical acceptance nội bộ, không phải production release hay Docker Hub publication.
+## Realtime operational alert worker (in progress)
+
+`V22` is immutable. The current follow-on hardening is a private,
+metadata-only worker slice, not a completed alert center: it adds the
+non-web `realtime-worker` profile and `realtime-alert-worker` Compose service,
+the separate restricted login `agriinsight_alert_worker`, durable scan state,
+and a distinct DLT observer. Compose requires
+`AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD` and passes it only to the worker
+datasource setup; it is not a value to commit. Only the alert-worker service
+disables the legacy Kafka publisher/consumer path. The existing
+`realtime-worker` service remains the separate legacy publisher/consumer path.
+
+The scanner reads only granted metadata, persists a cursor for fair bounded
+pages, and does not retain raw Kafka values, outbox payloads, or error text.
+Its default candidate maximum is 500 and its default query timeout is 20
+seconds (configuration is capped at 60 seconds). Policy evaluation uses a
+repeatable-read transaction, per-policy lock, current-condition recovery,
+hysteresis, and saturation signals. This does not create a public alert
+feed/API/UI, semantic agriculture alerts, a hosted release, a Docker Hub/GHCR
+publication, or an external deployment.
+
+The hardening migration sequence is V23-V26 and readiness expects version 26.
+V23 intentionally adds `NOT VALID` source/evidence checks without a table-wide
+legacy-row update. Before worker enablement, an operator must finish the
+idempotent 500-row source-evidence backfill and confirm both remaining-row
+checks are false. V24-V26 create one index concurrently each; their named
+invalid-index recovery must precede Flyway repair/retry. See the
+[deployment guide](docs/deployment-guide.md#alert-worker-pre-enable-and-concurrent-index-recovery).
 
 Bằng chứng hiện tại:
 
-- Historical Phase 7 evidence: disk guard PASS trước các tác vụ nặng; guarded Maven `verify` từng đạt 622 test (gồm 98 Failsafe integration test) trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway V1-V19 apply/validate, fresh install, RLS, assignment lifecycle, cost correction concurrency, outbox lease/dead-letter, query plans và reconciliation. Realtime V20-V21 cần evidence mới riêng.
-- Realtime slice source evidence: `scripts/run-realtime-e2e-tests.ps1`, the `realtime-e2e` workflow job, authenticated MockMvc summary-route coverage, and RLS schema tests are present. The full hosted workflow [`30337950699`](https://github.com/JasonTM17/AgriInsight/actions/runs/30337950699) succeeded; its `Real PostgreSQL and Kafka outbox gate` job logged `REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20` against real PostgreSQL and Apache Kafka 4.3.1.
+- Historical Phase 7 evidence: disk guard PASS trước các tác vụ nặng; guarded Maven `verify` từng đạt 622 test (gồm 98 Failsafe integration test) trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway apply/validate, fresh install, RLS, assignment lifecycle, cost correction concurrency, outbox lease/dead-letter, query plans và reconciliation. Đây là bằng chứng foundation trước slice hardening hiện tại.
+- Source evidence for the hardening includes `scripts/run-realtime-e2e-tests.ps1`, the `realtime-e2e` workflow job, authenticated MockMvc summary-route coverage, and RLS schema tests. Those existing artifacts are not a hosted acceptance, publication, or deployment claim for the in-progress alert worker; migration, focused tests, review, merge, and the protected release workflow remain required.
 - Hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) xanh 5/5 tại commit `8d8463f`; backend dùng Temurin 21.0.11 JRE Noble được pin digest, Trivy 0.70.0 có zero HIGH/CRITICAL, chạy non-root `10001:10001`.
 - Docker Hub và GHCR cùng trả backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d` cho tags `0.1.0-phase7` và `sha-8d8463f`; pull-by-digest smoke và OCI revision đều PASS.
 - OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
@@ -77,7 +104,7 @@ Bằng chứng hiện tại:
 Các cổng còn mở thuộc phase sau:
 
 - Phase 7 core đã có focused atomicity/lease/RLS tests; protected registry release và recovery approval vẫn là gate cuối của phase. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
-- Realtime hosted gate và full workflow đã xanh; [hồ sơ technical acceptance](./plans/260727-2026-realtime-analytics-foundation/reports/acceptance-2026-07-28-realtime-foundation.md) vẫn tách rõ internal acceptance khỏi production, protected registry release và Docker Hub publication.
+- The alert-worker hardening remains in progress. It has no new released image tag/digest, Docker Hub/GHCR package promotion, public alert-center API/UI, or external deployment claim; the protected workflow may run only after migration, tests, review, and merge.
 - Registry release yêu cầu repository variable `DOCKERHUB_NAMESPACE`, environment secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` và reviewer protection; không có automatic `latest`. Workflow xuất cả Docker Hub và GHCR, scan exact digest rồi smoke-test digest. Các manual phase tags chỉ là bằng chứng non-production.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 

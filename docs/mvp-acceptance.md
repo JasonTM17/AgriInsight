@@ -47,7 +47,7 @@
 - [ ] Hoàn tất protected production release/recovery approvals của backend Phase 7; technical, CI, registry và restore evidence đã có, còn authentication/RLS, Phase 4 operations, Phase 5 inventory/procurement và Phase 6 operating-cost đã nghiệm thu riêng.
 - [ ] Xây production frontend role-aware theo CK FE/Stitch design system và versioned OpenAPI contracts.
 - [ ] PostgreSQL/ClickHouse, Flyway/dbt và incremental ETL bằng Airflow.
-- [ ] Realtime Kafka, cảnh báo đa kênh và mobile field application.
+- [ ] Broad semantic agriculture alerts, public alert API/UI, multi-channel notifications, and mobile field application. The private metadata-only alert-worker hardening is still in progress.
 - [ ] ML forecasting, anomaly detection, what-if analysis và model monitoring.
 - [ ] AI Assistant Text-to-SQL với guardrails và audit trail.
 
@@ -61,11 +61,12 @@ Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm
 
 ## Backend Phase 7 technical verification
 
-- [x] Transactional outbox V18-V19, typed schema v1, dedicated NOLOGIN integration role và RLS/grant boundary.
-- [x] Lease/retry/ack fencing bằng owner + token + generation, predecessor ordering và bounded dead-letter; có Testcontainers atomicity/lease/RLS tests.
+- [x] Historical foundation: transactional outbox, typed schema v1, dedicated NOLOGIN integration role, and fenced lease/retry/ack boundary.
+- [ ] In-progress isolated alert-worker hardening: immutable V22 baseline; V23-V26 with expected schema version 26; restricted `agriinsight_alert_worker` login; metadata-only scanner/observer; durable cursors; bounded recovery/hysteresis; and narrow RLS/grants. V23 backfill must finish before enablement. It still requires focused tests, review, and merge.
 - [x] Pinned non-root Python/backend images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR workflow contract; manual phase tags đã pull-by-digest smoke ở cả hai registry.
 - [x] D-local checksum/metadata backup và timed clean-target restore drill 11.045s; production RPO/RTO/off-host encryption/owner approval còn bắt buộc trước production.
 
 ## Backend Phase 7 production release gate
 
 - [ ] Protected tag-triggered production publish bằng environment secrets/reviewers và phê duyệt RPO/RTO/retention/encrypted off-host storage/restore owner.
+- [ ] No new image tag/digest, Docker Hub/GHCR package publication, public alert center, or external deployment is accepted for the in-progress alert-worker hardening. Protected publication may start only after migration, tests, review, and merge.

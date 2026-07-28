@@ -2,7 +2,7 @@
 
 Version: 0.9
 Updated: 2026-07-28
-Status: backend core, Analytics Phase 2, eight-area web, and Phase 7 realtime technical slice internally verified; protected production release/recovery approvals remain open
+Status: backend core, Analytics Phase 2, and eight-area web are verified; the isolated alert-worker hardening is in progress and protected production release/recovery approvals remain open
 
 ## Product goal
 
@@ -37,8 +37,11 @@ hiding them in dashboards.
    Spring/FastAPI BFF allowlists, and server-rendered permission boundaries.
 4. **Integration boundary** — No direct Gold mutation or shared mutable storage.
    Phase 7 provides the versioned transactional outbox, fenced drain, and an
-   opt-in Kafka consumer that materializes PostgreSQL realtime summaries; Gold
-   ingestion remains future work.
+   opt-in Kafka consumer that materializes PostgreSQL realtime summaries.
+   `V22` alert storage is immutable; the metadata-only isolated alert-worker
+   hardening is V23-V26 with expected schema version 26 and remains in progress.
+   V23 requires its bounded source-evidence backfill before worker enablement.
+   It is not a public alert center or Gold ingestion.
 
 See [system architecture](./system-architecture.md), [data contracts](./data-contracts.md),
 and [architecture](./architecture.md) for the normative boundaries.
@@ -93,7 +96,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
-| 7 | Outbox, realtime read-model foundation, CI/images, SBOM/provenance, backup/restore, V18-V21 | Internally accepted: hosted workflow `30337950699` and realtime job `90207600976` passed real PostgreSQL/Kafka recovery, replay, RLS, and summary coverage; production release remains gated |
+| 7 | Outbox, realtime read-model foundation, isolated alert-worker hardening, CI/images, SBOM/provenance, backup/restore | Outbox/realtime foundation has historical evidence. Alert-worker hardening is in progress: migration, focused tests, review, merge, protected publication, and recovery/release approvals remain open. |
 | Web 5–10 | Eight product areas over tokenless BFF and real upstream contracts | Accepted 2026-07-27 |
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Internal candidate complete; external promotion blocked |
@@ -112,13 +115,15 @@ Phase 6 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase6.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md):
 26 focused cost tests, guarded backend `442 Surefire + 96 Failsafe` with zero
 failures/errors/skips, fresh PostgreSQL V17/RLS/concurrency/query-plan checks,
-and Python `75 passed, 3 skipped` unchanged at that checkpoint. Phase 7
-technical acceptance is recorded in
+and Python `75 passed, 3 skipped` unchanged at that checkpoint. Historical
+Phase 7 foundation evidence is recorded in
 [`acceptance-2026-07-28-realtime-foundation.md`](../plans/260727-2026-realtime-analytics-foundation/reports/acceptance-2026-07-28-realtime-foundation.md):
 622 backend tests (98 Failsafe) at the prior core checkpoint, hosted CI run
 `29932250984` passing 5/5 for the image path, and successful full workflow
 `30337950699` with realtime job `90207600976` logging
-`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. Published backend/Python digests remain non-production evidence; protected release and recovery approvals remain open.
+`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. It does not accept the later
+in-progress alert-worker hardening. Historical backend/Python digests remain
+non-production evidence; protected release and recovery approvals remain open.
 
 ## Non-functional requirements
 
@@ -131,8 +136,9 @@ technical acceptance is recorded in
   deterministic locks, and no unbounded per-row database loop in public paths.
 - **Reliability:** command reservation, domain write, projection update, and
   future outbox event share one transaction; replay reconstructs a safe current
-  representation. Realtime consumer/read-model replay is tested against the
-  accepted gate job with bounded recovery and freshness evidence.
+  representation. The in-progress alert worker uses bounded metadata scans,
+  durable cursors, current-condition recovery, hysteresis, and saturation
+  signals; it is not yet an externally released service.
 - **Operability:** C/D disk guard before heavy work; Maven/temp/cache on D;
   readiness includes database/schema; local binds remain loopback-only.
 - **Maintainability:** focused modules, conventional commits, tests at the
@@ -141,10 +147,12 @@ technical acceptance is recorded in
 
 ## Explicit non-goals for the current release
 
-Realtime alerts, ClickHouse/dbt/Airflow, mobile, ML forecasting,
-what-if analysis, AI Text-to-SQL, and direct Gold writes are deferred. Public
-promotion of the new web/analytics images, production identity/MFA, hostname/
-TLS, observability, and backup policy remain owner-gated.
+Broad semantic agriculture alerts, a public API/UI alert center, ClickHouse/dbt/
+Airflow, mobile, ML forecasting, what-if analysis, AI Text-to-SQL, and direct
+Gold writes are deferred. The metadata-only alert-worker hardening has no
+hosted release, Docker Hub/GHCR promotion, or external deployment claim.
+Public promotion of the new web/analytics images, production identity/MFA,
+hostname/TLS, observability, and backup policy remain owner-gated.
 
 ## Success metrics
 
