@@ -1,23 +1,8 @@
--- Keep V22 immutable: this forward migration introduces the isolated worker and its
--- metadata-only, fair continuation state without invalidating deployed Flyway history.
-UPDATE realtime_operational_alerts
-   SET source_occurred_at = opened_at
- WHERE source_occurred_at IS NULL;
-
--- A validated check lets PostgreSQL prove the following SET NOT NULL without
--- a second full table scan. The final catalog change still takes a brief lock.
+-- Legacy alert rows remain unvalidated; the operator backfill is required before
+-- the isolated alert worker is enabled.
 ALTER TABLE realtime_operational_alerts
     ADD CONSTRAINT realtime_operational_alerts_source_occurred_at_present
     CHECK (source_occurred_at IS NOT NULL) NOT VALID;
-
-ALTER TABLE realtime_operational_alerts
-    VALIDATE CONSTRAINT realtime_operational_alerts_source_occurred_at_present;
-
-ALTER TABLE realtime_operational_alerts
-    ALTER COLUMN source_occurred_at SET NOT NULL;
-
-ALTER TABLE realtime_operational_alerts
-    DROP CONSTRAINT realtime_operational_alerts_source_occurred_at_present;
 
 ALTER TABLE realtime_operational_alerts
     ADD CONSTRAINT realtime_operational_alerts_evidence_shape
@@ -26,9 +11,6 @@ ALTER TABLE realtime_operational_alerts
         OR (policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')
             AND source_event_id IS NOT NULL)
     ) NOT VALID;
-
-ALTER TABLE realtime_operational_alerts
-    VALIDATE CONSTRAINT realtime_operational_alerts_evidence_shape;
 
 CREATE TABLE realtime_operational_alert_scan_cursors (
     policy_code VARCHAR(64) COLLATE "C" PRIMARY KEY,
