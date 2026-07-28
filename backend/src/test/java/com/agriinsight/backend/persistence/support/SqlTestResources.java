@@ -113,35 +113,22 @@ public final class SqlTestResources {
     }
 
     public static Path copyMigrationsThroughV22() throws IOException {
-        return copyMigrations("official-v22-migrations-", new String[] {
-                "V1__create_tenant_anchor.sql",
-                "V2__create_identity_tables.sql",
-                "V3__seed_permissions_and_roles.sql",
-                "V4__add_tenant_security_and_idempotency.sql",
-                "V5__create_farm_and_operations_tables.sql",
-                "V6__add_farm_and_operations_rls_policies.sql",
-                "V7__serialize_farm_lifecycle_dependencies.sql",
-                "V8__serialize_field_crop_and_season_lifecycle.sql",
-                "V9__serialize_employee_lifecycle_dependencies.sql",
-                "V10__serialize_farm_assignment_profile_lifecycle.sql",
-                "V11__serialize_activity_season_lifecycle.sql",
-                "V12__create_inventory_tables.sql",
-                "V13__add_inventory_rls_policies.sql",
-                "V14__serialize_warehouse_assignment_lifecycle.sql",
-                "V15__harden_inventory_scope_and_indexes.sql",
-                "V16__create_operating_cost_ledger.sql",
-                "V17__add_cost_rls_policies.sql",
-                "V18__create_outbox_tables.sql",
-                "V19__add_outbox_rls_and_indexes.sql",
-                "V20__create_realtime_read_models.sql",
-                "V21__add_realtime_metric_summary_index.sql",
-                "V22__create_realtime_operational_alerts.sql"
-        });
+        return OfficialV22MigrationResources.copyVerifiedRelease(projectRoot());
+    }
+
+    public static void assertOfficialV22SourcesUnchanged() throws IOException {
+        OfficialV22MigrationResources.assertReleasedSourcesUnchanged(projectRoot());
+    }
+
+    public static String normalizedSha256(Path file) throws IOException {
+        return OfficialV22MigrationResources.normalizedSha256(file);
     }
 
     private static Path copyMigrations(String prefix, String[] migrationFiles) throws IOException {
         Path root = projectRoot();
-        Path target = Files.createTempDirectory(root.resolve("artifacts/_tmp"), prefix);
+        Path temporaryArtifacts = root.resolve("artifacts/_tmp");
+        Files.createDirectories(temporaryArtifacts);
+        Path target = Files.createTempDirectory(temporaryArtifacts, prefix);
         Path source = root.resolve("backend/src/main/resources/db/migration");
         for (String file : migrationFiles) {
             Files.copy(source.resolve(file), target.resolve(file));
