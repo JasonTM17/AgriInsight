@@ -22,10 +22,16 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class PostgresRealtimeOperationalEventSourceStore implements RealtimeOperationalEventSourceStore {
 
     private static final String FIND_SOURCE_OCCURRED_AT = """
-            SELECT occurred_at
-              FROM outbox_events
-             WHERE tenant_id = ?
-               AND id = ?
+            SELECT source.occurred_at
+              FROM outbox_events source
+             WHERE source.tenant_id = ?
+               AND source.id = ?
+               AND NOT EXISTS (
+                   SELECT 1
+                     FROM realtime_event_receipts receipt
+                    WHERE receipt.tenant_id = source.tenant_id
+                      AND receipt.event_id = source.id
+               )
             """;
 
     private final JdbcTemplate jdbcTemplate;

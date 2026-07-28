@@ -52,7 +52,7 @@ public class RealtimeOperationalAlertEvaluator {
         this.properties = Objects.requireNonNull(properties, "properties is required");
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry is required");
         this.unverifiedDeadLetterCounter = Counter.builder(UNVERIFIED_DLT_METRIC)
-                .description("Schema-valid DLT records with no matching outbox source")
+                .description("Schema-valid DLT records with no matching undelivered outbox source")
                 .register(this.meterRegistry);
     }
 
