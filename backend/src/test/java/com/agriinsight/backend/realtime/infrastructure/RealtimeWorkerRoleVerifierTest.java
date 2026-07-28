@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,10 +20,13 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class RealtimeWorkerRoleVerifierTest {
+
+    private static final String EXPECTED_SCHEMA_VERSION = "27";
 
     @Test
     void acceptsCompleteSourceEvidenceWithAnIndexEligibleBoundedProbe() throws Exception {
@@ -45,6 +49,11 @@ class RealtimeWorkerRoleVerifierTest {
                         "LIMIT 1")
                 .doesNotContain("SET ");
         verify(harness.statement()).setQueryTimeout(20);
+        verify(harness.jdbcTemplate())
+                .queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION));
     }
 
     @Test
@@ -56,14 +65,99 @@ class RealtimeWorkerRoleVerifierTest {
                 .hasMessage("operational alert worker source evidence backfill is incomplete");
     }
 
+    @Test
+    void rejectsMissingExpectedSchemaVersionBeforeRoleAndSourceEvidenceChecks() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(jdbcTemplate.queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(false);
+        RealtimeWorkerRoleVerifier verifier = verifier(jdbcTemplate);
+
+        assertThatThrownBy(verifier::verify)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("operational alert worker expected schema version is not installed");
+
+        verify(jdbcTemplate)
+                .queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION));
+        verify(jdbcTemplate, never())
+                .queryForObject(
+                        contains("current_user = CAST"),
+                        eq(Boolean.class),
+                        eq("agriinsight_alert_worker"));
+        verify(jdbcTemplate, never()).execute(any(ConnectionCallback.class));
+    }
+
+    @Test
+    void rejectsUnavailableSchemaHistoryWithoutLeakingDatabaseDetails() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(jdbcTemplate.queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenThrow(new DataAccessResourceFailureException("database password leaked in exception"));
+
+        assertThatThrownBy(() -> verifier(jdbcTemplate).verify())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("operational alert worker schema verification failed");
+    }
+
+    @Test
+    void rejectsDangerousRoleOrPrivilegeDriftWithAnEvidenceBackedCatalogQuery() throws Exception {
+        VerificationHarness harness = verifier(false, false);
+
+        assertThatThrownBy(harness.verifier()::verify)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("operational alert worker database role verification failed");
+
+        ArgumentCaptor<String> query = ArgumentCaptor.forClass(String.class);
+        verify(harness.jdbcTemplate())
+                .queryForObject(
+                        query.capture(), eq(Boolean.class), eq("agriinsight_alert_worker"));
+        assertThat(query.getValue())
+                .contains(
+                        "session_user = current_user",
+                        "worker_role.rolcanlogin",
+                        "NOT worker_role.rolsuper",
+                        "NOT worker_role.rolinherit",
+                        "NOT worker_role.rolcreaterole",
+                        "NOT worker_role.rolcreatedb",
+                        "NOT worker_role.rolreplication",
+                        "NOT worker_role.rolbypassrls",
+                        "pg_catalog.pg_auth_members",
+                        "sensitive_business_relation",
+                        "'farms'::NAME",
+                        "has_table_privilege",
+                        "has_any_column_privilege",
+                        "allowed_metadata_column",
+                        "'outbox_events'::NAME, 'id'::NAME",
+                        "'flyway_schema_history'::NAME, 'success'::NAME")
+                .doesNotContain("'payload'::NAME", "'last_error'::NAME");
+    }
+
     @SuppressWarnings("unchecked")
     private static VerificationHarness verifier(boolean invalidSourceEvidence) throws Exception {
+        return verifier(invalidSourceEvidence, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static VerificationHarness verifier(boolean invalidSourceEvidence, boolean roleVerified)
+            throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(jdbcTemplate.queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(true);
         when(jdbcTemplate.queryForObject(
                         contains("current_user = CAST"),
                         eq(Boolean.class),
                         eq("agriinsight_alert_worker")))
-                .thenReturn(true);
+                .thenReturn(roleVerified);
 
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
@@ -81,9 +175,23 @@ class RealtimeWorkerRoleVerifierTest {
 
         return new VerificationHarness(
                 new RealtimeWorkerRoleVerifier(
-                        jdbcTemplate, workerProperties(), alertProperties(), kafkaProperties()),
+                        jdbcTemplate,
+                        workerProperties(),
+                        alertProperties(),
+                        kafkaProperties(),
+                        EXPECTED_SCHEMA_VERSION),
+                jdbcTemplate,
                 connection,
                 statement);
+    }
+
+    private static RealtimeWorkerRoleVerifier verifier(JdbcTemplate jdbcTemplate) {
+        return new RealtimeWorkerRoleVerifier(
+                jdbcTemplate,
+                workerProperties(),
+                alertProperties(),
+                kafkaProperties(),
+                EXPECTED_SCHEMA_VERSION);
     }
 
     private static RealtimeWorkerProperties workerProperties() {
@@ -125,6 +233,9 @@ class RealtimeWorkerRoleVerifierTest {
     }
 
     private record VerificationHarness(
-            RealtimeWorkerRoleVerifier verifier, Connection connection, PreparedStatement statement) {
+            RealtimeWorkerRoleVerifier verifier,
+            JdbcTemplate jdbcTemplate,
+            Connection connection,
+            PreparedStatement statement) {
     }
 }

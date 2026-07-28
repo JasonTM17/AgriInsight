@@ -17,6 +17,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
@@ -91,10 +92,15 @@ public class RealtimeOperationalAlertWorkerConfiguration {
             org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
             RealtimeWorkerProperties workerProperties,
             RealtimeAlertWorkerProperties alertProperties,
-            KafkaProperties kafkaProperties) {
+            KafkaProperties kafkaProperties,
+            @Value("${agriinsight.schema.expected-version:1}") String expectedSchemaVersion) {
         RealtimeWorkerRoleVerifier verifier =
                 new RealtimeWorkerRoleVerifier(
-                        jdbcTemplate, workerProperties, alertProperties, kafkaProperties);
+                        jdbcTemplate,
+                        workerProperties,
+                        alertProperties,
+                        kafkaProperties,
+                        expectedSchemaVersion);
         verifier.verify();
         return verifier;
     }
