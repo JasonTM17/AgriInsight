@@ -167,22 +167,37 @@ class FlywayMigrationIntegrationTest {
     void v23ToV26ForwardMigrationsAreAdditiveAndUseRestartSafeOnlineIndexes() throws Exception {
         Path migrations = Path.of("src", "main", "resources", "db", "migration");
 
-        assertThat(Files.readString(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql")))
+        String v23 = Files.readString(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql"));
+        assertThat(v23)
                 .contains("realtime_operational_alerts_source_occurred_at_present")
                 .contains("realtime_operational_alerts_evidence_shape")
                 .contains("NOT VALID")
+                .contains("SET LOCAL lock_timeout = '5s';")
+                .contains("SET LOCAL statement_timeout = '30s';")
                 .doesNotContain("UPDATE realtime_operational_alerts");
-        assertThat(Files.readString(migrations.resolve("V24__add_realtime_alert_indexes_concurrently.sql")))
-                .contains("-- flyway:executeInTransaction=false")
-                .contains("CREATE INDEX CONCURRENTLY ix_outbox_events_alert_backlog");
-        assertThat(Files.readString(
-                        migrations.resolve("V25__add_realtime_alert_delivery_lag_index_concurrently.sql")))
-                .contains("-- flyway:executeInTransaction=false")
-                .contains("CREATE INDEX CONCURRENTLY ix_outbox_events_alert_delivery_lag");
-        assertThat(Files.readString(
-                        migrations.resolve("V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql")))
-                .contains("-- flyway:executeInTransaction=false")
-                .contains("CREATE INDEX CONCURRENTLY ix_realtime_operational_alerts_unrecovered_dlt");
+        assertThat(v23.indexOf("SET LOCAL lock_timeout = '5s';"))
+                .isLessThan(v23.indexOf("ALTER TABLE realtime_operational_alerts"));
+        assertBoundedConcurrentIndexMigration(
+                migrations, "V24__add_realtime_alert_indexes_concurrently.sql", "ix_outbox_events_alert_backlog");
+        assertBoundedConcurrentIndexMigration(
+                migrations, "V25__add_realtime_alert_delivery_lag_index_concurrently.sql", "ix_outbox_events_alert_delivery_lag");
+        assertBoundedConcurrentIndexMigration(
+                migrations, "V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql",
+                "ix_realtime_operational_alerts_unrecovered_dlt");
+    }
+
+    private void assertBoundedConcurrentIndexMigration(Path migrations, String filename, String indexName)
+            throws Exception {
+        String migration = Files.readString(migrations.resolve(filename));
+        String createIndex = "CREATE INDEX CONCURRENTLY " + indexName;
+        int createIndexOffset = migration.indexOf(createIndex);
+        assertThat(migration)
+                .contains("-- flyway:executeInTransaction=false", "SET lock_timeout = '5s';",
+                        "SET statement_timeout = '15min';", createIndex, "RESET statement_timeout;",
+                        "RESET lock_timeout;")
+                .doesNotContain("SET LOCAL", "IF NOT EXISTS");
+        assertThat(migration.indexOf("SET statement_timeout = '15min';")).isLessThan(createIndexOffset);
+        assertThat(migration.indexOf("RESET statement_timeout;")).isGreaterThan(createIndexOffset);
     }
 
     private void assertSafeRole(
