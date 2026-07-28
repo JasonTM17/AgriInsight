@@ -1,5 +1,10 @@
 -- Legacy alert rows remain unvalidated; the operator backfill is required before
 -- the isolated alert worker is enabled.
+-- Flyway runs this migration transactionally, so bound lock and statement waits
+-- to avoid indefinitely blocking the migration workflow.
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
+
 ALTER TABLE realtime_operational_alerts
     ADD CONSTRAINT realtime_operational_alerts_source_occurred_at_present
     CHECK (source_occurred_at IS NOT NULL) NOT VALID;
