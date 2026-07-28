@@ -765,6 +765,26 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/realtime/summary": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Get the tenant realtime operational summary
+         * @description Returns at most 100 payload-free metric groups with non-negative freshness.
+         */
+        readonly get: operations["get_api_v1_realtime_summary"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/seasons": {
         readonly parameters: {
             readonly query?: never;
@@ -1867,6 +1887,34 @@ export interface components {
             /** Format: int64 */
             readonly version?: number;
         };
+        readonly RealtimeMetricResponse: {
+            readonly aggregateType?: string;
+            /** Format: int64 */
+            readonly eventCount?: number;
+            readonly eventType?: string;
+            /** Format: date-time */
+            readonly lastOccurredAt?: string;
+            /** Format: date-time */
+            readonly lastProcessedAt?: string;
+        };
+        readonly RealtimeSummaryResponse: {
+            /** Format: int64 */
+            readonly eventCount?: number;
+            /** Format: int64 */
+            readonly freshnessSeconds?: number;
+            readonly hasMore?: boolean;
+            readonly items?: readonly components["schemas"]["RealtimeMetricResponse"][];
+            /** Format: date-time */
+            readonly lastOccurredAt?: string;
+            /** Format: date-time */
+            readonly lastProcessedAt?: string;
+            readonly lens?: string;
+            /** Format: int32 */
+            readonly limit?: number;
+            readonly source?: string;
+            /** Format: uuid */
+            readonly tenantId?: string;
+        };
         readonly SeasonCreateRequest: {
             readonly budgetVnd?: number;
             readonly code: string;
@@ -2313,6 +2361,8 @@ export type SchemaOperatingCostCorrectionRequest = components['schemas']['Operat
 export type SchemaOperatingCostPageResponse = components['schemas']['OperatingCostPageResponse'];
 export type SchemaOperatingCostPostRequest = components['schemas']['OperatingCostPostRequest'];
 export type SchemaOperatingCostResponse = components['schemas']['OperatingCostResponse'];
+export type SchemaRealtimeMetricResponse = components['schemas']['RealtimeMetricResponse'];
+export type SchemaRealtimeSummaryResponse = components['schemas']['RealtimeSummaryResponse'];
 export type SchemaSeasonCreateRequest = components['schemas']['SeasonCreateRequest'];
 export type SchemaSeasonPageResponse = components['schemas']['SeasonPageResponse'];
 export type SchemaSeasonResponse = components['schemas']['SeasonResponse'];
@@ -4546,6 +4596,33 @@ export interface operations {
                 };
                 content: {
                     readonly "*/*": components["schemas"]["CurrentUserResponse"];
+                };
+            };
+            readonly 400: components["responses"]["BadRequest"];
+            readonly 401: components["responses"]["Unauthorized"];
+            readonly 403: components["responses"]["Forbidden"];
+        };
+    };
+    readonly get_api_v1_realtime_summary: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: {
+                /** @description Optional caller correlation identifier */
+                readonly "X-Correlation-Id"?: components["parameters"]["X-Correlation-Id"];
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly "X-Correlation-Id": components["headers"]["X-Correlation-Id"];
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "*/*": components["schemas"]["RealtimeSummaryResponse"];
                 };
             };
             readonly 400: components["responses"]["BadRequest"];

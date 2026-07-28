@@ -5319,6 +5319,62 @@
         "x-required-authority" : "AUTHENTICATED"
       }
     },
+    "/api/v1/realtime/summary" : {
+      "get" : {
+        "description" : "Returns at most 100 payload-free metric groups with non-negative freshness.",
+        "operationId" : "get_api_v1_realtime_summary",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/X-Correlation-Id"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RealtimeSummaryResponse"
+                }
+              }
+            },
+            "description" : "OK",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get the tenant realtime operational summary",
+        "tags" : [ "realtime-summary-controller" ],
+        "x-required-authority" : "REALTIME_READ"
+      }
+    },
     "/api/v1/seasons" : {
       "get" : {
         "operationId" : "get_api_v1_seasons",
@@ -9909,6 +9965,73 @@
           "version" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }
+      },
+      "RealtimeMetricResponse" : {
+        "type" : "object",
+        "properties" : {
+          "aggregateType" : {
+            "type" : "string"
+          },
+          "eventCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "eventType" : {
+            "type" : "string"
+          },
+          "lastOccurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastProcessedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "RealtimeSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "eventCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "freshnessSeconds" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "hasMore" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RealtimeMetricResponse"
+            }
+          },
+          "lastOccurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastProcessedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lens" : {
+            "type" : "string"
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "tenantId" : {
+            "type" : "string",
+            "format" : "uuid"
           }
         }
       },
