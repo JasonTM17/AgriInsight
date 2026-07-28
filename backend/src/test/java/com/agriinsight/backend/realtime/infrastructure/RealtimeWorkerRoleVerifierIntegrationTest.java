@@ -1,6 +1,8 @@
 package com.agriinsight.backend.realtime.infrastructure;
 
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.migrateAndSeed;
+import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.execute;
+import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.operatorConnection;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -16,11 +18,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-/** Proves the restricted login can verify only the installed release schema and its own grants. */
+/** Proves the restricted login rejects released-schema, grant, policy, and privilege drift. */
 @Testcontainers
 class RealtimeWorkerRoleVerifierIntegrationTest {
-
-    private static final String EXPECTED_SCHEMA_VERSION = "27";
 
     @Container
     private static final PostgreSQLContainer POSTGRESQL = PostgresIntegrationSupport.container();
@@ -31,24 +31,91 @@ class RealtimeWorkerRoleVerifierIntegrationTest {
     }
 
     @Test
-    void acceptsTheInstalledSchemaAndRestrictedWorkerRole() {
-        assertThatCode(() -> verifier(EXPECTED_SCHEMA_VERSION).verify()).doesNotThrowAnyException();
+    void acceptsTheInstalledReleaseSchemaAndRestrictedWorkerRole() {
+        assertThatCode(() -> verifier().verify()).doesNotThrowAnyException();
     }
 
     @Test
-    void failsClosedBeforeStartingWhenTheExpectedVersionIsNotInstalled() {
-        assertThatThrownBy(() -> verifier("28").verify())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("operational alert worker expected schema version is not installed");
+    void rejectsAnUnsuccessfulReleasedSchemaVersion() throws Exception {
+        assertRejectedDuringDrift(
+                "UPDATE flyway_schema_history SET success = FALSE WHERE version = '27'",
+                "UPDATE flyway_schema_history SET success = TRUE WHERE version = '27'",
+                "operational alert worker expected schema version is not installed");
     }
 
-    private static RealtimeWorkerRoleVerifier verifier(String expectedSchemaVersion) {
+    @Test
+    void rejectsAnUnsuccessfulLatestRequiredGrantsMigration() throws Exception {
+        String latestRepeatable = """
+                installed_rank = (
+                    SELECT max(installed_rank)
+                      FROM flyway_schema_history
+                     WHERE script = 'R__tenant_rls_helpers_and_grants.sql'
+                )
+                """;
+        assertRejectedDuringDrift(
+                "UPDATE flyway_schema_history SET success = FALSE WHERE " + latestRepeatable,
+                "UPDATE flyway_schema_history SET success = TRUE WHERE " + latestRepeatable,
+                "operational alert worker required grants migration is not current");
+    }
+
+    @Test
+    void rejectsARevokedRequiredReceiptGrant() throws Exception {
+        assertRejectedDuringDrift(
+                """
+                REVOKE SELECT (event_id, tenant_id)
+                    ON realtime_event_receipts FROM agriinsight_alert_worker
+                """,
+                """
+                GRANT SELECT (event_id, tenant_id)
+                    ON realtime_event_receipts TO agriinsight_alert_worker
+                """,
+                "operational alert worker database role verification failed");
+    }
+
+    @Test
+    void rejectsARequiredReceiptPolicyAssignedToTheWrongRole() throws Exception {
+        assertRejectedDuringDrift(
+                """
+                ALTER POLICY alert_worker_realtime_event_receipts_read
+                    ON realtime_event_receipts TO PUBLIC
+                """,
+                """
+                ALTER POLICY alert_worker_realtime_event_receipts_read
+                    ON realtime_event_receipts TO agriinsight_alert_worker
+                """,
+                "operational alert worker database role verification failed");
+    }
+
+    @Test
+    void rejectsAForbiddenBusinessTableGrant() throws Exception {
+        assertRejectedDuringDrift(
+                "GRANT SELECT ON farms TO agriinsight_alert_worker",
+                "REVOKE SELECT ON farms FROM agriinsight_alert_worker",
+                "operational alert worker database role verification failed");
+    }
+
+    private static void assertRejectedDuringDrift(
+            String introduceDrift,
+            String repairDrift,
+            String expectedMessage) throws Exception {
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            execute(operator, introduceDrift);
+            try {
+                assertThatThrownBy(() -> verifier().verify())
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessage(expectedMessage);
+            } finally {
+                execute(operator, repairDrift);
+            }
+        }
+    }
+
+    private static RealtimeWorkerRoleVerifier verifier() {
         return new RealtimeWorkerRoleVerifier(
                 alertWorkerJdbcTemplate(),
                 workerProperties(),
                 alertProperties(),
-                kafkaProperties(),
-                expectedSchemaVersion);
+                kafkaProperties());
     }
 
     private static JdbcTemplate alertWorkerJdbcTemplate() {

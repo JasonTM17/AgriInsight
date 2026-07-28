@@ -708,7 +708,7 @@ GRANT SELECT (event_id, tenant_id)
     ON realtime_event_receipts TO agriinsight_alert_worker;
 GRANT SELECT (id)
     ON tenants TO agriinsight_alert_worker;
-GRANT SELECT (version, success)
+GRANT SELECT (installed_rank, version, script, success)
     ON flyway_schema_history TO agriinsight_alert_worker;
 GRANT SELECT, INSERT ON realtime_operational_alerts TO agriinsight_alert_worker;
 GRANT UPDATE (
