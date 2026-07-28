@@ -47,6 +47,16 @@ class RealtimeDeadLetterEnvelopeValidatorTest {
                 .isInstanceOf(RealtimeEventValidationException.class);
     }
 
+    @Test
+    void rejectsTombstoneDltValues() {
+        ConsumerRecord<byte[], byte[]> record = new ConsumerRecord<>(
+                "agriinsight.operational.v1.dlt", 0, 0, new byte[] {1}, null);
+
+        assertThatThrownBy(() -> new RealtimeDeadLetterEnvelopeValidator(JsonMapper.builder().build())
+                        .parse(record, 262_144))
+                .isInstanceOf(RealtimeEventValidationException.class);
+    }
+
     private static byte[] validValue() {
         return ("{\"event_id\":\"77000000-0000-0000-0000-000000000020\""
                         + ",\"tenant_id\":\"10000000-0000-0000-0000-000000000041\""

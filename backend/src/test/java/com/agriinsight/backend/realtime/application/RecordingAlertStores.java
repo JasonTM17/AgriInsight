@@ -12,7 +12,9 @@ import java.util.Set;
 import java.util.UUID;
 
 final class RecordingAlertStores
-        implements RealtimeOperationalAlertStore, RealtimeOperationalAlertScanStore {
+        implements RealtimeOperationalAlertStore,
+                RealtimeOperationalAlertScanStore,
+                RealtimeOperationalEventSourceStore {
 
     private final Map<RealtimeOperationalAlertPolicy, List<RealtimeOperationalAlertScanPage>> pages =
             new EnumMap<>(RealtimeOperationalAlertPolicy.class);
@@ -22,6 +24,7 @@ final class RecordingAlertStores
             recoveryCandidates = new EnumMap<>(RealtimeOperationalAlertPolicy.class);
     private final Map<RealtimeOperationalAlertPolicy, RealtimeOperationalAlertScanProgress> progress =
             new EnumMap<>(RealtimeOperationalAlertPolicy.class);
+    private final Map<SourceLookup, Instant> sourceOccurredAt = new HashMap<>();
     private final List<Upsert> upserts = new ArrayList<>();
     private final List<CleanUpdate> cleanUpdates = new ArrayList<>();
     private final List<ProgressSave> progressSaves = new ArrayList<>();
@@ -29,6 +32,7 @@ final class RecordingAlertStores
     private final List<RecoveryQuery> recoveryQueries = new ArrayList<>();
     private final List<RealtimeOperationalAlertPolicy> clearedPolicies = new ArrayList<>();
     private final List<RealtimeOperationalAlertPolicy> acquiredPolicies = new ArrayList<>();
+    private final List<SourceLookup> sourceLookups = new ArrayList<>();
     private final Set<UUID> evaluatedAlerts = new HashSet<>();
 
     void pages(RealtimeOperationalAlertPolicy policy, RealtimeOperationalAlertScanPage... values) {
@@ -39,6 +43,12 @@ final class RecordingAlertStores
             RealtimeOperationalAlertPolicy policy,
             RealtimeOperationalAlertRecoveryCandidate... values) {
         recoveryCandidates.put(policy, List.of(values));
+    }
+
+    void sourceOccurredAt(UUID tenantId, UUID eventId, Instant occurredAt) {
+        sourceOccurredAt.put(
+                new SourceLookup(tenantId, eventId),
+                java.util.Objects.requireNonNull(occurredAt, "occurredAt is required"));
     }
 
     List<Upsert> upserts() {
@@ -67,6 +77,10 @@ final class RecordingAlertStores
 
     List<RealtimeOperationalAlertPolicy> acquiredPolicies() {
         return acquiredPolicies;
+    }
+
+    List<SourceLookup> sourceLookups() {
+        return sourceLookups;
     }
 
     @Override
@@ -104,6 +118,13 @@ final class RecordingAlertStores
             Instant evaluatedAt) {
         evaluatedAlerts.add(alert.id());
         cleanUpdates.add(new CleanUpdate(alert, transition, staleBefore, evaluatedAt));
+    }
+
+    @Override
+    public Optional<Instant> findOccurredAt(UUID tenantId, UUID eventId) {
+        SourceLookup lookup = new SourceLookup(tenantId, eventId);
+        sourceLookups.add(lookup);
+        return Optional.ofNullable(sourceOccurredAt.get(lookup));
     }
 
     @Override
@@ -182,5 +203,8 @@ final class RecordingAlertStores
             Instant threshold,
             Instant staleBefore,
             int limit) {
+    }
+
+    record SourceLookup(UUID tenantId, UUID eventId) {
     }
 }

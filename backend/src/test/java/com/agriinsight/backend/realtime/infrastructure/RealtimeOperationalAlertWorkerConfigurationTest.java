@@ -14,6 +14,7 @@ import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertEval
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertScanStore;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertStore;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalEvent;
+import com.agriinsight.backend.realtime.application.RealtimeOperationalEventSourceStore;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import java.time.Duration;
@@ -161,6 +162,7 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 .realtimeOperationalAlertEvaluator(
                         mock(RealtimeOperationalAlertStore.class),
                         mock(RealtimeOperationalAlertScanStore.class),
+                        mock(RealtimeOperationalEventSourceStore.class),
                         transactionManager,
                         Clock.fixed(Instant.parse("2027-09-01T12:00:00Z"), ZoneOffset.UTC),
                         alertProperties(),
