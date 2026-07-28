@@ -169,36 +169,64 @@ class RealtimeOperationalAlertEvaluatorTest {
     }
 
     @Test
-    void cursorResumeKeepsSourceConditionsAndHealthyRecoverySafe() {
+    void rechecksCurrentRecoveryEvidenceAfterAPersistedScanResumesWithAFreshEvaluationTime() {
         RecordingAlertStores stores = new RecordingAlertStores();
-        RealtimeOperationalAlertPolicy policy = RealtimeOperationalAlertPolicy.REALTIME_DELIVERY_LAG;
+        RealtimeOperationalAlertPolicy policy = RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD;
+        Instant resumedAt = NOW.plusSeconds(30);
         RealtimeOperationalAlertScanCursor continuation = RealtimeOperationalAlertScanCursor.ordered(
                 NOW.minusSeconds(20), UUID.fromString("70000000-0000-0000-0000-000000000020"));
-        RealtimeOperationalAlertCondition first = deliveryCondition(1, NOW.minus(Duration.ofMinutes(8)));
-        RealtimeOperationalAlertCondition second = deliveryCondition(2, NOW.minus(Duration.ofMinutes(7)));
+        RealtimeOpenOperationalAlert alert = openAlert(policy, 3, NOW.minus(Duration.ofMinutes(5)), 1);
+        RealtimeOperationalAlertCondition currentCondition = new RealtimeOperationalAlertCondition(
+                policy,
+                tenant(3),
+                UUID.fromString("70000000-0000-0000-0000-000000000103"),
+                NOW.minus(Duration.ofMinutes(10)));
         stores.pages(
                 policy,
-                page(List.of(candidate(first)), Optional.of(continuation)),
-                page(List.of(candidate(second)), Optional.empty()));
-        RealtimeOpenOperationalAlert healthyOldAlert = openAlert(policy, 3, null, 0);
-        stores.recoveryCandidates(policy, recovery(healthyOldAlert, Optional.empty()));
-        RealtimeOperationalAlertEvaluator evaluator = evaluator(stores, properties(1));
+                page(List.of(), Optional.of(continuation)),
+                page(List.of(), Optional.empty()));
+        stores.recoveryCandidates(policy, recovery(alert, Optional.of(currentCondition)));
 
-        evaluator.evaluateAll();
-        evaluator.evaluateAll();
+        evaluator(stores, properties(1), Clock.fixed(NOW, ZoneOffset.UTC)).evaluateAll();
+
+        assertThat(stores.progressSaves(policy)).singleElement()
+                .satisfies(save -> {
+                    assertThat(save.progress().cursor()).isEqualTo(continuation);
+                    assertThat(save.progress().cycleStartedAt()).isEqualTo(NOW);
+                });
+        assertThat(stores.upserts()).containsExactly(new RecordingAlertStores.Upsert(currentCondition, NOW));
+        assertThat(stores.cleanUpdates()).isEmpty();
+        assertThat(stores.recoveryQueries(policy)).singleElement().satisfies(query -> {
+            assertThat(query.threshold()).isEqualTo(NOW);
+            assertThat(query.staleBefore()).isEqualTo(NOW);
+            assertThat(query.limit()).isEqualTo(2);
+        });
+
+        stores.recoveryCandidates(policy, recovery(alert, Optional.empty()));
+        evaluator(stores, properties(1), Clock.fixed(resumedAt, ZoneOffset.UTC)).evaluateAll();
 
         assertThat(stores.pageRequests(policy)).hasSize(2);
         assertThat(stores.pageRequests(policy).getFirst().cursor()).isEmpty();
         assertThat(stores.pageRequests(policy).get(1).cursor()).contains(continuation);
-        assertThat(stores.upserts()).containsExactly(
-                new RecordingAlertStores.Upsert(first, NOW),
-                new RecordingAlertStores.Upsert(second, NOW));
-        assertThat(stores.progressSaves(policy)).singleElement()
-                .extracting(save -> save.progress().cursor())
-                .isEqualTo(continuation);
         assertThat(stores.clearedPolicies()).contains(policy);
-        assertThat(stores.cleanUpdates()).extracting(RecordingAlertStores.CleanUpdate::alert)
-                .containsExactly(healthyOldAlert);
+        assertThat(stores.upserts()).containsExactly(new RecordingAlertStores.Upsert(currentCondition, NOW));
+        assertThat(stores.cleanUpdates()).singleElement().satisfies(update -> {
+            assertThat(update.alert()).isEqualTo(alert);
+            assertThat(update.transition().cleanSince()).isEqualTo(alert.cleanSince());
+            assertThat(update.transition().cleanScanCount()).isEqualTo(2);
+            assertThat(update.transition().resolve()).isTrue();
+            assertThat(update.staleBefore()).isEqualTo(resumedAt);
+            assertThat(update.evaluatedAt()).isEqualTo(resumedAt);
+        });
+        assertThat(stores.recoveryQueries(policy)).hasSize(2).satisfiesExactly(
+                firstQuery -> {
+                    assertThat(firstQuery.threshold()).isEqualTo(NOW);
+                    assertThat(firstQuery.staleBefore()).isEqualTo(NOW);
+                },
+                resumedQuery -> {
+                    assertThat(resumedQuery.threshold()).isEqualTo(resumedAt);
+                    assertThat(resumedQuery.staleBefore()).isEqualTo(resumedAt);
+                });
     }
 
     @Test
@@ -255,12 +283,25 @@ class RealtimeOperationalAlertEvaluatorTest {
 
     private static RealtimeOperationalAlertEvaluator evaluator(
             RecordingAlertStores stores, RealtimeAlertWorkerProperties properties) {
-        return evaluator(stores, properties, new SimpleMeterRegistry());
+        return evaluator(stores, properties, Clock.fixed(NOW, ZoneOffset.UTC), new SimpleMeterRegistry());
     }
 
     private static RealtimeOperationalAlertEvaluator evaluator(
             RecordingAlertStores stores,
             RealtimeAlertWorkerProperties properties,
+            MeterRegistry meterRegistry) {
+        return evaluator(stores, properties, Clock.fixed(NOW, ZoneOffset.UTC), meterRegistry);
+    }
+
+    private static RealtimeOperationalAlertEvaluator evaluator(
+            RecordingAlertStores stores, RealtimeAlertWorkerProperties properties, Clock clock) {
+        return evaluator(stores, properties, clock, new SimpleMeterRegistry());
+    }
+
+    private static RealtimeOperationalAlertEvaluator evaluator(
+            RecordingAlertStores stores,
+            RealtimeAlertWorkerProperties properties,
+            Clock clock,
             MeterRegistry meterRegistry) {
         TransactionOperations transaction = new ImmediateTransactions();
         return new RealtimeOperationalAlertEvaluator(
@@ -269,7 +310,7 @@ class RealtimeOperationalAlertEvaluatorTest {
                 stores,
                 transaction,
                 transaction,
-                Clock.fixed(NOW, ZoneOffset.UTC),
+                clock,
                 properties,
                 meterRegistry);
     }
