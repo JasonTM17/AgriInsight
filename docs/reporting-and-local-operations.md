@@ -47,6 +47,26 @@ visual catalog lives in `dashboard/assets/generated/`; it is application UI
 content, not a Gold fact or a registry image. Crop Health imagery is explicitly
 AI-generated demo evidence and cannot support a real agronomic diagnosis.
 
+## Realtime E2E
+
+Use `scripts/run-realtime-e2e-tests.ps1` for the outbox-to-Kafka gate. Local
+mode writes runtime under `artifacts/_tmp/realtime-e2e` on D and only starts
+after `DISK_GUARD overall=PASS`. It verifies owned Testcontainers cleanup and
+will not delete unrelated Docker resources.
+
+The realtime acceptance target is per-run `p95 <= 30s` across 20 accepted
+outbox-to-authenticated-summary samples. The test logs `freshness_p95_millis`;
+an individual green source run is not a production latency claim.
+
+Hosted mode uses `-HostedCi`, requires the GitHub-hosted Linux markers and
+`RUNNER_TEMP`, and keeps the runtime under the hosted runner temp path. The workflow job is wired, but
+the first hosted green run has not landed yet, so do not read the job as
+hosted acceptance evidence.
+
+If C or D is below the documented floor, keep local realtime Docker work off
+the workstation and wait for hosted CI or restored headroom. WARN is not a
+safe state for realtime verification.
+
 ## Luồng export
 
 1. Mở `Cost Analysis`.
@@ -77,7 +97,9 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 
 Thiếu hoặc không đọc được drive là FAIL. Script chỉ quan sát và in evidence;
 không xóa file, cache hoặc artifact. Khi WARN, dừng build/cài đặt nặng và giữ
-temp/cache trong `artifacts/_tmp` trên D.
+temp/cache trong `artifacts/_tmp` trên D. Realtime/backend Docker work cũng yêu
+cầu `DISK_GUARD overall=PASS`; WARN exit `0` không đủ an toàn cho local
+verification.
 
 Ngưỡng trong bảng là mặc định và có thể override từng ổ qua environment:
 `AGRIINSIGHT_DISK_GUARD_C_WARN_GB`, `AGRIINSIGHT_DISK_GUARD_C_FAIL_GB`,
@@ -89,9 +111,9 @@ không phải số, WARN thấp hơn FAIL, hoặc bất kỳ ngưỡng dưới s
 run mặc định. Override chỉ để chạy được trong workspace chật; nó không nới bất
 kỳ gate chất lượng nào.
 
-Evidence sau big-data/Python UI gates gần nhất: C còn 10.274 GB và D còn
-25.364 GB, cả hai PASS. Vì C gần ngưỡng cảnh báo, mọi Maven/temp/cache nặng
-phải giữ trên D.
+Docker Desktop image/cache vẫn có thể làm tăng áp lực lên C ngay cả khi project
+runtime/log nằm ở D. Khi disk guard đang WARN hoặc FAIL, chuyển verification
+nặng sang hosted CI thay vì cố chạy local.
 
 ## Backend verification
 
@@ -108,12 +130,12 @@ Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTim
 
 | Backend gate | Trạng thái hiện tại |
 |---|---|
-| Fresh Maven verification | PASS: 622 tests (98 Failsafe integration); zero failures/errors/skips |
-| Docker daemon | Available during guarded verification |
-| Testcontainers + Flyway PostgreSQL | PASS; không còn container test treo sau gate |
-| Java 21 CI | PASS: GitHub Actions run `29932250984` passed 5/5 jobs; protected production release remains open |
-| Compose + backend image build | Temurin 21.0.11 JRE Noble, UID/GID 10001, Trivy 0.70.0 zero HIGH/CRITICAL |
-| Registry image verification | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` match digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
+| Local guarded verify | Chỉ chạy khi `DISK_GUARD overall=PASS`; WARN không đủ |
+| Docker daemon | Required cho `verify`, realtime Compose và image build |
+| Testcontainers + Flyway PostgreSQL | Historical Phase 7 evidence có PASS; realtime/current branch cần evidence riêng |
+| Java 21 CI | Dùng hosted GitHub Actions làm source of truth khi local disk không đủ an toàn |
+| Compose + backend image build | Temurin 21.0.11 JRE Noble, UID/GID 10001; không tự coi image build local là release evidence |
+| Registry image verification | Chỉ semantic-tag protected workflow mới đủ thẩm quyền publish/verify Docker Hub + GHCR |
 
 Không đổi blocked gate thành PASS bằng cách skip integration test. Chỉ push image first-party của AgriInsight sau khi test, review và release hardening đạt; không republish PostgreSQL hoặc image upstream.
 

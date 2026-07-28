@@ -15,6 +15,7 @@ required before production.
 | Next web platform | Eight-area hosted browser gate passed | Loopback/private internal candidate; external promotion remains protected-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
+| Realtime worker | Disabled by default; optional local/staging outbox→Kafka→PostgreSQL read-model slice | Private only; compose overlay binds broker to loopback, runs the consumer internally, and exposes no broker/public worker API |
 | Next web + analytics API images | Hosted-CI release candidate | Digest-pinned, loopback-published deployment only; registry publication remains protected-gated |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
@@ -28,6 +29,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run-backend-tests.ps1 verify
 ```
 
 `verify` requires Docker and runs the mandatory PostgreSQL 18 integration gate. Maven repository, temp, and user-home paths must resolve to D. Do not pass test-skip/fail-masking flags.
+Local heavy verification starts only when the script prints `DISK_GUARD overall=PASS`; WARN still exits `0` and is not sufficient for backend/realtime Docker work.
 
 ## Big-data local demonstration
 
@@ -232,7 +234,7 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current schema is Flyway V1-V19 plus repeatable least-privilege helpers/grants; application readiness expects schema version `19`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. V16 creates the append-only operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. V18 creates the outbox tables and V19 adds outbox RLS/index policies. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables.
+The current schema is Flyway V1-V21 plus repeatable least-privilege helpers/grants; application readiness expects schema version `21`. V7-V11 install fail-closed farm, field/crop/season, Employee, farm-assignment, and activity-season lifecycle guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes active profile/warehouse assignments, and V15 adds role-aware inventory read/write RLS plus tenant-leading indexes. V16 creates the append-only operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. V18 creates the outbox tables and V19 adds outbox RLS/index policies. V20 adds tenant-scoped realtime read models plus the `REALTIME_READ` permission/role grants, and V21 adds the tenant summary index. Inconsistent upgrade data aborts migration, and rollback preserves ENABLE/FORCE ROW LEVEL SECURITY on affected tables. `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is a deployment contract check, not a bypass for unmigrated databases.
 
 Required deployment inputs:
 
@@ -317,8 +319,8 @@ The image runs as `10001:10001`. A local tag is not release evidence.
 
 The inventory contract is included in `/v3/api-docs`: warehouse/material/supplier
 masters, warehouse assignments, balances, lots, transactions, and linked
-reversals. `InventoryOpenApiContractTest` verifies the receipt/issue and
-reversal operation descriptions and base-unit examples. Do not expose the docs
+reversals. Inventory OpenAPI contract coverage verifies the receipt/issue and
+reversal operation descriptions plus base-unit examples. Do not expose the docs
 endpoint publicly in a production profile.
 
 The cost contract is also included when API docs are enabled: bounded
@@ -327,10 +329,12 @@ Cost responses use the explicit operating-cost lens. A cost correction appends
 one reversal and one replacement; there is no delete route and no implicit
 inventory/procurement allocation.
 
+The realtime contract is also included when API docs are enabled: `GET /api/v1/realtime/summary` is registered only when identity is enabled, requires `REALTIME_READ`, stays tenant-scoped, and returns at most 100 payload-free metric groups plus freshness metadata. It does not expose raw Kafka payloads, broker coordinates, checksums, or cross-tenant data.
+
 ## Health and logs
 
 - Liveness measures process state only.
-- Readiness includes database reachability and expected Flyway schema version.
+- Readiness includes database reachability and expected Flyway schema version (`21` by default).
 - Public health responses use `show-details=never`.
 - Security responses are generic Problem Details with correlation IDs.
 - Authentication logs contain correlation ID, method, path, reason/fingerprint where available; never Authorization headers, tokens, private keys, or provider diagnostics.

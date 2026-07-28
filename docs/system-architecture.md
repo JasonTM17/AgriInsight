@@ -173,7 +173,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V19 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, and transactional outbox lifecycle guards
+- liveness/readiness split and Flyway V1-V21 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, and the tenant summary index
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 - Phase 1 contract freeze adds eight additive bounded GET reads:
   activity assignments, activity logs, activity log correction history, user
@@ -274,7 +274,7 @@ operational counters only and no conversation content.
 
 ## Transactional outbox
 
-Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration, not a broker or consumer implementation.
+Phase 7 adds the `integration` module transactional outbox boundary. It is the persisted handoff for machine integration. Source now includes the opt-in Kafka publisher path, tenant realtime read models, and tenant summary API, while hosted acceptance for the full realtime slice remains pending.
 
 - `outbox_events` is committed in the same transaction as the domain command.
 - `agriinsight_integration` is a NOLOGIN role used for claim/read/update fencing.
@@ -303,7 +303,8 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
-| Backend phase 7 release boundary | Core verified 2026-07-22; V18-V19 outbox, fenced drain, images, CI, recovery wrappers; protected release/recovery approval remains open |
+| Backend phase 7 release boundary | Core verified 2026-07-22 for V18-V19 outbox/image/recovery evidence; source since then also includes V20-V21 realtime read models and summary API, but hosted acceptance/review for that slice remains open |
+| Realtime hosted gate | Wired in `.github/workflows/ci.yml` via `realtime-e2e`; authenticated summary-route and RLS schema tests are in source, but the first hosted green run is still pending |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
@@ -311,4 +312,4 @@ Phase 7 adds the `integration` module transactional outbox boundary. It is the p
 | Phase image publication | Docker Hub/GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`; protected production release not yet claimed |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
-The right way to read the repo is: analytics and backend phases 1-6 are accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI artifact, and Phase 7's outbox, hosted CI, image and recovery evidence is verified. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.
+The right way to read the repo is: analytics and backend phases 1-6 are accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI artifact, and Phase 7 has verified outbox/image/recovery evidence plus newer realtime source implementation that still needs its own hosted acceptance record. Production identity configuration, protected release approval and recovery-policy ownership remain open, so this is not a production-release claim.

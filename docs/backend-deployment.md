@@ -1,6 +1,6 @@
 # Backend deployment and recovery
 
-Phase 7 supplies a local/staging delivery contract. It is not a production approval: production still needs an OIDC issuer/audience decision, approved RPO/RTO, retention, encrypted off-host backup, a named restore owner, and the protected release/recovery environment.
+Phase 7 supplies a local/staging delivery contract. It is not a production approval: production still needs an OIDC issuer/audience decision, approved RPO/RTO, retention, encrypted off-host backup, a named restore owner, and the protected release/recovery environment. The realtime CI gate is wired, but the first hosted `realtime-e2e` green run is still pending.
 
 ## Optional local Compose profile
 
@@ -15,11 +15,22 @@ docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.
 
 The overlay binds PostgreSQL and API ports to `127.0.0.1`, stores PostgreSQL data under the ignored D-local `backend/.runtime/postgres`, runs the idempotent role bootstrap, then runs a one-shot Flyway migration before the restricted runtime. Tenant/first-admin provisioning remains explicit; container startup never creates an administrator. No service mounts `artifacts/`.
 
+Realtime local topology là overlay riêng, không nằm trong lệnh backend mặc định:
+
+```powershell
+docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.yaml `
+  -f compose.realtime.yaml --profile backend --profile realtime config --quiet
+docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.yaml `
+  -f compose.realtime.yaml --profile backend --profile realtime up --build
+```
+
+Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password setup và service `realtime-worker` non-web. Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD`, bind broker ra `127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored `backend/.runtime/kafka` trên D. Worker dùng `agriinsight_realtime`, bật cả `AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=true` lẫn `AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=true` để materialize read model. Local runner mode stays D-local; hosted mode stays runner-local through `RUNNER_TEMP`. Do not treat the wired CI job as completed hosted acceptance until a green run exists.
+
 Compose role passwords are environment inputs only. Do not put real values in `.env.example`, images, command history or logs. The backend image is read-only with a `/tmp` tmpfs, drops Linux capabilities and runs as UID/GID `10001:10001`.
 
 ## First-party images
 
-The root Python image is `agriinsight-python`; the backend image is `agriinsight-backend`. Both Dockerfiles pin base-image manifest digests, use allowlisted build contexts, add OCI source/revision/version labels and expose deterministic smoke checks. The backend runtime is Temurin 21.0.11 JRE Noble at `sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64` and runs as UID/GID 10001. PostgreSQL is consumed upstream and is never republished.
+The release workflow publishes four first-party images: `agriinsight-python`, `agriinsight-backend`, `agriinsight-web` và `agriinsight-analytics-api`. Realtime worker hiện tái sử dụng `agriinsight-backend`; không có image `agriinsight-realtime` riêng. Dockerfiles pin base-image manifest digests, use allowlisted build contexts, add OCI source/revision/version labels and expose deterministic smoke checks. The backend runtime is Temurin 21.0.11 JRE Noble at `sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64` and runs as UID/GID 10001. PostgreSQL and Apache Kafka remain upstream dependencies and are never republished.
 
 Pull-request CI builds both images without registry login or push. The protected `release-images` workflow runs only for a semantic-version tag (`vMAJOR.MINOR.PATCH`) and requires:
 
@@ -38,7 +49,7 @@ ghcr.io/<github-owner>/agriinsight-backend
 
 There is intentionally no automatic `latest`. BuildKit emits SBOM/provenance; Trivy scans the exact returned digest; both registry tags are resolved back to that digest; and a non-root smoke command runs against the digest. A failed post-publish evidence step fails the release and requires an audited new tag/republish rather than tag mutation. The published phase digests are evidence only until the protected production release environment is approved.
 
-Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This is reproducible non-production evidence, not approval to bypass the protected workflow above.
+Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This is reproducible non-production evidence for the earlier phase7 image/release path, not approval to bypass the protected workflow above or to claim realtime hosted acceptance.
 
 ## Backup
 

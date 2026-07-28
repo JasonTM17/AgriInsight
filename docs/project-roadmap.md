@@ -21,7 +21,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Phase | Goal | Dependency/status |
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
-| Phase 7 | Outbox operations, verified images, CI/release hardening | Core verified 2026-07-22; V18-V19 outbox, image, and recovery evidence is in place, but protected release approval remains open |
+| Phase 7 | Outbox operations, realtime read-model foundation, verified images, CI/release hardening | Core verified 2026-07-22 for V18-V19 outbox/image/recovery evidence; source now includes guarded realtime runner, hosted CI job, V20-V21 realtime read models, and summary API, but hosted acceptance and protected release approval remain open |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
 | Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 internal candidate is complete, while registry environment/reviewers/secrets and production operations remain owner-gated |
 
@@ -75,6 +75,7 @@ implicitly converted into operating cost.
   digest smoke, and identical Docker Hub/GHCR phase-image evidence. Keep the
   protected production release environment and reviewer gates open until the
   release owner approves them.
+- The realtime `realtime-e2e` job and `scripts/run-realtime-e2e-tests.ps1` are wired, but the first hosted green run is still pending; keep that slice labeled pending.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
   artifact. Keep the additive bounded GET reads, deterministic 67-path/94-op
   contract, and current 459+100 backend gate intact before any later phase
@@ -93,7 +94,7 @@ implicitly converted into operating cost.
 - Keep the completed eight-area production-web route set behind the protected
   release boundary; the `openid-client` OIDC boundary is implemented, while
   production OIDC configuration and approval remain open.
-- Outbox consumer, realtime Kafka analytics, alerts, and mobile field workflows.
+- Realtime alerts, advanced Kafka analytics, and mobile field workflows.
 - Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,
   and model monitoring.
 - Guardrailed RAG assistant is implemented locally; keep Text-to-SQL,

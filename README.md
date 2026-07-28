@@ -54,11 +54,12 @@ manager, không sửa `.env.example` và không commit khóa. Xem
 [deployment guide](docs/deployment-guide.md#deepseek-rag-assistant) và
 [kế hoạch/evaluation](plans/260727-2048-deepseek-rag-assistant/plan.md).
 
-Phase 7 bổ sung V18-V19 `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, optional backend Compose profile, pinned non-root images, CI image gate, protected Docker Hub/GHCR publication workflow và D-local backup/restore wrappers. Outbox chưa có consumer/Kafka/HTTP route; đây là handoff an toàn, at-least-once cho phase kế tiếp. Các digest đã xuất bản chỉ là bằng chứng phase, không phải production release.
+Phase 7 bổ sung V18-V21 backend realtime foundation: `outbox_events`, event schema v1, fenced lease/retry/dead-letter, role `agriinsight_integration`, login role `agriinsight_realtime`, PostgreSQL realtime read models, tenant summary API `GET /api/v1/realtime/summary`, optional backend+realtime Compose topology, pinned non-root images, CI image gate, và D-local backup/restore wrappers. Source implementation đã có guarded realtime runner, hosted CI job, authenticated MockMvc route test, RLS schema tests, và publisher/read-model/API path; hosted acceptance evidence cho realtime slice vẫn đang mở, nên các digest đã xuất bản chỉ là bằng chứng phase, không phải production release.
 
 Bằng chứng hiện tại:
 
-- Disk guard PASS trước các tác vụ nặng; guarded Maven `verify` đạt 622 test (gồm 98 Failsafe integration test) trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway V1-V19 apply/validate, fresh install, RLS, assignment lifecycle, cost correction concurrency, outbox lease/dead-letter, query plans và reconciliation.
+- Historical Phase 7 evidence: disk guard PASS trước các tác vụ nặng; guarded Maven `verify` từng đạt 622 test (gồm 98 Failsafe integration test) trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway V1-V19 apply/validate, fresh install, RLS, assignment lifecycle, cost correction concurrency, outbox lease/dead-letter, query plans và reconciliation. Realtime V20-V21 cần evidence mới riêng.
+- Realtime slice source evidence: `scripts/run-realtime-e2e-tests.ps1`, the `realtime-e2e` workflow job, authenticated MockMvc summary-route coverage, and RLS schema tests are present; hosted green evidence is still pending.
 - Hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) xanh 5/5 tại commit `8d8463f`; backend dùng Temurin 21.0.11 JRE Noble được pin digest, Trivy 0.70.0 có zero HIGH/CRITICAL, chạy non-root `10001:10001`.
 - Docker Hub và GHCR cùng trả backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d` cho tags `0.1.0-phase7` và `sha-8d8463f`; pull-by-digest smoke và OCI revision đều PASS.
 - OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
@@ -76,6 +77,7 @@ Bằng chứng hiện tại:
 Các cổng còn mở thuộc phase sau:
 
 - Phase 7 core đã có focused atomicity/lease/RLS tests; protected registry release và recovery approval vẫn là gate cuối của phase. Vì vậy toàn sản phẩm chưa production-ready. Identity vẫn mặc định tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+- Realtime hosted CI chưa có run xanh đầu tiên; không ghi nhận final acceptance, production, hay Docker Hub publication cho slice này.
 - Registry release yêu cầu repository variable `DOCKERHUB_NAMESPACE`, environment secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` và reviewer protection; không có automatic `latest`. Workflow xuất cả Docker Hub và GHCR, scan exact digest rồi smoke-test digest. Các manual phase tags chỉ là bằng chứng non-production.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 

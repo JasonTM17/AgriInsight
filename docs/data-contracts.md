@@ -6,7 +6,7 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | `19` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, and transactional outbox |
+| Flyway schema history | `21` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, and realtime read models |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
@@ -99,7 +99,7 @@ Admin can write tenant inventory; assigned Inventory Manager can read/write;
 Executive/Data Analyst can read tenant-wide; assigned Farm Manager can read;
 Supplier has no inventory permission. V12-V15 create the tables, tenant-safe
 foreign keys, assignment lifecycle guards, role-aware policies, and
-tenant-leading indexes. `InventoryOpenApiContractTest` verifies operation
+tenant-leading indexes. The inventory OpenAPI contract checks verify operation
 summaries and request examples in `/v3/api-docs`.
 
 ## Backend operating-cost contract
@@ -161,6 +161,8 @@ from the Python analytics plane.
 The contract is versioned by `backend/src/main/resources/contracts/agriinsight-operational-events-v1.schema.json`. Each row carries `tenant_id`, `command_id`, `event_ordinal`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `event_type`, `schema_version`, `occurred_at`, payload JSON, and lease/status metadata. `(tenant_id, command_id, event_ordinal)` and `(tenant_id, aggregate_type, aggregate_id, aggregate_version)` are the stable ordering and deduplication keys.
 
 The outbox is at-least-once and does not imply a broker, scheduler, public route, or exact-once delivery. Runtime code may insert events in the domain transaction; the integration role may only read/lease the fenced columns that the drain service needs. A dead-lettered predecessor blocks later versions for the same aggregate.
+
+Source coverage for the realtime slice now includes authenticated summary-route coverage and tenant-scoped RLS-boundary coverage. Those tests are code-level evidence only; hosted CI evidence for the realtime gate is still pending.
 
 ## Operational identifiers
 
@@ -256,4 +258,4 @@ giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm p
 
 Analytics contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đổi breaking phải tạo version mới, migration warehouse tương ứng và regression test cho Gold consumers.
 
-Backend operational API dùng `/api/v1`; Flyway migration number là backend schema history. Current schema history is V19, with V18 creating outbox tables and V19 adding outbox RLS/index policies. Hai giá trị này không đổi analytics version.
+Backend operational API dùng `/api/v1`; Flyway migration number là backend schema history. Current schema history is V21, with V18 creating outbox tables, V19 adding outbox RLS/index policies, V20 adding realtime read models plus `REALTIME_READ`, và V21 adding the tenant summary index. Các giá trị này không đổi analytics version.

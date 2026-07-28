@@ -128,7 +128,7 @@ Cost Analysis pre-aggregate `fact_crop_activity` và `fact_harvest` độc lập
 
 Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Analytics ghi artifact; backend ghi operational state vào PostgreSQL/Flyway. Hai plane không được âm thầm mutate dữ liệu của nhau.
 
-Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke. Phase 7 core đã có evidence transactional outbox và delivery hardening, nhưng protected production release/recovery approvals vẫn mở:
+Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL 18/Flyway integration, analytics regression và local image smoke. Phase 7 có historical evidence cho outbox/image/recovery V18-V19 và source realtime V20-V21 đang chờ hosted acceptance; protected production release/recovery approvals vẫn mở:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
@@ -140,8 +140,8 @@ Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway V1-V19 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox và lifecycle guards,
-- `integration` module owns the transactional outbox writer/drain/store boundary,
+- Flyway V1-V21 cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models và lifecycle guards,
+- `integration` module owns the transactional outbox writer/drain/store boundary; the opt-in worker publishes and consumes the bounded realtime envelope,
 - activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 - hosted CI run `29932250984` xanh 5/5; backend Temurin 21.0.11 JRE Noble
@@ -156,9 +156,9 @@ Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, Post
 
 Phase 5 keeps the operational inventory ledger in PostgreSQL: warehouses, materials, suppliers, and profile-to-warehouse assignments feed immutable transactions; receipts create lots, issues allocate lots by deterministic FEFO, and balances are projections reconciled from signed ledger effects. Reversals are linked, bounded, and service-generated. V15 binds tenant and profile context transaction-locally and separates read/write RLS by role and assignment. This plane does not mutate the Python Gold inventory contract or write `artifacts/`.
 
-Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger V16-V17, correction lineage, bounded summaries và role/farm-aware RLS. Phase 7 thêm V18-V19 outbox, event schema v1, role `agriinsight_integration`, fenced internal drain, image hardening, optional Compose overlay, CI scan/build và protected registry workflow. Docker Hub/GHCR phase tags cùng trỏ tới backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. Backend inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract. Phase digest chỉ là non-production evidence; production approval remains open.
+Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots, allocations, balances, reversals, warehouse assignments, role-aware RLS và OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger V16-V17, correction lineage, bounded summaries và role/farm-aware RLS. Phase 7 có V18-V19 outbox/image/recovery evidence, rồi source V20-V21 thêm read model, summary API và optional Compose worker publish+consume; hosted acceptance cho slice mới vẫn pending. Docker Hub/GHCR phase tags cùng trỏ tới backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. Backend inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value và operating cost không gộp. Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract. Phase digest chỉ là non-production evidence; production approval remains open.
 
-Outbox write nằm trong transaction của command record; event envelope được serialize trước commit và rollback-safe. Drain không phải broker: không có scheduler, consumer hay public route. Aggregate version là ordering key; `occurred_at` chỉ là metadata. Chi tiết role/lease/schema nằm ở [backend-development.md](backend-development.md), còn Compose, image, backup/restore và production approval nằm ở [backend-deployment.md](backend-deployment.md).
+Outbox write nằm trong transaction của command record; event envelope được serialize trước commit và rollback-safe. Outbox drain vẫn không có public HTTP route; optional non-web worker schedule publisher, Kafka consumer và PostgreSQL read-model materialization. Aggregate version là ordering key; `occurred_at` chỉ là metadata. Chi tiết role/lease/schema nằm ở [backend-development.md](backend-development.md), còn Compose, image, backup/restore và production approval nằm ở [backend-deployment.md](backend-deployment.md).
 
 ## Đường mở rộng
 

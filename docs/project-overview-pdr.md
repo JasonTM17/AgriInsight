@@ -36,8 +36,9 @@ hiding them in dashboards.
    shell, opaque PostgreSQL sessions, OIDC authorization-code/PKCE flow, exact
    Spring/FastAPI BFF allowlists, and server-rendered permission boundaries.
 4. **Integration boundary** — No direct Gold mutation or shared mutable storage.
-   Phase 7 provides the versioned transactional outbox and fenced drain boundary;
-   a real consumer/Kafka/Gold ingestion adapter remains future work.
+   Phase 7 provides the versioned transactional outbox, fenced drain, and an
+   opt-in Kafka consumer that materializes PostgreSQL realtime summaries; Gold
+   ingestion remains future work.
 
 See [system architecture](./system-architecture.md), [data contracts](./data-contracts.md),
 and [architecture](./architecture.md) for the normative boundaries.
@@ -92,7 +93,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
-| 7 | Outbox, CI, images, SBOM/provenance, backup/restore, V18-V19 | Core verified; production release gated |
+| 7 | Outbox, realtime read-model foundation, CI/images, SBOM/provenance, backup/restore, V18-V21 | V18-V19 core verified; hosted realtime acceptance and production release gated |
 | Web 5–10 | Eight product areas over tokenless BFF and real upstream contracts | Accepted 2026-07-27 |
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Internal candidate complete; external promotion blocked |
@@ -136,7 +137,7 @@ non-production evidence; protected release and recovery approvals remain open.
 
 ## Explicit non-goals for the current release
 
-Kafka/realtime alerts, ClickHouse/dbt/Airflow, mobile, ML forecasting,
+Realtime alerts, ClickHouse/dbt/Airflow, mobile, ML forecasting,
 what-if analysis, AI Text-to-SQL, and direct Gold writes are deferred. Public
 promotion of the new web/analytics images, production identity/MFA, hostname/
 TLS, observability, and backup policy remain owner-gated.

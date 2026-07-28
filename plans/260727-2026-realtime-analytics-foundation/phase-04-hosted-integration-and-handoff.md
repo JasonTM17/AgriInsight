@@ -19,7 +19,10 @@ dependencies: [3]
 
 Prove the complete outbox-to-Kafka-to-read-model path on hosted storage, review
 security/failure modes, update operations/docs, and hand off the next UI/alerts
-phase without mislabeling internal evidence as production.
+phase without mislabeling internal evidence as production. The source already
+contains the guarded realtime runner, hosted CI job, authenticated MockMvc
+summary-route test, and RLS schema coverage; hosted CI has not yet produced a
+green realtime run, so this phase stays pending.
 
 ## Requirements
 
@@ -28,6 +31,7 @@ phase without mislabeling internal evidence as production.
   aggregate ordering, tenant denial, and measured freshness.
 - Preserve existing Python/web/image gates and keep C/D disk policy explicit.
 - No registry push or production claim without protected owner approval.
+- Do not mark the slice accepted until the first hosted realtime run lands.
 
 ## Related code files
 
@@ -43,8 +47,10 @@ phase without mislabeling internal evidence as production.
 ## Tests before
 
 - Define exact machine-readable pass marker and cleanup assertions.
-- Define p95 local-hosted freshness target, no-loss count, duplicate count zero,
-  DLT count, and owned-container cleanup checks.
+- Define the p95 local/hosted freshness target as `<= 30s`, measured across 20
+  sequential accepted samples from durable outbox append to the authenticated
+  tenant summary; log `freshness_p95_millis`, assert no-loss/zero duplicate
+  increments/DLT delivery, and check owned-container cleanup.
 
 ## Implementation steps
 
@@ -61,10 +67,10 @@ phase without mislabeling internal evidence as production.
 
 ## Todo
 
-- [ ] Add deterministic E2E runner and CI job.
+- [x] Add deterministic E2E runner and CI job.
 - [ ] Capture freshness/replay/failure evidence.
 - [ ] Run security and code review with zero unresolved critical/high issues.
-- [ ] Sync docs, roadmap, and plan status.
+- [x] Sync docs, roadmap, and plan status.
 - [ ] Push and verify hosted CI.
 
 ## Success Criteria
