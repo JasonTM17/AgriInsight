@@ -14,9 +14,11 @@ public final class PostgresIntegrationSupport {
     public static final String RUNTIME = "agriinsight_runtime";
     public static final String IDENTITY_DEFINER = "agriinsight_identity_definer";
     public static final String REALTIME = "agriinsight_realtime";
+    public static final String ALERT_WORKER = "agriinsight_alert_worker";
     public static final String MIGRATOR_PASSWORD = "migrator-integration-only";
     public static final String RUNTIME_PASSWORD = "runtime-integration-only";
     public static final String REALTIME_PASSWORD = "realtime-integration-only";
+    public static final String ALERT_WORKER_PASSWORD = "alert-worker-integration-only";
 
     private PostgresIntegrationSupport() {
     }
@@ -34,6 +36,7 @@ public final class PostgresIntegrationSupport {
             execute(connection, "ALTER ROLE " + MIGRATOR + " PASSWORD '" + MIGRATOR_PASSWORD + "'");
             execute(connection, "ALTER ROLE " + RUNTIME + " PASSWORD '" + RUNTIME_PASSWORD + "'");
             execute(connection, "ALTER ROLE " + REALTIME + " PASSWORD '" + REALTIME_PASSWORD + "'");
+            execute(connection, "ALTER ROLE " + ALERT_WORKER + " PASSWORD '" + ALERT_WORKER_PASSWORD + "'");
         }
     }
 
@@ -72,6 +75,11 @@ public final class PostgresIntegrationSupport {
     public static Connection realtimeConnection(PostgreSQLContainer container, String database)
             throws SQLException {
         return connection(container, database, REALTIME, REALTIME_PASSWORD);
+    }
+
+    public static Connection alertWorkerConnection(PostgreSQLContainer container, String database)
+            throws SQLException {
+        return connection(container, database, ALERT_WORKER, ALERT_WORKER_PASSWORD);
     }
 
     public static Connection connection(

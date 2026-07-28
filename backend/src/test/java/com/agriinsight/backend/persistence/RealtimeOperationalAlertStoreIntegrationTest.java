@@ -13,11 +13,14 @@ import com.agriinsight.backend.realtime.application.RealtimeAlertRecoveryTransit
 import com.agriinsight.backend.realtime.application.RealtimeOpenOperationalAlert;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertAcknowledgementStore;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertCondition;
+import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertCandidate;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertPolicy;
 import com.agriinsight.backend.realtime.infrastructure.PostgresRealtimeOperationalAlertAcknowledgementStore;
+import com.agriinsight.backend.realtime.infrastructure.PostgresRealtimeOperationalAlertScanStore;
 import com.agriinsight.backend.realtime.infrastructure.PostgresRealtimeOperationalAlertStore;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,10 +49,11 @@ class RealtimeOperationalAlertStoreIntegrationTest {
 
     @Test
     void workerStoreDeduplicatesResolvesAndReopensOneAlert() throws Exception {
-        JdbcTemplate realtime = jdbcTemplate(
-                PostgresIntegrationSupport.REALTIME, PostgresIntegrationSupport.REALTIME_PASSWORD);
-        TransactionTemplate transaction = transaction(realtime);
-        PostgresRealtimeOperationalAlertStore store = new PostgresRealtimeOperationalAlertStore(realtime);
+        JdbcTemplate alertWorker = jdbcTemplate(
+                PostgresIntegrationSupport.ALERT_WORKER,
+                PostgresIntegrationSupport.ALERT_WORKER_PASSWORD);
+        TransactionTemplate transaction = transaction(alertWorker);
+        PostgresRealtimeOperationalAlertStore store = new PostgresRealtimeOperationalAlertStore(alertWorker);
         RealtimeOperationalAlertCondition condition = backlogCondition();
 
         transaction.executeWithoutResult(status -> {
@@ -61,6 +65,7 @@ class RealtimeOperationalAlertStoreIntegrationTest {
             store.recordClean(
                     open.getFirst(),
                     new RealtimeAlertRecoveryTransition(OBSERVED_AT.plusSeconds(60), 1, false),
+                    OBSERVED_AT.plusSeconds(60),
                     OBSERVED_AT.plusSeconds(60));
         });
         transaction.executeWithoutResult(status -> {
@@ -69,6 +74,7 @@ class RealtimeOperationalAlertStoreIntegrationTest {
             store.recordClean(
                     open,
                     new RealtimeAlertRecoveryTransition(OBSERVED_AT.plusSeconds(60), 2, true),
+                    OBSERVED_AT.plusSeconds(120),
                     OBSERVED_AT.plusSeconds(120));
         });
 
@@ -101,25 +107,34 @@ class RealtimeOperationalAlertStoreIntegrationTest {
 
     @Test
     void acknowledgementCopiesTheCurrentObservationAndAllowsALaterRecurrence() throws Exception {
-        JdbcTemplate realtime = jdbcTemplate(
-                PostgresIntegrationSupport.REALTIME, PostgresIntegrationSupport.REALTIME_PASSWORD);
-        TransactionTemplate realtimeTransaction = transaction(realtime);
-        PostgresRealtimeOperationalAlertStore workerStore = new PostgresRealtimeOperationalAlertStore(realtime);
+        JdbcTemplate alertWorker = jdbcTemplate(
+                PostgresIntegrationSupport.ALERT_WORKER,
+                PostgresIntegrationSupport.ALERT_WORKER_PASSWORD);
+        TransactionTemplate alertWorkerTransaction = transaction(alertWorker);
+        PostgresRealtimeOperationalAlertStore workerStore = new PostgresRealtimeOperationalAlertStore(alertWorker);
+        PostgresRealtimeOperationalAlertScanStore scanStore =
+                new PostgresRealtimeOperationalAlertScanStore(alertWorker);
         RealtimeOperationalAlertCondition condition = new RealtimeOperationalAlertCondition(
                 RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD,
                 TENANT_A,
                 UUID.fromString("77000000-0000-0000-0000-000000000020"),
                 OBSERVED_AT);
-        realtimeTransaction.executeWithoutResult(status -> workerStore.upsert(condition, OBSERVED_AT));
-        realtimeTransaction.executeWithoutResult(status -> workerStore.upsert(
+        alertWorkerTransaction.executeWithoutResult(status -> workerStore.upsert(condition, OBSERVED_AT));
+        alertWorkerTransaction.executeWithoutResult(status -> workerStore.upsert(
                 condition, OBSERVED_AT.plusSeconds(30)));
-        List<RealtimeOperationalAlertCondition> observedConditions = realtimeTransaction.execute(
-                status -> workerStore.findConditions(
-                        RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD, OBSERVED_AT, 10));
-        assertThat(observedConditions)
+        List<RealtimeOperationalAlertCandidate> observedCandidates = alertWorkerTransaction.execute(
+                status -> scanStore.findPage(
+                        RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD,
+                        OBSERVED_AT,
+                        Optional.empty(),
+                        10).candidates());
+        assertThat(observedCandidates)
                 .singleElement()
-                .extracting(RealtimeOperationalAlertCondition::sourceEventId)
+                .extracting(candidate -> candidate.condition().sourceEventId())
                 .isEqualTo(condition.sourceEventId());
+        JdbcTemplate realtime = jdbcTemplate(
+                PostgresIntegrationSupport.REALTIME, PostgresIntegrationSupport.REALTIME_PASSWORD);
+        TransactionTemplate realtimeTransaction = transaction(realtime);
         realtimeTransaction.executeWithoutResult(status -> realtime.update("""
                 INSERT INTO realtime_event_receipts (
                     event_id, tenant_id, checksum, topic, partition_id, broker_offset)
@@ -131,10 +146,13 @@ class RealtimeOperationalAlertStoreIntegrationTest {
                 "agriinsight.operational.v1",
                 0,
                 909));
-        List<RealtimeOperationalAlertCondition> clearedConditions = realtimeTransaction.execute(
-                status -> workerStore.findConditions(
-                        RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD, OBSERVED_AT, 10));
-        assertThat(clearedConditions).isEmpty();
+        List<RealtimeOperationalAlertCandidate> clearedCandidates = alertWorkerTransaction.execute(
+                status -> scanStore.findPage(
+                        RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD,
+                        OBSERVED_AT,
+                        Optional.empty(),
+                        10).candidates());
+        assertThat(clearedCandidates).isEmpty();
 
         UUID alertId;
         try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
@@ -171,7 +189,7 @@ class RealtimeOperationalAlertStoreIntegrationTest {
         assertThat(duplicate.created()).isFalse();
 
         Instant laterObservation = OBSERVED_AT.plusSeconds(300);
-        realtimeTransaction.executeWithoutResult(status -> workerStore.upsert(condition, laterObservation));
+        alertWorkerTransaction.executeWithoutResult(status -> workerStore.upsert(condition, laterObservation));
         RealtimeAlertAcknowledgement recurrence = runtimeTransaction.execute(status -> {
             bindRuntimeScope(runtime);
             return acknowledgements.acknowledge(TENANT_A, PROFILE_A, alertId, laterObservation.plusSeconds(5));

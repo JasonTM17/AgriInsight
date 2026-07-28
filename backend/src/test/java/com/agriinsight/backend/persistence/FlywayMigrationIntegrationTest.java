@@ -1,5 +1,6 @@
 package com.agriinsight.backend.persistence;
 
+import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.ALERT_WORKER;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.IDENTITY_DEFINER;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.MIGRATOR;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.MIGRATOR_PASSWORD;
@@ -16,8 +17,11 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,14 +46,14 @@ class FlywayMigrationIntegrationTest {
     @Test
     void freshPostgresqlAppliesAllMigrationsAndValidates() throws Exception {
         assertThat(initialMigration.success).isTrue();
-        assertThat(initialMigration.migrationsExecuted).isEqualTo(22);
+        assertThat(initialMigration.migrationsExecuted).isEqualTo(27);
         assertThat(migrate(POSTGRESQL, "agriinsight").migrationsExecuted).isZero();
         try (var connection = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(scalar(connection, """
                     SELECT version FROM flyway_schema_history
                     WHERE success AND version IS NOT NULL
                     ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("21");
+                    """)).isEqualTo("26");
             assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(20);
             assertThat(count(connection, "SELECT count(*) FROM roles")).isEqualTo(7);
         }
@@ -86,7 +90,7 @@ class FlywayMigrationIntegrationTest {
                     """);
         }
 
-        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(18);
+        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(23);
         try (var operator = operatorConnection(POSTGRESQL, database)) {
             assertThat(count(operator, """
                     SELECT count(*) FROM activity_types
@@ -111,6 +115,7 @@ class FlywayMigrationIntegrationTest {
             assertSafeRole(operator, RUNTIME, true, true);
             assertSafeRole(operator, IDENTITY_DEFINER, false, false);
             assertSafeRole(operator, REALTIME, true, true);
+            assertSafeRole(operator, ALERT_WORKER, true, false);
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_auth_members membership
                     JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
@@ -121,6 +126,12 @@ class FlywayMigrationIntegrationTest {
                       AND NOT membership.inherit_option
                       AND membership.set_option
                     """)).isEqualTo(1);
+            assertThat(count(operator, """
+                    SELECT count(*) FROM pg_auth_members membership
+                    JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
+                    JOIN pg_roles member_role ON member_role.oid = membership.member
+                    WHERE member_role.rolname = 'agriinsight_alert_worker'
+                    """)).isZero();
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_auth_members membership
                     JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
@@ -145,6 +156,35 @@ class FlywayMigrationIntegrationTest {
         }
     }
 
+    @Test
+    void v22AlertMigrationRemainsByteForByteImmutable() throws Exception {
+        Path migrations = Path.of("src", "main", "resources", "db", "migration");
+        assertThat(sha256(migrations.resolve("V22__create_realtime_operational_alerts.sql")))
+                .isEqualTo("41bbc48e80501b0392ba196db0385abfeee0c24aba9c77d8037494e187071f3b");
+    }
+
+    @Test
+    void v23ToV26ForwardMigrationsAreAdditiveAndUseRestartSafeOnlineIndexes() throws Exception {
+        Path migrations = Path.of("src", "main", "resources", "db", "migration");
+
+        assertThat(Files.readString(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql")))
+                .contains("realtime_operational_alerts_source_occurred_at_present")
+                .contains("realtime_operational_alerts_evidence_shape")
+                .contains("NOT VALID")
+                .doesNotContain("UPDATE realtime_operational_alerts");
+        assertThat(Files.readString(migrations.resolve("V24__add_realtime_alert_indexes_concurrently.sql")))
+                .contains("-- flyway:executeInTransaction=false")
+                .contains("CREATE INDEX CONCURRENTLY ix_outbox_events_alert_backlog");
+        assertThat(Files.readString(
+                        migrations.resolve("V25__add_realtime_alert_delivery_lag_index_concurrently.sql")))
+                .contains("-- flyway:executeInTransaction=false")
+                .contains("CREATE INDEX CONCURRENTLY ix_outbox_events_alert_delivery_lag");
+        assertThat(Files.readString(
+                        migrations.resolve("V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql")))
+                .contains("-- flyway:executeInTransaction=false")
+                .contains("CREATE INDEX CONCURRENTLY ix_realtime_operational_alerts_unrecovered_dlt");
+    }
+
     private void assertSafeRole(
             java.sql.Connection connection,
             String role,
@@ -161,5 +201,10 @@ class FlywayMigrationIntegrationTest {
                   AND NOT rolreplication
                   AND NOT rolbypassrls
                 """.formatted(role, expectedLogin, expectedInherit))).isEqualTo(1);
+    }
+
+    private static String sha256(Path file) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(Files.readAllBytes(file)));
     }
 }
