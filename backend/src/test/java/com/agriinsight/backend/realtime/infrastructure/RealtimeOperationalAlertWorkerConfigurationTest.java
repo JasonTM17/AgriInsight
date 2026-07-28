@@ -45,6 +45,8 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class RealtimeOperationalAlertWorkerConfigurationTest {
 
+    private static final String EXPECTED_SCHEMA_VERSION = "27";
+
     @Test
     void sendsCompactObserverFailuresToTheDistinctTerminalTopicWithoutPartitionAffinity() {
         KafkaTemplate<byte[], byte[]> template = template();
@@ -152,7 +154,8 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 mock(JdbcTemplate.class),
                 workerProperties(false, true),
                 alertProperties(),
-                kafkaProperties());
+                kafkaProperties(),
+                EXPECTED_SCHEMA_VERSION);
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -162,13 +165,22 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
     @Test
     void rejectsWorkerStartupWhenDatabaseRoleVerificationFails() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        when(jdbcTemplate.queryForObject(any(String.class), any(Class.class), any(Object.class)))
+        when(jdbcTemplate.queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(true);
+        when(jdbcTemplate.queryForObject(
+                        contains("current_user = CAST"),
+                        eq(Boolean.class),
+                        eq("agriinsight_alert_worker")))
                 .thenReturn(false);
         RealtimeWorkerRoleVerifier verifier = new RealtimeWorkerRoleVerifier(
                 jdbcTemplate,
                 workerProperties(false, false),
                 alertProperties(),
-                kafkaProperties());
+                kafkaProperties(),
+                EXPECTED_SCHEMA_VERSION);
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -179,6 +191,11 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
     void rejectsWorkerStartupWhenLegacySourceEvidenceIsMissingOrInvalid() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         when(jdbcTemplate.queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(true);
+        when(jdbcTemplate.queryForObject(
                         contains("current_user = CAST"),
                         eq(Boolean.class),
                         eq("agriinsight_alert_worker")))
@@ -188,7 +205,8 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 jdbcTemplate,
                 workerProperties(false, false),
                 alertProperties(),
-                kafkaProperties());
+                kafkaProperties(),
+                EXPECTED_SCHEMA_VERSION);
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
@@ -202,11 +220,37 @@ class RealtimeOperationalAlertWorkerConfigurationTest {
                 mock(JdbcTemplate.class),
                 workerProperties(false, false),
                 alertProperties("agriinsight.operational.v1"),
-                kafkaProperties());
+                kafkaProperties(),
+                EXPECTED_SCHEMA_VERSION);
 
         assertThatThrownBy(verifier::verify)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("observer failure topic must differ from the primary and observed DLT topics");
+    }
+
+    @Test
+    void wiresTheConfiguredSchemaVersionIntoTheStartupVerifier() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(jdbcTemplate.queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> new RealtimeOperationalAlertWorkerConfiguration()
+                        .realtimeAlertWorkerRoleVerifier(
+                                jdbcTemplate,
+                                workerProperties(false, false),
+                                alertProperties(),
+                                kafkaProperties(),
+                                EXPECTED_SCHEMA_VERSION))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("operational alert worker expected schema version is not installed");
+        verify(jdbcTemplate)
+                .queryForObject(
+                        contains("FROM public.flyway_schema_history"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION));
     }
 
     @Test
