@@ -41,6 +41,7 @@ import com.agriinsight.backend.inventory.application.InventoryReadService;
 import com.agriinsight.backend.inventory.application.InventoryTransactionCommandService;
 import com.agriinsight.backend.cost.application.OperatingCostCommandService;
 import com.agriinsight.backend.cost.application.OperatingCostQueryService;
+import com.agriinsight.backend.realtime.application.RealtimeSummaryService;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -116,7 +117,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         InventoryReadService.class,
         InventoryTransactionCommandService.class,
         OperatingCostCommandService.class,
-        OperatingCostQueryService.class
+        OperatingCostQueryService.class,
+        RealtimeSummaryService.class
 })
 public @interface IdentitySecurityContext {
 }
