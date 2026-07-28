@@ -14,14 +14,14 @@ import static com.agriinsight.backend.persistence.support.PostgresIntegrationSup
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.operatorConnection;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.runtimeConnection;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.scalar;
+import static com.agriinsight.backend.persistence.support.SqlTestResources.assertOfficialV22SourcesUnchanged;
+import static com.agriinsight.backend.persistence.support.SqlTestResources.normalizedSha256;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -31,6 +31,10 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @Testcontainers
 class FlywayMigrationIntegrationTest {
+
+    private static final String OFFICIAL_V22_TENANT_ID = "10000000-0000-0000-0000-000000000062";
+    private static final String OFFICIAL_V22_ALERT_ID = "22000000-0000-0000-0000-000000000001";
+    private static final String OFFICIAL_V22_DLT_ALERT_ID = "22000000-0000-0000-0000-000000000002";
 
     @Container
     private static final PostgreSQLContainer POSTGRESQL =
@@ -110,130 +114,62 @@ class FlywayMigrationIntegrationTest {
     @Test
     void officialV22DatabaseUpgradesThroughTheCurrentV27ReleaseLine() throws Exception {
         String database = "agriinsight_official_v22_upgrade";
-        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
-            execute(operator, "CREATE DATABASE " + database);
-        }
-        bootstrapRoles(POSTGRESQL, database);
-
-        Path officialV22Migrations =
-                com.agriinsight.backend.persistence.support.SqlTestResources.copyMigrationsThroughV22();
         try {
-            var baseline = flyway(
-                            POSTGRESQL,
-                            database,
-                            MIGRATOR,
-                            MIGRATOR_PASSWORD,
-                            "filesystem:" + officialV22Migrations.toString().replace('\\', '/'))
-                    .migrate();
-            assertThat(baseline.success).isTrue();
-            assertThat(baseline.migrationsExecuted).isEqualTo(22);
+            try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+                execute(operator, "CREATE DATABASE " + database);
+            }
+            bootstrapRoles(POSTGRESQL, database);
+
+            Path officialV22Migrations =
+                    com.agriinsight.backend.persistence.support.SqlTestResources.copyMigrationsThroughV22();
+            try {
+                var baseline = flyway(
+                                POSTGRESQL,
+                                database,
+                                MIGRATOR,
+                                MIGRATOR_PASSWORD,
+                                "filesystem:" + officialV22Migrations.toString().replace('\\', '/'))
+                        .migrate();
+                assertThat(baseline.success).isTrue();
+                assertThat(baseline.migrationsExecuted).isEqualTo(23);
+            } finally {
+                com.agriinsight.backend.persistence.support.SqlTestResources.deleteLegacyMigrations(
+                        officialV22Migrations);
+            }
+
+            try (var operator = operatorConnection(POSTGRESQL, database)) {
+                assertThat(scalar(operator, """
+                        SELECT version FROM flyway_schema_history
+                        WHERE success AND version IS NOT NULL
+                        ORDER BY installed_rank DESC LIMIT 1
+                        """)).isEqualTo("22");
+                assertThat(count(operator, """
+                        SELECT count(*) FROM flyway_schema_history
+                        WHERE success AND version IS NOT NULL
+                        """)).isEqualTo(22);
+                assertThat(count(operator, """
+                        SELECT count(*) FROM flyway_schema_history
+                        WHERE success AND script = 'R__tenant_rls_helpers_and_grants.sql'
+                        """)).isEqualTo(1);
+                seedOfficialV22Alert(operator);
+            }
+
+            MigrateResult upgrade = migrate(POSTGRESQL, database);
+            assertThat(upgrade.success).isTrue();
+            assertThat(upgrade.migrationsExecuted).isEqualTo(6);
+            assertThat(flyway(POSTGRESQL, database, MIGRATOR, MIGRATOR_PASSWORD, "classpath:db/migration")
+                            .validateWithResult()
+                            .validationSuccessful)
+                    .isTrue();
+            assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isZero();
+
+            try (var operator = operatorConnection(POSTGRESQL, database)) {
+                assertOfficialV22UpgradeState(operator);
+            }
         } finally {
-            com.agriinsight.backend.persistence.support.SqlTestResources.deleteLegacyMigrations(
-                    officialV22Migrations);
-        }
-
-        try (var operator = operatorConnection(POSTGRESQL, database)) {
-            assertThat(scalar(operator, """
-                    SELECT version FROM flyway_schema_history
-                    WHERE success AND version IS NOT NULL
-                    ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("22");
-            assertThat(count(operator, """
-                    SELECT count(*) FROM flyway_schema_history
-                    WHERE success AND version IS NOT NULL
-                    """)).isEqualTo(22);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM flyway_schema_history
-                    WHERE success AND script = 'R__tenant_rls_helpers_and_grants.sql'
-                    """)).isZero();
-        }
-
-        MigrateResult upgrade = migrate(POSTGRESQL, database);
-        assertThat(upgrade.success).isTrue();
-        assertThat(upgrade.migrationsExecuted).isEqualTo(6);
-        assertThat(flyway(POSTGRESQL, database, MIGRATOR, MIGRATOR_PASSWORD, "classpath:db/migration")
-                        .validateWithResult()
-                        .validationSuccessful)
-                .isTrue();
-        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isZero();
-
-        try (var operator = operatorConnection(POSTGRESQL, database)) {
-            assertThat(scalar(operator, """
-                    SELECT version FROM flyway_schema_history
-                    WHERE success AND version IS NOT NULL
-                    ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("27");
-            assertThat(count(operator, """
-                    SELECT count(*) FROM flyway_schema_history
-                    WHERE success AND version IN ('23', '24', '25', '26', '27')
-                    """)).isEqualTo(5);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM flyway_schema_history
-                    WHERE success AND script = 'R__tenant_rls_helpers_and_grants.sql'
-                    """)).isEqualTo(1);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM pg_constraint constraint_metadata
-                    JOIN pg_class relation ON relation.oid = constraint_metadata.conrelid
-                    JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
-                    WHERE namespace.nspname = 'public'
-                      AND relation.relname = 'realtime_operational_alerts'
-                      AND constraint_metadata.conname IN (
-                          'realtime_operational_alerts_source_occurred_at_present',
-                          'realtime_operational_alerts_evidence_shape')
-                      AND NOT constraint_metadata.convalidated
-                    """)).isEqualTo(2);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM pg_class relation
-                    JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
-                    WHERE namespace.nspname = 'public'
-                      AND relation.relname = 'realtime_operational_alert_scan_cursors'
-                      AND relation.relrowsecurity
-                      AND relation.relforcerowsecurity
-                    """)).isEqualTo(1);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM pg_policy
-                    WHERE polrelid = 'public.realtime_operational_alerts'::regclass
-                      AND polname IN (
-                          'alert_worker_realtime_operational_alerts_select',
-                          'alert_worker_realtime_operational_alerts_insert',
-                          'alert_worker_realtime_operational_alerts_update')
-                    """)).isEqualTo(3);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM pg_policy
-                    WHERE polrelid = 'public.realtime_operational_alert_scan_cursors'::regclass
-                      AND polname IN (
-                          'alert_worker_realtime_operational_alert_scan_cursors_select',
-                          'alert_worker_realtime_operational_alert_scan_cursors_insert',
-                          'alert_worker_realtime_operational_alert_scan_cursors_update',
-                          'alert_worker_realtime_operational_alert_scan_cursors_delete',
-                          'migration_realtime_operational_alert_scan_cursors_access')
-                    """)).isEqualTo(5);
-            assertThat(count(operator, """
-                    SELECT count(*) FROM pg_index index_metadata
-                    JOIN pg_class index_relation ON index_relation.oid = index_metadata.indexrelid
-                    JOIN pg_namespace namespace ON namespace.oid = index_relation.relnamespace
-                    WHERE namespace.nspname = 'public'
-                      AND index_relation.relname IN (
-                          'ix_outbox_events_alert_backlog',
-                          'ix_outbox_events_alert_delivery_lag',
-                          'ix_realtime_operational_alerts_unrecovered_dlt',
-                          'ix_realtime_operational_alerts_invalid_source_evidence')
-                      AND index_metadata.indisvalid
-                      AND index_metadata.indisready
-                    """)).isEqualTo(4);
-            assertThat(scalar(operator, """
-                    SELECT pg_get_expr(index_metadata.indpred, index_metadata.indrelid)
-                    FROM pg_index index_metadata
-                    JOIN pg_class index_relation ON index_relation.oid = index_metadata.indexrelid
-                    WHERE index_relation.relname = 'ix_realtime_operational_alerts_invalid_source_evidence'
-                    """))
-                    .contains(
-                            "source_occurred_at IS NULL",
-                            "OUTBOX_PUBLISH_BACKLOG",
-                            "source_event_id IS NOT NULL",
-                            "REALTIME_DELIVERY_LAG",
-                            "REALTIME_DLT_RECORD",
-                            "source_event_id IS NULL");
+            try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+                execute(operator, "DROP DATABASE IF EXISTS " + database + " WITH (FORCE)");
+            }
         }
     }
 
@@ -287,19 +223,23 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void officialV22ToV27MigrationsRemainByteForByteImmutable() throws Exception {
+    void releasedMigrationLogicalContentsRemainImmutableAcrossCheckoutLineEndings() throws Exception {
+        assertOfficialV22SourcesUnchanged();
+
         Path migrations = Path.of("src", "main", "resources", "db", "migration");
-        assertThat(sha256(migrations.resolve("V22__create_realtime_operational_alerts.sql")))
-                .isEqualTo("6912e47c821f63b99b0f852d62a3f4944964f4e853d157c97e6d7056a75adf31");
-        assertThat(sha256(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql")))
+        assertThat(normalizedSha256(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql")))
                 .isEqualTo("bcd5e8f4b6ca658b5ae836b270f13689fa5fc4ab47285a0c3ccb8f1f9cf40528");
-        assertThat(sha256(migrations.resolve("V24__add_realtime_alert_indexes_concurrently.sql")))
+        assertThat(normalizedSha256(
+                        migrations.resolve("V24__add_realtime_alert_indexes_concurrently.sql")))
                 .isEqualTo("7863279c7e826a05ecde9c2ae8c09d9d5b2ccd2b3bfae8c725b3d48a4087a933");
-        assertThat(sha256(migrations.resolve("V25__add_realtime_alert_delivery_lag_index_concurrently.sql")))
+        assertThat(normalizedSha256(
+                        migrations.resolve("V25__add_realtime_alert_delivery_lag_index_concurrently.sql")))
                 .isEqualTo("b3a6996c773156d82ed1d0eba5faa7c0393209ce9aa06d04513d3db5954148c9");
-        assertThat(sha256(migrations.resolve("V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql")))
+        assertThat(normalizedSha256(
+                        migrations.resolve("V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql")))
                 .isEqualTo("6cd177629e9db4133cf52496028dcce952d38ecb640133d738176e9d3f44862b");
-        assertThat(sha256(migrations.resolve("V27__add_realtime_alert_evidence_readiness_index_concurrently.sql")))
+        assertThat(normalizedSha256(
+                        migrations.resolve("V27__add_realtime_alert_evidence_readiness_index_concurrently.sql")))
                 .isEqualTo("e683d2daca4104a5f488c0f623830eb74d351c18b128780bbac1fc729a5cac55");
     }
 
@@ -372,6 +312,155 @@ class FlywayMigrationIntegrationTest {
                 .isEqualTo("executeInTransaction=false");
     }
 
+    private void assertOfficialV22UpgradeState(java.sql.Connection operator) throws SQLException {
+        assertThat(scalar(operator, """
+                SELECT version FROM flyway_schema_history
+                WHERE success AND version IS NOT NULL
+                ORDER BY installed_rank DESC LIMIT 1
+                """)).isEqualTo("27");
+        assertThat(count(operator, """
+                SELECT count(*) FROM flyway_schema_history
+                WHERE success AND version IN ('23', '24', '25', '26', '27')
+                """)).isEqualTo(5);
+        assertThat(count(operator, """
+                SELECT count(*) FROM flyway_schema_history
+                WHERE success AND script = 'R__tenant_rls_helpers_and_grants.sql'
+                """)).isEqualTo(2);
+        assertThat(count(operator, """
+                SELECT count(*) FROM realtime_operational_alerts
+                WHERE id = '%s'
+                  AND tenant_id = '%s'
+                  AND policy_code = 'OUTBOX_PUBLISH_BACKLOG'
+                  AND dedupe_key = repeat('a', 64)
+                  AND severity = 'WARNING'
+                  AND state = 'OPEN'
+                  AND source_event_id IS NULL
+                  AND source_occurred_at IS NULL
+                  AND opened_at = TIMESTAMPTZ '2026-07-01 00:00:00+00'
+                  AND last_observed_at = TIMESTAMPTZ '2026-07-01 00:05:00+00'
+                  AND last_evaluated_at = TIMESTAMPTZ '2026-07-01 00:06:00+00'
+                  AND version = 3
+                """.formatted(OFFICIAL_V22_ALERT_ID, OFFICIAL_V22_TENANT_ID))).isEqualTo(1);
+        assertThat(count(operator, """
+                SELECT count(*) FROM realtime_operational_alerts
+                WHERE id = '%s'
+                  AND tenant_id = '%s'
+                  AND policy_code = 'REALTIME_DLT_RECORD'
+                  AND dedupe_key = repeat('b', 64)
+                  AND severity = 'CRITICAL'
+                  AND state = 'OPEN'
+                  AND source_event_id IS NULL
+                  AND source_occurred_at = TIMESTAMPTZ '2026-07-01 00:07:00+00'
+                  AND opened_at = TIMESTAMPTZ '2026-07-01 00:08:00+00'
+                  AND last_observed_at = TIMESTAMPTZ '2026-07-01 00:09:00+00'
+                  AND last_evaluated_at = TIMESTAMPTZ '2026-07-01 00:10:00+00'
+                  AND version = 4
+                """.formatted(OFFICIAL_V22_DLT_ALERT_ID, OFFICIAL_V22_TENANT_ID))).isEqualTo(1);
+        assertThat(count(operator, """
+                SELECT count(*) FROM realtime_operational_alerts
+                WHERE id IN ('%s', '%s')
+                  AND (
+                      source_occurred_at IS NULL
+                      OR (policy_code = 'OUTBOX_PUBLISH_BACKLOG' AND source_event_id IS NOT NULL)
+                      OR (policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')
+                          AND source_event_id IS NULL)
+                  )
+                """.formatted(OFFICIAL_V22_ALERT_ID, OFFICIAL_V22_DLT_ALERT_ID))).isEqualTo(2);
+        assertThat(count(operator, """
+                SELECT count(*) FROM pg_constraint constraint_metadata
+                JOIN pg_class relation ON relation.oid = constraint_metadata.conrelid
+                JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+                WHERE namespace.nspname = 'public'
+                  AND relation.relname = 'realtime_operational_alerts'
+                  AND constraint_metadata.conname IN (
+                      'realtime_operational_alerts_source_occurred_at_present',
+                      'realtime_operational_alerts_evidence_shape')
+                  AND NOT constraint_metadata.convalidated
+                """)).isEqualTo(2);
+        assertThat(count(operator, """
+                SELECT count(*) FROM pg_class relation
+                JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+                WHERE namespace.nspname = 'public'
+                  AND relation.relname = 'realtime_operational_alert_scan_cursors'
+                  AND relation.relrowsecurity
+                  AND relation.relforcerowsecurity
+                """)).isEqualTo(1);
+        assertThat(count(operator, """
+                SELECT count(*) FROM pg_policy
+                WHERE polrelid = 'public.realtime_operational_alerts'::regclass
+                  AND polname IN (
+                      'alert_worker_realtime_operational_alerts_select',
+                      'alert_worker_realtime_operational_alerts_insert',
+                      'alert_worker_realtime_operational_alerts_update')
+                """)).isEqualTo(3);
+        assertThat(count(operator, """
+                SELECT count(*) FROM pg_policy
+                WHERE polrelid = 'public.realtime_operational_alert_scan_cursors'::regclass
+                  AND polname IN (
+                      'alert_worker_realtime_operational_alert_scan_cursors_select',
+                      'alert_worker_realtime_operational_alert_scan_cursors_insert',
+                      'alert_worker_realtime_operational_alert_scan_cursors_update',
+                      'alert_worker_realtime_operational_alert_scan_cursors_delete',
+                      'migration_realtime_operational_alert_scan_cursors_access')
+                """)).isEqualTo(5);
+        assertThat(count(operator, """
+                SELECT count(*) FROM pg_index index_metadata
+                JOIN pg_class index_relation ON index_relation.oid = index_metadata.indexrelid
+                JOIN pg_namespace namespace ON namespace.oid = index_relation.relnamespace
+                WHERE namespace.nspname = 'public'
+                  AND index_relation.relname IN (
+                      'ix_outbox_events_alert_backlog',
+                      'ix_outbox_events_alert_delivery_lag',
+                      'ix_realtime_operational_alerts_unrecovered_dlt',
+                      'ix_realtime_operational_alerts_invalid_source_evidence')
+                  AND index_metadata.indisvalid
+                  AND index_metadata.indisready
+                """)).isEqualTo(4);
+        assertThat(scalar(operator, """
+                SELECT pg_get_expr(index_metadata.indpred, index_metadata.indrelid)
+                FROM pg_index index_metadata
+                JOIN pg_class index_relation ON index_relation.oid = index_metadata.indexrelid
+                WHERE index_relation.relname = 'ix_realtime_operational_alerts_invalid_source_evidence'
+                """))
+                .contains(
+                        "source_occurred_at IS NULL",
+                        "OUTBOX_PUBLISH_BACKLOG",
+                        "source_event_id IS NOT NULL",
+                        "REALTIME_DELIVERY_LAG",
+                        "REALTIME_DLT_RECORD",
+                        "source_event_id IS NULL");
+    }
+
+    private void seedOfficialV22Alert(java.sql.Connection operator) throws SQLException {
+        execute(operator, """
+                INSERT INTO tenants (id, code, display_name)
+                VALUES ('%s', 'UPGRADE-V22', 'Official V22 upgrade tenant')
+                """.formatted(OFFICIAL_V22_TENANT_ID));
+        execute(operator, """
+                INSERT INTO realtime_operational_alerts (
+                    id, tenant_id, policy_code, dedupe_key, severity, state,
+                    source_event_id, source_occurred_at, opened_at, last_observed_at,
+                    last_evaluated_at, version)
+                VALUES (
+                    '%s', '%s', 'OUTBOX_PUBLISH_BACKLOG', repeat('a', 64), 'WARNING', 'OPEN',
+                    NULL, NULL, TIMESTAMPTZ '2026-07-01 00:00:00+00',
+                    TIMESTAMPTZ '2026-07-01 00:05:00+00',
+                    TIMESTAMPTZ '2026-07-01 00:06:00+00', 3)
+                """.formatted(OFFICIAL_V22_ALERT_ID, OFFICIAL_V22_TENANT_ID));
+        execute(operator, """
+                INSERT INTO realtime_operational_alerts (
+                    id, tenant_id, policy_code, dedupe_key, severity, state,
+                    source_event_id, source_occurred_at, opened_at, last_observed_at,
+                    last_evaluated_at, version)
+                VALUES (
+                    '%s', '%s', 'REALTIME_DLT_RECORD', repeat('b', 64), 'CRITICAL', 'OPEN',
+                    NULL, TIMESTAMPTZ '2026-07-01 00:07:00+00',
+                    TIMESTAMPTZ '2026-07-01 00:08:00+00',
+                    TIMESTAMPTZ '2026-07-01 00:09:00+00',
+                    TIMESTAMPTZ '2026-07-01 00:10:00+00', 4)
+                """.formatted(OFFICIAL_V22_DLT_ALERT_ID, OFFICIAL_V22_TENANT_ID));
+    }
+
     private void assertSafeRole(
             java.sql.Connection connection,
             String role,
@@ -390,8 +479,4 @@ class FlywayMigrationIntegrationTest {
                 """.formatted(role, expectedLogin, expectedInherit))).isEqualTo(1);
     }
 
-    private static String sha256(Path file) throws Exception {
-        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(Files.readAllBytes(file)));
-    }
 }
