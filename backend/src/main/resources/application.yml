@@ -45,8 +45,10 @@ spring:
       group-id: ${AGRIINSIGHT_KAFKA_CONSUMER_GROUP:agriinsight-realtime-v1}
       enable-auto-commit: false
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      properties:
+        "[max.partition.fetch.bytes]": ${AGRIINSIGHT_REALTIME_MAX_RECORD_BYTES:262144}
     listener:
       ack-mode: record
       missing-topics-fatal: true

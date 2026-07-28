@@ -27,7 +27,7 @@ class RealtimeOperationalEventParserTest {
 
     @Test
     void parsesTheExactV1RecordWithoutRetainingPayload() throws Exception {
-        ConsumerRecord<String, String> record = record(value(), headers());
+        ConsumerRecord<byte[], byte[]> record = record(value(), headers());
 
         RealtimeOperationalEvent event = parser.parse(record, 262_144);
 
@@ -38,7 +38,7 @@ class RealtimeOperationalEventParserTest {
         assertThat(event.aggregateVersion()).isEqualTo(3);
         assertThat(event.eventType()).isEqualTo(EVENT_TYPE);
         assertThat(event.occurredAt()).isEqualTo(Instant.parse("2026-07-27T13:30:00Z"));
-        assertThat(event.checksum()).isEqualTo(sha256(value()));
+        assertThat(event.checksum()).isEqualTo(sha256(value().getBytes(StandardCharsets.UTF_8)));
         assertThat(event.topic()).isEqualTo("agriinsight.operational.v1");
         assertThat(event.partition()).isZero();
         assertThat(event.offset()).isEqualTo(42);
@@ -69,7 +69,7 @@ class RealtimeOperationalEventParserTest {
     }
 
     @Test
-    void rejectsSchemaDriftKeyDriftAndOversizeValues() {
+    void rejectsSchemaDriftKeyDriftAndOversizeRecordInputs() {
         assertThatThrownBy(() -> parser.parse(record(
                         value().replace("\"payload\"", "\"unexpected\""), headers()), 262_144))
                 .isInstanceOf(RealtimeEventValidationException.class)
@@ -85,20 +85,57 @@ class RealtimeOperationalEventParserTest {
                 .hasMessageContaining("maximum");
     }
 
-    private static ConsumerRecord<String, String> record(String value, RecordHeaders headers) {
+    @Test
+    void rejectsMalformedValueUtf8BeforeItsChecksumCanBeCalculated() {
+        byte[] malformedValue = value().getBytes(StandardCharsets.UTF_8);
+        malformedValue[value().indexOf("ignored-raw-payload")] = (byte) 0xFF;
+
+        assertThatThrownBy(() -> parser.parse(record(
+                        (TENANT_ID + ":FARM:" + AGGREGATE_ID).getBytes(StandardCharsets.UTF_8),
+                        malformedValue,
+                        headers()),
+                        262_144))
+                .isInstanceOf(RealtimeEventValidationException.class)
+                .hasMessageContaining("UTF-8");
+    }
+
+    @Test
+    void rejectsOversizedKeysAndHeaderValuesBeforeDecodingThem() {
+        assertThatThrownBy(() -> parser.parse(record(
+                        new byte[139], value().getBytes(StandardCharsets.UTF_8), headers()), 262_144))
+                .isInstanceOf(RealtimeEventValidationException.class)
+                .hasMessageContaining("key");
+
+        RecordHeaders oversizedHeader = headers();
+        oversizedHeader.remove("agriinsight-event-id");
+        oversizedHeader.add("agriinsight-event-id", new byte[161]);
+        assertThatThrownBy(() -> parser.parse(record(value(), oversizedHeader), 262_144))
+                .isInstanceOf(RealtimeEventValidationException.class)
+                .hasMessageContaining("header");
+    }
+
+    private static ConsumerRecord<byte[], byte[]> record(String value, RecordHeaders headers) {
         return record(TENANT_ID + ":FARM:" + AGGREGATE_ID, value, headers);
     }
 
-    private static ConsumerRecord<String, String> record(
+    private static ConsumerRecord<byte[], byte[]> record(
             String key, String value, RecordHeaders headers) {
+        return record(
+                key.getBytes(StandardCharsets.UTF_8),
+                value.getBytes(StandardCharsets.UTF_8),
+                headers);
+    }
+
+    private static ConsumerRecord<byte[], byte[]> record(
+            byte[] key, byte[] value, RecordHeaders headers) {
         return new ConsumerRecord<>(
                 "agriinsight.operational.v1",
                 0,
                 42,
                 ConsumerRecord.NO_TIMESTAMP,
                 TimestampType.CREATE_TIME,
-                key.getBytes(StandardCharsets.UTF_8).length,
-                value.getBytes(StandardCharsets.UTF_8).length,
+                key.length,
+                value.length,
                 key,
                 value,
                 headers,
@@ -121,8 +158,8 @@ class RealtimeOperationalEventParserTest {
                 """;
     }
 
-    private static String sha256(String value) throws Exception {
+    private static String sha256(byte[] value) throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(value.getBytes(StandardCharsets.UTF_8)));
+                .digest(value));
     }
 }

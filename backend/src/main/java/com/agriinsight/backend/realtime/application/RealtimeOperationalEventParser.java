@@ -23,6 +23,9 @@ public class RealtimeOperationalEventParser {
     private static final Set<String> HEADER_FIELDS = Set.of(
             "agriinsight-event-id", "agriinsight-tenant-id", "agriinsight-event-type",
             "agriinsight-schema-version");
+    private static final int MAX_KEY_BYTES = 138;
+    private static final int MAX_HEADER_NAME_BYTES = 64;
+    private static final int MAX_HEADER_VALUE_BYTES = 160;
 
     private final RealtimeEventEnvelopeParser envelopeParser;
 
@@ -31,16 +34,15 @@ public class RealtimeOperationalEventParser {
                 Objects.requireNonNull(jsonMapper, "jsonMapper is required"));
     }
 
-    public RealtimeOperationalEvent parse(ConsumerRecord<String, String> record, int maxRecordBytes) {
-        ConsumerRecord<String, String> required = Objects.requireNonNull(record, "record is required");
+    public RealtimeOperationalEvent parse(ConsumerRecord<byte[], byte[]> record, int maxRecordBytes) {
+        ConsumerRecord<byte[], byte[]> required = Objects.requireNonNull(record, "record is required");
         if (maxRecordBytes < 1) {
             throw new IllegalArgumentException("maxRecordBytes must be positive");
         }
-        String value = Objects.requireNonNull(required.value(), "record value is required");
-        byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
-        if (valueBytes.length > maxRecordBytes) {
-            throw invalid("event value exceeds the configured maximum");
-        }
+        byte[] keyBytes = Objects.requireNonNull(required.key(), "record key is required");
+        byte[] valueBytes = Objects.requireNonNull(required.value(), "record value is required");
+        requireBoundedInput(required, keyBytes, valueBytes, maxRecordBytes);
+        String value = decodeUtf8(valueBytes, "event value");
 
         RealtimeEventEnvelope envelope = envelopeParser.parse(value);
 
@@ -49,7 +51,11 @@ public class RealtimeOperationalEventParser {
         requireHeader(headers, "agriinsight-tenant-id", envelope.tenantId().toString());
         requireHeader(headers, "agriinsight-event-type", envelope.eventType());
         requireHeader(headers, "agriinsight-schema-version", "1");
-        requireKey(required.key(), envelope.tenantId(), envelope.aggregateType(), envelope.aggregateId());
+        requireKey(
+                decodeUtf8(keyBytes, "event key"),
+                envelope.tenantId(),
+                envelope.aggregateType(),
+                envelope.aggregateId());
 
         return new RealtimeOperationalEvent(
                 envelope.eventId(),
@@ -65,7 +71,42 @@ public class RealtimeOperationalEventParser {
                 required.offset());
     }
 
-    private static Map<String, String> requireHeaders(ConsumerRecord<String, String> record) {
+    private static void requireBoundedInput(
+            ConsumerRecord<byte[], byte[]> record,
+            byte[] keyBytes,
+            byte[] valueBytes,
+            int maximumBytes) {
+        if (keyBytes.length > MAX_KEY_BYTES) {
+            throw invalid("event key exceeds the configured maximum");
+        }
+        long inputBytes = (long) keyBytes.length + valueBytes.length;
+        for (Header header : record.headers()) {
+            String name = header.key();
+            if (name == null) {
+                throw invalid("event header name is required");
+            }
+            byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
+            if (nameBytes.length > MAX_HEADER_NAME_BYTES) {
+                throw invalid("event header name exceeds the configured maximum");
+            }
+            byte[] headerValue = header.value();
+            if (headerValue == null) {
+                throw invalid("event header value is required");
+            }
+            if (headerValue.length > MAX_HEADER_VALUE_BYTES) {
+                throw invalid("event header value exceeds the configured maximum");
+            }
+            inputBytes += nameBytes.length + headerValue.length;
+            if (inputBytes > maximumBytes) {
+                throw invalid("event input exceeds the configured maximum");
+            }
+        }
+        if (inputBytes > maximumBytes) {
+            throw invalid("event input exceeds the configured maximum");
+        }
+    }
+
+    private static Map<String, String> requireHeaders(ConsumerRecord<byte[], byte[]> record) {
         Map<String, List<Header>> grouped = new HashMap<>();
         for (Header header : record.headers()) {
             grouped.computeIfAbsent(header.key(), ignored -> new java.util.ArrayList<>()).add(header);
@@ -80,14 +121,22 @@ public class RealtimeOperationalEventParser {
     }
 
     private static String decodeHeader(Header header) {
+        byte[] value = header.value();
+        if (value == null) {
+            throw invalid("event headers must contain UTF-8 text");
+        }
+        return decodeUtf8(value, "event headers");
+    }
+
+    private static String decodeUtf8(byte[] value, String field) {
         try {
             return StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(Objects.requireNonNull(header.value(), "header value is required")))
+                    .decode(ByteBuffer.wrap(value))
                     .toString();
-        } catch (CharacterCodingException | NullPointerException exception) {
-            throw invalid("event headers must contain UTF-8 text", exception);
+        } catch (CharacterCodingException exception) {
+            throw invalid(field + " must contain UTF-8 text", exception);
         }
     }
 
