@@ -26,7 +26,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class RealtimeWorkerRoleVerifierTest {
 
-    private static final String EXPECTED_SCHEMA_VERSION = "27";
+    private static final String EXPECTED_SCHEMA_VERSION = "28";
 
     @Test
     void acceptsCompleteSourceEvidenceWithAnIndexEligibleBoundedProbe() throws Exception {
