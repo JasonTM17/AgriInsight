@@ -1,15 +1,23 @@
 ---
-title: "Realtime operational alert center"
-description: "Deliver a tenant-safe, durable operational alert center for realtime transport health without inventing domain signals."
-status: pending
+title: Realtime operational alert center
+description: >-
+  Deliver a tenant-safe, durable operational alert center for realtime transport
+  health without inventing domain signals.
+status: in-progress
 priority: P1
-effort: "5-7d"
-branch: "main"
-tags: [feature, backend, database, api, frontend, critical]
+effort: 5-7d
+branch: main
+tags:
+  - feature
+  - backend
+  - database
+  - api
+  - frontend
+  - critical
 blockedBy: []
 blocks: []
-created: "2026-07-28T08:07:07.598Z"
-createdBy: "ck:plan"
+created: '2026-07-28T08:07:07.598Z'
+createdBy: 'ck:plan'
 source: skill
 ---
 
@@ -91,7 +99,7 @@ locations.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | Pending |
+| 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | In Progress |
 | 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | Pending |
 | 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | Pending |
 

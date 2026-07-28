@@ -186,11 +186,3 @@ Browser receives typed, bounded, source-labelled view data only
 
 Phase 3 consumes only the generated BFF contract. It does not add a browser
 connection to Spring/Kafka, change a backend route, or recompute alert state.
-
-## Implementation Steps
-
-<!-- Detailed steps -->
-
-## Success Criteria
-
-- [ ] ...

@@ -1,8 +1,8 @@
 ---
 phase: 1
-title: "Tenant-safe alert lifecycle"
-status: pending
-effort: "2-3d"
+title: Tenant-safe alert lifecycle
+status: in-progress
+effort: 2-3d
 ---
 
 # Phase 1: Tenant-safe alert lifecycle
@@ -10,7 +10,7 @@ effort: "2-3d"
 ## Overview
 
 Priority: P1  
-Current status: pending  
+Current status: in progress
 Owner boundary: backend database + separate realtime worker
 
 Create the durable, metadata-only alert lifecycle before exposing any new UI.
@@ -47,7 +47,9 @@ profile's acknowledgement without changing the underlying operational fact.
 2. Implement exactly three first-policy codes:
    `OUTBOX_PUBLISH_BACKLOG`, `REALTIME_DELIVERY_LAG`, and
    `REALTIME_DLT_RECORD`.
-3. Evaluate backlog and delivery lag from outbox/receipt/metric metadata only.
+3. Evaluate backlog and delivery lag from outbox/receipt/metric metadata only;
+   a DLT alert recovers only after its validated event identity is eventually
+   present in the receipt projection.
    A separate DLT consumer group observes the DLT topic and validates a bounded
    event *value* against the v1 envelope while treating all Kafka headers as
    untrusted. It creates a tenant alert only when that value proves a tenant.
@@ -119,21 +121,24 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 | `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql` | Modify | Revoke public/runtime/integration access first, then grant minimum columns to runtime and integration roles. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Permission.java` | Modify | Add explicit alert read/ack permissions. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Role.java` | Modify | Keep role catalog/permission expectations aligned with SQL seeds. |
-| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\integration\infrastructure\RealtimeWorkerProperties.java` | Modify | Add bounded alert/DLT observer/hysteresis settings; preserve disabled defaults. |
+| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\RealtimeAlertWorkerProperties.java` | Create | Keep bounded alert/DLT observer/hysteresis settings separate from the established v1 worker contract. |
 | `D:\AgriInsight\backend\src\main\resources\application.yml` | Modify | Keep all alert worker/listener paths off by default. |
 | `D:\AgriInsight\backend\src\main\resources\application-realtime-worker.yml` | Create | Non-web worker topology; only this profile enables the evaluator/consumer after login verification. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\application\RealtimeOperationalAlertPolicy.java` | Create | Typed policy codes, severity/state, and deterministic evaluation inputs. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\application\RealtimeOperationalAlertStore.java` | Create | Narrow store port for worker upsert/resolve and runtime future reads. |
+| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\application\RealtimeOperationalAlertAcknowledgementStore.java` | Create | Lock and insert immutable current-profile acknowledgement observations without an HTTP surface. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\application\RealtimeOperationalAlertEvaluator.java` | Create | Bounded metadata-only policy evaluation. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\application\RealtimeDeadLetterEnvelopeValidator.java` | Create | Bounded value-only DLT envelope validation that ignores untrusted framework headers. |
-| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\PostgresRealtimeOperationalAlertStore.java` | Create | SQL implementation with deterministic locks/upsert behavior. |
+| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\PostgresRealtimeOperationalAlertStore.java` | Create | Worker SQL implementation with deterministic locks/upsert behavior. |
+| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\PostgresRealtimeOperationalAlertAcknowledgementStore.java` | Create | Runtime SQL implementation that locks and copies the exact alert observation. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\RealtimeDeadLetterAlertObserver.java` | Create | Distinct DLT listener group with no self-DLT publishing path. |
-| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\RealtimeKafkaConsumerConfiguration.java` | Modify | Keep existing v1 retry/DLT behavior; wire observer failure handling to a distinct terminal topic or committed unattributable metric, never back to its observed DLT topic. |
+| `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\RealtimeOperationalAlertWorkerConfiguration.java` | Create | Keep existing v1 retry/DLT behavior unchanged while wiring observer failures to a distinct terminal topic and committed unattributable metric. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\realtime\infrastructure\RealtimeWorkerRoleVerifier.java` | Create | Fail startup if an enabled evaluator/observer is not using the restricted worker login/topology. |
 | `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\realtime\application\RealtimeOperationalAlertEvaluatorTest.java` | Create | Unit rules for open/refresh/resolve/dedupe/bounds. |
 | `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\RealtimeOperationalAlertSchemaIntegrationTest.java` | Create | V22/FORCE RLS/grant/role/profile-isolation/pool-reset proof. |
 | `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\RealtimeOperationalAlertStoreIntegrationTest.java` | Create | Cross-tenant/profile, replay, reopening, re-acknowledgement, hysteresis, and index behavior. |
-| `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\realtime\infrastructure\KafkaRealtimeDeadLetterIntegrationTest.java` | Modify | Prove valid DLT extra-header alert, malformed non-attribution, observer retry/failure topic, replay, and no self-loop. |
+| `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\realtime\infrastructure\RealtimeDeadLetterAlertObserverTest.java` | Create | Prove valid forwarding, malformed non-attribution, and observer-failure propagation without a self-loop. |
+| `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\realtime\infrastructure\RealtimeOperationalAlertWorkerConfigurationTest.java` | Create | Prove distinct terminal topic and worker role validation. |
 
 ## Implementation steps
 
@@ -198,9 +203,9 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 
 ## Todo list
 
-- [ ] Freeze policy vocabulary and exclude semantic domain policies.
-- [ ] Create V22 alert/revision tables, profile RLS, grants, permissions, and role tests.
-- [ ] Implement metadata-only evaluator, hysteresis, worker topology, and non-recursive DLT observer.
+- [x] Freeze policy vocabulary and exclude semantic domain policies.
+- [x] Create V22 alert/revision tables, profile RLS, grants, permissions, and role tests.
+- [x] Implement metadata-only evaluator, hysteresis, worker topology, and non-recursive DLT observer.
 - [ ] Prove deterministic dedupe, recovery, concurrent acknowledgement revision, and profile isolation semantics.
 - [ ] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible.
 
@@ -241,11 +246,3 @@ outbox_events + realtime_event_receipts + realtime_tenant_metrics
 
 Phase 2 may begin only when migration, grants, and worker lifecycle tests prove
 the alert projection is durable and tenant-safe.
-
-## Implementation Steps
-
-<!-- Detailed steps -->
-
-## Success Criteria
-
-- [ ] ...

@@ -172,11 +172,3 @@ After all acceptance evidence is recorded, domain-specific agriculture alerts
 may be planned separately around a versioned semantic-event contract or
 source-side policies. External deployment needs real host credentials and a
 protected release owner; ChatGPT/Codex cannot supply a VPS.
-
-## Implementation Steps
-
-<!-- Detailed steps -->
-
-## Success Criteria
-
-- [ ] ...
