@@ -5,14 +5,19 @@ import com.agriinsight.backend.integration.application.OutboxDrainService;
 import com.agriinsight.backend.integration.application.OutboxPublishingService;
 import com.agriinsight.backend.integration.application.OutboxStore;
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -36,8 +41,23 @@ public class RealtimePublisherConfiguration {
     }
 
     @Bean
+    ProducerFactory<String, String> realtimeOperationalEventProducerFactory(
+            KafkaProperties kafkaProperties) {
+        return new DefaultKafkaProducerFactory<>(
+                new HashMap<>(kafkaProperties.buildProducerProperties()));
+    }
+
+    @Bean
+    KafkaTemplate<String, String> realtimeOperationalEventKafkaTemplate(
+            @Qualifier("realtimeOperationalEventProducerFactory")
+                    ProducerFactory<String, String> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
     OperationalEventPublisher operationalEventPublisher(
-            KafkaTemplate<String, String> kafkaTemplate,
+            @Qualifier("realtimeOperationalEventKafkaTemplate")
+                    KafkaTemplate<String, String> kafkaTemplate,
             JsonMapper jsonMapper,
             RealtimeWorkerProperties properties) {
         return new KafkaOperationalEventPublisher(kafkaTemplate, jsonMapper, properties);

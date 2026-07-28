@@ -47,6 +47,13 @@ public class RealtimeKafkaConsumerConfiguration {
     }
 
     @Bean
+    KafkaTemplate<byte[], byte[]> realtimeDeadLetterKafkaTemplate(
+            @Qualifier("realtimeDeadLetterProducerFactory")
+                    ProducerFactory<byte[], byte[]> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
     RealtimeOperationalEventParser realtimeOperationalEventParser(JsonMapper jsonMapper) {
         return new RealtimeOperationalEventParser(jsonMapper);
     }
@@ -63,9 +70,9 @@ public class RealtimeKafkaConsumerConfiguration {
 
     @Bean
     DefaultErrorHandler realtimeKafkaErrorHandler(
-            @Qualifier("realtimeDeadLetterProducerFactory") ProducerFactory<byte[], byte[]> producerFactory,
+            @Qualifier("realtimeDeadLetterKafkaTemplate") KafkaTemplate<byte[], byte[]> kafkaTemplate,
             RealtimeWorkerProperties properties) {
-        return errorHandler(new KafkaTemplate<>(producerFactory), properties);
+        return errorHandler(kafkaTemplate, properties);
     }
 
     static DefaultErrorHandler errorHandler(
