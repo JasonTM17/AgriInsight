@@ -58,5 +58,18 @@ public final class RealtimeWorkerRoleVerifier {
         if (!Boolean.TRUE.equals(verified)) {
             throw new IllegalStateException("operational alert worker database role verification failed");
         }
+        Boolean sourceEvidenceReady = jdbcTemplate.queryForObject(
+                """
+                SELECT NOT EXISTS (
+                    SELECT 1
+                      FROM realtime_operational_alerts
+                     WHERE source_occurred_at IS NULL
+                )
+                """,
+                Boolean.class);
+        if (!Boolean.TRUE.equals(sourceEvidenceReady)) {
+            throw new IllegalStateException(
+                    "operational alert worker source evidence backfill is incomplete");
+        }
     }
 }
