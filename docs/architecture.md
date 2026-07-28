@@ -131,8 +131,9 @@ Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Ana
 Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL
 18/Flyway integration, analytics regression và local image smoke. Phase 7 có
 historical evidence cho outbox/image/recovery. Isolated alert-worker hardening
-hiện đang in progress; existing runner/workflow artifacts không phải hosted
-acceptance, image publication, hoặc external deployment của slice này.
+đã merged locally với focused contract coverage; existing runner/workflow
+artifacts không phải hosted acceptance, image publication, hoặc external
+deployment của slice này.
 Protected production release/recovery approvals vẫn mở:
 
 - application bootstrap và module boundary,
@@ -145,9 +146,9 @@ Protected production release/recovery approvals vẫn mở:
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway migrations cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models, immutable V22 alert storage, và follow-on alert-worker hardening đang in progress,
+- Flyway migrations cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models, immutable V22 alert storage, và follow-on alert-worker hardening đã merged locally với focused contract coverage,
 - `integration` module owns the transactional outbox writer/drain/store boundary; the opt-in worker publishes and consumes the bounded realtime envelope,
-- `realtime-alert-worker` dùng non-web profile và login `agriinsight_alert_worker`; chỉ service này tắt legacy publisher/consumer, scanner/observer chỉ đọc metadata được grant, lưu cursor durable, và không giữ raw payload/error,
+- `realtime-alert-worker` dùng non-web profile và login `agriinsight_alert_worker`; chỉ service này tắt legacy publisher/consumer, scanner/observer chỉ đọc metadata được grant, lưu cursor durable, và không giữ raw payload/error; startup pin successful V27 và latest repeatable grant, không thể hạ bằng backend readiness,
 - activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
 - local default bind `127.0.0.1`; image chạy non-root `10001:10001`.
 - hosted CI run `29932250984` xanh 5/5; backend Temurin 21.0.11 JRE Noble
@@ -170,17 +171,27 @@ historical outbox/image/recovery evidence. `V22` alert storage là immutable;
 V23-V27 là hardening sequence với expected schema version 27. V23 cần bounded
 source-evidence backfill trước worker enablement; V24-V27 mỗi migration tạo một
 concurrent scan index, còn V27 chỉ là readiness index cho invalid source
-evidence và không thay thế backfill. Follow-on alert-worker hardening hiện là
-private source/Compose work: restricted login, metadata-only scanner/observer,
-durable cursors, bounded pages, current-condition recovery, hysteresis, và
-saturation safety. The DLT observer validates the bounded envelope, then
-inside a dedicated transaction looks up `(tenant_id, event_id)` in
-`outbox_events`, uses the database `occurred_at`, and only upserts when the
-source record matches. Không có public alert API/UI, broad semantic agriculture
-alert, hosted acceptance, new Docker Hub/GHCR package, image digest, hay
-external deployment cho slice này. Backend inventory/cost vẫn tách khỏi
-SQLite/Gold; procurement spend, inventory value và operating cost không gộp.
-Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
+evidence và không thay thế backfill. Follow-on alert-worker hardening đã
+merged locally với focused contract coverage: restricted login,
+metadata-only scanner/observer, durable cursors, bounded pages,
+current-condition recovery, hysteresis, và saturation safety. Startup pin
+successful V27, latest repeatable grant, narrow relation/column privileges,
+and the definitions of the required named FORCE-RLS policies; backend
+readiness config cannot lower that worker gate. The DLT observer
+validates the bounded envelope, then inside a dedicated transaction looks up
+`(tenant_id, event_id)` in `outbox_events`, uses the database `occurred_at`,
+and only upserts when the source record matches. Receipt recording and source
+attribution share a transaction-scoped per-event advisory lock, so that path
+is database serialization, not exactly-once or broker ordering. The upgrade
+test reconstructs the fingerprinted official V1-V22 set plus its historical
+repeatable from commit `6927eeda70981c2461e85a165834e2464ba793d1`, applies
+current V23-V27 plus the current repeatable, validates, reruns zero-op, and
+preserves legacy invalid rows without performing the required pre-enable
+backfill. Không có public alert API/UI, broad semantic agriculture alert,
+hosted acceptance, new Docker Hub/GHCR package, image digest, hay external
+deployment cho slice này. Backend inventory/cost vẫn tách khỏi SQLite/Gold;
+procurement spend, inventory value và operating cost không gộp. Identity mặc
+định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 
 Outbox write nằm trong transaction của command record; event envelope được
 serialize trước commit và rollback-safe. Outbox drain vẫn không có public HTTP

@@ -1,11 +1,11 @@
 # Backend deployment and recovery
 
-Phase 7 supplies a local/staging delivery contract. It is not a production
-approval: production still needs an OIDC issuer/audience decision, approved
-RPO/RTO, retention, encrypted off-host backup, a named restore owner, and the
-protected release/recovery environment. Existing realtime runner/workflow
+Phase 7 supplies a local/staging delivery contract. The alert-worker hardening
+is merged on a local feature branch with focused contract coverage, but it is
+still not released: hosted CI, main merge, protected publication, and
+release/recovery approvals remain open. Existing realtime runner/workflow
 artifacts are foundation evidence only; they do not accept, publish, or deploy
-the current in-progress alert-worker hardening.
+the current alert-worker slice.
 
 ## Optional local Compose profile
 
@@ -29,51 +29,30 @@ docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.
   -f compose.realtime.yaml --profile backend --profile realtime up --build
 ```
 
-Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password
-setup, service `realtime-worker`, và service `realtime-alert-worker` non-web.
-Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD` và
-`AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; biến sau chỉ được map vào datasource
-của login `agriinsight_alert_worker`, không được commit. Broker bind ra
-`127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored
-`backend/.runtime/kafka` trên D. Chỉ service `realtime-alert-worker` giữ
-`AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=false` và
-`AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=false`; DLT observer riêng vẫn hoạt
-động ở worker đó. `realtime-worker` là legacy publisher/consumer path riêng.
-Không có HTTP listener/public worker API. Cùng backend image được dùng cho
-source/Compose local; hiện chưa có image tag, digest, Docker Hub/GHCR package
-publication, hay external deployment mới cho slice này.
+Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password setup, service `realtime-worker`, và service `realtime-alert-worker` non-web. Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD` và `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; biến sau chỉ được map vào datasource của login `agriinsight_alert_worker`, không được commit. Broker bind ra `127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored `backend/.runtime/kafka` trên D. Chỉ service `realtime-alert-worker` giữ `AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=false` và `AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=false`; DLT observer riêng vẫn hoạt động ở worker đó. `realtime-worker` là legacy publisher/consumer path riêng. Không có HTTP listener/public worker API. Cùng backend image được dùng cho source/Compose local; hiện chưa có image tag, digest, Docker Hub/GHCR package publication, hay external deployment mới cho slice này.
 
-The alert-only datasource fixes pgJDBC `socketTimeout=65`, which is larger
-than the worker's configuration-capped 60-second query bound and leaves the
-API datasource's default fail-fast timeout unchanged. Its distinct terminal
-observer topic receives only a compact headerless marker on observer failure;
-it never forwards the original Kafka key, value, headers, or exception text.
+The alert-only datasource fixes pgJDBC `socketTimeout=65`, which is larger than the worker's configuration-capped 60-second query bound and leaves the API datasource's default fail-fast timeout unchanged. Its distinct terminal observer topic receives only a compact headerless marker on observer failure; it never forwards the original Kafka key, value, headers, or exception text. Receipt recording and DLT source attribution share a transaction-scoped advisory lock per event, so the DLT transaction waits and rechecks receipt after acquiring the lock; that is serialization, not exactly-once or broker ordering.
 
-The worker must stay disabled until Flyway V23-V27 reaches expected version 27
-and the V23 source-evidence backfill reports no remaining legacy or
-invalid-shape rows. V24-V27 each create one index concurrently; V27 is the
-readiness-only partial index over invalid source-evidence rows. Use the exact
-invalid-index recovery procedure in the
-[deployment guide](deployment-guide.md#alert-worker-pre-enable-and-concurrent-index-recovery),
-not an ad hoc retry.
+The worker must stay disabled until its startup gate finds a successful V27 row, the latest installed repeatable `R__tenant_rls_helpers_and_grants.sql` succeeds, and the V23 source-evidence backfill reports no remaining legacy or invalid-shape rows. Startup also verifies the exact `agriinsight_alert_worker` login topology, no inherited memberships, the narrow metadata-only grants, and the named FORCE-RLS policies. V24-V27 each create one index concurrently; V27 is the readiness-only partial index over invalid source-evidence rows. Use the exact invalid-index recovery procedure in the [deployment guide](deployment-guide.md#alert-worker-pre-enable-and-concurrent-index-recovery), not an ad hoc retry.
 
 Compose role passwords are environment inputs only. Do not put real values in `.env.example`, images, command history or logs. The backend image is read-only with a `/tmp` tmpfs, drops Linux capabilities and runs as UID/GID `10001:10001`.
 
 ## First-party images
 
-The protected release workflow is configured to publish four first-party
-images: `agriinsight-python`, `agriinsight-backend`, `agriinsight-web`, and
-`agriinsight-analytics-api`. The isolated alert worker reuses
-`agriinsight-backend`; there is no separate `agriinsight-realtime` image. This
-in-progress slice does not establish a new backend tag, digest, Docker Hub/GHCR
-package visibility, or release. Dockerfiles pin base-image manifest digests,
-use allowlisted build contexts, add OCI source/revision/version labels and
-expose deterministic smoke checks. The backend runtime is Temurin 21.0.11 JRE
-Noble at `sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64`
-and runs as UID/GID 10001. PostgreSQL and Apache Kafka remain upstream
-dependencies and are never republished.
+The protected release workflow publishes four first-party images:
+`agriinsight-python`, `agriinsight-backend`, `agriinsight-web`, and
+`agriinsight-analytics-api`. Pull-request CI builds the same four images with
+`push: false`. The isolated alert worker reuses `agriinsight-backend`; there is
+no separate `agriinsight-realtime` image. This in-progress slice does not
+establish a new backend tag, digest, Docker Hub/GHCR package visibility, or
+release. Dockerfiles pin base-image manifest digests, use allowlisted build
+contexts, add OCI source/revision/version labels and expose deterministic smoke
+checks. The backend runtime is Temurin 21.0.11 JRE Noble at
+`sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64` and
+runs as UID/GID 10001. PostgreSQL and Apache Kafka remain upstream dependencies
+and are never republished.
 
-Pull-request CI builds both images without registry login or push. The protected `release-images` workflow runs only for a semantic-version tag (`vMAJOR.MINOR.PATCH`) and requires:
+Pull-request CI builds all four images without registry login or push. The protected `release-images` workflow runs only for a semantic-version tag (`vMAJOR.MINOR.PATCH`) and requires:
 
 - repository variable `DOCKERHUB_NAMESPACE`;
 - environment secrets `DOCKERHUB_USERNAME` and least-privilege, rotatable `DOCKERHUB_TOKEN`;
@@ -84,8 +63,12 @@ It publishes only immutable semantic-version and `sha-<full-commit>` tags to:
 ```text
 <DOCKERHUB_NAMESPACE>/agriinsight-python
 <DOCKERHUB_NAMESPACE>/agriinsight-backend
+<DOCKERHUB_NAMESPACE>/agriinsight-web
+<DOCKERHUB_NAMESPACE>/agriinsight-analytics-api
 ghcr.io/<github-owner>/agriinsight-python
 ghcr.io/<github-owner>/agriinsight-backend
+ghcr.io/<github-owner>/agriinsight-web
+ghcr.io/<github-owner>/agriinsight-analytics-api
 ```
 
 There is intentionally no automatic `latest`. BuildKit emits SBOM/provenance; Trivy scans the exact returned digest; both registry tags are resolved back to that digest; and a non-root smoke command runs against the digest. A failed post-publish evidence step fails the release and requires an audited new tag/republish rather than tag mutation. The published phase digests are evidence only until the protected production release environment is approved.

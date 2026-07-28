@@ -21,7 +21,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Phase | Goal | Dependency/status |
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
-| Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Outbox/realtime foundation has historical evidence. The isolated alert-worker hardening is in progress; migration, focused tests, review, merge, protected publication, and release/recovery owner gates remain open. V27 adds the readiness-only invalid-source-evidence index. |
+| Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Outbox/realtime foundation has historical evidence. The isolated alert-worker hardening is merged locally with focused contract coverage; hosted CI, main merge, protected publication, and release/recovery owner gates remain open. V27 adds the readiness-only invalid-source-evidence index. |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
 | Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 internal candidate is complete, while registry environment/reviewers/secrets and production operations remain owner-gated |
 
@@ -75,18 +75,19 @@ implicitly converted into operating cost.
   digest smoke, and identical Docker Hub/GHCR phase-image evidence. Keep the
   protected production release environment and reviewer gates open until the
   release owner approves them.
-- `V22` alert storage is immutable. The isolated realtime alert worker is an
-  in-progress private operational slice: V23-V27 target expected schema version
-  27, V23 needs bounded source-evidence backfill before enablement, and V24-V27
-  use one concurrent scan index each. V27 is the readiness-only invalid-source-
-  evidence index and does not replace the backfill. It has a non-web restricted
-  login, metadata-only scans, durable cursors, bounded pages, recovery
-  hysteresis, and a separate DLT observer. Do not promote it as a public alert
-  product, a new REST/UI surface, a semantic agriculture-alert policy, hosted
-  acceptance, or a production release.
+- `V22` alert storage is immutable. The isolated realtime alert worker is a
+  private operational slice: V23-V27 target expected schema version 27, the
+  worker startup gate independently pins successful V27 and the latest repeatable
+  grant, V23 needs bounded source-evidence backfill before enablement, and
+  V24-V27 use one concurrent scan index each. V27 is the readiness-only
+  invalid-source-evidence index and does not replace the backfill. It has a
+  non-web restricted login, metadata-only scans, durable cursors, bounded pages,
+  recovery hysteresis, and a separate DLT observer. Do not promote it as a
+  public alert product, a new REST/UI surface, a semantic agriculture-alert
+  policy, hosted acceptance, or a production release.
 - Existing `realtime-e2e` runner/workflow artifacts remain foundation evidence.
   They are not acceptance for the follow-on hardening. Migration, focused tests,
-  review, merge, production Kafka ownership, protected Docker Hub/GHCR
+  review, main merge, production Kafka ownership, protected Docker Hub/GHCR
   publication, and external deployment remain owner-gated.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
   artifact. Keep the additive bounded GET reads, deterministic 67-path/94-op

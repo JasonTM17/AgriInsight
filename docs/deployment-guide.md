@@ -234,15 +234,24 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The current expected schema is Flyway V27 plus repeatable least-privilege
-helpers/grants. V7-V11 install fail-closed farm, field/crop/season, Employee,
-farm-assignment, and activity-season lifecycle guards. V12 creates inventory
-tables, V13 adds tenant RLS, V14 serializes active profile/warehouse
-assignments, and V15 adds role-aware inventory read/write RLS plus
-tenant-leading indexes. V16 creates the append-only operating-cost ledger and
-V17 adds role/farm-aware cost RLS plus indexes. V18 creates the outbox tables,
-V19 adds outbox RLS/index policies, V20 adds tenant-scoped realtime read
-models, and V21 adds the tenant summary index.
+The generic backend readiness schema is Flyway V27 plus repeatable
+least-privilege helpers/grants. The alert-worker startup gate separately pins
+successful V27 and the latest repeatable `R__tenant_rls_helpers_and_grants.sql`;
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` only drives backend health/readiness and
+cannot weaken the worker gate. V7-V11 install fail-closed farm,
+field/crop/season, Employee, farm-assignment, and activity-season lifecycle
+guards. V12 creates inventory tables, V13 adds tenant RLS, V14 serializes
+active profile/warehouse assignments, and V15 adds role-aware inventory
+read/write RLS plus tenant-leading indexes. V16 creates the append-only
+operating-cost ledger and V17 adds role/farm-aware cost RLS plus indexes. V18
+creates the outbox tables, V19 adds outbox RLS/index policies, V20 adds
+tenant-scoped realtime read models, and V21 adds the tenant summary index.
+
+The official upgrade proof reconstructs V1-V22 from release commit
+`6927eeda70981c2461e85a165834e2464ba793d1` plus the historical repeatable
+grant file, then applies current V23-V27 plus repeatable grants. It validates,
+reruns zero-op, preserves two representative legacy invalid rows and the V23
+`NOT VALID` constraints, and does not perform the backfill.
 
 `V22__create_realtime_operational_alerts.sql` is immutable. `V23` is additive
 only: it adds the metadata evidence checks as `NOT VALID`, durable alert scan
@@ -274,10 +283,13 @@ V24-V27 run outside a Flyway transaction through their adjacent versioned
 `.sql.conf` files (`executeInTransaction=false`); the checked-in migration
 workflow also disables PostgreSQL's transactional advisory lock for these
 concurrent-index migrations. For each migration, its named index must be absent
-first. If a failed build leaves that index invalid, run the matching `DROP INDEX
-CONCURRENTLY` below, then repair/retry Flyway in the approved migration
+first. If a failed build leaves that index invalid, run the matching `DROP
+INDEX CONCURRENTLY` below, then repair/retry Flyway in the approved migration
 workflow. If the index is already valid, reconcile Flyway history with the
-operator; do not retry the migration.
+operator; do not retry the migration. Receipt recording and DLT source
+attribution share a transaction-scoped per-event PostgreSQL advisory lock, so
+the DLT path waits and rechecks receipt in the same database transaction
+snapshot; that is serialization, not exactly-once or broker ordering.
 
 | Migration | Index | Invalid-index recovery command |
 |---|---|---|
