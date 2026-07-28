@@ -203,12 +203,13 @@ class FlywayMigrationIntegrationTest {
     private void assertBoundedConcurrentIndexMigration(Path migrations, String filename, String indexName)
             throws Exception {
         String migration = Files.readString(migrations.resolve(filename));
+        String migrationConfiguration = Files.readString(migrations.resolve(filename + ".conf"));
         String createIndex = "CREATE INDEX CONCURRENTLY " + indexName;
         int createIndexOffset = migration.indexOf(createIndex);
+        assertThat(migrationConfiguration.trim()).isEqualTo("executeInTransaction=false");
         assertThat(migration)
-                .contains("-- flyway:executeInTransaction=false", "SET lock_timeout = '5s';",
-                        "SET statement_timeout = '15min';", createIndex, "RESET statement_timeout;",
-                        "RESET lock_timeout;")
+                .contains("SET lock_timeout = '5s';", "SET statement_timeout = '15min';", createIndex,
+                        "RESET statement_timeout;", "RESET lock_timeout;")
                 .doesNotContain("SET LOCAL", "IF NOT EXISTS");
         assertThat(migration.indexOf("SET statement_timeout = '15min';")).isLessThan(createIndexOffset);
         assertThat(migration.indexOf("RESET statement_timeout;")).isGreaterThan(createIndexOffset);
