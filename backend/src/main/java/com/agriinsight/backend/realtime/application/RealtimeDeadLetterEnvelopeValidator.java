@@ -26,7 +26,10 @@ public class RealtimeDeadLetterEnvelopeValidator {
         if (maxRecordBytes < 1) {
             throw new IllegalArgumentException("maxRecordBytes must be positive");
         }
-        byte[] value = Objects.requireNonNull(required.value(), "record value is required");
+        byte[] value = required.value();
+        if (value == null) {
+            throw invalid("DLT event value is required");
+        }
         if (value.length > maxRecordBytes) {
             throw invalid("DLT event value exceeds the configured maximum");
         }

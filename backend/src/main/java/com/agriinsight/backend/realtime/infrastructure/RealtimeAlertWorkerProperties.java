@@ -15,6 +15,7 @@ public record RealtimeAlertWorkerProperties(
         Duration healthyFor,
         int requiredCleanScans,
         int maximumCandidates,
+        Duration maximumQueryDuration,
         String observerGroupId,
         String observerFailureTopic,
         int observerFailureRetries,
@@ -23,6 +24,7 @@ public record RealtimeAlertWorkerProperties(
     private static final Pattern KAFKA_NAME = Pattern.compile("[A-Za-z0-9._-]{1,249}");
     private static final Duration MAX_DELAY = Duration.ofMinutes(5);
     private static final Duration MAX_THRESHOLD = Duration.ofDays(7);
+    private static final Duration MAX_QUERY_DURATION = Duration.ofMinutes(1);
 
     public RealtimeAlertWorkerProperties {
         requireDuration(evaluationDelay, "evaluation-delay", Duration.ofSeconds(1), MAX_DELAY);
@@ -43,6 +45,11 @@ public record RealtimeAlertWorkerProperties(
         if (maximumCandidates < 1 || maximumCandidates > 1_000) {
             throw new IllegalArgumentException("maximum-candidates must be between 1 and 1000");
         }
+        requireDuration(
+                maximumQueryDuration,
+                "maximum-query-duration",
+                Duration.ofSeconds(1),
+                MAX_QUERY_DURATION);
         observerGroupId = requireKafkaName(observerGroupId, "observer-group-id");
         observerFailureTopic = requireKafkaName(observerFailureTopic, "observer-failure-topic");
         if (observerFailureRetries < 0 || observerFailureRetries > 10) {

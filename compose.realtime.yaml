@@ -45,6 +45,7 @@ services:
       PGUSER: postgres
       PGPASSWORD: ${AGRIINSIGHT_POSTGRES_OPERATOR_PASSWORD:?set operator password}
       AGRIINSIGHT_DB_REALTIME_PASSWORD: ${AGRIINSIGHT_DB_REALTIME_PASSWORD:?set realtime password}
+      AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD: ${AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD:?set alert worker password}
     volumes:
       - ./backend/ops/postgres:/ops:ro
     entrypoint: ["/bin/sh", "-ec"]
@@ -53,6 +54,9 @@ services:
         psql -v ON_ERROR_STOP=1 \
           -v realtime_password="$${AGRIINSIGHT_DB_REALTIME_PASSWORD}" \
           -f /ops/configure-local-realtime-role-password.sql
+        psql -v ON_ERROR_STOP=1 \
+          -v alert_worker_password="$${AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD}" \
+          -f /ops/configure-local-alert-worker-role-password.sql
     depends_on:
       backend-role-bootstrap:
         condition: service_completed_successfully
@@ -82,6 +86,40 @@ services:
       AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED: "true"
       AGRIINSIGHT_REALTIME_CONSUMER_ENABLED: "true"
       AGRIINSIGHT_REALTIME_WORKER_ID: ${AGRIINSIGHT_REALTIME_WORKER_ID:-realtime-worker-1}
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+      realtime-role-password:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  realtime-alert-worker:
+    profiles: ["realtime"]
+    build:
+      context: ./backend
+      args:
+        OCI_REVISION: ${AGRIINSIGHT_IMAGE_REVISION:-local}
+        OCI_VERSION: ${AGRIINSIGHT_BACKEND_VERSION:-0.1.0-local}
+    environment:
+      SPRING_PROFILES_ACTIVE: realtime-worker
+      SPRING_MAIN_WEB_APPLICATION_TYPE: none
+      AGRIINSIGHT_IDENTITY_ENABLED: "false"
+      AGRIINSIGHT_DB_URL: jdbc:postgresql://postgres:5432/agriinsight
+      AGRIINSIGHT_ALERT_WORKER_DB_USERNAME: agriinsight_alert_worker
+      AGRIINSIGHT_ALERT_WORKER_DB_PASSWORD: ${AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD:?set alert worker password}
+      AGRIINSIGHT_FLYWAY_ENABLED: "false"
+      AGRIINSIGHT_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED: "false"
+      AGRIINSIGHT_REALTIME_CONSUMER_ENABLED: "false"
+      AGRIINSIGHT_REALTIME_ALERTS_ENABLED: "true"
     depends_on:
       backend-migrate:
         condition: service_completed_successfully

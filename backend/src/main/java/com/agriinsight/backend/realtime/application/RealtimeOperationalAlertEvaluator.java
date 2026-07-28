@@ -1,31 +1,51 @@
 package com.agriinsight.backend.realtime.application;
 
 import com.agriinsight.backend.realtime.infrastructure.RealtimeAlertWorkerProperties;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionOperations;
 
 /** Evaluates bounded transport-health conditions and applies recovery hysteresis. */
 public class RealtimeOperationalAlertEvaluator {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RealtimeOperationalAlertEvaluator.class);
+    private static final String SCAN_SATURATION_METRIC = "agriinsight.realtime.alerts.scan.saturated";
+
     private final RealtimeOperationalAlertStore store;
-    private final TransactionOperations transaction;
+    private final RealtimeOperationalAlertScanStore scanStore;
+    private final TransactionOperations evaluationTransaction;
+    private final TransactionOperations deadLetterTransaction;
     private final Clock clock;
     private final RealtimeAlertWorkerProperties properties;
+    private final MeterRegistry meterRegistry;
+    private final Set<String> activeSaturations = ConcurrentHashMap.newKeySet();
 
     public RealtimeOperationalAlertEvaluator(
             RealtimeOperationalAlertStore store,
-            TransactionOperations transaction,
+            RealtimeOperationalAlertScanStore scanStore,
+            TransactionOperations evaluationTransaction,
+            TransactionOperations deadLetterTransaction,
             Clock clock,
-            RealtimeAlertWorkerProperties properties) {
+            RealtimeAlertWorkerProperties properties,
+            MeterRegistry meterRegistry) {
         this.store = Objects.requireNonNull(store, "store is required");
-        this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+        this.scanStore = Objects.requireNonNull(scanStore, "scanStore is required");
+        this.evaluationTransaction = Objects.requireNonNull(
+                evaluationTransaction, "evaluationTransaction is required");
+        this.deadLetterTransaction = Objects.requireNonNull(
+                deadLetterTransaction, "deadLetterTransaction is required");
         this.clock = Objects.requireNonNull(clock, "clock is required");
         this.properties = Objects.requireNonNull(properties, "properties is required");
+        this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry is required");
     }
 
     public void evaluateAll() {
@@ -38,17 +58,20 @@ public class RealtimeOperationalAlertEvaluator {
     public void observeDeadLetter(RealtimeOperationalEvent event) {
         RealtimeOperationalEvent required = Objects.requireNonNull(event, "event is required");
         Instant observedAt = clock.instant();
-        transaction.executeWithoutResult(status -> store.upsert(
-                new RealtimeOperationalAlertCondition(
-                        RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD,
-                        required.tenantId(),
-                        required.eventId(),
-                        required.occurredAt()),
-                observedAt));
+        deadLetterTransaction.executeWithoutResult(status -> {
+            store.acquirePolicyLock(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD);
+            store.upsert(
+                    new RealtimeOperationalAlertCondition(
+                            RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD,
+                            required.tenantId(),
+                            required.eventId(),
+                            required.occurredAt()),
+                    observedAt);
+        });
     }
 
     private void evaluate(RealtimeOperationalAlertPolicy policy, Instant evaluatedAt) {
-        transaction.executeWithoutResult(status -> evaluateInTransaction(policy, evaluatedAt));
+        evaluationTransaction.executeWithoutResult(status -> evaluateInTransaction(policy, evaluatedAt));
     }
 
     private void evaluateInTransaction(RealtimeOperationalAlertPolicy policy, Instant evaluatedAt) {
@@ -56,30 +79,85 @@ public class RealtimeOperationalAlertEvaluator {
             return;
         }
         int boundedLimit = properties.maximumCandidates() + 1;
-        List<RealtimeOperationalAlertCondition> conditions =
-                store.findConditions(policy, threshold(policy, evaluatedAt), boundedLimit);
-        boolean conditionsTruncated = conditions.size() == boundedLimit;
-        List<RealtimeOperationalAlertCondition> boundedConditions = conditionsTruncated
-                ? conditions.subList(0, properties.maximumCandidates())
-                : conditions;
-        Set<String> observedKeys = new HashSet<>();
-        for (RealtimeOperationalAlertCondition condition : boundedConditions) {
+        Optional<RealtimeOperationalAlertScanProgress> progress = scanStore.findProgress(policy);
+        Optional<RealtimeOperationalAlertScanCursor> cursor = progress.map(
+                RealtimeOperationalAlertScanProgress::cursor);
+        Instant cycleStartedAt = progress.map(RealtimeOperationalAlertScanProgress::cycleStartedAt)
+                .orElse(evaluatedAt);
+        Instant conditionThreshold = threshold(policy, evaluatedAt);
+        RealtimeOperationalAlertScanPage page = scanStore.findPage(
+                policy, conditionThreshold, cursor, boundedLimit);
+        for (RealtimeOperationalAlertCandidate candidate : page.candidates()) {
+            RealtimeOperationalAlertCondition condition = candidate.condition();
             store.upsert(condition, evaluatedAt);
-            observedKeys.add(condition.dedupeKey());
         }
-        if (conditionsTruncated) {
+        if (page.hasMore()) {
+            scanStore.saveProgress(
+                    policy,
+                    new RealtimeOperationalAlertScanProgress(
+                            page.continuationCursor().orElseThrow(), cycleStartedAt),
+                    evaluatedAt);
+            recordSaturation(policy, "conditions");
+            recoverStaleAlerts(policy, conditionThreshold, evaluatedAt, boundedLimit);
             return;
         }
+        clearSaturation(policy, "conditions");
+        scanStore.clearProgress(policy);
+        recoverStaleAlerts(policy, conditionThreshold, evaluatedAt, boundedLimit);
+    }
 
-        List<RealtimeOpenOperationalAlert> openAlerts = store.findOpenAlerts(policy, boundedLimit);
-        if (openAlerts.size() == boundedLimit) {
-            return;
+    private void recoverStaleAlerts(
+            RealtimeOperationalAlertPolicy policy,
+            Instant conditionThreshold,
+            Instant evaluatedAt,
+            int boundedLimit) {
+        List<RealtimeOperationalAlertRecoveryCandidate> recoveryCandidates =
+                scanStore.findRecoveryCandidates(
+                        policy, conditionThreshold, evaluatedAt, boundedLimit);
+        if (recoveryCandidates.size() == boundedLimit) {
+            recordSaturation(policy, "recovery");
+        } else {
+            clearSaturation(policy, "recovery");
         }
-        for (RealtimeOpenOperationalAlert alert : openAlerts) {
-            if (!observedKeys.contains(alert.dedupeKey())) {
-                store.recordClean(alert, recoveryTransition(alert, evaluatedAt), evaluatedAt);
+        List<RealtimeOperationalAlertRecoveryCandidate> boundedCandidates =
+                recoveryCandidates.size() == boundedLimit
+                        ? recoveryCandidates.subList(0, properties.maximumCandidates())
+                        : recoveryCandidates;
+        for (RealtimeOperationalAlertRecoveryCandidate candidate : boundedCandidates) {
+            if (candidate.currentCondition().isPresent()) {
+                store.upsert(candidate.currentCondition().orElseThrow(), evaluatedAt);
+                continue;
             }
+            RealtimeOpenOperationalAlert alert = candidate.alert();
+            store.recordClean(
+                    alert, recoveryTransition(alert, evaluatedAt), evaluatedAt, evaluatedAt);
         }
+    }
+
+    private void recordSaturation(RealtimeOperationalAlertPolicy policy, String stage) {
+        Counter.builder(SCAN_SATURATION_METRIC)
+                .description("Operational alert scans that reached the configured candidate bound")
+                .tag("policy", policy.name())
+                .tag("stage", stage)
+                .register(meterRegistry)
+                .increment();
+        if (activeSaturations.add(saturationKey(policy, stage))) {
+            LOGGER.warn(
+                    "realtime_alert_scan_saturated policy={} stage={} maximumCandidates={}",
+                    policy,
+                    stage,
+                    properties.maximumCandidates());
+        }
+    }
+
+    private void clearSaturation(RealtimeOperationalAlertPolicy policy, String stage) {
+        if (activeSaturations.remove(saturationKey(policy, stage))) {
+            LOGGER.info("realtime_alert_scan_saturation_cleared policy={} stage={}", policy, stage);
+        }
+    }
+
+    private static String saturationKey(RealtimeOperationalAlertPolicy policy, String stage) {
+        return policy.name() + ':' + stage;
     }
 
     private Instant threshold(RealtimeOperationalAlertPolicy policy, Instant evaluatedAt) {

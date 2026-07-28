@@ -94,7 +94,7 @@ agriinsight:
     assurance-claim: ${AGRIINSIGHT_OIDC_ASSURANCE_CLAIM:acr}
     cors-allowed-origins: ${AGRIINSIGHT_CORS_ALLOWED_ORIGINS:}
   schema:
-    expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:22}
+    expected-version: ${AGRIINSIGHT_SCHEMA_EXPECTED_VERSION:24}
   realtime:
     publisher-enabled: ${AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED:false}
     consumer-enabled: ${AGRIINSIGHT_REALTIME_CONSUMER_ENABLED:false}
@@ -116,6 +116,7 @@ agriinsight:
       healthy-for: ${AGRIINSIGHT_REALTIME_ALERT_HEALTHY_FOR:5m}
       required-clean-scans: ${AGRIINSIGHT_REALTIME_ALERT_REQUIRED_CLEAN_SCANS:2}
       maximum-candidates: ${AGRIINSIGHT_REALTIME_ALERT_MAXIMUM_CANDIDATES:500}
+      maximum-query-duration: ${AGRIINSIGHT_REALTIME_ALERT_MAXIMUM_QUERY_DURATION:20s}
       observer-group-id: ${AGRIINSIGHT_REALTIME_ALERT_OBSERVER_GROUP:agriinsight-alert-observer-v1}
       observer-failure-topic: ${AGRIINSIGHT_REALTIME_ALERT_OBSERVER_FAILURE_TOPIC:agriinsight.operational.v1.alert-observer-failure}
       observer-failure-retries: ${AGRIINSIGHT_REALTIME_ALERT_OBSERVER_FAILURE_RETRIES:2}
