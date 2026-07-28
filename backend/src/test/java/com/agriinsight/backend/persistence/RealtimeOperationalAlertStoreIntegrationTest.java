@@ -208,6 +208,45 @@ class RealtimeOperationalAlertStoreIntegrationTest {
         }
     }
 
+    @Test
+    void doesNotCleanAnAlertRefreshedAfterTheCompletedScanStarted() throws Exception {
+        JdbcTemplate alertWorker = jdbcTemplate(
+                PostgresIntegrationSupport.ALERT_WORKER,
+                PostgresIntegrationSupport.ALERT_WORKER_PASSWORD);
+        TransactionTemplate alertWorkerTransaction = transaction(alertWorker);
+        PostgresRealtimeOperationalAlertStore store = new PostgresRealtimeOperationalAlertStore(alertWorker);
+        RealtimeOperationalAlertCondition condition = new RealtimeOperationalAlertCondition(
+                RealtimeOperationalAlertPolicy.REALTIME_DELIVERY_LAG,
+                TENANT_A,
+                UUID.fromString("77000000-0000-0000-0000-000000000099"),
+                OBSERVED_AT.minusSeconds(600));
+        Instant cycleStartedAt = OBSERVED_AT.plusSeconds(60);
+        alertWorkerTransaction.executeWithoutResult(status -> store.upsert(condition, OBSERVED_AT));
+        RealtimeOpenOperationalAlert stale = alertWorkerTransaction.execute(status -> store
+                .findStaleOpenAlerts(RealtimeOperationalAlertPolicy.REALTIME_DELIVERY_LAG, cycleStartedAt, 10)
+                .getFirst());
+
+        alertWorkerTransaction.executeWithoutResult(status -> {
+            store.upsert(condition, cycleStartedAt.plusSeconds(1));
+            store.recordClean(
+                    stale,
+                    new RealtimeAlertRecoveryTransition(cycleStartedAt, 1, false),
+                    cycleStartedAt,
+                    cycleStartedAt.plusSeconds(2));
+        });
+
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            assertThat(scalar(operator, """
+                    SELECT state || ':' || clean_scan_count || ':'
+                           || to_char(last_evaluated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                      FROM realtime_operational_alerts
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND policy_code = 'REALTIME_DELIVERY_LAG'
+                       AND source_event_id = '77000000-0000-0000-0000-000000000099'
+                    """)).isEqualTo("OPEN:0:2027-09-01T00:01:01Z");
+        }
+    }
+
     private static RealtimeOperationalAlertCondition backlogCondition() {
         return new RealtimeOperationalAlertCondition(
                 RealtimeOperationalAlertPolicy.OUTBOX_PUBLISH_BACKLOG,
