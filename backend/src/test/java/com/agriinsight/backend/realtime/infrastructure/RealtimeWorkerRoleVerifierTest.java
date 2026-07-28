@@ -54,6 +54,11 @@ class RealtimeWorkerRoleVerifierTest {
                         contains("FROM public.flyway_schema_history"),
                         eq(Boolean.class),
                         eq(EXPECTED_SCHEMA_VERSION));
+        verify(harness.jdbcTemplate())
+                .queryForObject(
+                        contains("ORDER BY installed_rank DESC"),
+                        eq(Boolean.class),
+                        eq("R__tenant_rls_helpers_and_grants.sql"));
     }
 
     @Test
@@ -84,6 +89,37 @@ class RealtimeWorkerRoleVerifierTest {
                         contains("FROM public.flyway_schema_history"),
                         eq(Boolean.class),
                         eq(EXPECTED_SCHEMA_VERSION));
+        verify(jdbcTemplate, never())
+                .queryForObject(
+                        contains("ORDER BY installed_rank DESC"),
+                        eq(Boolean.class),
+                        eq("R__tenant_rls_helpers_and_grants.sql"));
+        verify(jdbcTemplate, never())
+                .queryForObject(
+                        contains("current_user = CAST"),
+                        eq(Boolean.class),
+                        eq("agriinsight_alert_worker"));
+        verify(jdbcTemplate, never()).execute(any(ConnectionCallback.class));
+    }
+
+    @Test
+    void rejectsMissingOrFailedLatestRequiredGrantsMigrationBeforeRoleChecks() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(jdbcTemplate.queryForObject(
+                        contains("WHERE version = ?"),
+                        eq(Boolean.class),
+                        eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(true);
+        when(jdbcTemplate.queryForObject(
+                        contains("ORDER BY installed_rank DESC"),
+                        eq(Boolean.class),
+                        eq("R__tenant_rls_helpers_and_grants.sql")))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> verifier(jdbcTemplate).verify())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("operational alert worker required grants migration is not current");
+
         verify(jdbcTemplate, never())
                 .queryForObject(
                         contains("current_user = CAST"),
@@ -121,6 +157,7 @@ class RealtimeWorkerRoleVerifierTest {
         assertThat(query.getValue())
                 .contains(
                         "session_user = current_user",
+                        "has_schema_privilege",
                         "worker_role.rolcanlogin",
                         "NOT worker_role.rolsuper",
                         "NOT worker_role.rolinherit",
@@ -129,13 +166,17 @@ class RealtimeWorkerRoleVerifierTest {
                         "NOT worker_role.rolreplication",
                         "NOT worker_role.rolbypassrls",
                         "pg_catalog.pg_auth_members",
-                        "sensitive_business_relation",
-                        "'farms'::NAME",
+                        "relation.relname <> ALL",
                         "has_table_privilege",
                         "has_any_column_privilege",
                         "allowed_metadata_column",
                         "'outbox_events'::NAME, 'id'::NAME",
-                        "'flyway_schema_history'::NAME, 'success'::NAME")
+                        "'flyway_schema_history'::NAME, 'installed_rank'::NAME",
+                        "allowed_worker_state_update_column",
+                        "required_worker_policy",
+                        "relation.relrowsecurity",
+                        "relation.relforcerowsecurity",
+                        "pg_catalog.pg_get_expr")
                 .doesNotContain("'payload'::NAME", "'last_error'::NAME");
     }
 
@@ -149,9 +190,14 @@ class RealtimeWorkerRoleVerifierTest {
             throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         when(jdbcTemplate.queryForObject(
-                        contains("FROM public.flyway_schema_history"),
+                        contains("WHERE version = ?"),
                         eq(Boolean.class),
                         eq(EXPECTED_SCHEMA_VERSION)))
+                .thenReturn(true);
+        when(jdbcTemplate.queryForObject(
+                        contains("ORDER BY installed_rank DESC"),
+                        eq(Boolean.class),
+                        eq("R__tenant_rls_helpers_and_grants.sql")))
                 .thenReturn(true);
         when(jdbcTemplate.queryForObject(
                         contains("current_user = CAST"),
@@ -178,8 +224,7 @@ class RealtimeWorkerRoleVerifierTest {
                         jdbcTemplate,
                         workerProperties(),
                         alertProperties(),
-                        kafkaProperties(),
-                        EXPECTED_SCHEMA_VERSION),
+                        kafkaProperties()),
                 jdbcTemplate,
                 connection,
                 statement);
@@ -190,8 +235,7 @@ class RealtimeWorkerRoleVerifierTest {
                 jdbcTemplate,
                 workerProperties(),
                 alertProperties(),
-                kafkaProperties(),
-                EXPECTED_SCHEMA_VERSION);
+                kafkaProperties());
     }
 
     private static RealtimeWorkerProperties workerProperties() {
