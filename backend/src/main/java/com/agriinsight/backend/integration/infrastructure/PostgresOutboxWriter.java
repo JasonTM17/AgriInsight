@@ -2,11 +2,13 @@ package com.agriinsight.backend.integration.infrastructure;
 
 import com.agriinsight.backend.integration.application.OutboxWriter;
 import com.agriinsight.backend.shared.application.CommandCommittedEvent;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.sql.Timestamp;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,6 +35,7 @@ public class PostgresOutboxWriter implements OutboxWriter {
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void append(CommandCommittedEvent event) {
         CommandCommittedEvent required = Objects.requireNonNull(event, "event is required");
+        Instant occurredAt = required.occurredAt().truncatedTo(ChronoUnit.MICROS);
         try {
             UUID eventId = UUID.randomUUID();
             jdbcTemplate.update(
@@ -52,14 +55,15 @@ public class PostgresOutboxWriter implements OutboxWriter {
                     required.target().resourceVersion(),
                     required.eventType(),
                     CommandCommittedEvent.SCHEMA_VERSION,
-                    Timestamp.from(required.occurredAt()),
-                    jsonMapper.writeValueAsString(envelope(eventId, required)));
+                    Timestamp.from(occurredAt),
+                    jsonMapper.writeValueAsString(envelope(eventId, required, occurredAt)));
         } catch (JacksonException exception) {
             throw new IllegalStateException("Unable to serialize outbox payload", exception);
         }
     }
 
-    private static Map<String, Object> envelope(UUID eventId, CommandCommittedEvent event) {
+    private static Map<String, Object> envelope(
+            UUID eventId, CommandCommittedEvent event, Instant occurredAt) {
         Map<String, Object> envelope = new LinkedHashMap<>();
         envelope.put("event_id", eventId);
         envelope.put("tenant_id", event.tenantId());
@@ -71,7 +75,7 @@ public class PostgresOutboxWriter implements OutboxWriter {
         envelope.put("business_code", null);
         envelope.put("event_type", event.eventType());
         envelope.put("schema_version", CommandCommittedEvent.SCHEMA_VERSION);
-        envelope.put("occurred_at", event.occurredAt().toString());
+        envelope.put("occurred_at", occurredAt.toString());
         envelope.put("payload", event.payload());
         return envelope;
     }

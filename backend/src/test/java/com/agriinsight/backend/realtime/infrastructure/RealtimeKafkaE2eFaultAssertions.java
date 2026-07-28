@@ -41,6 +41,8 @@ final class RealtimeKafkaE2eFaultAssertions {
             assertThat(requeued.status()).isEqualTo(OutboxStatus.PENDING);
             assertThat(requeued.attempts()).isEqualTo(1);
             assertThat(requeued.publishedAt()).isEmpty();
+            assertThat(requeued.lastError())
+                    .contains("Kafka publication failed: IllegalStateException");
         } finally {
             if (paused) {
                 RealtimeKafkaE2eSupport.resumeKafka(kafka);
