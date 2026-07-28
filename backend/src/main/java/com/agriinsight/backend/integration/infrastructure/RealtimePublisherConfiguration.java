@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -42,9 +43,12 @@ public class RealtimePublisherConfiguration {
 
     @Bean
     ProducerFactory<String, String> realtimeOperationalEventProducerFactory(
-            KafkaProperties kafkaProperties) {
-        return new DefaultKafkaProducerFactory<>(
-                new HashMap<>(kafkaProperties.buildProducerProperties()));
+            KafkaProperties kafkaProperties,
+            RealtimeWorkerProperties properties) {
+        Map<String, Object> configuration = new HashMap<>(kafkaProperties.buildProducerProperties());
+        // Kafka can block before returning a send future while it fetches topic metadata.
+        configuration.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, properties.sendTimeout().toMillis());
+        return new DefaultKafkaProducerFactory<>(configuration);
     }
 
     @Bean

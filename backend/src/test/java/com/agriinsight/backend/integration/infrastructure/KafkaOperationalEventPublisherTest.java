@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import tools.jackson.databind.json.JsonMapper;
@@ -54,6 +55,20 @@ class KafkaOperationalEventPublisherTest {
         assertThatThrownBy(() -> publisher.publish(event()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Kafka did not confirm the operational event");
+    }
+
+    @Test
+    void turnsSynchronousKafkaTemplateFailuresIntoAWorkerFailure() {
+        KafkaTemplate<String, String> template = mock(KafkaTemplate.class);
+        when(template.send(any(ProducerRecord.class)))
+                .thenThrow(new KafkaException("Kafka metadata is unavailable"));
+        KafkaOperationalEventPublisher publisher =
+                new KafkaOperationalEventPublisher(template, new JsonMapper(), properties());
+
+        assertThatThrownBy(() -> publisher.publish(event()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Kafka did not confirm the operational event")
+                .hasCauseInstanceOf(KafkaException.class);
     }
 
     @SuppressWarnings("unchecked")

@@ -49,6 +49,9 @@ public class KafkaOperationalEventPublisher implements OperationalEventPublisher
         } catch (ExecutionException | TimeoutException exception) {
             throw new IllegalStateException(
                     "Kafka did not confirm the operational event", exception);
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException(
+                    "Kafka did not confirm the operational event", exception);
         }
     }
 

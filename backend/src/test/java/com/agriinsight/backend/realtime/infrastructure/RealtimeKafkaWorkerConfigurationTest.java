@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import com.agriinsight.backend.integration.application.OutboxStore;
 import com.agriinsight.backend.integration.infrastructure.RealtimePublisherConfiguration;
 import com.agriinsight.backend.realtime.application.RealtimeReadModelStore;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import tools.jackson.databind.json.JsonMapper;
@@ -50,6 +52,10 @@ class RealtimeKafkaWorkerConfigurationTest {
                             "realtimeOperationalEventKafkaTemplate",
                             "realtimeDeadLetterKafkaTemplate")
                     .hasSize(2);
+            DefaultKafkaProducerFactory<?, ?> producerFactory = context.getBean(
+                    "realtimeOperationalEventProducerFactory", DefaultKafkaProducerFactory.class);
+            assertThat(producerFactory.getConfigurationProperties())
+                    .containsEntry(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2_000L);
         });
     }
 
