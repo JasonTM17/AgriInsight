@@ -4,6 +4,7 @@ import com.agriinsight.backend.AgriInsightBackendApplication;
 import com.agriinsight.backend.integration.infrastructure.OutboxPublishingSchedule;
 import com.agriinsight.backend.persistence.support.PostgresIntegrationSupport;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -34,8 +35,7 @@ final class RealtimeWorkerE2eHarness implements AutoCloseable {
             String bootstrapServers) {
         ConfigurableApplicationContext context = new SpringApplicationBuilder(AgriInsightBackendApplication.class)
                 .web(WebApplicationType.NONE)
-                .properties(workerProperties(postgresql, bootstrapServers))
-                .run();
+                .run(commandLineArguments(workerProperties(postgresql, bootstrapServers)));
         KafkaListenerEndpointRegistry listeners = context.getBean(KafkaListenerEndpointRegistry.class);
         requireConsumerWiring(context, listeners);
         return new RealtimeWorkerE2eHarness(
@@ -88,6 +88,12 @@ final class RealtimeWorkerE2eHarness implements AutoCloseable {
             "agriinsight.realtime.replication-factor=1",
             "agriinsight.realtime.max-record-bytes=262144"
         };
+    }
+
+    private static String[] commandLineArguments(String[] properties) {
+        return Arrays.stream(properties)
+                .map(property -> "--" + property)
+                .toArray(String[]::new);
     }
 
     private static void requireConsumerWiring(
