@@ -19,19 +19,23 @@ public class RealtimeOperationalAlertEvaluator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RealtimeOperationalAlertEvaluator.class);
     private static final String SCAN_SATURATION_METRIC = "agriinsight.realtime.alerts.scan.saturated";
+    private static final String UNVERIFIED_DLT_METRIC = "agriinsight.realtime.alerts.dlt.unverified";
 
     private final RealtimeOperationalAlertStore store;
     private final RealtimeOperationalAlertScanStore scanStore;
+    private final RealtimeOperationalEventSourceStore sourceStore;
     private final TransactionOperations evaluationTransaction;
     private final TransactionOperations deadLetterTransaction;
     private final Clock clock;
     private final RealtimeAlertWorkerProperties properties;
     private final MeterRegistry meterRegistry;
+    private final Counter unverifiedDeadLetterCounter;
     private final Set<String> activeSaturations = ConcurrentHashMap.newKeySet();
 
     public RealtimeOperationalAlertEvaluator(
             RealtimeOperationalAlertStore store,
             RealtimeOperationalAlertScanStore scanStore,
+            RealtimeOperationalEventSourceStore sourceStore,
             TransactionOperations evaluationTransaction,
             TransactionOperations deadLetterTransaction,
             Clock clock,
@@ -39,6 +43,7 @@ public class RealtimeOperationalAlertEvaluator {
             MeterRegistry meterRegistry) {
         this.store = Objects.requireNonNull(store, "store is required");
         this.scanStore = Objects.requireNonNull(scanStore, "scanStore is required");
+        this.sourceStore = Objects.requireNonNull(sourceStore, "sourceStore is required");
         this.evaluationTransaction = Objects.requireNonNull(
                 evaluationTransaction, "evaluationTransaction is required");
         this.deadLetterTransaction = Objects.requireNonNull(
@@ -46,6 +51,9 @@ public class RealtimeOperationalAlertEvaluator {
         this.clock = Objects.requireNonNull(clock, "clock is required");
         this.properties = Objects.requireNonNull(properties, "properties is required");
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry is required");
+        this.unverifiedDeadLetterCounter = Counter.builder(UNVERIFIED_DLT_METRIC)
+                .description("Schema-valid DLT records with no matching outbox source")
+                .register(this.meterRegistry);
     }
 
     public void evaluateAll() {
@@ -60,12 +68,20 @@ public class RealtimeOperationalAlertEvaluator {
         Instant observedAt = clock.instant();
         deadLetterTransaction.executeWithoutResult(status -> {
             store.acquirePolicyLock(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD);
+            Optional<Instant> sourceOccurredAt = Objects.requireNonNull(
+                    sourceStore.findOccurredAt(required.tenantId(), required.eventId()),
+                    "source lookup result is required");
+            if (sourceOccurredAt.isEmpty()) {
+                unverifiedDeadLetterCounter.increment();
+                LOGGER.warn("realtime_alert_dlt_unverified");
+                return;
+            }
             store.upsert(
                     new RealtimeOperationalAlertCondition(
                             RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD,
                             required.tenantId(),
                             required.eventId(),
-                            required.occurredAt()),
+                            sourceOccurredAt.orElseThrow()),
                     observedAt);
         });
     }

@@ -5,6 +5,7 @@ import com.agriinsight.backend.realtime.application.RealtimeDeadLetterEnvelopeVa
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertEvaluator;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertScanStore;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertStore;
+import com.agriinsight.backend.realtime.application.RealtimeOperationalEventSourceStore;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.util.HashMap;
@@ -56,6 +57,7 @@ public class RealtimeOperationalAlertWorkerConfiguration {
     RealtimeOperationalAlertEvaluator realtimeOperationalAlertEvaluator(
             RealtimeOperationalAlertStore store,
             RealtimeOperationalAlertScanStore scanStore,
+            RealtimeOperationalEventSourceStore sourceStore,
             PlatformTransactionManager transactionManager,
             @Qualifier("realtimeAlertClock") Clock clock,
             RealtimeAlertWorkerProperties properties,
@@ -71,7 +73,14 @@ public class RealtimeOperationalAlertWorkerConfiguration {
         deadLetterTransaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         deadLetterTransaction.setTimeout(Math.toIntExact(properties.maximumQueryDuration().toSeconds()));
         return new RealtimeOperationalAlertEvaluator(
-                store, scanStore, transaction, deadLetterTransaction, clock, properties, meterRegistry);
+                store,
+                scanStore,
+                sourceStore,
+                transaction,
+                deadLetterTransaction,
+                clock,
+                properties,
+                meterRegistry);
     }
 
     @Bean("realtimeAlertWorkerRoleVerifier")

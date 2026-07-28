@@ -3,6 +3,7 @@ package com.agriinsight.backend.realtime.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agriinsight.backend.realtime.infrastructure.RealtimeAlertWorkerProperties;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import java.time.Duration;
@@ -72,6 +73,34 @@ class RealtimeOperationalAlertEvaluatorTest {
                 .extracting(RecordingAlertStores.RecoveryQuery::limit)
                 .isEqualTo(2);
         assertThat(stores.upserts()).isEmpty();
+    }
+
+    @Test
+    void resumesPastAnEmptyReceiptPageToReachASparseDeliveryTail() {
+        RecordingAlertStores stores = new RecordingAlertStores();
+        RealtimeOperationalAlertPolicy policy = RealtimeOperationalAlertPolicy.REALTIME_DELIVERY_LAG;
+        RealtimeOperationalAlertScanCursor continuation = RealtimeOperationalAlertScanCursor.ordered(
+                NOW.minusSeconds(20), UUID.fromString("70000000-0000-0000-0000-000000000020"));
+        RealtimeOperationalAlertCondition tail = deliveryCondition(2, NOW.minus(Duration.ofMinutes(7)));
+        stores.pages(
+                policy,
+                page(List.of(), Optional.of(continuation)),
+                page(List.of(candidate(tail)), Optional.empty()));
+        RealtimeOperationalAlertEvaluator evaluator = evaluator(stores, properties(1));
+
+        evaluator.evaluateAll();
+        evaluator.evaluateAll();
+
+        assertThat(stores.pageRequests(policy)).hasSize(2);
+        assertThat(stores.pageRequests(policy).getFirst().cursor()).isEmpty();
+        assertThat(stores.pageRequests(policy).get(1).cursor()).contains(continuation);
+        assertThat(stores.upserts()).containsExactly(new RecordingAlertStores.Upsert(tail, NOW));
+        assertThat(stores.progressSaves(policy)).singleElement()
+                .extracting(save -> save.progress().cursor())
+                .isEqualTo(continuation);
+        assertThat(stores.clearedPolicies()).contains(policy);
+        assertThat(stores.recoveryQueries(policy)).hasSize(2)
+                .allSatisfy(query -> assertThat(query.limit()).isEqualTo(2));
     }
 
     @Test
@@ -173,20 +202,28 @@ class RealtimeOperationalAlertEvaluatorTest {
     }
 
     @Test
-    void recordsADeduplicatedDltConditionInItsOwnTransaction() {
+    void rejectsForgedDltRecordsWithoutCreatingAnAlertOrRevision() {
         RecordingAlertStores stores = new RecordingAlertStores();
-        RealtimeOperationalEvent event = new RealtimeOperationalEvent(
-                UUID.fromString("70000000-0000-0000-0000-000000000001"),
-                TENANT_A,
-                "FARM",
-                UUID.fromString("71000000-0000-0000-0000-000000000001"),
-                1,
-                "AGRIINSIGHT.OPERATIONAL.FARM.COMMITTED",
-                NOW.minusSeconds(20),
-                "a".repeat(64),
-                "agriinsight.operational.v1.dlt",
-                1,
-                3);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        RealtimeOperationalEvent event = deadLetterEvent(NOW.plusSeconds(30));
+
+        evaluator(stores, properties(1), registry).observeDeadLetter(event);
+
+        assertThat(stores.acquiredPolicies())
+                .containsExactly(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD);
+        assertThat(stores.sourceLookups())
+                .containsExactly(new RecordingAlertStores.SourceLookup(event.tenantId(), event.eventId()));
+        assertThat(stores.upserts()).isEmpty();
+        assertThat(registry.get("agriinsight.realtime.alerts.dlt.unverified").counter().count())
+                .isEqualTo(1.0);
+    }
+
+    @Test
+    void recordsADeduplicatedDltConditionWithTheAuthoritativeSourceTimestamp() {
+        RecordingAlertStores stores = new RecordingAlertStores();
+        Instant sourceOccurredAt = NOW.minus(Duration.ofMinutes(3));
+        RealtimeOperationalEvent event = deadLetterEvent(NOW.plusSeconds(30));
+        stores.sourceOccurredAt(event.tenantId(), event.eventId(), sourceOccurredAt);
 
         evaluator(stores, properties(1)).observeDeadLetter(event);
 
@@ -197,21 +234,44 @@ class RealtimeOperationalAlertEvaluatorTest {
                     .isEqualTo(RealtimeOperationalAlertPolicy.REALTIME_DLT_RECORD);
             assertThat(upsert.condition().tenantId()).isEqualTo(event.tenantId());
             assertThat(upsert.condition().sourceEventId()).isEqualTo(event.eventId());
-            assertThat(upsert.observedAt()).isEqualTo(NOW);
+            assertThat(upsert.condition().sourceOccurredAt()).isEqualTo(sourceOccurredAt);
         });
+    }
+
+    private static RealtimeOperationalEvent deadLetterEvent(Instant occurredAt) {
+        return new RealtimeOperationalEvent(
+                UUID.fromString("70000000-0000-0000-0000-000000000001"),
+                TENANT_A,
+                "FARM",
+                UUID.fromString("71000000-0000-0000-0000-000000000001"),
+                1,
+                "AGRIINSIGHT.OPERATIONAL.FARM.COMMITTED",
+                occurredAt,
+                "a".repeat(64),
+                "agriinsight.operational.v1.dlt",
+                1,
+                3);
     }
 
     private static RealtimeOperationalAlertEvaluator evaluator(
             RecordingAlertStores stores, RealtimeAlertWorkerProperties properties) {
+        return evaluator(stores, properties, new SimpleMeterRegistry());
+    }
+
+    private static RealtimeOperationalAlertEvaluator evaluator(
+            RecordingAlertStores stores,
+            RealtimeAlertWorkerProperties properties,
+            MeterRegistry meterRegistry) {
         TransactionOperations transaction = new ImmediateTransactions();
         return new RealtimeOperationalAlertEvaluator(
+                stores,
                 stores,
                 stores,
                 transaction,
                 transaction,
                 Clock.fixed(NOW, ZoneOffset.UTC),
                 properties,
-                new SimpleMeterRegistry());
+                meterRegistry);
     }
 
     private static RealtimeAlertWorkerProperties properties(int maximumCandidates) {
