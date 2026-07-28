@@ -46,14 +46,14 @@ class FlywayMigrationIntegrationTest {
     @Test
     void freshPostgresqlAppliesAllMigrationsAndValidates() throws Exception {
         assertThat(initialMigration.success).isTrue();
-        assertThat(initialMigration.migrationsExecuted).isEqualTo(27);
+        assertThat(initialMigration.migrationsExecuted).isEqualTo(28);
         assertThat(migrate(POSTGRESQL, "agriinsight").migrationsExecuted).isZero();
         try (var connection = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(scalar(connection, """
                     SELECT version FROM flyway_schema_history
                     WHERE success AND version IS NOT NULL
                     ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("26");
+                    """)).isEqualTo("27");
             assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(20);
             assertThat(count(connection, "SELECT count(*) FROM roles")).isEqualTo(7);
         }
@@ -90,7 +90,7 @@ class FlywayMigrationIntegrationTest {
                     """);
         }
 
-        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(23);
+        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(24);
         try (var operator = operatorConnection(POSTGRESQL, database)) {
             assertThat(count(operator, """
                     SELECT count(*) FROM activity_types
@@ -164,7 +164,7 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void v23ToV26ForwardMigrationsAreAdditiveAndUseRestartSafeOnlineIndexes() throws Exception {
+    void v23ToV27ForwardMigrationsAreAdditiveAndUseRestartSafeOnlineIndexes() throws Exception {
         Path migrations = Path.of("src", "main", "resources", "db", "migration");
 
         String v23 = Files.readString(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql"));
@@ -184,6 +184,20 @@ class FlywayMigrationIntegrationTest {
         assertBoundedConcurrentIndexMigration(
                 migrations, "V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql",
                 "ix_realtime_operational_alerts_unrecovered_dlt");
+        String v27 = Files.readString(
+                migrations.resolve("V27__add_realtime_alert_evidence_readiness_index_concurrently.sql"));
+        assertThat(v27).contains(
+                "ON realtime_operational_alerts (id)",
+                "WHERE (",
+                "source_occurred_at IS NULL",
+                "policy_code = 'OUTBOX_PUBLISH_BACKLOG'",
+                "source_event_id IS NOT NULL",
+                "policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')",
+                "source_event_id IS NULL");
+        assertBoundedConcurrentIndexMigration(
+                migrations,
+                "V27__add_realtime_alert_evidence_readiness_index_concurrently.sql",
+                "ix_realtime_operational_alerts_invalid_source_evidence");
     }
 
     private void assertBoundedConcurrentIndexMigration(Path migrations, String filename, String indexName)
