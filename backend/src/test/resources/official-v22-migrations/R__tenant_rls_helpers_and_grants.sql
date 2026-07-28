@@ -1,0 +1,714 @@
+SET ROLE agriinsight_identity_definer;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.resolve_identity_bootstrap(
+    p_issuer TEXT,
+    p_subject TEXT
+)
+RETURNS TABLE (
+    profile_id UUID,
+    tenant_id UUID,
+    profile_active BOOLEAN,
+    tenant_active BOOLEAN
+)
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+    SELECT
+        identity_row.user_profile_id,
+        identity_row.tenant_id,
+        profile.active,
+        tenant.active
+    FROM public.external_identities AS identity_row
+    JOIN public.user_profiles AS profile
+      ON profile.tenant_id = identity_row.tenant_id
+     AND profile.id = identity_row.user_profile_id
+    JOIN public.tenants AS tenant
+      ON tenant.id = identity_row.tenant_id
+    WHERE identity_row.issuer = p_issuer
+      AND identity_row.subject = p_subject
+      AND identity_row.active = TRUE
+$function$;
+
+REVOKE ALL ON FUNCTION agriinsight_security.resolve_identity_bootstrap(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION agriinsight_security.resolve_identity_bootstrap(TEXT, TEXT)
+    TO agriinsight_runtime;
+
+RESET ROLE;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.assert_admin_path_remains(
+    p_profile_id UUID,
+    p_identity_id UUID,
+    p_remove_all_profile_paths BOOLEAN
+)
+RETURNS VOID
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+    target_contributes BOOLEAN;
+    remaining_admin_path BOOLEAN;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL THEN
+        RAISE EXCEPTION 'Tenant context is required'
+            USING ERRCODE = '42501';
+    END IF;
+
+    PERFORM 1
+      FROM public.tenants AS tenant
+     WHERE tenant.id = resolved_tenant
+     FOR UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Tenant context is not active'
+            USING ERRCODE = '42501';
+    END IF;
+
+    IF p_remove_all_profile_paths THEN
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.id = p_profile_id
+               AND profile.active = TRUE
+        ) INTO target_contributes;
+
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.id <> p_profile_id
+               AND profile.active = TRUE
+        ) INTO remaining_admin_path;
+    ELSE
+        IF p_identity_id IS NULL THEN
+            RAISE EXCEPTION 'Identity id is required'
+                USING ERRCODE = '22004';
+        END IF;
+
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.id = p_profile_id
+               AND profile.active = TRUE
+               AND identity_row.id = p_identity_id
+        ) INTO target_contributes;
+
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_profiles AS profile
+              JOIN public.user_roles AS assignment
+                ON assignment.tenant_id = profile.tenant_id
+               AND assignment.user_profile_id = profile.id
+               AND assignment.role_code = 'TENANT_ADMIN'
+               AND assignment.revoked_at IS NULL
+              JOIN public.external_identities AS identity_row
+                ON identity_row.tenant_id = profile.tenant_id
+               AND identity_row.user_profile_id = profile.id
+               AND identity_row.active = TRUE
+             WHERE profile.tenant_id = resolved_tenant
+               AND profile.active = TRUE
+               AND identity_row.id <> p_identity_id
+        ) INTO remaining_admin_path;
+    END IF;
+
+    IF target_contributes AND NOT remaining_admin_path THEN
+        RAISE EXCEPTION 'The final active tenant administrator path cannot be removed'
+            USING ERRCODE = '23514',
+                  CONSTRAINT = 'tenant_last_active_admin_path';
+    END IF;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity_versioned(
+    p_identity_id UUID,
+    p_profile_id UUID,
+    p_issuer TEXT,
+    p_subject TEXT
+)
+RETURNS TABLE (
+    identity_id UUID,
+    identity_version BIGINT
+)
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+    resolved_identity_id UUID;
+    resolved_identity_version BIGINT;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL THEN
+        RAISE EXCEPTION 'Tenant context is required'
+            USING ERRCODE = '42501';
+    END IF;
+
+    PERFORM 1
+      FROM public.user_profiles AS profile
+     WHERE profile.tenant_id = resolved_tenant
+       AND profile.id = p_profile_id
+       AND profile.active = TRUE
+     FOR SHARE;
+    IF NOT FOUND THEN
+        RETURN;
+    END IF;
+
+    UPDATE public.external_identities AS identity_row
+       SET active = TRUE,
+           version = identity_row.version + 1,
+           updated_at = CURRENT_TIMESTAMP
+     WHERE identity_row.tenant_id = resolved_tenant
+       AND identity_row.user_profile_id = p_profile_id
+       AND identity_row.issuer = p_issuer
+       AND identity_row.subject = p_subject
+       AND identity_row.active = FALSE
+    RETURNING identity_row.id, identity_row.version
+         INTO resolved_identity_id, resolved_identity_version;
+    IF FOUND THEN
+        RETURN QUERY SELECT resolved_identity_id, resolved_identity_version;
+        RETURN;
+    END IF;
+
+    INSERT INTO public.external_identities AS identity_row (
+        id,
+        tenant_id,
+        user_profile_id,
+        issuer,
+        subject
+    )
+    SELECT
+        p_identity_id,
+        resolved_tenant,
+        p_profile_id,
+        p_issuer,
+        p_subject
+    RETURNING identity_row.id, identity_row.version
+         INTO resolved_identity_id, resolved_identity_version;
+
+    RETURN QUERY SELECT resolved_identity_id, resolved_identity_version;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.read_external_identity(
+    p_tenant_id UUID,
+    p_profile_id UUID,
+    p_identity_id UUID
+)
+RETURNS TABLE (
+    identity_id UUID,
+    identity_issuer TEXT,
+    identity_active BOOLEAN,
+    identity_version BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL OR resolved_tenant <> p_tenant_id THEN
+        RAISE EXCEPTION 'Tenant context does not match the requested tenant'
+            USING ERRCODE = '42501';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        identity_row.id,
+        identity_row.issuer::TEXT,
+        identity_row.active,
+        identity_row.version
+      FROM public.external_identities AS identity_row
+     WHERE identity_row.tenant_id = resolved_tenant
+       AND identity_row.user_profile_id = p_profile_id
+       AND identity_row.id = p_identity_id;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.list_external_identities(
+    p_tenant_id UUID,
+    p_profile_id UUID,
+    p_active BOOLEAN,
+    p_limit INTEGER,
+    p_offset INTEGER
+)
+RETURNS TABLE (
+    identity_id UUID,
+    identity_issuer TEXT,
+    identity_active BOOLEAN,
+    identity_version BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL OR resolved_tenant <> p_tenant_id THEN
+        RAISE EXCEPTION 'Tenant context does not match the requested tenant'
+            USING ERRCODE = '42501';
+    END IF;
+    IF p_limit < 1 OR p_limit > 101 THEN
+        RAISE EXCEPTION 'External identity limit is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+    IF p_offset < 0 OR p_offset > 10000 THEN
+        RAISE EXCEPTION 'External identity offset is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        identity_row.id,
+        identity_row.issuer::TEXT,
+        identity_row.active,
+        identity_row.version
+      FROM public.external_identities AS identity_row
+     WHERE identity_row.tenant_id = resolved_tenant
+       AND identity_row.user_profile_id = p_profile_id
+       AND (p_active IS NULL OR identity_row.active = p_active)
+     ORDER BY identity_row.issuer, identity_row.id
+     LIMIT p_limit
+    OFFSET p_offset;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.list_tenant_audit_events(
+    p_tenant_id UUID,
+    p_actor_profile_id UUID,
+    p_action TEXT,
+    p_target_type TEXT,
+    p_target_id UUID,
+    p_outcome TEXT,
+    p_limit INTEGER,
+    p_offset INTEGER
+)
+RETURNS TABLE (
+    event_id UUID,
+    event_actor_type TEXT,
+    event_actor_profile_id UUID,
+    event_action TEXT,
+    event_target_type TEXT,
+    event_target_id UUID,
+    event_reason_code TEXT,
+    event_correlation_id TEXT,
+    event_outcome TEXT,
+    event_occurred_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL OR resolved_tenant <> p_tenant_id THEN
+        RAISE EXCEPTION 'Tenant context does not match the requested tenant'
+            USING ERRCODE = '42501';
+    END IF;
+    IF p_limit < 1 OR p_limit > 101 THEN
+        RAISE EXCEPTION 'Audit event limit is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+    IF p_offset < 0 OR p_offset > 10000 THEN
+        RAISE EXCEPTION 'Audit event offset is outside the allowed range'
+            USING ERRCODE = '22023';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        event_row.id,
+        event_row.actor_type::TEXT,
+        event_row.actor_profile_id,
+        event_row.action::TEXT,
+        event_row.target_type::TEXT,
+        event_row.target_id,
+        CASE
+            WHEN event_row.reason_code ~ '^[A-Z][A-Z0-9_]{0,79}$'
+                THEN event_row.reason_code::TEXT
+            ELSE NULL
+        END,
+        CASE
+            WHEN event_row.correlation_id ~ '^[A-Za-z0-9._:-]{1,128}$'
+                THEN event_row.correlation_id::TEXT
+            ELSE NULL
+        END,
+        event_row.outcome::TEXT,
+        event_row.occurred_at
+      FROM public.tenant_audit_events AS event_row
+     WHERE event_row.tenant_id = resolved_tenant
+       AND (p_actor_profile_id IS NULL OR event_row.actor_profile_id = p_actor_profile_id)
+       AND (p_action IS NULL OR event_row.action = p_action)
+       AND (p_target_type IS NULL OR event_row.target_type = p_target_type)
+       AND (p_target_id IS NULL OR event_row.target_id = p_target_id)
+       AND (p_outcome IS NULL OR event_row.outcome = p_outcome)
+       AND event_row.action ~ '^[A-Z][A-Z0-9_]{0,79}$'
+       AND event_row.target_type ~ '^[A-Z][A-Z0-9_]{0,63}$'
+     ORDER BY event_row.occurred_at DESC, event_row.id
+     LIMIT p_limit
+    OFFSET p_offset;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.link_external_identity(
+    p_identity_id UUID,
+    p_profile_id UUID,
+    p_issuer TEXT,
+    p_subject TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE SQL
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+    SELECT EXISTS (
+        SELECT 1
+          FROM agriinsight_security.link_external_identity_versioned(
+              p_identity_id,
+              p_profile_id,
+              p_issuer,
+              p_subject
+          )
+    )
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.unlink_external_identity_versioned(
+    p_profile_id UUID,
+    p_identity_id UUID
+)
+RETURNS BIGINT
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+DECLARE
+    resolved_tenant UUID;
+    resolved_identity_version BIGINT;
+BEGIN
+    resolved_tenant := agriinsight_security.app_current_tenant_id();
+    IF resolved_tenant IS NULL THEN
+        RAISE EXCEPTION 'Tenant context is required'
+            USING ERRCODE = '42501';
+    END IF;
+
+    PERFORM agriinsight_security.assert_admin_path_remains(
+        p_profile_id,
+        p_identity_id,
+        FALSE
+    );
+
+    UPDATE public.external_identities
+       SET active = FALSE,
+           version = version + 1,
+           updated_at = CURRENT_TIMESTAMP
+     WHERE tenant_id = resolved_tenant
+       AND user_profile_id = p_profile_id
+       AND id = p_identity_id
+       AND active = TRUE
+    RETURNING version INTO resolved_identity_version;
+
+    RETURN resolved_identity_version;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION agriinsight_security.unlink_external_identity(
+    p_profile_id UUID,
+    p_identity_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE SQL
+VOLATILE
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $function$
+    SELECT agriinsight_security.unlink_external_identity_versioned(
+        p_profile_id,
+        p_identity_id
+    ) IS NOT NULL
+$function$;
+
+REVOKE ALL ON SCHEMA agriinsight_security FROM PUBLIC;
+GRANT USAGE ON SCHEMA agriinsight_security TO agriinsight_runtime;
+GRANT USAGE, CREATE ON SCHEMA agriinsight_security TO agriinsight_identity_definer;
+
+REVOKE ALL ON FUNCTION agriinsight_security.app_current_tenant_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.app_current_profile_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.inventory_warehouse_access(UUID, BOOLEAN) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.list_external_identities(
+    UUID, UUID, BOOLEAN, INTEGER, INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.list_tenant_audit_events(
+    UUID, UUID, TEXT, TEXT, UUID, TEXT, INTEGER, INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity_versioned(UUID, UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_tenant_id()
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.app_current_profile_id()
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.inventory_warehouse_access(UUID, BOOLEAN)
+    TO agriinsight_runtime, agriinsight_migrator;
+GRANT EXECUTE ON FUNCTION agriinsight_security.operating_cost_access(
+    TEXT, UUID, UUID, UUID, UUID, BOOLEAN)
+    TO agriinsight_runtime, agriinsight_migrator;
+GRANT EXECUTE ON FUNCTION agriinsight_security.assert_admin_path_remains(UUID, UUID, BOOLEAN)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity_versioned(UUID, UUID, TEXT, TEXT)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.read_external_identity(UUID, UUID, UUID)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.list_external_identities(
+    UUID, UUID, BOOLEAN, INTEGER, INTEGER)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.list_tenant_audit_events(
+    UUID, UUID, TEXT, TEXT, UUID, TEXT, INTEGER, INTEGER)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.link_external_identity(UUID, UUID, TEXT, TEXT)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.unlink_external_identity_versioned(UUID, UUID)
+    TO agriinsight_runtime;
+GRANT EXECUTE ON FUNCTION agriinsight_security.unlink_external_identity(UUID, UUID)
+    TO agriinsight_runtime;
+
+REVOKE ALL ON tenants FROM PUBLIC;
+REVOKE ALL ON user_profiles FROM PUBLIC;
+REVOKE ALL ON external_identities FROM PUBLIC;
+REVOKE ALL ON roles FROM PUBLIC;
+REVOKE ALL ON permissions FROM PUBLIC;
+REVOKE ALL ON user_roles FROM PUBLIC;
+REVOKE ALL ON role_permissions FROM PUBLIC;
+REVOKE ALL ON api_command_records FROM PUBLIC;
+REVOKE ALL ON tenant_audit_events FROM PUBLIC;
+REVOKE ALL ON farms FROM PUBLIC;
+REVOKE ALL ON crops FROM PUBLIC;
+REVOKE ALL ON fields FROM PUBLIC;
+REVOKE ALL ON seasons FROM PUBLIC;
+REVOKE ALL ON employees FROM PUBLIC;
+REVOKE ALL ON user_farm_assignments FROM PUBLIC;
+REVOKE ALL ON activity_types FROM PUBLIC;
+REVOKE ALL ON activities FROM PUBLIC;
+REVOKE ALL ON activity_assignees FROM PUBLIC;
+REVOKE ALL ON activity_logs FROM PUBLIC;
+REVOKE ALL ON harvests FROM PUBLIC;
+REVOKE ALL ON warehouses FROM PUBLIC;
+REVOKE ALL ON materials FROM PUBLIC;
+REVOKE ALL ON suppliers FROM PUBLIC;
+REVOKE ALL ON user_warehouse_assignments FROM PUBLIC;
+REVOKE ALL ON inventory_transactions FROM PUBLIC;
+REVOKE ALL ON inventory_transaction_lot_allocations FROM PUBLIC;
+REVOKE ALL ON stock_lots FROM PUBLIC;
+REVOKE ALL ON stock_balances FROM PUBLIC;
+REVOKE ALL ON cost_categories FROM PUBLIC;
+REVOKE ALL ON operating_cost_entries FROM PUBLIC;
+REVOKE ALL ON outbox_events FROM PUBLIC;
+REVOKE ALL ON realtime_event_receipts FROM PUBLIC;
+REVOKE ALL ON realtime_aggregate_progress FROM PUBLIC;
+REVOKE ALL ON realtime_tenant_metrics FROM PUBLIC;
+REVOKE ALL ON realtime_operational_alerts FROM PUBLIC;
+REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM PUBLIC;
+REVOKE ALL ON flyway_schema_history FROM PUBLIC;
+
+REVOKE ALL ON tenants FROM agriinsight_runtime;
+REVOKE ALL ON user_profiles FROM agriinsight_runtime;
+REVOKE ALL ON external_identities FROM agriinsight_runtime;
+REVOKE ALL ON roles FROM agriinsight_runtime;
+REVOKE ALL ON permissions FROM agriinsight_runtime;
+REVOKE ALL ON user_roles FROM agriinsight_runtime;
+REVOKE ALL ON role_permissions FROM agriinsight_runtime;
+REVOKE ALL ON api_command_records FROM agriinsight_runtime;
+REVOKE ALL ON tenant_audit_events FROM agriinsight_runtime;
+REVOKE ALL ON farms FROM agriinsight_runtime;
+REVOKE ALL ON crops FROM agriinsight_runtime;
+REVOKE ALL ON fields FROM agriinsight_runtime;
+REVOKE ALL ON seasons FROM agriinsight_runtime;
+REVOKE ALL ON employees FROM agriinsight_runtime;
+REVOKE ALL ON user_farm_assignments FROM agriinsight_runtime;
+REVOKE ALL ON activity_types FROM agriinsight_runtime;
+REVOKE ALL ON activities FROM agriinsight_runtime;
+REVOKE ALL ON activity_assignees FROM agriinsight_runtime;
+REVOKE ALL ON activity_logs FROM agriinsight_runtime;
+REVOKE ALL ON harvests FROM agriinsight_runtime;
+REVOKE ALL ON warehouses FROM agriinsight_runtime;
+REVOKE ALL ON materials FROM agriinsight_runtime;
+REVOKE ALL ON suppliers FROM agriinsight_runtime;
+REVOKE ALL ON user_warehouse_assignments FROM agriinsight_runtime;
+REVOKE ALL ON inventory_transactions FROM agriinsight_runtime;
+REVOKE ALL ON inventory_transaction_lot_allocations FROM agriinsight_runtime;
+REVOKE ALL ON stock_lots FROM agriinsight_runtime;
+REVOKE ALL ON stock_balances FROM agriinsight_runtime;
+REVOKE ALL ON cost_categories FROM agriinsight_runtime;
+REVOKE ALL ON operating_cost_entries FROM agriinsight_runtime;
+REVOKE ALL ON outbox_events FROM agriinsight_runtime;
+REVOKE ALL ON realtime_event_receipts FROM agriinsight_runtime;
+REVOKE ALL ON realtime_aggregate_progress FROM agriinsight_runtime;
+REVOKE ALL ON realtime_tenant_metrics FROM agriinsight_runtime;
+REVOKE ALL ON realtime_operational_alerts FROM agriinsight_runtime;
+REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM agriinsight_runtime;
+REVOKE ALL ON flyway_schema_history FROM agriinsight_runtime;
+
+REVOKE ALL ON realtime_event_receipts FROM agriinsight_integration;
+REVOKE ALL ON realtime_aggregate_progress FROM agriinsight_integration;
+REVOKE ALL ON realtime_tenant_metrics FROM agriinsight_integration;
+REVOKE ALL ON realtime_operational_alerts FROM agriinsight_integration;
+REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM agriinsight_integration;
+REVOKE ALL ON realtime_event_receipts FROM agriinsight_realtime;
+REVOKE ALL ON realtime_aggregate_progress FROM agriinsight_realtime;
+REVOKE ALL ON realtime_tenant_metrics FROM agriinsight_realtime;
+REVOKE ALL ON realtime_operational_alerts FROM agriinsight_realtime;
+REVOKE ALL ON realtime_alert_acknowledgement_revisions FROM agriinsight_realtime;
+
+GRANT SELECT ON tenants TO agriinsight_runtime;
+GRANT SELECT, INSERT, UPDATE ON user_profiles TO agriinsight_runtime;
+GRANT SELECT ON roles TO agriinsight_runtime;
+GRANT SELECT ON permissions TO agriinsight_runtime;
+GRANT SELECT, INSERT, UPDATE ON user_roles TO agriinsight_runtime;
+GRANT SELECT ON role_permissions TO agriinsight_runtime;
+GRANT SELECT, INSERT, UPDATE ON api_command_records TO agriinsight_runtime;
+GRANT INSERT ON tenant_audit_events TO agriinsight_runtime;
+GRANT SELECT, INSERT ON farms TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, active, version, updated_at)
+    ON farms TO agriinsight_runtime;
+GRANT SELECT, INSERT ON crops TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, scientific_name, active, version, updated_at)
+    ON crops TO agriinsight_runtime;
+GRANT SELECT, INSERT ON fields TO agriinsight_runtime;
+GRANT UPDATE (
+    code, display_name, area_hectares, responsible_employee_id, latitude, longitude,
+    soil_type, irrigation_type, active, version, updated_at)
+    ON fields TO agriinsight_runtime;
+GRANT SELECT, INSERT ON seasons TO agriinsight_runtime;
+GRANT UPDATE (
+    code, display_name, variety_name, planned_start_date, planned_end_date,
+    started_on, ended_on, planted_area_hectares, budget_vnd, status, version, updated_at)
+    ON seasons TO agriinsight_runtime;
+GRANT SELECT, INSERT ON employees TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, job_title, active, version, updated_at)
+    ON employees TO agriinsight_runtime;
+GRANT SELECT, INSERT ON user_farm_assignments TO agriinsight_runtime;
+GRANT UPDATE (revoked_at, version, updated_at)
+    ON user_farm_assignments TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activity_types TO agriinsight_runtime;
+GRANT UPDATE (display_name, active, version, updated_at)
+    ON activity_types TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activities TO agriinsight_runtime;
+GRANT UPDATE (
+    code, title, description, planned_start_at, due_at, started_at, completed_at,
+    cancelled_at, status, version, updated_at)
+    ON activities TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activity_assignees TO agriinsight_runtime;
+GRANT UPDATE (revoked_at, version, updated_at)
+    ON activity_assignees TO agriinsight_runtime;
+GRANT SELECT, INSERT ON activity_logs TO agriinsight_runtime;
+GRANT SELECT, INSERT ON harvests TO agriinsight_runtime;
+GRANT SELECT, INSERT ON warehouses TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, location_text, active, version, updated_at)
+    ON warehouses TO agriinsight_runtime;
+GRANT SELECT, INSERT ON materials TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, base_unit, minimum_stock_quantity, active, version, updated_at)
+    ON materials TO agriinsight_runtime;
+GRANT SELECT, INSERT ON suppliers TO agriinsight_runtime;
+GRANT UPDATE (code, display_name, active, version, updated_at)
+    ON suppliers TO agriinsight_runtime;
+GRANT SELECT, INSERT ON user_warehouse_assignments TO agriinsight_runtime;
+GRANT UPDATE (revoked_at, version, updated_at)
+    ON user_warehouse_assignments TO agriinsight_runtime;
+GRANT SELECT, INSERT ON inventory_transactions TO agriinsight_runtime;
+GRANT UPDATE (version, updated_at)
+    ON inventory_transactions TO agriinsight_runtime;
+GRANT SELECT, INSERT ON inventory_transaction_lot_allocations TO agriinsight_runtime;
+GRANT SELECT, INSERT ON stock_lots TO agriinsight_runtime;
+GRANT UPDATE (available_quantity, version, updated_at)
+    ON stock_lots TO agriinsight_runtime;
+GRANT SELECT, INSERT ON stock_balances TO agriinsight_runtime;
+GRANT UPDATE (quantity_on_hand, inventory_value_vnd, version, updated_at)
+    ON stock_balances TO agriinsight_runtime;
+GRANT SELECT ON cost_categories TO agriinsight_runtime;
+GRANT SELECT, INSERT ON operating_cost_entries TO agriinsight_runtime;
+GRANT SELECT ON realtime_tenant_metrics TO agriinsight_runtime;
+GRANT SELECT ON realtime_operational_alerts TO agriinsight_runtime;
+GRANT SELECT, INSERT ON realtime_alert_acknowledgement_revisions TO agriinsight_runtime;
+GRANT SELECT ON flyway_schema_history TO agriinsight_runtime;
+
+GRANT INSERT (
+    id, tenant_id, command_id, event_ordinal, aggregate_type, aggregate_id,
+    aggregate_version, event_type, schema_version, occurred_at, payload)
+    ON outbox_events TO agriinsight_runtime;
+
+GRANT SELECT ON outbox_events TO agriinsight_integration;
+GRANT UPDATE (
+    status, attempts, available_at, leased_until, published_at, dead_lettered_at,
+    lease_owner, lease_token, lease_generation, last_error)
+    ON outbox_events TO agriinsight_integration;
+GRANT SELECT, INSERT ON realtime_event_receipts TO agriinsight_integration;
+GRANT SELECT, INSERT ON realtime_aggregate_progress TO agriinsight_integration;
+GRANT UPDATE (last_version, last_event_id, updated_at)
+    ON realtime_aggregate_progress TO agriinsight_integration;
+GRANT SELECT, INSERT ON realtime_tenant_metrics TO agriinsight_integration;
+GRANT UPDATE (event_count, last_occurred_at, last_processed_at)
+    ON realtime_tenant_metrics TO agriinsight_integration;
+GRANT SELECT, INSERT ON realtime_operational_alerts TO agriinsight_integration;
+GRANT UPDATE (
+    severity, state, source_event_id, source_occurred_at, last_observed_at,
+    resolved_at, clean_since, clean_scan_count, last_evaluated_at, version)
+    ON realtime_operational_alerts TO agriinsight_integration;
+
+GRANT SELECT (id, tenant_id, user_profile_id, issuer, subject, active)
+    ON external_identities TO agriinsight_identity_definer;
+GRANT SELECT (id, tenant_id, active)
+    ON user_profiles TO agriinsight_identity_definer;
+GRANT SELECT (id, active)
+    ON tenants TO agriinsight_identity_definer;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE agriinsight_migrator IN SCHEMA public
+    REVOKE ALL ON TABLES FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES FOR ROLE agriinsight_migrator IN SCHEMA public
+    REVOKE ALL ON SEQUENCES FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES FOR ROLE agriinsight_migrator IN SCHEMA agriinsight_security
+    REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
