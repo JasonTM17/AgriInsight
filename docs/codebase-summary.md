@@ -108,7 +108,7 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
 | `integration` | Transactional outbox event model, writer port, drain service, and PostgreSQL outbox store |
 | `realtime` | Tenant summary read model plus in-progress metadata-only operational alert evaluator, scanner/cursor store, and distinct DLT observer |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V26 one concurrent scan index each (expected schema version 26) |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V27 one concurrent scan index each (expected schema version 27) |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal
@@ -190,23 +190,29 @@ metadata plus alert projection/cursor state. It cannot retain raw Kafka values,
 outbox payloads, `last_error`, framework headers, or business-table data. The
 scanner stores per-policy cursors for fair pages, defaults to 500 candidates
 plus a continuation probe and 20-second query budget (configuration cap: 60
-seconds), and evaluates in `REPEATABLE_READ` under a policy lock. Recovery
-rechecks the current condition in the same snapshot, applies hysteresis, and
-reports saturation rather than performing unbounded scans.
+seconds), and evaluates in `REPEATABLE_READ` under a policy lock. DLT
+attribution validates the bounded envelope, then in a dedicated transaction
+looks up `(tenant_id, event_id)` in `outbox_events`, uses the database
+`occurred_at`, and only upserts when the source record matches; unmatched DLTs
+increment the unverified metric and log a stable event. Recovery rechecks the
+current condition in the same snapshot, applies hysteresis, and reports
+saturation rather than performing unbounded scans.
 
 This is not a public alert feed/API/UI, a semantic agriculture-alert product,
 a hosted acceptance, a new Docker Hub/GHCR package, or an external deployment.
 Those actions wait for the hardening migration, focused tests, review, merge,
 and the protected release workflow.
 
-The confirmed hardening split is V23-V26. V23 adds `NOT VALID` source/evidence
+The confirmed hardening split is V23-V27. V23 adds `NOT VALID` source/evidence
 checks and cursor/worker isolation without a table-wide legacy-row update.
 Before enabling the worker, an operator repeats the V23 backfill in at-most
 500-row idempotent batches until both remaining-row checks are false. V24, V25,
-and V26 create the backlog, delivery-lag, and unrecovered-DLT scan indexes
-concurrently; a failed invalid index must be dropped concurrently before the
-approved Flyway repair/retry, while a valid existing index requires history
-reconciliation instead of retry. Readiness expects schema version 26.
+V26, and V27 create the backlog, delivery-lag, unrecovered-DLT, and readiness
+scan indexes concurrently; V27 is the readiness-only invalid-source-evidence
+index and does not replace the backfill. A failed invalid index must be dropped
+concurrently before the approved Flyway repair/retry, while a valid existing
+index requires history reconciliation instead of retry. Readiness expects
+schema version 27.
 
 ## Verification snapshot
 

@@ -75,12 +75,14 @@ hysteresis, and saturation signals. This does not create a public alert
 feed/API/UI, semantic agriculture alerts, a hosted release, a Docker Hub/GHCR
 publication, or an external deployment.
 
-The hardening migration sequence is V23-V26 and readiness expects version 26.
+The hardening migration sequence is V23-V27 and readiness expects version 27.
 V23 intentionally adds `NOT VALID` source/evidence checks without a table-wide
 legacy-row update. Before worker enablement, an operator must finish the
 idempotent 500-row source-evidence backfill and confirm both remaining-row
-checks are false. V24-V26 create one index concurrently each; their named
-invalid-index recovery must precede Flyway repair/retry. See the
+checks are false. V24-V27 create one index concurrently each; V27 is a
+readiness-only partial index over invalid source-evidence rows and does not
+replace the V23 backfill or validate the constraints. Their named invalid-index
+recovery must precede Flyway repair/retry. See the
 [deployment guide](docs/deployment-guide.md#alert-worker-pre-enable-and-concurrent-index-recovery).
 
 Bằng chứng hiện tại:

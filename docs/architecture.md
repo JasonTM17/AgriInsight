@@ -167,17 +167,20 @@ allocations, balances, reversals, warehouse assignments, role-aware RLS và
 OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger,
 correction lineage, bounded summaries và role/farm-aware RLS. Phase 7 có
 historical outbox/image/recovery evidence. `V22` alert storage là immutable;
-V23-V26 là hardening sequence với expected schema version 26. V23 cần bounded
-source-evidence backfill trước worker enablement; V24-V26 mỗi migration tạo một
-concurrent scan index với invalid-index recovery riêng. Follow-on alert-worker
-hardening hiện là private source/Compose work: restricted login, metadata-only
-scanner/observer, durable cursors, bounded pages, current-condition recovery,
-hysteresis, và saturation safety. Không có public
-alert API/UI, broad semantic agriculture alert, hosted acceptance, new Docker
-Hub/GHCR package, image digest, hay external deployment cho slice này. Backend
-inventory/cost vẫn tách khỏi SQLite/Gold; procurement spend, inventory value
-và operating cost không gộp. Identity mặc định vẫn tắt cho đến khi deployment
-cung cấp đầy đủ OIDC contract.
+V23-V27 là hardening sequence với expected schema version 27. V23 cần bounded
+source-evidence backfill trước worker enablement; V24-V27 mỗi migration tạo một
+concurrent scan index, còn V27 chỉ là readiness index cho invalid source
+evidence và không thay thế backfill. Follow-on alert-worker hardening hiện là
+private source/Compose work: restricted login, metadata-only scanner/observer,
+durable cursors, bounded pages, current-condition recovery, hysteresis, và
+saturation safety. The DLT observer validates the bounded envelope, then
+inside a dedicated transaction looks up `(tenant_id, event_id)` in
+`outbox_events`, uses the database `occurred_at`, and only upserts when the
+source record matches. Không có public alert API/UI, broad semantic agriculture
+alert, hosted acceptance, new Docker Hub/GHCR package, image digest, hay
+external deployment cho slice này. Backend inventory/cost vẫn tách khỏi
+SQLite/Gold; procurement spend, inventory value và operating cost không gộp.
+Identity mặc định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.
 
 Outbox write nằm trong transaction của command record; event envelope được
 serialize trước commit và rollback-safe. Outbox drain vẫn không có public HTTP

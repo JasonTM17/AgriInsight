@@ -176,7 +176,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V26 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, and V24-V26 concurrent scan indexes; expected schema version is 26
+- liveness/readiness split and Flyway V1-V27 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, and V24-V27 concurrent scan indexes; expected schema version is 27
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 - Phase 1 contract freeze adds eight additive bounded GET reads:
   activity assignments, activity logs, activity log correction history, user
@@ -298,11 +298,13 @@ REST/API or UI alert center, and it does not define semantic agriculture alerts.
 It hardens the backend worker boundary around transport-health evidence already
 owned by the realtime system.
 
-The hardening schema is V23-V26 and readiness expects 26. V23 leaves legacy
+The hardening schema is V23-V27 and readiness expects 27. V23 leaves legacy
 source/evidence constraints `NOT VALID`; a repeatable 500-row operator
 backfill must finish with no legacy or invalid-shape rows before the worker is
-enabled. V24-V26 each build one scan index concurrently; invalid-index recovery
-must follow the migration-specific precondition rather than rerunning blindly.
+enabled. V24-V27 each build one scan index concurrently; V27 is the
+readiness-only partial invalid-source-evidence index and does not replace the
+V23 backfill. Invalid-index recovery must follow the migration-specific
+precondition rather than rerunning blindly.
 
 - The private `realtime-alert-worker` Compose service uses the non-web
   `realtime-worker` profile and the restricted, no-inheritance
@@ -314,13 +316,17 @@ must follow the migration-specific precondition rather than rerunning blindly.
   topic and untrusted framework headers.
 - The worker can use only tenant IDs, narrow outbox/receipt metadata, alert
   projection, and cursor state. It never receives business-table access, raw
-  Kafka values, outbox payloads, or error text.
+  Kafka values, outbox payloads, or error text. DLT attribution validates the
+  bounded envelope, then in a dedicated transaction looks up `(tenant_id,
+  event_id)` in `outbox_events`, uses the database `occurred_at`, and only
+  upserts on a match; unmatched DLTs increment the unverified metric and log a
+  stable event.
 - Scans use durable per-policy cursors and fair pages bounded to the default
   500 candidates plus a continuation probe. `REPEATABLE_READ`, a policy-level
   advisory lock, current-condition recovery, hysteresis, and saturation
   signalling protect against overlap, stale resolution, flapping, and
-  unbounded outage work. Default query time is 20 seconds; configuration is
-  capped at 60 seconds.
+  unbounded outage work. Default query time is 20 seconds and is capped by
+  configuration at 60 seconds.
 
 ## Boundaries
 
