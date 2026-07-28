@@ -176,7 +176,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V27 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, and V24-V27 concurrent scan indexes; expected schema version is 27
+- liveness/readiness split and Flyway V1-V27 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V26 concurrent scan indexes, and the V27 partial invalid-source-evidence readiness index; expected schema version is 27
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 - Phase 1 contract freeze adds eight additive bounded GET reads:
   activity assignments, activity logs, activity log correction history, user
@@ -301,8 +301,8 @@ owned by the realtime system.
 The hardening schema is V23-V27 and readiness expects 27. V23 leaves legacy
 source/evidence constraints `NOT VALID`; a repeatable 500-row operator
 backfill must finish with no legacy or invalid-shape rows before the worker is
-enabled. V24-V27 each build one scan index concurrently; V27 is the
-readiness-only partial invalid-source-evidence index and does not replace the
+enabled. V24-V26 each build one scan index concurrently, while V27 is the
+readiness-only partial invalid-source-evidence index; it does not replace the
 V23 backfill. Invalid-index recovery must follow the migration-specific
 precondition rather than rerunning blindly.
 
@@ -313,7 +313,9 @@ precondition rather than rerunning blindly.
 - Only that alert-worker service disables the legacy Kafka publisher/consumer
   path. The existing `realtime-worker` retains the legacy path, while the alert
   DLT observer is a distinct observer path with an independent group/failure
-  topic and untrusted framework headers.
+  topic and untrusted framework headers. Terminal observer failures use a
+  compact headerless marker, never a copied source key, value, header, or
+  exception message.
 - The worker can use only tenant IDs, narrow outbox/receipt metadata, alert
   projection, and cursor state. It never receives business-table access, raw
   Kafka values, outbox payloads, or error text. DLT attribution validates the
@@ -326,7 +328,8 @@ precondition rather than rerunning blindly.
   advisory lock, current-condition recovery, hysteresis, and saturation
   signalling protect against overlap, stale resolution, flapping, and
   unbounded outage work. Default query time is 20 seconds and is capped by
-  configuration at 60 seconds.
+  configuration at 60 seconds; the isolated worker pgJDBC read timeout is 65
+  seconds so it does not preempt that bound.
 
 ## Boundaries
 

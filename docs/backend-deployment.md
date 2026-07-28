@@ -43,6 +43,12 @@ Không có HTTP listener/public worker API. Cùng backend image được dùng c
 source/Compose local; hiện chưa có image tag, digest, Docker Hub/GHCR package
 publication, hay external deployment mới cho slice này.
 
+The alert-only datasource fixes pgJDBC `socketTimeout=65`, which is larger
+than the worker's configuration-capped 60-second query bound and leaves the
+API datasource's default fail-fast timeout unchanged. Its distinct terminal
+observer topic receives only a compact headerless marker on observer failure;
+it never forwards the original Kafka key, value, headers, or exception text.
+
 The worker must stay disabled until Flyway V23-V27 reaches expected version 27
 and the V23 source-evidence backfill reports no remaining legacy or
 invalid-shape rows. V24-V27 each create one index concurrently; V27 is the

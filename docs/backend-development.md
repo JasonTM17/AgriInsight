@@ -71,11 +71,15 @@ receipt, tenant, alert, and cursor columns it needs; it has no outbox payload,
 `last_error`, or business-table grant. The scanner uses a durable per-policy
 cursor and fair pages bounded by `maximumCandidates=500` plus a continuation
 probe. Default `maximumQueryDuration=20s` is validated with a 60-second cap.
-Each policy runs in `REPEATABLE_READ` behind a policy-level advisory lock,
-rechecks the current condition before recovery, applies healthy-duration and
-clean-scan hysteresis, and records saturation rather than expanding a scan.
-The distinct DLT observer treats Kafka headers as untrusted, retains no raw
-value or error text, and never republishes to the observed DLT topic.
+Its isolated profile sets pgJDBC `socketTimeout=65`, exceeding that cap without
+loosening the API datasource's fail-fast read timeout. Each policy runs in
+`REPEATABLE_READ` behind a policy-level advisory lock, rechecks the current
+condition before recovery, applies healthy-duration and clean-scan hysteresis,
+and records saturation rather than expanding a scan. The distinct DLT observer
+treats Kafka headers as untrusted, retains no raw value or error text, and
+never republishes to the observed DLT topic; terminal observer failures emit a
+fixed headerless marker to the distinct terminal topic rather than forwarding
+the original key, payload, headers, or exception text.
 
 Realtime source coverage includes authenticated MockMvc summary-route coverage,
 tenant-scoped RLS/privilege coverage, and Kafka E2E source paths after

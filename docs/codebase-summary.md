@@ -108,7 +108,7 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
 | `integration` | Transactional outbox event model, writer port, drain service, and PostgreSQL outbox store |
 | `realtime` | Tenant summary read model plus in-progress metadata-only operational alert evaluator, scanner/cursor store, and distinct DLT observer |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V27 one concurrent scan index each (expected schema version 27) |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V26 concurrent scan indexes; V27 partial invalid-source-evidence readiness index (expected schema version 27) |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal

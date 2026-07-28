@@ -122,7 +122,7 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 | `realtime_operational_alerts` | UUID primary key; tenant ID; validated policy/severity/state enums; SHA-256 dedupe key; optional only validated event UUID/correlation ID; one identity per tenant/policy/dedupe key; UTC timestamps; version; `clean_since`, clean streak, and evaluation watermark for recovery hysteresis. |
 | `realtime_alert_acknowledgement_revisions` | tenant-aware alert/profile composite references; immutable UUID revision; `acknowledged_observation_at` copied under the alert lock; unique `(tenant, alert, profile, observation)`; no user text or destructive mutation path. |
 | Worker evaluation | compares only granted tenant/outbox/receipt/alert metadata in a bounded repeatable-read snapshot, uses a policy advisory lock and durable cursor per policy, upserts/reopens deterministically, checks current conditions before recovery, and does not call business APIs, fetch URLs, or issue database scope from a Kafka header. |
-| DLT observer | separate consumer group with its own non-recursive error policy; validates a bounded value/envelope while allowing extra DLT framework headers; never trusts those headers for tenant scope and cannot publish back to its observed DLT topic. It validates the envelope, then in a dedicated transaction looks up `(tenant_id, event_id)` in `outbox_events`, uses database `occurred_at`, and only upserts on a match; unmatched DLTs increment the unverified metric and log a stable event. |
+| DLT observer | separate consumer group with its own non-recursive error policy; validates a bounded value/envelope while allowing extra DLT framework headers; never trusts those headers for tenant scope and cannot publish back to its observed DLT topic. Its terminal failure record is a compact headerless marker, never a copied key/value/header or exception text. It validates the envelope, then in a dedicated transaction looks up `(tenant_id, event_id)` in `outbox_events`, uses database `occurred_at`, and only upserts on a match; unmatched DLTs increment the unverified metric and log a stable event. |
 
 ## Related code files
 
@@ -170,8 +170,9 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
    legacy updates/validation. Before enablement, run the V23 operator backfill
    as `agriinsight_migrator` in repeatable at-most-500-row batches until both
    remaining-row checks are false; invalid source shape requires correction or
-   retirement, never `source_event_id` rewriting. V24-V27 each create one scan
-   index concurrently. If one fails with an invalid index, drop that named index
+   retirement, never `source_event_id` rewriting. V24-V26 each create one scan
+   index concurrently, and V27 adds the partial invalid-source-evidence readiness
+   index. If one fails with an invalid index, drop that named index
    concurrently and repair/retry Flyway; a valid pre-existing index requires
    history reconciliation rather than retry. V27 is readiness-only and does not
    replace the backfill.

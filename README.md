@@ -69,7 +69,9 @@ disables the legacy Kafka publisher/consumer path. The existing
 The scanner reads only granted metadata, persists a cursor for fair bounded
 pages, and does not retain raw Kafka values, outbox payloads, or error text.
 Its default candidate maximum is 500 and its default query timeout is 20
-seconds (configuration is capped at 60 seconds). Policy evaluation uses a
+seconds (configuration is capped at 60 seconds); the isolated worker profile
+uses a 65-second PostgreSQL JDBC read timeout so the driver does not preempt
+that bound. Policy evaluation uses a
 repeatable-read transaction, per-policy lock, current-condition recovery,
 hysteresis, and saturation signals. This does not create a public alert
 feed/API/UI, semantic agriculture alerts, a hosted release, a Docker Hub/GHCR
