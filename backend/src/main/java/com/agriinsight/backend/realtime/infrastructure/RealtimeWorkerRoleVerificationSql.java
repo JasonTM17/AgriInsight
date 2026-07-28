@@ -160,6 +160,11 @@ final class RealtimeWorkerRoleVerificationSql {
                             current_user, 'public.' || metadata.relation_name, 'REFERENCES')
                         AND NOT has_table_privilege(
                             current_user, 'public.' || metadata.relation_name, 'TRIGGER')
+                        AND NOT has_any_column_privilege(
+                            current_user,
+                            'public.' || metadata.relation_name,
+                            'INSERT, UPDATE, REFERENCES'
+                        )
                     ), FALSE)
                     FROM metadata_relation AS metadata
                )
