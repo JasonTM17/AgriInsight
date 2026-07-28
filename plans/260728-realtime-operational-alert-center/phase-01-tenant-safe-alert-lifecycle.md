@@ -17,12 +17,12 @@ Create the durable, metadata-only alert lifecycle before exposing any new UI.
 It evaluates only transport evidence already owned by the outbox/realtime
 system, persists concise tenant alerts under FORCE RLS, and records a current
 profile's acknowledgement without changing the underlying operational fact.
-`V22` is immutable. The current V23-V26 worker hardening is in progress and
-readiness expects schema version 26. V23 adds `NOT VALID` source/evidence
+`V22` is immutable. The current V23-V27 worker hardening is in progress and
+readiness expects schema version 27. V23 adds `NOT VALID` source/evidence
 checks, so an operator must complete its idempotent 500-row source-evidence
-backfill before worker enablement. V24-V26 create one index concurrently each
-and use migration-specific invalid-index recovery. Phase 2/3 public API, BFF,
-and UI work has not started.
+backfill before worker enablement. V24-V27 create one index concurrently each;
+V27 is the readiness-only invalid-source-evidence index and does not replace
+the V23 backfill. Phase 2/3 public API, BFF, and UI work has not started.
 
 ## Context links
 
@@ -50,9 +50,10 @@ and UI work has not started.
 ### Functional
 
 1. Preserve immutable V22 `realtime_operational_alerts` and
-   `realtime_alert_acknowledgement_revisions`; add V23-V26 without rewriting
-   applied history. V23 must stay additive/`NOT VALID` and V24-V26 must retain
-   one concurrent index per migration.
+   `realtime_alert_acknowledgement_revisions`; add V23-V27 without rewriting
+   applied history. V23 must stay additive/`NOT VALID` and V24-V27 must retain
+   one concurrent index per migration. V27 remains readiness-only and does not
+   replace the V23 backfill.
 2. Implement exactly three first-policy codes:
    `OUTBOX_PUBLISH_BACKLOG`, `REALTIME_DELIVERY_LAG`, and
    `REALTIME_DLT_RECORD`.
@@ -121,7 +122,7 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 | `realtime_operational_alerts` | UUID primary key; tenant ID; validated policy/severity/state enums; SHA-256 dedupe key; optional only validated event UUID/correlation ID; one identity per tenant/policy/dedupe key; UTC timestamps; version; `clean_since`, clean streak, and evaluation watermark for recovery hysteresis. |
 | `realtime_alert_acknowledgement_revisions` | tenant-aware alert/profile composite references; immutable UUID revision; `acknowledged_observation_at` copied under the alert lock; unique `(tenant, alert, profile, observation)`; no user text or destructive mutation path. |
 | Worker evaluation | compares only granted tenant/outbox/receipt/alert metadata in a bounded repeatable-read snapshot, uses a policy advisory lock and durable cursor per policy, upserts/reopens deterministically, checks current conditions before recovery, and does not call business APIs, fetch URLs, or issue database scope from a Kafka header. |
-| DLT observer | separate consumer group with its own non-recursive error policy; validates a bounded value/envelope while allowing extra DLT framework headers; never trusts those headers for tenant scope and cannot publish back to its observed DLT topic. |
+| DLT observer | separate consumer group with its own non-recursive error policy; validates a bounded value/envelope while allowing extra DLT framework headers; never trusts those headers for tenant scope and cannot publish back to its observed DLT topic. It validates the envelope, then in a dedicated transaction looks up `(tenant_id, event_id)` in `outbox_events`, uses database `occurred_at`, and only upserts on a match; unmatched DLTs increment the unverified metric and log a stable event. |
 
 ## Related code files
 
@@ -131,7 +132,8 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V23__harden_realtime_operational_alert_worker.sql` | In progress | Additive `NOT VALID` source/evidence checks, restricted worker RLS/grants, and durable scan cursors; no table-wide legacy-row update/validation. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V24__add_realtime_alert_indexes_concurrently.sql` | In progress | One concurrent backlog scan index with named absent/invalid-index precondition. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V25__add_realtime_alert_delivery_lag_index_concurrently.sql` | In progress | One concurrent delivery-lag scan index with named absent/invalid-index precondition. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql` | In progress | One concurrent unrecovered-DLT scan index with named absent/invalid-index precondition; application readiness expects 26. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql` | In progress | One concurrent unrecovered-DLT scan index with named absent/invalid-index precondition. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V27__add_realtime_alert_evidence_readiness_index_concurrently.sql` | In progress | One concurrent readiness-only invalid-source-evidence scan index; application readiness expects 27. |
 | `D:\AgriInsight\backend\ops\postgres\backfill-realtime-alert-source-evidence.sql` | Run before worker enablement | Idempotent `agriinsight_migrator` backfill, at most 500 valid legacy rows per run; do not enable until both remaining-row checks are false. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql` | Modify | Revoke broad access first, then grant minimum columns to runtime, integration, and the separate alert-worker login without inheritance. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Permission.java` | Modify | Add explicit alert read/ack permissions. |
@@ -168,10 +170,11 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
    legacy updates/validation. Before enablement, run the V23 operator backfill
    as `agriinsight_migrator` in repeatable at-most-500-row batches until both
    remaining-row checks are false; invalid source shape requires correction or
-   retirement, never `source_event_id` rewriting. V24-V26 each create one scan
+   retirement, never `source_event_id` rewriting. V24-V27 each create one scan
    index concurrently. If one fails with an invalid index, drop that named index
    concurrently and repair/retry Flyway; a valid pre-existing index requires
-   history reconciliation rather than retry.
+   history reconciliation rather than retry. V27 is readiness-only and does not
+   replace the backfill.
 4. Extend repeatable grants after all revokes. Runtime receives tenant-only
    alert select plus acknowledgement revision select/insert constrained by both
    `app_current_tenant_id()` and `app_current_profile_id()`; it never gets
@@ -229,15 +232,16 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 
 - [x] Freeze policy vocabulary and exclude semantic domain policies.
 - [x] Preserve V22 alert/revision baseline, profile RLS, grants, and permissions as immutable history.
-- [ ] Complete and verify V23-V26: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V26 one concurrent index each, expected schema version 26, and named invalid-index recovery.
+- [ ] Complete and verify V23-V27: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V27 one concurrent index each, expected schema version 27, and named invalid-index recovery.
 - [ ] Prove deterministic dedupe, current-condition recovery, concurrent acknowledgement revision, profile isolation, fair continuation, and saturation semantics.
 - [ ] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible; complete migration/test/review/merge before any protected publication.
 
 ## Success criteria
 
-- [ ] V23-V26 are proven on fresh and existing schema paths; V22 and every
+- [ ] V23-V27 are proven on fresh and existing schema paths; V22 and every
   applied migration remain untouched. V23 backfill completes before worker
-  enablement, and V24-V26 recovery never blindly retries an index migration.
+  enablement, V27 remains readiness-only, and V24-V27 recovery never blindly
+  retries an index migration.
 - [ ] Every alert is deterministically attributable to a valid tenant and
   source condition, with no payload/error/body retention; valid DLT values
   survive extra framework headers and malformed values stay unattributable.

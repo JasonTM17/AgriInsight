@@ -248,11 +248,12 @@ models, and V21 adds the tenant summary index.
 only: it adds the metadata evidence checks as `NOT VALID`, durable alert scan
 cursors, and the restricted worker policies; it deliberately does not run a
 table-wide update, validate legacy rows, or make `source_occurred_at` `NOT
-NULL`. `V24`, `V25`, and `V26` each create exactly one alert scan index with
-`CREATE INDEX CONCURRENTLY`, respectively for outbox backlog,
-published-without-receipt delivery lag, and open unrecovered DLT alerts. The
-default `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `26`; it is a readiness
-contract check, never a bypass for unmigrated databases.
+NULL`. `V24`, `V25`, `V26`, and `V27` each create exactly one alert scan index
+with `CREATE INDEX CONCURRENTLY`, respectively for outbox backlog,
+published-without-receipt delivery lag, open unrecovered DLT alerts, and a
+readiness-only partial invalid-source-evidence index. The default
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `27`; it is a readiness contract
+check, never a bypass for unmigrated databases.
 
 ### Alert-worker pre-enable and concurrent-index recovery
 
@@ -265,9 +266,11 @@ Run it until no rows are backfilled and both final checks are `false`:
 `legacy_source_occurred_at_rows_remain` and
 `invalid_source_evidence_shape_rows_remain`. A true invalid-shape result needs
 operator correction or retirement; the script intentionally never rewrites
-`source_event_id`. Do not enable the worker earlier.
+`source_event_id`. Do not enable the worker earlier. V27 does not replace this
+backfill or validate the constraints; it only adds the readiness index over
+invalid source-evidence rows.
 
-V24-V26 run outside a Flyway transaction. For each migration, its named index
+V24-V27 run outside a Flyway transaction. For each migration, its named index
 must be absent first. If a failed build leaves that index invalid, run the
 matching `DROP INDEX CONCURRENTLY` below, then repair/retry Flyway in the
 approved migration workflow. If the index is already valid, reconcile Flyway
@@ -278,6 +281,7 @@ history with the operator; do not retry the migration.
 | V24 | `ix_outbox_events_alert_backlog` | `DROP INDEX CONCURRENTLY ix_outbox_events_alert_backlog` |
 | V25 | `ix_outbox_events_alert_delivery_lag` | `DROP INDEX CONCURRENTLY ix_outbox_events_alert_delivery_lag` |
 | V26 | `ix_realtime_operational_alerts_unrecovered_dlt` | `DROP INDEX CONCURRENTLY ix_realtime_operational_alerts_unrecovered_dlt` |
+| V27 | `ix_realtime_operational_alerts_invalid_source_evidence` | `DROP INDEX CONCURRENTLY ix_realtime_operational_alerts_invalid_source_evidence` |
 
 Required deployment inputs:
 
@@ -287,7 +291,7 @@ Required deployment inputs:
 | `AGRIINSIGHT_DB_OPERATOR_USERNAME`, `AGRIINSIGHT_DB_OPERATOR_PASSWORD` | Short-lived role bootstrap credential; must not be the migrator |
 | `AGRIINSIGHT_FLYWAY_URL`, `AGRIINSIGHT_FLYWAY_USERNAME`, `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration connection; username must be `agriinsight_migrator` |
 | `AGRIINSIGHT_DB_ADOPTION_USERNAME`, `AGRIINSIGHT_DB_ADOPTION_PASSWORD` | Required only for the explicit Phase 1/2 legacy-owner adoption path |
-| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `26` unless a later reviewed migration changes the readiness contract |
+| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `27` unless a later reviewed migration changes the readiness contract |
 | `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD` | Compose-only password input for the separate `agriinsight_alert_worker` login; never commit or expose it |
 
 Fresh database:

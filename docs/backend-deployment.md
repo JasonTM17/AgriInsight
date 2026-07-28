@@ -43,9 +43,10 @@ Không có HTTP listener/public worker API. Cùng backend image được dùng c
 source/Compose local; hiện chưa có image tag, digest, Docker Hub/GHCR package
 publication, hay external deployment mới cho slice này.
 
-The worker must stay disabled until Flyway V23-V26 reaches expected version 26
+The worker must stay disabled until Flyway V23-V27 reaches expected version 27
 and the V23 source-evidence backfill reports no remaining legacy or
-invalid-shape rows. V24-V26 each create one index concurrently; use the exact
+invalid-shape rows. V24-V27 each create one index concurrently; V27 is the
+readiness-only partial index over invalid source-evidence rows. Use the exact
 invalid-index recovery procedure in the
 [deployment guide](deployment-guide.md#alert-worker-pre-enable-and-concurrent-index-recovery),
 not an ad hoc retry.

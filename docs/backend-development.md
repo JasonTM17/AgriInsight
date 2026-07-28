@@ -26,14 +26,16 @@ try {
 } finally { Pop-Location }
 ```
 
-`V22` is immutable. The current alert-worker hardening is V23-V26 with expected
-schema version 26. V23 is additive and keeps its source/evidence checks `NOT
+`V22` is immutable. The current alert-worker hardening is V23-V27 with expected
+schema version 27. V23 is additive and keeps its source/evidence checks `NOT
 VALID`; a bounded idempotent operator backfill is required before worker
-enablement. V24-V26 are one concurrent index each and have explicit
-invalid-index recovery preconditions. Repeatable grants run after versioned
-migration. Every new migration must keep `ENABLE/FORCE ROW LEVEL SECURITY`,
-update readiness/schema tests, and run fresh plus controlled-upgrade integration
-tests. Follow the pre-enable and recovery procedure in
+enablement. V24-V27 are one concurrent index each and have explicit
+invalid-index recovery preconditions; V27 is a readiness-only partial index for
+invalid source-evidence rows and does not replace the V23 backfill. Repeatable
+grants run after versioned migration. Every new migration must keep
+`ENABLE/FORCE ROW LEVEL SECURITY`, update readiness/schema tests, and run fresh
+plus controlled-upgrade integration tests. Follow the pre-enable and recovery
+procedure in
 [deployment guide](deployment-guide.md#alert-worker-pre-enable-and-concurrent-index-recovery).
 
 ## Transactional outbox
