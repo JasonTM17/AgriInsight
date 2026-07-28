@@ -169,6 +169,7 @@ class RealtimeWorkerRoleVerifierTest {
                         "relation.relname <> ALL",
                         "has_table_privilege",
                         "has_any_column_privilege",
+                        "'INSERT, UPDATE, REFERENCES'",
                         "allowed_metadata_column",
                         "'outbox_events'::NAME, 'id'::NAME",
                         "'flyway_schema_history'::NAME, 'installed_rank'::NAME",

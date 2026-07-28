@@ -94,6 +94,20 @@ class RealtimeWorkerRoleVerifierIntegrationTest {
                 "operational alert worker database role verification failed");
     }
 
+    @Test
+    void rejectsAColumnLevelWriteGrantOnSchemaHistory() throws Exception {
+        assertRejectedDuringDrift(
+                """
+                GRANT UPDATE (success)
+                    ON flyway_schema_history TO agriinsight_alert_worker
+                """,
+                """
+                REVOKE UPDATE (success)
+                    ON flyway_schema_history FROM agriinsight_alert_worker
+                """,
+                "operational alert worker database role verification failed");
+    }
+
     private static void assertRejectedDuringDrift(
             String introduceDrift,
             String repairDrift,
