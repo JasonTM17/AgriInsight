@@ -26,10 +26,12 @@ try {
 } finally { Pop-Location }
 ```
 
-`V22` is immutable. The current alert-worker hardening is V23-V27 with expected
-schema version 27. V23 is additive and keeps its source/evidence checks `NOT
-VALID`; a bounded idempotent operator backfill is required before worker
-enablement. V24-V27 are one concurrent index each and have explicit
+`V22` is immutable. The alert-worker hardening is V23-V27 with expected schema
+version 27, but the worker startup gate independently pins successful V27 and
+the latest repeatable grant execution; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION`
+remains backend readiness only. V23 is additive and keeps its source/evidence
+checks `NOT VALID`; a bounded idempotent operator backfill is required before
+worker enablement. V24-V27 are one concurrent index each and have explicit
 invalid-index recovery preconditions; V27 is a readiness-only partial index for
 invalid source-evidence rows and does not replace the V23 backfill. Repeatable
 grants run after versioned migration. Every new migration must keep
@@ -66,28 +68,33 @@ profile with `spring.main.web-application-type=none` and the
 The existing `realtime-worker` service remains the separate
 `agriinsight_realtime` publisher/consumer path.
 
-The alert worker is metadata-only: it can read only the narrow outbox,
-receipt, tenant, alert, and cursor columns it needs; it has no outbox payload,
-`last_error`, or business-table grant. The scanner uses a durable per-policy
-cursor and fair pages bounded by `maximumCandidates=500` plus a continuation
-probe. Default `maximumQueryDuration=20s` is validated with a 60-second cap.
-Its isolated profile sets pgJDBC `socketTimeout=65`, exceeding that cap without
-loosening the API datasource's fail-fast read timeout. Each policy runs in
+The alert worker is metadata-only: it can read only the narrow outbox, receipt,
+tenant, alert, and cursor columns it needs; it has no outbox payload,
+`last_error`, or business-table grant. Startup also verifies the exact
+`agriinsight_alert_worker` login topology, no inherited memberships, the
+named FORCE-RLS policies, and the narrow grants on the metadata-only tables.
+The scanner uses a durable per-policy cursor and fair pages bounded by
+`maximumCandidates=500` plus a continuation probe. Default
+`maximumQueryDuration=20s` is validated with a 60-second cap. Its isolated
+profile sets pgJDBC `socketTimeout=65`, exceeding that cap without loosening
+the API datasource's fail-fast read timeout. Each policy runs in
 `REPEATABLE_READ` behind a policy-level advisory lock, rechecks the current
 condition before recovery, applies healthy-duration and clean-scan hysteresis,
 and records saturation rather than expanding a scan. The distinct DLT observer
 treats Kafka headers as untrusted, retains no raw value or error text, and
 never republishes to the observed DLT topic; terminal observer failures emit a
 fixed headerless marker to the distinct terminal topic rather than forwarding
-the original key, payload, headers, or exception text.
+the original key, payload, headers, or exception text. Receipt recording and
+source attribution share a per-event advisory lock, so DLT handling is database
+serialization, not exactly-once or broker ordering.
 
 Realtime source coverage includes authenticated MockMvc summary-route coverage,
 tenant-scoped RLS/privilege coverage, and Kafka E2E source paths after
 `scripts/run-realtime-e2e-tests.ps1`. Existing runner/workflow artifacts are
-foundation evidence only. The follow-on alert-worker hardening is in progress:
-it is not a hosted acceptance, release image, Docker Hub/GHCR publication, or
-production SLA until its migration, tests, review, merge, and protected release
-workflow complete.
+foundation evidence only. The follow-on alert-worker hardening is merged
+locally with focused contract coverage: it is not a hosted acceptance, release
+image, Docker Hub/GHCR publication, or production SLA until hosted CI,
+main merge, and the protected release workflow complete.
 
 ## Role matrix
 

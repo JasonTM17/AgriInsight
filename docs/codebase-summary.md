@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-28 (alert-worker hardening source/Compose only; not released)
+Verified snapshot: 2026-07-28 (alert-worker hardening source/Compose merged locally with focused contract coverage; not released)
 
 ## Repository shape
 
@@ -174,7 +174,7 @@ GETs also expose `ETag`.
   development profile or authenticated non-development configuration.
 - All unregistered business mappings are denied.
 
-## Realtime alert-worker hardening (in progress)
+## Realtime alert-worker hardening
 
 `V22` remains immutable. The private `realtime-alert-worker` service uses the
 non-web `realtime-worker` profile and a separate no-inheritance
@@ -194,14 +194,27 @@ seconds), and evaluates in `REPEATABLE_READ` under a policy lock. DLT
 attribution validates the bounded envelope, then in a dedicated transaction
 looks up `(tenant_id, event_id)` in `outbox_events`, uses the database
 `occurred_at`, and only upserts when the source record matches; unmatched DLTs
-increment the unverified metric and log a stable event. Recovery rechecks the
-current condition in the same snapshot, applies hysteresis, and reports
-saturation rather than performing unbounded scans.
+increment the unverified metric and log a stable event. Receipt recording and
+source attribution share a transaction-scoped per-event advisory lock, so that
+path is database serialization, not exactly-once or broker ordering. Recovery
+rechecks the current condition in the same snapshot, applies hysteresis, and
+reports saturation rather than performing unbounded scans.
 
 This is not a public alert feed/API/UI, a semantic agriculture-alert product,
 a hosted acceptance, a new Docker Hub/GHCR package, or an external deployment.
-Those actions wait for the hardening migration, focused tests, review, merge,
-and the protected release workflow.
+Implementation and focused contract coverage are merged locally; those actions
+still wait for hosted CI, main merge, and the protected publication/release
+gates. The worker startup gate independently pins successful V27 and the latest
+repeatable grant; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend
+readiness only.
+
+The official upgrade fixture reconstructs V1-V22 plus the historical
+repeatable from release commit
+`6927eeda70981c2461e85a165834e2464ba793d1`, verifies normalized SHA-256
+fingerprints, applies current V23-V27 plus the current repeatable, validates,
+and reruns with zero migrations. It preserves representative legacy invalid
+rows and the V23 `NOT VALID` constraints; it does not perform the pre-enable
+backfill.
 
 The confirmed hardening split is V23-V27. V23 adds `NOT VALID` source/evidence
 checks and cursor/worker isolation without a table-wide legacy-row update.
@@ -293,12 +306,13 @@ schema version 27.
 The eight-area production-web implementation and Phase 11 browser gate are
 complete. Phase 12 is an internal container candidate: Dockerfiles, no-push
 build/scan/smoke, release overlays, serialized protected publication contract,
-and owner handoff exist. The alert-worker hardening is a separate in-progress
-boundary: migration, focused tests, review, and merge must complete before any
-protected backend image/package publication. Registry publication and any
-production-release claim remain blocked until the protected environment,
-reviewers/secrets, license, production OIDC/operations, and immutable-digest
-release evidence are approved.
+and owner handoff exist. The alert-worker hardening is a separate boundary
+that is merged locally with focused contract coverage; hosted CI, main merge,
+protected publication, and release/recovery approvals must still complete
+before any protected backend image/package publication. Registry publication
+and any production-release claim remain blocked until the protected
+environment, reviewers/secrets, license, production OIDC/operations, and
+immutable-digest release evidence are approved.
 
 ## Unresolved questions
 

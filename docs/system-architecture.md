@@ -147,9 +147,9 @@ The web and analytics images run as UID/GID `10001`, accept a read-only root
 filesystem, and use explicit `/tmp` tmpfs mounts. Semantic-version and full-SHA
 tags may be published to Docker Hub and GHCR only after candidate scan/smoke;
 BuildKit SBOM/provenance and exact-digest scan/smoke are mandatory. `latest` is
-not part of the tag model. The in-progress alert-worker hardening reuses the
-backend image and does not yet have a new tag, digest, package visibility, or
-external deployment.
+not part of the tag model. The alert-worker hardening reuses the backend image,
+is merged locally with focused contract coverage, and still has no released
+tag, digest, package visibility, or external deployment.
 
 `deploy/compose.release-overlay.yaml` replaces local builds with digest-pinned
 first-party images and orders backend/web migrations before readiness. The
@@ -292,37 +292,53 @@ in-progress alert-worker hardening.
 
 ## Realtime operational alert center
 
-`V22` alert storage is immutable. The current isolated operational alert
-hardening is in progress and remains metadata-only: it does not add a public
-REST/API or UI alert center, and it does not define semantic agriculture alerts.
-It hardens the backend worker boundary around transport-health evidence already
-owned by the realtime system.
+`V22` alert storage is immutable. The isolated operational alert hardening is
+metadata-only: it does not add a public REST/API or UI alert center, and it
+does not define semantic agriculture alerts. It hardens the backend worker
+boundary around transport-health evidence already owned by the realtime system.
 
 The hardening schema is V23-V27 and readiness expects 27. V23 leaves legacy
 source/evidence constraints `NOT VALID`; a repeatable 500-row operator
 backfill must finish with no legacy or invalid-shape rows before the worker is
-enabled. V24-V26 each build one scan index concurrently, while V27 is the
-readiness-only partial invalid-source-evidence index; it does not replace the
-V23 backfill. Invalid-index recovery must follow the migration-specific
-precondition rather than rerunning blindly.
+enabled. V24-V27 each run outside a Flyway transaction with
+`executeInTransaction=false` and build one index through bounded
+`CREATE INDEX CONCURRENTLY`; V27 is the readiness-only partial
+invalid-source-evidence index and does not replace the V23 backfill. Invalid
+indexes must be dropped concurrently before repair/retry, while an already
+valid index requires history reconciliation. The worker startup gate
+independently pins successful V27 and the latest repeatable grant;
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend readiness only.
+
+The official upgrade fixture reconstructs the fingerprinted V1-V22 release
+plus its historical repeatable from commit
+`6927eeda70981c2461e85a165834e2464ba793d1`, then applies current V23-V27 and
+the current repeatable. It validates, reruns with zero migrations, preserves
+representative legacy invalid rows, and leaves the V23 checks `NOT VALID`;
+the operator backfill remains a separate pre-enable step.
 
 - The private `realtime-alert-worker` Compose service uses the non-web
   `realtime-worker` profile and the restricted, no-inheritance
   `agriinsight_alert_worker` login. Compose requires
   `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; it supplies no public worker port.
+  Startup verifies login flags and memberships, required and forbidden
+  relation/column privileges, and the definitions of each required named
+  permissive FORCE-RLS policy.
 - Only that alert-worker service disables the legacy Kafka publisher/consumer
   path. The existing `realtime-worker` retains the legacy path, while the alert
   DLT observer is a distinct observer path with an independent group/failure
-  topic and untrusted framework headers. Terminal observer failures use a
-  compact headerless marker, never a copied source key, value, header, or
-  exception message.
+  topic and untrusted framework headers. Terminal observer failures create the
+  fixed ASCII `terminal-observer-failure` marker with no partition affinity,
+  key, headers, source value, or exception message; publish failures propagate.
 - The worker can use only tenant IDs, narrow outbox/receipt metadata, alert
   projection, and cursor state. It never receives business-table access, raw
   Kafka values, outbox payloads, or error text. DLT attribution validates the
   bounded envelope, then in a dedicated transaction looks up `(tenant_id,
   event_id)` in `outbox_events`, uses the database `occurred_at`, and only
   upserts on a match; unmatched DLTs increment the unverified metric and log a
-  stable event.
+  stable event. Receipt recording and source attribution share a transaction-
+  scoped per-event advisory lock, so the DLT transaction waits and rechecks
+  receipt after acquiring the lock; that is serialization, not exactly-once or
+  broker ordering.
 - Scans use durable per-policy cursors and fair pages bounded to the default
   500 candidates plus a continuation probe. `REPEATABLE_READ`, a policy-level
   advisory lock, current-condition recovery, hysteresis, and saturation
@@ -352,7 +368,7 @@ precondition rather than rerunning blindly.
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
-| Backend phase 7 release boundary | Outbox/realtime foundation has historical evidence; isolated alert-worker hardening is in progress and still needs migration, focused tests, review, merge, and protected release/recovery gates |
+| Backend phase 7 release boundary | Outbox/realtime foundation has historical evidence; isolated alert-worker hardening is merged locally with focused contract coverage and still needs hosted CI, main merge, protected publication, and release/recovery gates |
 | Realtime alert worker | Source/Compose topology is private and non-web; no public alert API/UI, semantic agriculture policy, hosted acceptance, image publication, or external deployment is claimed |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
@@ -364,6 +380,7 @@ precondition rather than rerunning blindly.
 The right way to read the repo is: analytics and backend phases 1-6 are
 accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI
 artifact, and Phase 7 has historical outbox/image/recovery evidence. The
-isolated alert-worker hardening is a separate in-progress private slice.
-Production identity configuration, protected release approval, recovery-policy
-ownership, and all external promotion remain open.
+isolated alert-worker hardening is a separate private slice that is merged
+locally with focused contract coverage but still unreleased. Production identity
+configuration, protected release approval, recovery-policy ownership, and all
+external promotion remain open.

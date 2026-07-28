@@ -129,6 +129,7 @@ Runner chỉ bắt đầu Maven khi disk guard trả `DISK_GUARD overall=PASS`. 
 Với goal `verify`, runner kiểm tra Docker daemon trước Maven và từ chối `skipTests`, `skipIT`, `fail-never`, POM/settings/module selector thay thế, để integration gate không thể biến thành false green.
 
 Runtime DB connections also carry bounded PostgreSQL `connectTimeout`, `loginTimeout`, and `socketTimeout` values so a black-holed host cannot turn a readiness probe into an unbounded socket wait.
+The merged alert-worker hardening uses the same backend gate shape: 600 main + 302 test classes compiled and 38 focused unit tests passed locally, but hosted integration/Docker and release approvals remain open.
 
 | Backend gate | Trạng thái hiện tại |
 |---|---|

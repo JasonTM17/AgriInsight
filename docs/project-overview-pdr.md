@@ -2,7 +2,7 @@
 
 Version: 0.9
 Updated: 2026-07-28
-Status: backend core, Analytics Phase 2, and eight-area web are verified; the isolated alert-worker hardening is in progress and protected production release/recovery approvals remain open
+Status: backend core, Analytics Phase 2, and eight-area web are verified; the alert-worker hardening is merged locally with focused contract coverage, while hosted CI, main merge, and protected production release/recovery approvals remain open
 
 ## Product goal
 
@@ -39,9 +39,10 @@ hiding them in dashboards.
    Phase 7 provides the versioned transactional outbox, fenced drain, and an
    opt-in Kafka consumer that materializes PostgreSQL realtime summaries.
    `V22` alert storage is immutable; the metadata-only isolated alert-worker
-   hardening is V23-V27 with expected schema version 27 and remains in progress.
-   V23 requires its bounded source-evidence backfill before worker enablement,
-   and V27 is a readiness-only invalid-source-evidence index.
+   hardening is V23-V27 with expected schema version 27 and is merged locally
+   with focused contract coverage, but it is still unreleased. V23 requires its
+   bounded source-evidence backfill before worker enablement, and V27 is a
+   readiness-only invalid-source-evidence index.
    It is not a public alert center or Gold ingestion.
 
 See [system architecture](./system-architecture.md), [data contracts](./data-contracts.md),
@@ -97,7 +98,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
-| 7 | Outbox, realtime read-model foundation, isolated alert-worker hardening, CI/images, SBOM/provenance, backup/restore | Outbox/realtime foundation has historical evidence. Alert-worker hardening is in progress: migration, focused tests, review, merge, protected publication, and recovery/release approvals remain open. V27 is the readiness-only invalid-source-evidence index. |
+| 7 | Outbox, realtime read-model foundation, isolated alert-worker hardening, CI/images, SBOM/provenance, backup/restore | Outbox/realtime foundation has historical evidence. Alert-worker hardening is merged locally with focused contract coverage; hosted CI, main merge, protected publication, and recovery/release approvals remain open. V27 is the readiness-only invalid-source-evidence index. |
 | Web 5–10 | Eight product areas over tokenless BFF and real upstream contracts | Accepted 2026-07-27 |
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Internal candidate complete; external promotion blocked |
@@ -122,9 +123,7 @@ Phase 7 foundation evidence is recorded in
 622 backend tests (98 Failsafe) at the prior core checkpoint, hosted CI run
 `29932250984` passing 5/5 for the image path, and successful full workflow
 `30337950699` with realtime job `90207600976` logging
-`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. It does not accept the later
-in-progress alert-worker hardening. Historical backend/Python digests remain
-non-production evidence; protected release and recovery approvals remain open.
+`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. The current alert-worker slice has a separate local gate of 600 main + 302 test classes compiled and 38 focused unit tests passed; the historical backend/Python digests remain non-production evidence, not current hardening acceptance.
 
 ## Non-functional requirements
 
