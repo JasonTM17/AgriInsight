@@ -19,7 +19,8 @@ public enum Permission {
     INVENTORY_MANAGE,
     INVENTORY_ASSIGNMENT_MANAGE,
     COST_READ,
-    COST_MANAGE;
+    COST_MANAGE,
+    REALTIME_READ;
 
     public String authority() {
         return name();

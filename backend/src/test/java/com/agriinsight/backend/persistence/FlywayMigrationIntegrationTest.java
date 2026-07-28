@@ -42,15 +42,15 @@ class FlywayMigrationIntegrationTest {
     @Test
     void freshPostgresqlAppliesAllMigrationsAndValidates() throws Exception {
         assertThat(initialMigration.success).isTrue();
-        assertThat(initialMigration.migrationsExecuted).isEqualTo(20);
+        assertThat(initialMigration.migrationsExecuted).isEqualTo(21);
         assertThat(migrate(POSTGRESQL, "agriinsight").migrationsExecuted).isZero();
         try (var connection = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(scalar(connection, """
                     SELECT version FROM flyway_schema_history
                     WHERE success AND version IS NOT NULL
                     ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("19");
-            assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(19);
+                    """)).isEqualTo("20");
+            assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(20);
             assertThat(count(connection, "SELECT count(*) FROM roles")).isEqualTo(7);
         }
     }
@@ -86,7 +86,7 @@ class FlywayMigrationIntegrationTest {
                     """);
         }
 
-        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(16);
+        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(17);
         try (var operator = operatorConnection(POSTGRESQL, database)) {
             assertThat(count(operator, """
                     SELECT count(*) FROM activity_types

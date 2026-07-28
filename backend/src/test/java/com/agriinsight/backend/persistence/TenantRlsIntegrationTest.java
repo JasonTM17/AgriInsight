@@ -392,14 +392,16 @@ class TenantRlsIntegrationTest {
                     WHERE namespace.nspname = 'public'
                       AND relation.relname IN (
                         'tenants', 'user_profiles', 'external_identities',
-                        'user_roles', 'api_command_records', 'tenant_audit_events')
+                        'user_roles', 'api_command_records', 'tenant_audit_events',
+                        'realtime_event_receipts', 'realtime_aggregate_progress',
+                        'realtime_tenant_metrics')
                       AND relation.relrowsecurity
                       AND relation.relforcerowsecurity
-                    """)).isEqualTo(6);
+                    """)).isEqualTo(9);
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_policies
                     WHERE schemaname = 'public' AND permissive = 'PERMISSIVE'
-            """)).isEqualTo(66);
+            """)).isEqualTo(79);
             assertThat(count(operator, """
                     SELECT count(*) FROM pg_policies
                     WHERE tablename = 'external_identities'

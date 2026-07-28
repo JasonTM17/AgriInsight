@@ -9,7 +9,7 @@ class AuthorizationCatalogTest {
     @Test
     void fixedCatalogContainsSupplierWithoutImplicitPermissions() {
         assertThat(Role.values()).hasSize(7).contains(Role.SUPPLIER);
-        assertThat(Permission.values()).hasSize(19);
+        assertThat(Permission.values()).hasSize(20);
         assertThat(Role.TENANT_ADMIN.authority()).isEqualTo("ROLE_TENANT_ADMIN");
         assertThat(Permission.IDENTITY_ROLE_MANAGE.authority()).isEqualTo("IDENTITY_ROLE_MANAGE");
         assertThat(Role.TENANT_ADMIN.permissions()).containsExactlyInAnyOrder(Permission.values());
@@ -22,8 +22,14 @@ class AuthorizationCatalogTest {
         assertThat(Role.FARM_MANAGER.grants(Permission.COST_MANAGE)).isFalse();
         assertThat(Role.EXECUTIVE.grants(Permission.COST_READ)).isTrue();
         assertThat(Role.DATA_ANALYST.grants(Permission.COST_READ)).isTrue();
+        assertThat(Role.TENANT_ADMIN.grants(Permission.REALTIME_READ)).isTrue();
+        assertThat(Role.EXECUTIVE.grants(Permission.REALTIME_READ)).isTrue();
+        assertThat(Role.DATA_ANALYST.grants(Permission.REALTIME_READ)).isTrue();
+        assertThat(Role.FARM_MANAGER.grants(Permission.REALTIME_READ)).isFalse();
         assertThat(Role.INVENTORY_MANAGER.grants(Permission.COST_READ)).isFalse();
         assertThat(Role.INVENTORY_MANAGER.grants(Permission.COST_MANAGE)).isFalse();
+        assertThat(Role.INVENTORY_MANAGER.grants(Permission.REALTIME_READ)).isFalse();
+        assertThat(Role.FIELD_WORKER.grants(Permission.REALTIME_READ)).isFalse();
         assertThat(Role.SUPPLIER.permissions()).isEmpty();
     }
 }
