@@ -32,6 +32,8 @@ spring:
     url: ${AGRIINSIGHT_FLYWAY_URL:${AGRIINSIGHT_DB_URL:jdbc:postgresql://localhost:5432/agriinsight}}
     user: ${AGRIINSIGHT_FLYWAY_USERNAME:agriinsight_migrator}
     password: ${AGRIINSIGHT_FLYWAY_PASSWORD:}
+    postgresql:
+      transactional-lock: false
   kafka:
     bootstrap-servers: ${AGRIINSIGHT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:

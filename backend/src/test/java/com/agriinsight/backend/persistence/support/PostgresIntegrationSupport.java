@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
+import org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 public final class PostgresIntegrationSupport {
@@ -50,11 +51,14 @@ public final class PostgresIntegrationSupport {
             String username,
             String password,
             String location) {
-        return Flyway.configure()
+        var configuration = Flyway.configure()
                 .dataSource(jdbcUrl(container, database), username, password)
                 .locations(location)
-                .validateMigrationNaming(true)
-                .load();
+                .validateMigrationNaming(true);
+        configuration
+                .getConfigurationExtension(PostgreSQLConfigurationExtension.class)
+                .setTransactionalLock(false);
+        return configuration.load();
     }
 
     public static Connection operatorConnection(PostgreSQLContainer container, String database)
