@@ -12,12 +12,21 @@ import org.springframework.http.HttpMethod;
 class RealtimeRoutesTest {
 
     @Test
-    void publishesOnlyTheTenantWideRealtimeReadSummaryContract() {
+    void publishesTheExactRealtimeSummaryAndOperationalAlertContracts() {
         SecuredRouteRegistry registry = new SecuredRouteRegistry(List.of(new RealtimeRoutes()));
 
-        assertThat(registry.routes()).containsExactly(new SecuredRouteRegistry.Route(
-                HttpMethod.GET,
-                "/api/v1/realtime/summary",
-                Optional.of(Permission.REALTIME_READ.name())));
+        assertThat(registry.routes()).containsExactly(
+                new SecuredRouteRegistry.Route(
+                        HttpMethod.GET,
+                        "/api/v1/realtime/alerts",
+                        Optional.of(Permission.REALTIME_ALERT_READ.name())),
+                new SecuredRouteRegistry.Route(
+                        HttpMethod.GET,
+                        "/api/v1/realtime/summary",
+                        Optional.of(Permission.REALTIME_READ.name())),
+                new SecuredRouteRegistry.Route(
+                        HttpMethod.POST,
+                        "/api/v1/realtime/alerts/{id}/acknowledgements",
+                        Optional.of(Permission.REALTIME_ALERT_ACKNOWLEDGE.name())));
     }
 }

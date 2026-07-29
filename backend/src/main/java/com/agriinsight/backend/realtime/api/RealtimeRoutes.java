@@ -14,10 +14,24 @@ import org.springframework.stereotype.Component;
 public class RealtimeRoutes implements SecuredRouteRegistry.Contributor {
 
     private static final String SUMMARY = ApiVersion.PREFIX + "/realtime/summary";
+    private static final String ALERTS = ApiVersion.PREFIX + "/realtime/alerts";
+    private static final String ACKNOWLEDGEMENTS = ALERTS + "/{id}/acknowledgements";
 
     @Override
     public Collection<SecuredRouteRegistry.Route> routes() {
-        return List.of(SecuredRouteRegistry.Route.permission(
-                HttpMethod.GET, SUMMARY, Permission.REALTIME_READ.name()));
+        return List.of(
+                permission(HttpMethod.GET, SUMMARY, Permission.REALTIME_READ),
+                permission(HttpMethod.GET, ALERTS, Permission.REALTIME_ALERT_READ),
+                permission(
+                        HttpMethod.POST,
+                        ACKNOWLEDGEMENTS,
+                        Permission.REALTIME_ALERT_ACKNOWLEDGE));
+    }
+
+    private static SecuredRouteRegistry.Route permission(
+            HttpMethod method,
+            String pattern,
+            Permission permission) {
+        return SecuredRouteRegistry.Route.permission(method, pattern, permission.name());
     }
 }
