@@ -19,8 +19,8 @@ import {
 } from "./helpers/csp-assertions";
 import { loginWithRealOidc } from "./helpers/real-oidc-login";
 
-const ALERT_TRIGGER_NAME =
-  /Mở (?:thông báo|cảnh báo vận hành(?: realtime)?)/i;
+const ALERT_TRIGGER_SELECTOR =
+  'button[aria-controls="realtime-operational-alert-panel"]';
 const ALERT_DIALOG_NAME = /Cảnh báo vận hành realtime/i;
 const SECRET_PATTERN =
   /access_token|refresh_token|Bearer\s|eyJ[a-zA-Z0-9_-]+\.|client_secret/i;
@@ -54,9 +54,10 @@ test("@realtime executive reviews and acknowledges the seeded operational alert"
       }
     });
 
-    const trigger = page.getByRole("button", { name: ALERT_TRIGGER_NAME });
+    const trigger = page.locator(ALERT_TRIGGER_SELECTOR);
     const dialog = page.getByRole("dialog", { name: ALERT_DIALOG_NAME });
     await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAccessibleName("Mở thông báo");
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
 
     const firstFeedResponse = waitForAlertResponse(
@@ -69,6 +70,7 @@ test("@realtime executive reviews and acknowledges the seeded operational alert"
     await page.clock.runFor(1);
     const feed = await readSeededFeed(await firstFeedResponse, fixture.alertId);
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(trigger).toHaveAccessibleName("Đóng thông báo");
     await expect(dialog).toBeVisible();
     const seededRow = alertRowFor(dialog, feed, fixture.alertId);
     await expectSeededAlertLabels(seededRow);
@@ -101,6 +103,7 @@ test("@realtime executive reviews and acknowledges the seeded operational alert"
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect(trigger).toHaveAccessibleName("Mở thông báo");
     await expect(trigger).toBeFocused();
     const requestCountAfterClose = feedRequestCount;
     await page.clock.runFor(60_000);
