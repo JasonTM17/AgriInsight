@@ -5412,7 +5412,7 @@
                 }
               }
             },
-            "description" : "OK",
+            "description" : "Current open operational alert",
             "headers" : {
               "X-Correlation-Id" : {
                 "$ref" : "#/components/headers/X-Correlation-Id"
@@ -5437,6 +5437,14 @@
           },
           "403" : {
             "$ref" : "#/components/responses/Forbidden",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound",
             "headers" : {
               "X-Correlation-Id" : {
                 "$ref" : "#/components/headers/X-Correlation-Id"
@@ -8165,6 +8173,22 @@
           }
         }
       },
+      "NotFound" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "type" : "object",
+              "$ref" : "#/components/schemas/AgriInsightProblemDetail"
+            }
+          }
+        },
+        "description" : "The requested resource does not exist",
+        "headers" : {
+          "X-Correlation-Id" : {
+            "$ref" : "#/components/headers/X-Correlation-Id"
+          }
+        }
+      },
       "Unauthorized" : {
         "content" : {
           "application/problem+json" : {
@@ -9040,13 +9064,15 @@
         "type" : "object",
         "properties" : {
           "id" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           },
           "type" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "TENANT_BACKLOG", "OPERATIONAL_EVENT" ]
           }
-        }
+        },
+        "required" : [ "id", "type" ]
       },
       "ExternalIdentityPageResponse" : {
         "type" : "object",
@@ -10145,6 +10171,8 @@
         }
       },
       "RealtimeOperationalAlertAcknowledgementRequest" : {
+        "type" : "object",
+        "additionalProperties" : false,
         "description" : "Exact empty object. Acknowledgement scope and observation are server-derived."
       },
       "RealtimeOperationalAlertFeedResponse" : {
@@ -10161,13 +10189,17 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/RealtimeOperationalAlertResponse"
-            }
+            },
+            "maxItems" : 50
           },
           "limit" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "maximum" : 50,
+            "minimum" : 50
           }
-        }
+        },
+        "required" : [ "generatedAt", "hasMore", "items", "limit" ]
       },
       "RealtimeOperationalAlertResponse" : {
         "type" : "object",
@@ -10176,12 +10208,13 @@
             "type" : "boolean"
           },
           "acknowledgedAt" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "date-time"
           },
           "ageSeconds" : {
             "type" : "integer",
-            "format" : "int64"
+            "format" : "int64",
+            "minimum" : 0
           },
           "evidence" : {
             "$ref" : "#/components/schemas/Evidence"
@@ -10203,22 +10236,27 @@
             "format" : "date-time"
           },
           "policy" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "OUTBOX_PUBLISH_BACKLOG", "REALTIME_DELIVERY_LAG", "REALTIME_DLT_RECORD" ]
           },
           "severity" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "WARNING", "CRITICAL" ]
           },
           "source" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "realtime_operational" ]
           },
           "sourceOccurredAt" : {
             "type" : "string",
             "format" : "date-time"
           },
           "state" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "OPEN" ]
           }
-        }
+        },
+        "required" : [ "acknowledged", "acknowledgedAt", "ageSeconds", "evidence", "id", "lastEvaluatedAt", "lastObservedAt", "openedAt", "policy", "severity", "source", "sourceOccurredAt", "state" ]
       },
       "RealtimeSummaryResponse" : {
         "type" : "object",

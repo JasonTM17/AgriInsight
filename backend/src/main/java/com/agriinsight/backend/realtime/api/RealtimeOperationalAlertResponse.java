@@ -7,18 +7,54 @@ import java.util.Objects;
 import java.util.UUID;
 
 public record RealtimeOperationalAlertResponse(
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                allowableValues = "realtime_operational")
         String source,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         UUID id,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                allowableValues = {
+                    "OUTBOX_PUBLISH_BACKLOG",
+                    "REALTIME_DELIVERY_LAG",
+                    "REALTIME_DLT_RECORD"
+                })
         String policy,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                allowableValues = {"WARNING", "CRITICAL"})
         String severity,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                allowableValues = "OPEN")
         String state,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         Evidence evidence,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         Instant openedAt,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         Instant sourceOccurredAt,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         Instant lastObservedAt,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         Instant lastEvaluatedAt,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                minimum = "0")
         long ageSeconds,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
         boolean acknowledged,
+        @io.swagger.v3.oas.annotations.media.Schema(
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                nullable = true)
         Instant acknowledgedAt) {
 
     public RealtimeOperationalAlertResponse {
@@ -45,7 +81,17 @@ public record RealtimeOperationalAlertResponse(
                 view.acknowledgedAt().orElse(null));
     }
 
-    public record Evidence(String type, UUID id) {
+    public record Evidence(
+            @io.swagger.v3.oas.annotations.media.Schema(
+                    requiredMode =
+                            io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                    allowableValues = {"TENANT_BACKLOG", "OPERATIONAL_EVENT"})
+            String type,
+            @io.swagger.v3.oas.annotations.media.Schema(
+                    requiredMode =
+                            io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                    nullable = true)
+            UUID id) {
 
         public Evidence {
             Objects.requireNonNull(type, "type is required");

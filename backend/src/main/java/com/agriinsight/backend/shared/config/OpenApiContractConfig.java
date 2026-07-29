@@ -47,6 +47,7 @@ public class OpenApiContractConfig {
                 .addResponses("BadRequest", problemResponse("The request is malformed or invalid", false))
                 .addResponses("Unauthorized", problemResponse("Authentication is required", true))
                 .addResponses("Forbidden", problemResponse("The authenticated principal is not authorized", false))
+                .addResponses("NotFound", problemResponse("The requested resource does not exist", false))
                 .addResponses("Conflict", problemResponse("The request conflicts with current resource state", false));
 
         return new OpenAPI()
