@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,6 +33,7 @@ public class RealtimeOperationalAlertService {
     private final CommandExecutionService commands;
     private final Clock clock;
 
+    @Autowired
     public RealtimeOperationalAlertService(
             PermissionEvaluator permissions,
             RealtimeOperationalAlertQueryStore queries,
