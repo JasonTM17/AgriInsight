@@ -107,8 +107,8 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `inventory/infrastructure` | PostgreSQL ledger/projections, deterministic locks/FEFO, reconciliation, warehouse scope SQL |
 | `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
 | `integration` | Transactional outbox event model, writer port, drain service, and PostgreSQL outbox store |
-| `realtime` | Tenant summary read model plus in-progress metadata-only operational alert evaluator, scanner/cursor store, and distinct DLT observer |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V27 concurrent scan indexes; V28 forward acknowledgement-function repair (expected schema version 28) |
+| `realtime` | Tenant summary read model, metadata-only operational alert evaluator/scanner/DLT observer, and exact tenant/profile-safe alert feed and acknowledgement API |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V27 concurrent worker indexes; V28 forward acknowledgement-function repair; V29 open-only acknowledgement locking; V30 concurrent open-feed index (generic expected schema version 30) |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal
@@ -129,9 +129,17 @@ non-enumerating:
 - `GET /api/v1/warehouse-assignments`
 - `GET /api/v1/audit-events`
 
-The deterministic backend OpenAPI artifact is frozen at 67 paths and 94
-operations. Every operation carries `X-Correlation-Id`; 13 versioned detail
-GETs also expose `ETag`.
+The deterministic backend OpenAPI artifact includes the additive Phase 1 reads
+and the exact alert feed/acknowledgement operations. Every operation carries
+`X-Correlation-Id`; versioned detail GETs expose `ETag`.
+
+The Phase 2 operational alert contract adds:
+
+- `GET /api/v1/realtime/alerts`: no query parameters; returns at most the latest
+  50 open alerts in severity, observation-time, and UUID order.
+- `POST /api/v1/realtime/alerts/{id}/acknowledgements`: exact empty JSON body,
+  required idempotency key, current-profile acknowledgement, and sanitized
+  permission/not-found behavior.
 
 ## Inventory contract summary
 
@@ -174,7 +182,7 @@ GETs also expose `ETag`.
   development profile or authenticated non-development configuration.
 - All unregistered business mappings are denied.
 
-## Realtime alert-worker hardening
+## Realtime alert worker and Phase 2 API
 
 `V22` remains immutable. The private `realtime-alert-worker` service uses the
 non-web `realtime-worker` profile and a separate no-inheritance
@@ -200,22 +208,22 @@ path is database serialization, not exactly-once or broker ordering. Recovery
 rechecks the current condition in the same snapshot, applies hysteresis, and
 reports saturation rather than performing unbounded scans.
 
-This is not a public alert feed/API/UI, a semantic agriculture-alert product,
-or an external deployment. Implementation and focused contract coverage are
-merged on `main`; hosted CI and protected `v0.2.3` publication are complete.
-The worker startup gate independently pins successful V28 and the latest
-repeatable grant; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend
-readiness only.
+The worker remains private and metadata-only; it does not define semantic
+agriculture alerts and is not an external deployment. Phase 2 separately adds
+the public Spring feed/acknowledgement operations and same-origin Next BFF. The
+browser alert panel remains Phase 3 work. The worker startup gate independently
+pins successful V28 and the latest repeatable grant, while generic backend
+readiness now expects schema version 30.
 
 The official upgrade fixture reconstructs V1-V22 plus the historical
 repeatable from release commit
 `6927eeda70981c2461e85a165834e2464ba793d1`, verifies normalized SHA-256
-fingerprints, applies current V23-V28 plus the current repeatable, validates,
+fingerprints, applies current V23-V30 plus the current repeatable, validates,
 and reruns with zero migrations. It preserves representative legacy invalid
 rows and the V23 `NOT VALID` constraints; it does not perform the pre-enable
 backfill.
 
-The confirmed hardening split is V23-V28. V23 adds `NOT VALID` source/evidence
+The worker hardening split is V23-V28. V23 adds `NOT VALID` source/evidence
 checks and cursor/worker isolation without a table-wide legacy-row update.
 Before enabling the worker, an operator repeats the V23 backfill in at-most
 500-row idempotent batches until both remaining-row checks are false. V24, V25,
@@ -226,10 +234,19 @@ concurrently before the approved Flyway repair/retry, while a valid existing
 index requires history reconciliation instead of retry. Transactional V28
 replaces the acknowledgement function without changing its public/security
 contract and targets the named observation constraint to avoid PL/pgSQL
-identifier ambiguity. Readiness expects schema version 28.
+identifier ambiguity. The worker startup gate continues to expect V28 plus the
+latest repeatable grant.
+V29 then restricts the locked acknowledgement function to open alerts, and
+nontransactional V30 adds the exact concurrent partial index used by the
+latest-open feed. These API/read-path migrations advance generic readiness to
+30 without changing the worker's independent V28 startup invariant.
 
 ## Verification snapshot
 
+- Realtime alert center Phase 2 (2026-07-29): PR `#13` implementation SHA
+  `d781fe49419f2b8ae0508897cc958a1c8cf70124`; hosted run `30425647823` passed
+  all 10 Java, Python, web, secret/configuration, real PostgreSQL/Kafka,
+  seven-persona browser, and four candidate-image checks.
 - Production-web candidate gate (2026-07-27): 202 Python tests, 463 Java
   unit/contract + 100 PostgreSQL integration tests, 308 web tests with 11
   intentional skips, 9/9 web database privilege tests, and 26/26 real Chrome
@@ -279,21 +296,20 @@ identifier ambiguity. Readiness expects schema version 28.
   inventory focused suite remains 32/32.
 - OpenAPI contract: `/v3/api-docs` operation summaries and request examples
   verified by the inventory OpenAPI contract checks.
-- Phase 1 contract export:
+- Current deterministic contract export:
   `backend/src/main/resources/contracts/agriinsight-api-v1.openapi.json`
   regenerated deterministically with SHA-256
-  `673b2dabb8853d75fff5b719fd1ecfaef350b0b076170e78a63b05fedbb7dfa8`.
+  `87bc2c4bc4626c37a2eb8e6b4fd1b286957b1cb2e38e8486a509e02ddd933854`.
 - Analytics: Python 76 passed, 3 expected optional-PDF skips; compileall and
   visual/export/dashboard checks pass.
 - Big-data: 1,050,003 Bronze sensor rows, 1,050,000 Silver/warehouse facts,
   quality passed, 74 checksum entries with zero mismatch, 388.2 MB on D.
-- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. Current C
-  headroom remains below the local heavy-work floor, while D is above its
-  warning floor; browser, Big Data, and four-image gates therefore run on
-  guarded hosted storage. Recoverable C relief moved diagnostics, Node compile
-  cache, and the Maven repository to ignored D storage, with a junction
-  preserving Maven behavior. No active training process or project artifact
-  was deleted.
+- Disk policy: C warns/fails below 10/8 GB and D below 25/20 GB. Browser, Big
+  Data, Testcontainers, and four-image gates use guarded hosted storage whenever
+  either local drive is below the relevant heavy-work floor. Recoverable C
+  relief moved diagnostics, Node compile cache, and the Maven repository to
+  ignored D storage, with a junction preserving Maven behavior. No active
+  training process or project artifact was deleted.
 - Backup/restore drill: D-local custom dump SHA-256 `934ddd9db020d5a2e4f6860ce977663ec5a28bd68d4dcd7a16cc88a4c9c4162c`,
   Flyway `19`, clean target restore elapsed 11.045s, and role/RLS/runtime
   smoke passed.
@@ -304,11 +320,10 @@ identifier ambiguity. Readiness expects schema version 28.
 
 ## Next boundary
 
-The eight-area production-web implementation and Phase 11 browser gate are
-complete. The serialized Phase 12 publication path produced release `v0.2.3`
-for Python, backend, web, and analytics API with exact Docker Hub/GHCR digest
-agreement. The alert-worker hardening is a separate private boundary merged on
-`main` and carried by the released backend image. External production
+The eight-area production-web implementation, Phase 11 browser gate, and
+serialized Phase 12 four-image publication are complete. Alert Center Phase 2
+has a verified API/BFF contract; Phase 3 owns the browser panel, polling,
+responsive/accessibility evidence, screenshots, and GIF. External production
 deployment remains blocked on the license decision, production OIDC/broker
 operations, recovery objectives/ownership, observability, and host controls.
 

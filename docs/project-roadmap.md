@@ -14,6 +14,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
+| Realtime alert center | Phase 2 complete; Phase 3 UI pending | Exact latest-50 open-alert feed, idempotent acknowledgement, same-origin BFF, V29/V30, and generated OpenAPI/web contract verified in PR #13 / CI run 30425647823 |
 | Frontend | Hosted gate and image release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and protected `agriinsight-web:0.2.3` publication |
 
 ## Next backend phases
@@ -22,6 +23,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
 | Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Alert-worker hardening is merged on `main` and released in `v0.2.3`; main CI and protected four-image publication are green. V27 adds the readiness-only invalid-source-evidence index, and V28 repairs the acknowledgement function without rewriting V22. External deployment, broker ownership, and recovery objectives remain open. |
+| Realtime alert center Phase 3 | Browser alert UX and acceptance | Depends on the completed Phase 2 API/BFF contract; pending |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
 | Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 published four verified `v0.2.3` images. Production hosting, OIDC/operations, package visibility, and credential rotation remain owner-gated. |
 
@@ -76,8 +78,8 @@ implicitly converted into operating cost.
   all four first-party images. Preserve the protected environment and reviewer
   policy for later immutable tags.
 - `V22` alert storage is immutable. The isolated realtime alert worker is a
-  private operational slice: V23-V28 target expected schema version 28, the
-  worker startup gate independently pins successful V28 and the latest repeatable
+  private operational slice: V23-V28 establish its independent startup
+  invariant at successful V28 plus the latest repeatable
   grant, V23 needs bounded source-evidence backfill before enablement, and
   V24-V27 use one concurrent scan index each. V27 is the readiness-only
   invalid-source-evidence index and does not replace the backfill. Transactional
@@ -92,9 +94,8 @@ implicitly converted into operating cost.
   publication are complete for the hardening. Production Kafka ownership and
   external deployment remain owner-gated.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
-  artifact. Keep the additive bounded GET reads, deterministic 67-path/94-op
-  contract, and current 459+100 backend gate intact before any later phase
-  reopens the contract surface.
+  artifact. Keep its additive bounded GET reads, deterministic export, and
+  current backend gate intact when later phases extend the contract surface.
 - Do not promote the manual `0.1.0-phase7`/commit tags as current evidence;
   use the semantic `0.2.3` and full-SHA tags from protected run `30413877863`.
   Registry publication does not by itself approve an external deployment.
@@ -109,8 +110,8 @@ implicitly converted into operating cost.
 - Keep the completed eight-area production-web route set behind the protected
   release boundary; the `openid-client` OIDC boundary is implemented, while
   production OIDC configuration and approval remain open.
-- Broad semantic agriculture alerts, a public alert API/UI, advanced Kafka
-  analytics, and mobile field workflows.
+- Broad semantic agriculture alerts beyond the current exact alert API/BFF,
+  advanced Kafka analytics, and mobile field workflows.
 - Yield/inventory/pest-risk forecasting, anomaly detection, what-if analysis,
   and model monitoring.
 - Guardrailed RAG assistant is implemented locally; keep Text-to-SQL,
