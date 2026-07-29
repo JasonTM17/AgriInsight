@@ -364,6 +364,11 @@
   overflow-x: auto;
 }
 
+.tableScroll:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
 .dataTable {
   width: 100%;
   min-width: 42rem;

@@ -52,7 +52,12 @@ export function InventoryOperationalTables({
           title="Số dư vật tư"
         >
           {(page) => (
-            <div className={styles.tableScroll}>
+            <div
+              aria-label="Bảng số dư vật tư có thể cuộn"
+              className={styles.tableScroll}
+              role="region"
+              tabIndex={0}
+            >
               <table className={styles.dataTable} data-testid="inventory-balance-table">
                 <thead><tr><th>Vật tư</th><th>Số dư</th><th>Ngưỡng</th><th>Giá trị</th></tr></thead>
                 <tbody>
@@ -75,7 +80,12 @@ export function InventoryOperationalTables({
           title="Lô tồn kho · FEFO server"
         >
           {(page) => (
-            <div className={styles.tableScroll}>
+            <div
+              aria-label="Bảng lô tồn kho có thể cuộn"
+              className={styles.tableScroll}
+              role="region"
+              tabIndex={0}
+            >
               <table className={styles.dataTable} data-testid="inventory-lot-table">
                 <thead><tr><th>Lô</th><th>Vật tư</th><th>Còn lại</th><th>Hạn</th></tr></thead>
                 <tbody>
@@ -99,7 +109,12 @@ export function InventoryOperationalTables({
         title="Sổ giao dịch bất biến"
       >
         {(page) => (
-          <div className={styles.tableScroll}>
+          <div
+            aria-label="Sổ giao dịch kho có thể cuộn"
+            className={styles.tableScroll}
+            role="region"
+            tabIndex={0}
+          >
             <table className={styles.dataTable} data-testid="inventory-transaction-table">
               <thead><tr><th>Thời điểm</th><th>Loại</th><th>Vật tư</th><th>Số lượng</th><th>Tham chiếu</th><th>Phiên bản</th></tr></thead>
               <tbody>

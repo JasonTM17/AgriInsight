@@ -185,7 +185,12 @@ function StatusTable({
           Không có dòng tình trạng SKU-location trong snapshot này.
         </p>
       ) : (
-        <div className={styles.tableScroll}>
+        <div
+          aria-label="Bảng chính sách tồn kho có thể cuộn"
+          className={styles.tableScroll}
+          role="region"
+          tabIndex={0}
+        >
           <table className={`${styles.dataTable} ${styles.policyTable}`}>
             <thead>
               <tr>

@@ -44,7 +44,12 @@ export function InventoryForecastEvidencePanel({
           Snapshot không có dòng trạng thái để hiển thị bằng chứng dự báo.
         </p>
       ) : (
-        <div className={styles.tableScroll}>
+        <div
+          aria-label="Bảng bằng chứng dự báo có thể cuộn"
+          className={styles.tableScroll}
+          role="region"
+          tabIndex={0}
+        >
           <table className={`${styles.dataTable} ${styles.forecastTable}`}>
             <thead>
               <tr>

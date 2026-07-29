@@ -585,6 +585,13 @@ describe("inventory analytics rendering", () => {
     expect(markup).toContain("81 KG");
     expect(markup).toContain("mean-daily-usage-90d-v1");
     expect(markup).toContain("Đánh giá ngược");
+    expect(markup).toContain(
+      'aria-label="Bảng bằng chứng dự báo có thể cuộn"'
+    );
+    expect(markup).toContain(
+      'aria-label="Bảng chính sách tồn kho có thể cuộn"'
+    );
+    expect(markup.match(/role="region" tabindex="0"/g)).toHaveLength(2);
   });
 
   it("names insufficient history and preserves a semantic no-status state", () => {
