@@ -108,7 +108,7 @@ The backend is a Spring modular monolith under `com.agriinsight.backend`.
 | `cost` | Append-only operating-cost ledger, correction/reversal commands, bounded hierarchy-derived reads, summaries, and cost route contracts |
 | `integration` | Transactional outbox event model, writer port, drain service, and PostgreSQL outbox store |
 | `realtime` | Tenant summary read model plus in-progress metadata-only operational alert evaluator, scanner/cursor store, and distinct DLT observer |
-| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V26 concurrent scan indexes; V27 partial invalid-source-evidence readiness index (expected schema version 27) |
+| `db/migration` | V1-V4 foundation/identity; V5-V11 farm/workforce/activity lifecycle; V12-V15 inventory/warehouse scope; V16-V17 cost ledger/RLS; V18-V19 outbox; V20-V22 realtime summary/immutable alert storage; V23 metadata/cursor hardening; V24-V27 concurrent scan indexes; V28 forward acknowledgement-function repair (expected schema version 28) |
 | `backend/ops/postgres` | Idempotent role gate, allowlisted ownership adoption, operator first-admin provisioning |
 
 The backend resolves exact `(issuer, subject)`, loads the active internal
@@ -204,19 +204,19 @@ This is not a public alert feed/API/UI, a semantic agriculture-alert product,
 a hosted acceptance, a new Docker Hub/GHCR package, or an external deployment.
 Implementation and focused contract coverage are merged locally; those actions
 still wait for hosted CI, main merge, and the protected publication/release
-gates. The worker startup gate independently pins successful V27 and the latest
+gates. The worker startup gate independently pins successful V28 and the latest
 repeatable grant; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend
 readiness only.
 
 The official upgrade fixture reconstructs V1-V22 plus the historical
 repeatable from release commit
 `6927eeda70981c2461e85a165834e2464ba793d1`, verifies normalized SHA-256
-fingerprints, applies current V23-V27 plus the current repeatable, validates,
+fingerprints, applies current V23-V28 plus the current repeatable, validates,
 and reruns with zero migrations. It preserves representative legacy invalid
 rows and the V23 `NOT VALID` constraints; it does not perform the pre-enable
 backfill.
 
-The confirmed hardening split is V23-V27. V23 adds `NOT VALID` source/evidence
+The confirmed hardening split is V23-V28. V23 adds `NOT VALID` source/evidence
 checks and cursor/worker isolation without a table-wide legacy-row update.
 Before enabling the worker, an operator repeats the V23 backfill in at-most
 500-row idempotent batches until both remaining-row checks are false. V24, V25,
@@ -224,8 +224,10 @@ V26, and V27 create the backlog, delivery-lag, unrecovered-DLT, and readiness
 scan indexes concurrently; V27 is the readiness-only invalid-source-evidence
 index and does not replace the backfill. A failed invalid index must be dropped
 concurrently before the approved Flyway repair/retry, while a valid existing
-index requires history reconciliation instead of retry. Readiness expects
-schema version 27.
+index requires history reconciliation instead of retry. Transactional V28
+replaces the acknowledgement function without changing its public/security
+contract and targets the named observation constraint to avoid PL/pgSQL
+identifier ambiguity. Readiness expects schema version 28.
 
 ## Verification snapshot
 

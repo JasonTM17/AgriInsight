@@ -17,12 +17,13 @@ Create the durable, metadata-only alert lifecycle before exposing any new UI.
 It evaluates only transport evidence already owned by the outbox/realtime
 system, persists concise tenant alerts under FORCE RLS, and records a current
 profile's acknowledgement without changing the underlying operational fact.
-`V22` is immutable. The current V23-V27 worker hardening is in progress and
-readiness expects schema version 27. V23 adds `NOT VALID` source/evidence
+`V22` is immutable. The current V23-V28 worker hardening is in progress and
+readiness expects schema version 28. V23 adds `NOT VALID` source/evidence
 checks, so an operator must complete its idempotent 500-row source-evidence
 backfill before worker enablement. V24-V27 create one index concurrently each;
-V27 is the readiness-only invalid-source-evidence index and does not replace
-the V23 backfill. Phase 2/3 public API, BFF, and UI work has not started.
+V27 is the readiness-only invalid-source-evidence index. V28 repairs the
+acknowledgement function through a forward migration and does not replace the
+V23 backfill. Phase 2/3 public API, BFF, and UI work has not started.
 
 ## Context links
 
@@ -50,10 +51,12 @@ the V23 backfill. Phase 2/3 public API, BFF, and UI work has not started.
 ### Functional
 
 1. Preserve immutable V22 `realtime_operational_alerts` and
-   `realtime_alert_acknowledgement_revisions`; add V23-V27 without rewriting
+   `realtime_alert_acknowledgement_revisions`; add V23-V28 without rewriting
    applied history. V23 must stay additive/`NOT VALID` and V24-V27 must retain
    one concurrent index per migration. V27 remains readiness-only and does not
-   replace the V23 backfill.
+   replace the V23 backfill. V28 must preserve the acknowledgement function
+   signature and security contract while using the named unique constraint as
+   its conflict target.
 2. Implement exactly three first-policy codes:
    `OUTBOX_PUBLISH_BACKLOG`, `REALTIME_DELIVERY_LAG`, and
    `REALTIME_DLT_RECORD`.
@@ -133,7 +136,8 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V24__add_realtime_alert_indexes_concurrently.sql` | In progress | One concurrent backlog scan index with named absent/invalid-index precondition. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V25__add_realtime_alert_delivery_lag_index_concurrently.sql` | In progress | One concurrent delivery-lag scan index with named absent/invalid-index precondition. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql` | In progress | One concurrent unrecovered-DLT scan index with named absent/invalid-index precondition. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V27__add_realtime_alert_evidence_readiness_index_concurrently.sql` | In progress | One concurrent readiness-only invalid-source-evidence scan index; application readiness expects 27. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V27__add_realtime_alert_evidence_readiness_index_concurrently.sql` | In progress | One concurrent readiness-only invalid-source-evidence scan index. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V28__fix_realtime_alert_acknowledgement_function.sql` | In progress | Forward function replacement removes the ambiguous acknowledgement conflict target; application and worker readiness expect 28. |
 | `D:\AgriInsight\backend\ops\postgres\backfill-realtime-alert-source-evidence.sql` | Run before worker enablement | Idempotent `agriinsight_migrator` backfill, at most 500 valid legacy rows per run; do not enable until both remaining-row checks are false. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql` | Modify | Revoke broad access first, then grant minimum columns to runtime, integration, and the separate alert-worker login without inheritance. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Permission.java` | Modify | Add explicit alert read/ack permissions. |
@@ -175,7 +179,9 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
    index. If one fails with an invalid index, drop that named index
    concurrently and repair/retry Flyway; a valid pre-existing index requires
    history reconciliation rather than retry. V27 is readiness-only and does not
-   replace the backfill.
+   replace the backfill. V28 replaces the acknowledgement function in place,
+   preserving its signature, `SECURITY DEFINER`, safe search path, and ACL while
+   targeting `ux_realtime_alert_acknowledgement_revisions_observation` by name.
 4. Extend repeatable grants after all revokes. Runtime receives tenant-only
    alert select plus acknowledgement revision select/insert constrained by both
    `app_current_tenant_id()` and `app_current_profile_id()`; it never gets
@@ -233,16 +239,17 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 
 - [x] Freeze policy vocabulary and exclude semantic domain policies.
 - [x] Preserve V22 alert/revision baseline, profile RLS, grants, and permissions as immutable history.
-- [ ] Complete and verify V23-V27: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V27 one concurrent index each, expected schema version 27, and named invalid-index recovery.
+- [ ] Complete and verify V23-V28: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V27 one concurrent index each, V28 forward acknowledgement repair, expected schema version 28, and named invalid-index recovery.
 - [ ] Prove deterministic dedupe, current-condition recovery, concurrent acknowledgement revision, profile isolation, fair continuation, and saturation semantics.
 - [ ] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible; complete migration/test/review/merge before any protected publication.
 
 ## Success criteria
 
-- [ ] V23-V27 are proven on fresh and existing schema paths; V22 and every
+- [ ] V23-V28 are proven on fresh and existing schema paths; V22 and every
   applied migration remain untouched. V23 backfill completes before worker
   enablement, V27 remains readiness-only, and V24-V27 recovery never blindly
-  retries an index migration.
+  retries an index migration. V28 preserves the acknowledgement function
+  contract while removing its ambiguous conflict target.
 - [ ] Every alert is deterministically attributable to a valid tenant and
   source condition, with no payload/error/body retention; valid DLT values
   survive extra framework headers and malformed values stay unattributable.

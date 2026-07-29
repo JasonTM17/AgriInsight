@@ -38,11 +38,13 @@ alert feeds remain batch analytics with snapshot lineage and keep their own UI
 locations.
 
 Current execution status: Phase 1 worker hardening is in progress. Its confirmed
-migration sequence is V23-V27 with expected schema version 27: V23 remains
+migration sequence is V23-V28 with expected schema version 28: V23 remains
 additive with `NOT VALID` source/evidence checks and requires bounded operator
 backfill before worker enablement; V24-V26 each create one scan index
 concurrently and V27 adds the readiness-only partial invalid-source-evidence
-index. V27 does not replace the V23 backfill.
+index. V28 repairs the V22 acknowledgement function through a forward
+`CREATE OR REPLACE FUNCTION` migration without rewriting V22. V27 does not
+replace the V23 backfill.
 Phases 2 and 3 are planned only; no public alert API, acknowledgement route,
 BFF route, or UI is complete.
 
@@ -83,7 +85,7 @@ BFF route, or UI is complete.
 - Alert policies `OUTBOX_PUBLISH_BACKLOG`, `REALTIME_DELIVERY_LAG`, and
   `REALTIME_DLT_RECORD`, including deterministic severity thresholds from
   worker configuration.
-- Preserve immutable V22 alert storage; add V23-V27 hardening, FORCE RLS,
+- Preserve immutable V22 alert storage; add V23-V28 hardening, FORCE RLS,
   least-privilege grants, a new worker-only evaluator, and a distinct DLT
   observer consumer group. The
   observer validates a bounded envelope value while treating framework headers

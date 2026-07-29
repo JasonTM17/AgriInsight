@@ -176,7 +176,7 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V27 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V26 concurrent scan indexes, and the V27 partial invalid-source-evidence readiness index; expected schema version is 27
+- liveness/readiness split and Flyway V1-V28 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V27 concurrent scan indexes, and the V28 forward acknowledgement-function repair; expected schema version is 28
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 - Phase 1 contract freeze adds eight additive bounded GET reads:
   activity assignments, activity logs, activity log correction history, user
@@ -297,7 +297,7 @@ metadata-only: it does not add a public REST/API or UI alert center, and it
 does not define semantic agriculture alerts. It hardens the backend worker
 boundary around transport-health evidence already owned by the realtime system.
 
-The hardening schema is V23-V27 and readiness expects 27. V23 leaves legacy
+The hardening schema is V23-V28 and readiness expects 28. V23 leaves legacy
 source/evidence constraints `NOT VALID`; a repeatable 500-row operator
 backfill must finish with no legacy or invalid-shape rows before the worker is
 enabled. V24-V27 each run outside a Flyway transaction with
@@ -305,13 +305,15 @@ enabled. V24-V27 each run outside a Flyway transaction with
 `CREATE INDEX CONCURRENTLY`; V27 is the readiness-only partial
 invalid-source-evidence index and does not replace the V23 backfill. Invalid
 indexes must be dropped concurrently before repair/retry, while an already
-valid index requires history reconciliation. The worker startup gate
-independently pins successful V27 and the latest repeatable grant;
+valid index requires history reconciliation. Transactional V28 replaces the
+acknowledgement function with its signature, security-definer search path, and
+ACL intact while targeting the named observation constraint. The worker startup
+gate independently pins successful V28 and the latest repeatable grant;
 `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend readiness only.
 
 The official upgrade fixture reconstructs the fingerprinted V1-V22 release
 plus its historical repeatable from commit
-`6927eeda70981c2461e85a165834e2464ba793d1`, then applies current V23-V27 and
+`6927eeda70981c2461e85a165834e2464ba793d1`, then applies current V23-V28 and
 the current repeatable. It validates, reruns with zero migrations, preserves
 representative legacy invalid rows, and leaves the V23 checks `NOT VALID`;
 the operator backfill remains a separate pre-enable step.

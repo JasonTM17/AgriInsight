@@ -62,7 +62,7 @@ Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm
 ## Backend Phase 7 technical verification
 
 - [x] Historical foundation: transactional outbox, typed schema v1, dedicated NOLOGIN integration role, and fenced lease/retry/ack boundary.
-- [ ] In-progress isolated alert-worker hardening: immutable V22 baseline; V23-V27 with expected schema version 27; restricted `agriinsight_alert_worker` login; metadata-only scanner/observer; durable cursors; bounded recovery/hysteresis; and narrow RLS/grants. V23 backfill must finish before enablement, and V27 is a readiness-only invalid-source-evidence index. It still requires focused tests, review, and merge.
+- [ ] In-progress isolated alert-worker hardening: immutable V22 baseline; V23-V28 with expected schema version 28; restricted `agriinsight_alert_worker` login; metadata-only scanner/observer; durable cursors; bounded recovery/hysteresis; and narrow RLS/grants. V23 backfill must finish before enablement, V27 is a readiness-only invalid-source-evidence index, and V28 is the forward acknowledgement-function repair. It still requires hosted tests, review, and merge.
 - [x] Pinned non-root Python/backend images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR workflow contract; manual phase tags đã pull-by-digest smoke ở cả hai registry.
 - [x] D-local checksum/metadata backup và timed clean-target restore drill 11.045s; production RPO/RTO/off-host encryption/owner approval còn bắt buộc trước production.
 
