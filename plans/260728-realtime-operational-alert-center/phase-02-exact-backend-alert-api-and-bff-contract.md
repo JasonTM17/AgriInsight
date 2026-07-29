@@ -85,7 +85,7 @@ client-selectable tenant query.
 |---|---|
 | Acknowledgement body | Exact empty JSON object `{}`. Both Next and Spring reject unknown fields. |
 | Acknowledgement status | Always `200` with the current open-alert representation; the immutable revision is internal. |
-| Replay after observation change | The original key remains a replay and reloads current state. A new observation is acknowledged only with a new key. If the alert has since resolved or is no longer authorized, the replay loader is empty and the controller deliberately maps that absence through `RealtimeOperationalAlertNotFoundException` to the same sanitized `404`; it never calls a generic empty-optional failure path or returns a stored stale receipt. |
+| Replay after observation change | The original key remains a replay and reloads current state. A new observation is acknowledged only with a new key. If the alert has since resolved or is no longer visible inside an otherwise authorized scope, the replay loader is empty and the controller deliberately maps that absence through `RealtimeOperationalAlertNotFoundException` to the same sanitized `404`; it never calls a generic empty-optional failure path or returns a stored stale receipt. A caller that has lost `REALTIME_ALERT_ACKNOWLEDGE` instead fails at the permission-first boundary with `403` before any alert or idempotency lookup. |
 | Resolved alert | Not acknowledgeable. V29 checks `state='OPEN'` under the same row lock and returns no row, which maps to sanitized 404. |
 | Evidence | `TENANT_BACKLOG` with no ID for backlog; `OPERATIONAL_EVENT` with source UUID for delivery lag/DLT. Never expose `dedupe_key`. |
 | Freshness | `generatedAt` plus per-item UTC timestamps and non-negative `ageSeconds`; no unowned “fresh/stale” threshold. |
@@ -130,7 +130,8 @@ Browser receives typed, bounded, source-labelled view data only
 | `D:\AgriInsight\backend\src\main\resources\contracts\agriinsight-api-v1.openapi.json` | Modify (generated) | Deterministic OpenAPI output after route contract tests. |
 | `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\realtime\RealtimeOperationalAlertHttpContractTest.java` | Create | Permission/shape/bounds/idempotency HTTP proof. |
 | `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\realtime\api\RealtimeRoutesTest.java` | Modify | Assert the exact summary, alert-feed, and acknowledgement secured-route inventory. |
-| `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\RealtimeOperationalAlertStoreIntegrationTest.java` | Modify | Fixed-window/current-profile revision/cross-tenant mutation proof. |
+| `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\RealtimeOperationalAlertStoreIntegrationTest.java` | Modify | Resolved-alert acknowledgement rejection under the V29 locked function. |
+| `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\RealtimeOperationalAlertQueryStoreIntegrationTest.java` | Create | Real runtime-role tenant/profile isolation, exact ordering, and 51-row lookahead proof. |
 | `D:\AgriInsight\backend\src\test\java\com\agriinsight\backend\persistence\FlywayMigrationIntegrationTest.java` | Modify | Fresh/upgrade/zero-op V29-V30 and exact index eligibility proof. |
 | `D:\AgriInsight\web\src\server\bff\allowed-operation.ts` | Modify | Add exact operation keys, paths, methods, and allowlisted controls. |
 | `D:\AgriInsight\web\src\server\bff\upstream-client.ts` | Modify | Preserve the hardened wrappers while forwarding caller cancellation. |
@@ -184,7 +185,7 @@ Browser receives typed, bounded, source-labelled view data only
 | Critical | Caller sends tenant/profile/policy override | BFF/schema rejects it; backend derives scope only from identity. |
 | Critical | Foreign tenant/same-tenant foreign-profile alert state | 404/403-safe behavior, no representation or acknowledgement revision leak. |
 | Critical | Replay/current-vs-later acknowledgement | Stable idempotent response for one observation; a later observation permits a distinct revision. |
-| Critical | Replay after alert resolution or authorization loss | Replay loader absence is explicitly translated to the same sanitized alert `404`; no stale receipt, empty success, or generic `500`. |
+| Critical | Replay after resolution/non-visibility or permission loss | An authorized replay whose projection is absent becomes sanitized `404`; a caller without the acknowledgement permission gets `403` before lookup. No stale receipt, empty success, or generic `500`. |
 | Critical | Resolve races acknowledgement | V29 checks open state while locking the current alert; resolved/foreign paths return the same sanitized 404. |
 | High | Query/filter injection and over-limit result | Every query key rejected; fixed 50-record server cap and matching index. |
 | High | Role distinction | New read/ack permissions independent from prior `REALTIME_READ`. |
