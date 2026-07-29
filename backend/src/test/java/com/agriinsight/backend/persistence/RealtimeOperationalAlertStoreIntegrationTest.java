@@ -3,9 +3,11 @@ package com.agriinsight.backend.persistence;
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.TENANT_A;
 import static com.agriinsight.backend.persistence.support.FarmOperationsTestFixtures.migrateAndSeed;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.count;
+import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.execute;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.operatorConnection;
 import static com.agriinsight.backend.persistence.support.PostgresIntegrationSupport.scalar;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agriinsight.backend.persistence.support.PostgresIntegrationSupport;
 import com.agriinsight.backend.realtime.application.RealtimeAlertAcknowledgement;
@@ -14,6 +16,7 @@ import com.agriinsight.backend.realtime.application.RealtimeOpenOperationalAlert
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertAcknowledgementStore;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertCondition;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertCandidate;
+import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertNotFoundException;
 import com.agriinsight.backend.realtime.application.RealtimeOperationalAlertPolicy;
 import com.agriinsight.backend.realtime.infrastructure.PostgresRealtimeOperationalAlertAcknowledgementStore;
 import com.agriinsight.backend.realtime.infrastructure.PostgresRealtimeOperationalAlertScanStore;
@@ -212,6 +215,63 @@ class RealtimeOperationalAlertStoreIntegrationTest {
                        AND alert_id = '%s'
                        AND profile_id = '41000000-0000-0000-0000-000000000005'
                     """.formatted(alertId))).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void resolvedAlertCannotCreateAnAcknowledgementRevision() throws Exception {
+        UUID sourceEventId = UUID.fromString("77000000-0000-0000-0000-000000000021");
+        JdbcTemplate alertWorker = jdbcTemplate(
+                PostgresIntegrationSupport.ALERT_WORKER,
+                PostgresIntegrationSupport.ALERT_WORKER_PASSWORD);
+        TransactionTemplate alertWorkerTransaction = transaction(alertWorker);
+        PostgresRealtimeOperationalAlertStore workerStore =
+                new PostgresRealtimeOperationalAlertStore(alertWorker);
+        RealtimeOperationalAlertCondition condition = new RealtimeOperationalAlertCondition(
+                RealtimeOperationalAlertPolicy.REALTIME_DELIVERY_LAG,
+                TENANT_A,
+                sourceEventId,
+                OBSERVED_AT.minusSeconds(600));
+        alertWorkerTransaction.executeWithoutResult(status -> workerStore.upsert(condition, OBSERVED_AT));
+
+        UUID alertId;
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            alertId = UUID.fromString(scalar(operator, """
+                    SELECT id
+                      FROM realtime_operational_alerts
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND policy_code = 'REALTIME_DELIVERY_LAG'
+                       AND source_event_id = '77000000-0000-0000-0000-000000000021'
+                    """));
+            execute(operator, """
+                    UPDATE realtime_operational_alerts
+                       SET state = 'RESOLVED',
+                           resolved_at = TIMESTAMPTZ '2027-09-01T00:01:00Z'
+                     WHERE id = '%s'
+                    """.formatted(alertId));
+        }
+
+        JdbcTemplate runtime = jdbcTemplate(
+                PostgresIntegrationSupport.RUNTIME, PostgresIntegrationSupport.RUNTIME_PASSWORD);
+        TransactionTemplate runtimeTransaction = transaction(runtime);
+        RealtimeOperationalAlertAcknowledgementStore acknowledgements =
+                new PostgresRealtimeOperationalAlertAcknowledgementStore(runtime);
+
+        assertThatThrownBy(() -> runtimeTransaction.execute(status -> {
+                    bindRuntimeScope(runtime);
+                    return acknowledgements.acknowledge(
+                            TENANT_A, PROFILE_A, alertId, OBSERVED_AT.plusSeconds(90));
+                }))
+                .isInstanceOf(RealtimeOperationalAlertNotFoundException.class);
+
+        try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
+            assertThat(count(operator, """
+                    SELECT count(*)
+                      FROM realtime_alert_acknowledgement_revisions
+                     WHERE tenant_id = '10000000-0000-0000-0000-000000000041'
+                       AND alert_id = '%s'
+                       AND profile_id = '41000000-0000-0000-0000-000000000005'
+                    """.formatted(alertId))).isZero();
         }
     }
 

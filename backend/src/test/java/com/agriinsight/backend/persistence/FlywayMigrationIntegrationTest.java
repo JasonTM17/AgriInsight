@@ -21,7 +21,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -50,14 +53,18 @@ class FlywayMigrationIntegrationTest {
     @Test
     void freshPostgresqlAppliesAllMigrationsAndValidates() throws Exception {
         assertThat(initialMigration.success).isTrue();
-        assertThat(initialMigration.migrationsExecuted).isEqualTo(29);
+        assertThat(initialMigration.migrationsExecuted).isEqualTo(31);
         assertThat(migrate(POSTGRESQL, "agriinsight").migrationsExecuted).isZero();
         try (var connection = operatorConnection(POSTGRESQL, "agriinsight")) {
             assertThat(scalar(connection, """
                     SELECT version FROM flyway_schema_history
                     WHERE success AND version IS NOT NULL
                     ORDER BY installed_rank DESC LIMIT 1
-                    """)).isEqualTo("28");
+                    """)).isEqualTo("30");
+            assertThat(count(connection, """
+                    SELECT count(*) FROM flyway_schema_history
+                    WHERE success AND version IS NOT NULL
+                    """)).isEqualTo(30);
             assertThat(count(connection, "SELECT count(*) FROM permissions")).isEqualTo(22);
             assertThat(count(connection, "SELECT count(*) FROM roles")).isEqualTo(7);
         }
@@ -94,7 +101,7 @@ class FlywayMigrationIntegrationTest {
                     """);
         }
 
-        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(25);
+        assertThat(migrate(POSTGRESQL, database).migrationsExecuted).isEqualTo(27);
         try (var operator = operatorConnection(POSTGRESQL, database)) {
             assertThat(count(operator, """
                     SELECT count(*) FROM activity_types
@@ -112,7 +119,7 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void officialV22DatabaseUpgradesThroughTheCurrentV28ReleaseLine() throws Exception {
+    void officialV22DatabaseUpgradesThroughTheCurrentV30ReleaseLine() throws Exception {
         String database = "agriinsight_official_v22_upgrade";
         try {
             try (var operator = operatorConnection(POSTGRESQL, "agriinsight")) {
@@ -156,7 +163,7 @@ class FlywayMigrationIntegrationTest {
 
             MigrateResult upgrade = migrate(POSTGRESQL, database);
             assertThat(upgrade.success).isTrue();
-            assertThat(upgrade.migrationsExecuted).isEqualTo(7);
+            assertThat(upgrade.migrationsExecuted).isEqualTo(9);
             assertThat(flyway(POSTGRESQL, database, MIGRATOR, MIGRATOR_PASSWORD, "classpath:db/migration")
                             .validateWithResult()
                             .validationSuccessful)
@@ -247,7 +254,7 @@ class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    void v23ToV28ForwardMigrationSqlIsAdditiveAndUsesRestartSafeOnlineIndexes() throws Exception {
+    void v23ToV30ForwardMigrationSqlIsAdditiveAndUsesRestartSafeOnlineIndexes() throws Exception {
         Path migrations = Path.of("src", "main", "resources", "db", "migration");
 
         String v23 = Files.readString(migrations.resolve("V23__harden_realtime_operational_alert_worker.sql"));
@@ -290,10 +297,62 @@ class FlywayMigrationIntegrationTest {
                                 + "ux_realtime_alert_acknowledgement_revisions_observation")
                 .doesNotContain(
                         "ON CONFLICT (tenant_id, alert_id, profile_id, acknowledged_observation_at)");
+        String v28 = Files.readString(
+                        migrations.resolve("V28__fix_realtime_alert_acknowledgement_function.sql"))
+                .replace("\r\n", "\n");
+        String v29 = Files.readString(
+                        migrations.resolve("V29__restrict_realtime_alert_acknowledgement_to_open_alerts.sql"))
+                .replace("\r\n", "\n");
+        assertThat(v29)
+                .contains(
+                        "CREATE OR REPLACE FUNCTION "
+                                + "agriinsight_security.acknowledge_realtime_operational_alert(",
+                        "SECURITY DEFINER",
+                        "SET search_path = pg_catalog, public",
+                        "AND alert.state = 'OPEN'",
+                        "FOR UPDATE",
+                        "ON CONFLICT ON CONSTRAINT "
+                                + "ux_realtime_alert_acknowledgement_revisions_observation",
+                        "REVOKE ALL ON FUNCTION "
+                                + "agriinsight_security.acknowledge_realtime_operational_alert(",
+                        "TO agriinsight_runtime, agriinsight_migrator")
+                .doesNotContain(
+                        "ON CONFLICT (tenant_id, alert_id, profile_id, acknowledged_observation_at)");
+        assertThat(v29.indexOf("AND alert.state = 'OPEN'")).isLessThan(v29.indexOf("FOR UPDATE"));
+        assertThat(v29.replace("       AND alert.state = 'OPEN'\n", "")).isEqualTo(v28);
+
+        String v30 = Files.readString(
+                migrations.resolve("V30__add_realtime_alert_feed_index_concurrently.sql"));
+        assertThat(v30)
+                .contains(
+                        "CREATE INDEX CONCURRENTLY "
+                                + "ix_realtime_operational_alerts_tenant_open_feed",
+                        "ON realtime_operational_alerts (",
+                        "tenant_id,",
+                        "(CASE severity",
+                        "WHEN 'CRITICAL' THEN 0",
+                        "WHEN 'WARNING' THEN 1",
+                        "ELSE 2",
+                        "last_observed_at DESC,",
+                        "id ASC",
+                        "WHERE state = 'OPEN'",
+                        "AND source_occurred_at IS NOT NULL",
+                        "(policy_code = 'OUTBOX_PUBLISH_BACKLOG' AND source_event_id IS NULL)",
+                        "OR (policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')",
+                        "AND source_event_id IS NOT NULL)");
+        assertThat(v30.indexOf("CREATE INDEX CONCURRENTLY"))
+                .isEqualTo(v30.lastIndexOf("CREATE INDEX CONCURRENTLY"));
+        assertThat(v30.indexOf("tenant_id,")).isLessThan(v30.indexOf("(CASE severity"));
+        assertThat(v30.indexOf("(CASE severity")).isLessThan(v30.indexOf("last_observed_at DESC,"));
+        assertThat(v30.indexOf("last_observed_at DESC,")).isLessThan(v30.indexOf("id ASC"));
+        assertRestartSafeConcurrentIndexMigration(
+                migrations,
+                "V30__add_realtime_alert_feed_index_concurrently.sql",
+                "ix_realtime_operational_alerts_tenant_open_feed");
     }
 
     @Test
-    void v24ToV27ConcurrentIndexConfigurationsRemainNonTransactional() throws Exception {
+    void v24ToV30ConcurrentIndexConfigurationsRemainNonTransactional() throws Exception {
         Path migrations = Path.of("src", "main", "resources", "db", "migration");
         assertNonTransactionalMigrationConfiguration(
                 migrations, "V24__add_realtime_alert_indexes_concurrently.sql");
@@ -303,6 +362,8 @@ class FlywayMigrationIntegrationTest {
                 migrations, "V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql");
         assertNonTransactionalMigrationConfiguration(
                 migrations, "V27__add_realtime_alert_evidence_readiness_index_concurrently.sql");
+        assertNonTransactionalMigrationConfiguration(
+                migrations, "V30__add_realtime_alert_feed_index_concurrently.sql");
     }
 
     private void assertRestartSafeConcurrentIndexMigration(Path migrations, String filename, String indexName)
@@ -329,11 +390,11 @@ class FlywayMigrationIntegrationTest {
                 SELECT version FROM flyway_schema_history
                 WHERE success AND version IS NOT NULL
                 ORDER BY installed_rank DESC LIMIT 1
-                """)).isEqualTo("28");
+                """)).isEqualTo("30");
         assertThat(count(operator, """
                 SELECT count(*) FROM flyway_schema_history
-                WHERE success AND version IN ('23', '24', '25', '26', '27', '28')
-                """)).isEqualTo(6);
+                WHERE success AND version IN ('23', '24', '25', '26', '27', '28', '29', '30')
+                """)).isEqualTo(8);
         assertThat(count(operator, """
                 SELECT count(*) FROM flyway_schema_history
                 WHERE success AND script = 'R__tenant_rls_helpers_and_grants.sql'
@@ -424,10 +485,11 @@ class FlywayMigrationIntegrationTest {
                       'ix_outbox_events_alert_backlog',
                       'ix_outbox_events_alert_delivery_lag',
                       'ix_realtime_operational_alerts_unrecovered_dlt',
-                      'ix_realtime_operational_alerts_invalid_source_evidence')
+                      'ix_realtime_operational_alerts_invalid_source_evidence',
+                      'ix_realtime_operational_alerts_tenant_open_feed')
                   AND index_metadata.indisvalid
                   AND index_metadata.indisready
-                """)).isEqualTo(4);
+                """)).isEqualTo(5);
         assertThat(scalar(operator, """
                 SELECT pg_get_expr(index_metadata.indpred, index_metadata.indrelid)
                 FROM pg_index index_metadata
@@ -441,6 +503,58 @@ class FlywayMigrationIntegrationTest {
                         "REALTIME_DELIVERY_LAG",
                         "REALTIME_DLT_RECORD",
                         "source_event_id IS NULL");
+        assertThat(scalar(operator, """
+                SELECT pg_get_indexdef(index_metadata.indexrelid)
+                FROM pg_index index_metadata
+                JOIN pg_class index_relation ON index_relation.oid = index_metadata.indexrelid
+                WHERE index_relation.relname = 'ix_realtime_operational_alerts_tenant_open_feed'
+                """))
+                .contains(
+                        "tenant_id",
+                        "CASE severity",
+                        "WHEN 'CRITICAL'",
+                        "WHEN 'WARNING'",
+                        "last_observed_at DESC",
+                        "id",
+                        "WHERE",
+                        "state = 'OPEN'",
+                        "source_occurred_at IS NOT NULL",
+                        "source_event_id IS NULL",
+                        "source_event_id IS NOT NULL");
+        execute(operator, "SET enable_seqscan = off");
+        List<String> feedPlan = explain(operator, """
+                SELECT alert.id, alert.policy_code, alert.severity, alert.state,
+                       alert.source_event_id, alert.source_occurred_at,
+                       alert.opened_at, alert.last_observed_at, alert.last_evaluated_at,
+                       alert.version, acknowledgement.acknowledged_at
+                  FROM realtime_operational_alerts alert
+                  LEFT JOIN realtime_alert_acknowledgement_revisions acknowledgement
+                    ON acknowledgement.tenant_id = alert.tenant_id
+                   AND acknowledgement.alert_id = alert.id
+                   AND acknowledgement.profile_id =
+                       '41000000-0000-0000-0000-000000000005'
+                   AND acknowledgement.acknowledged_observation_at = alert.last_observed_at
+                 WHERE alert.tenant_id = '10000000-0000-0000-0000-000000000062'
+                   AND alert.state = 'OPEN'
+                   AND alert.source_occurred_at IS NOT NULL
+                   AND (
+                       (alert.policy_code = 'OUTBOX_PUBLISH_BACKLOG'
+                           AND alert.source_event_id IS NULL)
+                       OR (alert.policy_code IN ('REALTIME_DELIVERY_LAG', 'REALTIME_DLT_RECORD')
+                           AND alert.source_event_id IS NOT NULL)
+                   )
+                 ORDER BY CASE alert.severity
+                              WHEN 'CRITICAL' THEN 0
+                              WHEN 'WARNING' THEN 1
+                              ELSE 2
+                          END,
+                          alert.last_observed_at DESC,
+                          alert.id ASC
+                 LIMIT 51
+                """);
+        assertThat(feedPlan)
+                .anyMatch(line -> line.contains("ix_realtime_operational_alerts_tenant_open_feed"))
+                .noneMatch(line -> line.contains("Sort"));
     }
 
     private void seedOfficialV22Alert(java.sql.Connection operator) throws SQLException {
@@ -489,6 +603,17 @@ class FlywayMigrationIntegrationTest {
                   AND NOT rolreplication
                   AND NOT rolbypassrls
                 """.formatted(role, expectedLogin, expectedInherit))).isEqualTo(1);
+    }
+
+    private static List<String> explain(Connection connection, String query) throws SQLException {
+        List<String> plan = new ArrayList<>();
+        try (var statement = connection.createStatement();
+                var rows = statement.executeQuery("EXPLAIN (COSTS OFF) " + query)) {
+            while (rows.next()) {
+                plan.add(rows.getString(1));
+            }
+        }
+        return plan;
     }
 
 }
