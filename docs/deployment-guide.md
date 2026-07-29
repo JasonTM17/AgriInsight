@@ -234,9 +234,9 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The generic backend readiness schema is Flyway V27 plus repeatable
+The generic backend readiness schema is Flyway V28 plus repeatable
 least-privilege helpers/grants. The alert-worker startup gate separately pins
-successful V27 and the latest repeatable `R__tenant_rls_helpers_and_grants.sql`;
+successful V28 and the latest repeatable `R__tenant_rls_helpers_and_grants.sql`;
 `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` only drives backend health/readiness and
 cannot weaken the worker gate. V7-V11 install fail-closed farm,
 field/crop/season, Employee, farm-assignment, and activity-season lifecycle
@@ -249,7 +249,7 @@ tenant-scoped realtime read models, and V21 adds the tenant summary index.
 
 The official upgrade proof reconstructs V1-V22 from release commit
 `6927eeda70981c2461e85a165834e2464ba793d1` plus the historical repeatable
-grant file, then applies current V23-V27 plus repeatable grants. It validates,
+grant file, then applies current V23-V28 plus repeatable grants. It validates,
 reruns zero-op, preserves two representative legacy invalid rows and the V23
 `NOT VALID` constraints, and does not perform the backfill.
 
@@ -260,9 +260,12 @@ table-wide update, validate legacy rows, or make `source_occurred_at` `NOT
 NULL`. `V24`, `V25`, `V26`, and `V27` each create exactly one alert scan index
 with `CREATE INDEX CONCURRENTLY`, respectively for outbox backlog,
 published-without-receipt delivery lag, open unrecovered DLT alerts, and a
-readiness-only partial invalid-source-evidence index. The default
-`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `27`; it is a readiness contract
-check, never a bypass for unmigrated databases.
+readiness-only partial invalid-source-evidence index. Transactional V28 then
+replaces the acknowledgement function with the same signature and security
+contract while targeting its named unique constraint, avoiding the ambiguous
+PL/pgSQL conflict target without rewriting V22. The default
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `28`; it is a readiness contract check,
+never a bypass for unmigrated databases.
 
 ### Alert-worker pre-enable and concurrent-index recovery
 
@@ -306,7 +309,7 @@ Required deployment inputs:
 | `AGRIINSIGHT_DB_OPERATOR_USERNAME`, `AGRIINSIGHT_DB_OPERATOR_PASSWORD` | Short-lived role bootstrap credential; must not be the migrator |
 | `AGRIINSIGHT_FLYWAY_URL`, `AGRIINSIGHT_FLYWAY_USERNAME`, `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration connection; username must be `agriinsight_migrator` |
 | `AGRIINSIGHT_DB_ADOPTION_USERNAME`, `AGRIINSIGHT_DB_ADOPTION_PASSWORD` | Required only for the explicit Phase 1/2 legacy-owner adoption path |
-| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `27` unless a later reviewed migration changes the readiness contract |
+| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `28` unless a later reviewed migration changes the readiness contract |
 | `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD` | Compose-only password input for the separate `agriinsight_alert_worker` login; never commit or expose it |
 
 Fresh database:

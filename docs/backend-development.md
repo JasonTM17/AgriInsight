@@ -26,14 +26,16 @@ try {
 } finally { Pop-Location }
 ```
 
-`V22` is immutable. The alert-worker hardening is V23-V27 with expected schema
-version 27, but the worker startup gate independently pins successful V27 and
+`V22` is immutable. The alert-worker hardening is V23-V28 with expected schema
+version 28, but the worker startup gate independently pins successful V28 and
 the latest repeatable grant execution; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION`
 remains backend readiness only. V23 is additive and keeps its source/evidence
 checks `NOT VALID`; a bounded idempotent operator backfill is required before
 worker enablement. V24-V27 are one concurrent index each and have explicit
 invalid-index recovery preconditions; V27 is a readiness-only partial index for
-invalid source-evidence rows and does not replace the V23 backfill. Repeatable
+invalid source-evidence rows. Transactional V28 repairs the acknowledgement
+function through its named unique constraint without rewriting V22 or replacing
+the V23 backfill. Repeatable
 grants run after versioned migration. Every new migration must keep
 `ENABLE/FORCE ROW LEVEL SECURITY`, update readiness/schema tests, and run fresh
 plus controlled-upgrade integration tests. Follow the pre-enable and recovery

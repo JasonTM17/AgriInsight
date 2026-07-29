@@ -6,7 +6,7 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | expected version `27` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, realtime read models, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V26 concurrent scan indexes, and the V27 partial invalid-source-evidence readiness index |
+| Flyway schema history | expected version `28` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, realtime read models, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V27 concurrent scan indexes, and the V28 forward acknowledgement-function repair |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
@@ -165,7 +165,7 @@ The outbox is at-least-once and does not imply a broker, scheduler, public route
 ## Backend realtime alert contract
 
 The operational alert slice is metadata-only and bounded. `V22` remains
-immutable; current hardening is V23-V27 and remains in progress. These are worker/data
+immutable; current hardening is V23-V28 and remains in progress. These are worker/data
 contracts, not a released public alert feed, acknowledgement API, or browser
 alert center. It uses three table families:
 
@@ -202,7 +202,9 @@ create one scan index concurrently and V27 adds the partial invalid-source-evide
 readiness index; a failed invalid index must be dropped
 concurrently before Flyway repair/retry, while a valid existing index requires
 operator history reconciliation. V27 does not waive the V23 backfill or validate
-the `NOT VALID` constraints. Expected schema version is 27.
+the `NOT VALID` constraints. Transactional V28 preserves the acknowledgement
+function contract while using the named observation constraint to remove its
+ambiguous conflict target. Expected schema version is 28.
 
 ## Operational identifiers
 
@@ -301,6 +303,7 @@ Analytics contract hiện tại là `agriinsight-bronze-silver-gold-v1`. Thay đ
 Backend operational API dùng `/api/v1`; Flyway migration history is the backend
 schema history. It includes outbox tables, realtime read models, tenant summary
 support, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V26
-concurrent scan indexes, and the V27 partial invalid-source-evidence readiness
-index; expected schema version is 27. Các giá trị này không
+concurrent scan indexes, the V27 partial invalid-source-evidence readiness
+index, and the V28 acknowledgement-function repair; expected schema version is
+28. Các giá trị này không
 đổi analytics version.
