@@ -3,7 +3,7 @@ title: Realtime operational alert center
 description: >-
   Deliver a tenant-safe, durable operational alert center for realtime transport
   health without inventing domain signals.
-status: in-progress
+status: completed
 priority: P1
 effort: 5-7d
 branch: main
@@ -49,8 +49,11 @@ replace the V23 backfill.
 Phase 2 is implemented and verified by PR `#13` / CI run `30425647823`.
 The exact Spring feed and acknowledgement API, generated OpenAPI/TypeScript
 contract, hardened same-origin Next BFF, V29/V30 migrations, and runtime-role
-tenant/profile query proof are complete. Phase 3 browser alert UX remains
-pending.
+tenant/profile query proof are complete. Phase 3 passed hosted CI
+[`30445148252`](https://github.com/JasonTM17/AgriInsight/actions/runs/30445148252)
+at feature head `e8a02a2` and was rebase-merged by
+[PR #14](https://github.com/JasonTM17/AgriInsight/pull/14) at
+`bd724503dd3e0864cbd546a6398216fbcd053f31`.
 
 The runtime API uses a separate query port rather than the worker-only mutation
 store. Transactional V29 restricts the locked acknowledgement function to open
@@ -72,8 +75,8 @@ V28 plus the latest repeatable grants.
   database/RLS, worker, HTTP/BFF, and browser trust boundaries. Splitting the
   lifecycle, contract, and panel avoids duplicate ownership of a migration or
   public route.
-- Selected scope: Phases 1 and 2 are complete. The browser operations alert
-  center remains Phase 3 work;
+- Selected scope: Phases 1–3 are complete. The browser operations alert center
+  has hosted acceptance and is merged on `main`;
   domain alert semantics, WebSocket/SSE, email/SMS/push, and public deployment
   remain explicitly deferred.
 
@@ -121,8 +124,8 @@ V28 plus the latest repeatable grants.
 - Public VPS deployment and production readiness claims until a real target
   host plus production environment ownership exist. Protected registry
   promotion is complete for `v0.2.3`.
-- The acknowledgement UI and browser alert center until Phase 3 is
-  implemented. The Phase 2 public feed/API and BFF contract are complete.
+- Phase 3 acceptance did not publish a new image. `v0.2.3` remains the
+  worker-only protected Docker Hub/GHCR publication.
 
 ## Phases
 
@@ -130,7 +133,7 @@ V28 plus the latest repeatable grants.
 |-------|------|--------|
 | 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | Completed and released in `v0.2.3` |
 | 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | Completed |
-| 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | In Progress |
+| 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | Completed — hosted CI `30445148252`; PR #14 rebase-merged |
 
 ## Dependencies
 
@@ -172,6 +175,15 @@ V28 plus the latest repeatable grants.
 - Documentation differentiates this operational alert source from batch Gold
   analytics and records source/Compose behavior separately from unfinished
   migration, release, Docker Hub/GHCR publication, VPS, and production claims.
+
+Acceptance evidence: feature head `e8a02a2` passed all 10 hosted CI gates in
+run [`30445148252`](https://github.com/JasonTM17/AgriInsight/actions/runs/30445148252),
+including real PostgreSQL/Kafka, seven-persona browser, and candidate-image
+build validations. PR #14 was rebase-merged at
+`bd724503dd3e0864cbd546a6398216fbcd053f31`. Local typecheck, ESLint, and
+Vitest also passed; the local heavy E2E gate remained intentionally skipped
+because the D-drive guard measured below its 20 GiB floor. No threshold was
+weakened, and hosted CI is the browser acceptance source.
 
 ## Risks and rollback
 

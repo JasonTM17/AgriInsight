@@ -166,10 +166,11 @@ The outbox is at-least-once and does not imply a broker, scheduler, public route
 
 The operational alert slice is metadata-only and bounded. `V22` remains
 immutable; worker hardening is V23-V30 and the worker startup gate still pins
-successful V28 plus the latest repeatable grant. The released public surface is
+successful V28 plus the latest repeatable grant. The public surface is
 the exact feed/ack API plus the same-origin browser BFF; the browser panel is
-implemented in source and awaits hosted browser acceptance and merge/release
-promotion. It uses three table families:
+passed hosted CI `30445148252` at `e8a02a2` and is merged through PR `#14`.
+That acceptance did not publish a new image or approve external deployment. It
+uses three table families:
 
 | Method | Path | Contract |
 |---|---|---|
@@ -197,9 +198,10 @@ configuration cannot exceed 60 seconds. The DLT observer is a distinct path,
 not the legacy publisher/consumer path, and treats Kafka headers as untrusted.
 
 Source coverage includes authenticated summary-route and tenant-scoped
-RLS-boundary tests. Existing realtime runner/workflow artifacts are not hosted
-acceptance, Docker Hub/GHCR publication, or external deployment evidence for
-the in-progress hardening.
+RLS-boundary tests. Existing realtime runner/workflow artifacts are supporting
+implementation evidence only; the separately recorded Phase 1 protected
+release and Phase 2–3 hosted runs supply their respective acceptance evidence.
+Neither is an external deployment approval.
 
 V23 adds its source/evidence constraints as `NOT VALID`, so it neither rewrites
 legacy rows nor validates them globally. Before enabling the worker, repeat the

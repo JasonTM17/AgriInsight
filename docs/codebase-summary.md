@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-29 (alert-worker hardening merged on `main` and released as `v0.2.3`; Phase 2 alert API/BFF verified in PR `#13` / CI `30425647823`; Phase 3 browser panel source implemented locally; four-image Docker Hub/GHCR publication verified)
+Verified snapshot: 2026-07-29 (alert-worker hardening merged on `main` and released as `v0.2.3`; Phase 2 alert API/BFF verified in PR `#13` / CI `30425647823`; Phase 3 browser panel accepted in PR `#14` / CI `30445148252` and merged on `main`; four-image Docker Hub/GHCR publication remains Phase 1 worker evidence)
 
 ## Repository shape
 
@@ -49,8 +49,9 @@ The alert-center UI lives in `web/src/features/realtime-alerts/` and is now a
 lazy-loaded Field Ledger dialog from the app header. It uses the same-origin
 BFF, 30-second open/visible polling, a 90-second stale clock, abort/cleanup,
 and acknowledgement terminal states for denied, unavailable, and expired
-sessions. The browser bundle is source-implemented; hosted browser acceptance
-still remains pending.
+sessions. The browser bundle passed hosted acceptance in PR `#14` at `e8a02a2`
+/ CI `30445148252` and is merged on `main`; that evidence did not publish a new
+image or approve external deployment.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
 calling the typed FastAPI Gold read layer. The browser receives aggregated
@@ -221,8 +222,8 @@ reports saturation rather than performing unbounded scans.
 The worker remains private and metadata-only; it does not define semantic
 agriculture alerts and is not an external deployment. Phase 2 separately adds
 the public Spring feed/acknowledgement operations and same-origin Next BFF.
-Phase 3 browser source is implemented locally with the app-header entry,
-lazy panel, bounded polling, stale clock, and guarded acknowledgement states.
+Phase 3 has hosted acceptance and is merged with the app-header entry, lazy
+panel, bounded polling, stale clock, and guarded acknowledgement states.
 The worker startup gate independently pins successful V28 and the latest
 repeatable grant, while generic backend readiness now expects schema version
 30.
@@ -259,6 +260,11 @@ startup invariant.
   `d781fe49419f2b8ae0508897cc958a1c8cf70124`; hosted run `30425647823` passed
   all 10 Java, Python, web, secret/configuration, real PostgreSQL/Kafka,
   seven-persona browser, and four candidate-image checks.
+- Realtime alert center Phase 3 (2026-07-29): PR `#14` feature head `e8a02a2`
+  passed hosted run `30445148252`, including the real PostgreSQL/Kafka,
+  seven-persona browser, and four candidate-image build validations, then
+  rebase-merged on `main` at `bd724503dd3e0864cbd546a6398216fbcd053f31`. The
+  run did not publish a new image or approve external deployment.
 - Production-web candidate gate (2026-07-27): 202 Python tests, 463 Java
   unit/contract + 100 PostgreSQL integration tests, 308 web tests with 11
   intentional skips, 9/9 web database privilege tests, and 26/26 real Chrome
@@ -333,11 +339,11 @@ startup invariant.
 ## Next boundary
 
 The eight-area production-web implementation, Phase 11 browser gate, and
-serialized Phase 12 four-image publication are complete. Alert Center Phase 2
-has a verified API/BFF contract; Phase 3 owns the browser panel, polling,
-responsive/accessibility evidence, screenshots, and GIF. External production
-deployment remains blocked on the license decision, production OIDC/broker
-operations, recovery objectives/ownership, observability, and host controls.
+serialized Phase 12 four-image publication are complete. Alert Center Phases
+2–3 have verified API/BFF and hosted browser acceptance evidence; Phase 3 is
+merged on `main`. External production deployment remains blocked on the license
+decision, production OIDC/broker operations, recovery objectives/ownership,
+observability, and host controls.
 
 ## Unresolved questions
 

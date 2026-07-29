@@ -1,7 +1,8 @@
 # Deployment Guide
 
-This guide documents the verified runtime contracts through release `v0.2.3`
-and Backend Phase 7 core. It is not an external production deployment approval:
+This guide documents the verified runtime contracts through release `v0.2.3`,
+Backend Phase 7 core, and the merged Phase 3 hosted browser acceptance. It is
+not an external production deployment approval:
 production OIDC/broker operations, a scheduled recurring recovery drill,
 RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 
@@ -14,7 +15,7 @@ RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 | Next web platform | Eight-area hosted browser gate and `v0.2.3` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
-| Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback and runs the alert observer internally; the Phase 2 feed/ack API and Phase 3 browser panel are source-implemented but remain host-gated |
+| Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback and runs the alert observer internally; the Phase 2 feed/ack API and Phase 3 browser panel passed hosted CI acceptance (PR #13 / `30425647823`; PR #14 / `30445148252`) but this neither approves production hosting nor publishes a new image |
 | Next web + analytics API images | Published to Docker Hub/GHCR as `0.2.3` and full-SHA tags | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 

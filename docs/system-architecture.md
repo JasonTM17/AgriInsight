@@ -299,8 +299,8 @@ completed alert-worker hardening.
 does not define semantic agriculture alerts. It hardens transport-health
 evidence already owned by the realtime system. The public surface is the
 Phase 2 exact feed/acknowledgement API plus the same-origin Next BFF, while
-the Phase 3 browser panel is now implemented in source and awaits hosted
-browser acceptance and merge/release promotion. `GET /api/v1/realtime/alerts`
+the Phase 3 browser panel passed hosted browser acceptance in PR `#14` / run
+`30445148252` at feature head `e8a02a2` and is merged on `main`. `GET /api/v1/realtime/alerts`
 returns at most the latest 50 open alerts, while idempotent
 `POST /api/v1/realtime/alerts/{id}/acknowledgements` records a current-profile
 observation revision. PostgreSQL RLS and the runtime tenant/profile context
@@ -392,11 +392,11 @@ the operator backfill remains a separate pre-enable step.
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
 | Backend phase 7 release boundary | Alert-worker hardening is merged on `main`; main CI `30413064146`, protected publication `30413877863`, and release `v0.2.3` are complete. External deployment and recovery-policy ownership remain open. |
 | Realtime alert worker | Source/Compose topology remains private and non-web; hosted acceptance and backend-image publication are verified; semantic agriculture policy and external deployment remain deferred |
-| Realtime alert center Phase 2 | Exact Spring feed/acknowledgement API, same-origin BFF, V29/V30, OpenAPI/web generation, runtime-role RLS proof, and all 10 CI checks verified in PR `#13` / run `30425647823`; Phase 3 browser UX source implemented locally, hosted browser acceptance and merge pending |
+| Realtime alert center Phases 2–3 | Exact Spring feed/acknowledgement API, same-origin BFF, V29/V30, OpenAPI/web generation, runtime-role RLS proof, and all 10 CI checks verified in PR `#13` / run `30425647823`; Phase 3 browser UX passed all 10 CI checks in PR `#14` / run `30445148252` at `e8a02a2` and is merged on `main` |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
-| Hosted CI | Main run `30413064146` remains the accepted release baseline; PR `#13` run `30425647823` passed Java, Python, web, secret/configuration, real PostgreSQL/Kafka, seven-persona browser, and all four candidate-image gates at implementation SHA `d781fe4` |
+| Hosted CI | Main run `30413064146` remains the accepted worker-release baseline; PR `#13` run `30425647823` passed Java, Python, web, secret/configuration, real PostgreSQL/Kafka, seven-persona browser, and all four candidate-image gates at implementation SHA `d781fe4`; PR `#14` run `30445148252` accepted the Phase 3 browser UX at `e8a02a2` |
 | Protected image workflow | Run `30413877863` published all four `0.2.3` and full-SHA tags to Docker Hub/GHCR with SBOM/provenance, exact-digest scan/smoke, and cross-registry digest agreement |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
@@ -404,6 +404,6 @@ The right way to read the repo is: analytics and backend phases 1-6 are
 accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI
 artifact, and Phase 7 has current hosted/release evidence. The isolated
 alert-worker hardening is the private worker slice released through backend
-`0.2.3`; the separate Alert Center Phase 2 API/BFF is verified and awaits its
-Phase 3 browser UX. Production identity configuration, recovery-policy
+`0.2.3`; the separate Alert Center Phases 2–3 API/BFF and browser UX have
+hosted acceptance evidence and are merged on `main`. Production identity configuration, recovery-policy
 ownership, broker operations, and external deployment remain open.

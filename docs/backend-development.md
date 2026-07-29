@@ -95,13 +95,13 @@ Realtime source coverage includes authenticated MockMvc summary-route coverage,
 tenant-scoped RLS/privilege coverage, and Kafka E2E source paths after
 `scripts/run-realtime-e2e-tests.ps1`. The follow-on alert-worker hardening is
 merged on `main` and released in `v0.2.3`; that release is worker-only. Phase 2
-feed/ack API and same-origin BFF are verified in PR `#13` / CI `30425647823`,
-and the Phase 3 browser panel source is implemented locally with focused
-Vitest, full web Vitest, typecheck, ESLint, production build, and a two-scenario
-Playwright list. The focused local gate passed 42 tests; main CI `30413064146`
-and protected image publication `30413877863` passed at commit
-`3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`. This proves the hosted/release
-boundary, not a production SLA or external deployment.
+feed/ack API and same-origin BFF are verified in PR `#13` / CI `30425647823`.
+Phase 3's browser panel passed hosted CI `30445148252` at `e8a02a2` and is
+merged through PR `#14`; the run included the real browser and candidate-image
+gates without publishing a new image. The focused local gate passed 42 tests;
+main CI `30413064146` and protected image publication `30413877863` passed at
+commit `3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`. This proves hosted PR
+acceptance, not a production SLA, external deployment, or a new image release.
 
 ## Role matrix
 

@@ -14,7 +14,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Realtime alert center | Phase 2 complete; Phase 3 source implemented locally; hosted acceptance and merge pending | Exact latest-50 open-alert feed, idempotent acknowledgement, same-origin BFF, V29/V30, and generated OpenAPI/web contract verified in PR #13 / CI run 30425647823 |
+| Realtime alert center | Phases 2–3 hosted-accepted and merged | Exact latest-50 open-alert feed, idempotent acknowledgement, same-origin BFF, V29/V30, generated OpenAPI/web contract, and the Field Ledger browser panel verified in PR #13 / CI `30425647823` and PR #14 / CI `30445148252` (feature head `e8a02a2`, rebase-merged at `bd724503`) |
 | Frontend | Hosted gate and image release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and protected `agriinsight-web:0.2.3` publication |
 
 ## Next backend phases
@@ -23,7 +23,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
 | Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Alert-worker hardening is merged on `main` and released in `v0.2.3`; main CI and protected four-image publication are green. V27 adds the readiness-only invalid-source-evidence index, and V28 repairs the acknowledgement function without rewriting V22. External deployment, broker ownership, and recovery objectives remain open. |
-| Realtime alert center Phase 3 | Browser alert UX and acceptance | Depends on the completed Phase 2 API/BFF contract; source implementation in progress; hosted acceptance/merge pending |
+| Realtime alert center Phase 3 | Browser alert UX and acceptance | Hosted acceptance passed in PR #14 / CI `30445148252` and the PR is merged; no new image publication or external deployment is implied |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
 | Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 published four verified `v0.2.3` images. Production hosting, OIDC/operations, package visibility, and credential rotation remain owner-gated. |
 
@@ -92,10 +92,10 @@ implicitly converted into operating cost.
   deployment.
 - Existing `realtime-e2e` runner/workflow artifacts remain foundation evidence.
   Migration, focused tests, review, main merge, and protected Docker Hub/GHCR
-  publication are complete for the worker slice. Phase 2 API/BFF is verified
-  and Phase 3 browser source is implemented locally, but hosted browser
-  acceptance, merge promotion, production Kafka ownership, and external
-  deployment remain owner-gated.
+  publication are complete for the worker slice. Phase 2 API/BFF and Phase 3
+  browser acceptance are verified through PR #13 / CI `30425647823` and PR #14
+  / CI `30445148252`; production Kafka ownership and external deployment remain
+  owner-gated. The Phase 3 run built candidate images without publishing one.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
   artifact. Keep its additive bounded GET reads, deterministic export, and
   current backend gate intact when later phases extend the contract surface.

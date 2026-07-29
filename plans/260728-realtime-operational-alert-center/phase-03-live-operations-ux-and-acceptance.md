@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: Live operations UX and acceptance
-status: in-progress
+status: completed
 effort: 1.5-2d
 ---
 
@@ -10,13 +10,28 @@ effort: 1.5-2d
 ## Overview
 
 Priority: P1  
-Current status: in progress; depends on completed Phases 1–2
+Current status: completed; hosted CI `30445148252` passed at feature head
+`e8a02a2`, and PR #14 was rebase-merged at
+`bd724503dd3e0864cbd546a6398216fbcd053f31`
 Owner boundary: Next UI, browser verification, docs, hosted technical evidence
 
 Replace the inert app-header bell with a focused, Field Ledger alert panel. It
 renders only the typed BFF contract, retains source and freshness provenance,
 and supports a guarded user acknowledgement without pretending that an
 operational alert is a batch Gold insight or a live WebSocket stream.
+
+## Acceptance evidence
+
+- [Hosted CI run `30445148252`](https://github.com/JasonTM17/AgriInsight/actions/runs/30445148252)
+  passed all 10 gates at feature head `e8a02a2`, including real
+  PostgreSQL/Kafka, seven-persona browser, and candidate-image build checks.
+- [PR #14](https://github.com/JasonTM17/AgriInsight/pull/14) was rebase-merged
+  on `main` at `bd724503dd3e0864cbd546a6398216fbcd053f31`.
+- Local typecheck, ESLint, and Vitest passed. The local heavy E2E run was not
+  attempted because the disk guard measured the D drive below its 20 GiB floor;
+  the guard was not weakened and hosted CI is the browser acceptance evidence.
+- Candidate images were built and validated in CI without publishing a new
+  image. External deployment remains owner-gated.
 
 ## Context links
 
@@ -165,23 +180,23 @@ operational alert is a batch Gold insight or a live WebSocket stream.
 
 ## Todo list
 
-- [ ] Implement strict generated-contract reuse and client-safe state boundary.
-- [ ] Replace header bell with accessible Field Ledger alert panel.
-- [ ] Add bounded polling/refresh/acknowledgement with cleanup.
-- [ ] Prove BFF, component, responsive/a11y, and real-persona browser flows.
-- [ ] Synchronize architecture/contract/deployment/roadmap evidence and report.
+- [x] Implement strict generated-contract reuse and client-safe state boundary.
+- [x] Replace header bell with accessible Field Ledger alert panel.
+- [x] Add bounded polling/refresh/acknowledgement with cleanup.
+- [x] Prove BFF, component, responsive/a11y, and real-persona browser flows.
+- [x] Synchronize architecture/contract/deployment/roadmap evidence and report.
 
 ## Success criteria
 
-- [ ] Panel renders only authorized, typed, source-labelled data through a
+- [x] Panel renders only authorized, typed, source-labelled data through a
   same-origin BFF route; no browser token or direct upstream call exists.
-- [ ] Keyboard, focus, motion, responsive, error, stale, partial, and empty
+- [x] Keyboard, focus, motion, responsive, error, stale, partial, and empty
   states satisfy the Field Ledger and WCAG requirements.
-- [ ] Polling and acknowledgement are bounded/replay-safe and do not alter
+- [x] Polling and acknowledgement are bounded/replay-safe and do not alter
   worker-owned alert state client-side.
-- [ ] Heavy integration/browser evidence passes in guarded CI; local disk guard
+- [x] Heavy integration/browser evidence passes in guarded CI; local disk guard
   is respected and no C/D threshold is weakened.
-- [ ] Docs/report state exactly what was proven and list a real VPS/protected
+- [x] Docs/report state exactly what was proven and list a real VPS/protected
   release as an owner-gated next action, not a completed deployment.
 
 ## Risk assessment
