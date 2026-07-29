@@ -14,7 +14,7 @@ RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 | Next web platform | Eight-area hosted browser gate and `v0.2.3` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
-| Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback, runs the alert observer internally, and exposes no broker/public worker API; production broker ownership remains gated |
+| Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback and runs the alert observer internally; the Phase 2 feed/ack API and Phase 3 browser panel are source-implemented but remain host-gated |
 | Next web + analytics API images | Published to Docker Hub/GHCR as `0.2.3` and full-SHA tags | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
@@ -45,6 +45,14 @@ and writes only to `artifacts/big-data`. The verified profile produced
 passed quality report, 74 checksums, and a 388.2 MB artifact set. Generated
 artifacts are local demo state and must not be committed or exposed as a public
 download.
+
+## Alert-center rollback
+
+Rollback for alert-center changes is ordered: stop the isolated
+`realtime-alert-worker` and any evaluator first, then redeploy the previous
+BFF/web image digest. Keep the alert rows and migrations in place; rollback is
+an image/code change, not a table wipe. Do not rely on flipping a checked-in
+Compose environment value when a service hard-codes its behavior.
 
 The dashboard's eight generated WebP visuals are first-party application assets,
 not Docker images and not real customer evidence. Their provenance, hashes,
@@ -233,7 +241,7 @@ Never run the application with the Flyway owner as its runtime identity. The che
 
 `scripts/run-backend-migrations.ps1` is the only checked-in migration workflow. It runs the disk guard, verifies the exact target, applies the cluster-role gate with a narrowly held operator credential, optionally adopts only the known V1-V3 objects, and then runs Flyway migrate plus validate as `agriinsight_migrator`.
 
-The generic backend readiness schema is Flyway V28 plus repeatable
+The generic backend readiness schema is Flyway V30 plus repeatable
 least-privilege helpers/grants. The alert-worker startup gate separately pins
 successful V28 and the latest repeatable `R__tenant_rls_helpers_and_grants.sql`;
 `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` only drives backend health/readiness and
@@ -248,7 +256,7 @@ tenant-scoped realtime read models, and V21 adds the tenant summary index.
 
 The official upgrade proof reconstructs V1-V22 from release commit
 `6927eeda70981c2461e85a165834e2464ba793d1` plus the historical repeatable
-grant file, then applies current V23-V28 plus repeatable grants. It validates,
+grant file, then applies current V23-V30 plus repeatable grants. It validates,
 reruns zero-op, preserves two representative legacy invalid rows and the V23
 `NOT VALID` constraints, and does not perform the backfill.
 
@@ -262,9 +270,10 @@ published-without-receipt delivery lag, open unrecovered DLT alerts, and a
 readiness-only partial invalid-source-evidence index. Transactional V28 then
 replaces the acknowledgement function with the same signature and security
 contract while targeting its named unique constraint, avoiding the ambiguous
-PL/pgSQL conflict target without rewriting V22. The default
-`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `28`; it is a readiness contract check,
-never a bypass for unmigrated databases.
+PL/pgSQL conflict target without rewriting V22. V29 locks acknowledgement to
+OPEN alerts and V30 adds the latest-open-feed index. The default
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` is `30`; it is a readiness contract
+check, never a bypass for unmigrated databases.
 
 ### Alert-worker pre-enable and concurrent-index recovery
 
@@ -299,6 +308,7 @@ snapshot; that is serialization, not exactly-once or broker ordering.
 | V25 | `ix_outbox_events_alert_delivery_lag` | `DROP INDEX CONCURRENTLY ix_outbox_events_alert_delivery_lag` |
 | V26 | `ix_realtime_operational_alerts_unrecovered_dlt` | `DROP INDEX CONCURRENTLY ix_realtime_operational_alerts_unrecovered_dlt` |
 | V27 | `ix_realtime_operational_alerts_invalid_source_evidence` | `DROP INDEX CONCURRENTLY ix_realtime_operational_alerts_invalid_source_evidence` |
+| V30 | `ix_realtime_operational_alerts_tenant_open_feed` | `DROP INDEX CONCURRENTLY ix_realtime_operational_alerts_tenant_open_feed` |
 
 Required deployment inputs:
 
@@ -308,7 +318,7 @@ Required deployment inputs:
 | `AGRIINSIGHT_DB_OPERATOR_USERNAME`, `AGRIINSIGHT_DB_OPERATOR_PASSWORD` | Short-lived role bootstrap credential; must not be the migrator |
 | `AGRIINSIGHT_FLYWAY_URL`, `AGRIINSIGHT_FLYWAY_USERNAME`, `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration connection; username must be `agriinsight_migrator` |
 | `AGRIINSIGHT_DB_ADOPTION_USERNAME`, `AGRIINSIGHT_DB_ADOPTION_PASSWORD` | Required only for the explicit Phase 1/2 legacy-owner adoption path |
-| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `28` unless a later reviewed migration changes the readiness contract |
+| `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` | Keep at `30` unless a later reviewed migration changes the readiness contract |
 | `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD` | Compose-only password input for the separate `agriinsight_alert_worker` login; never commit or expose it |
 
 Fresh database:

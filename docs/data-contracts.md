@@ -6,7 +6,7 @@
 |---|---|---|
 | Analytics contract | `agriinsight-bronze-silver-gold-v1` | Bronze, Silver, quarantine, warehouse, Gold và report |
 | HTTP API prefix | `/api/v1` | Operational API của backend |
-| Flyway schema history | expected version `28` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, realtime read models, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V27 concurrent scan indexes, and the V28 forward acknowledgement-function repair |
+| Flyway schema history | expected version `30` | Tenant anchor, identity/RBAC, farm/workforce/activity/harvest, inventory schema, warehouse assignment lifecycle, role-aware inventory RLS, operating-cost ledger, transactional outbox, realtime read models, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V27 concurrent scan indexes, V28 acknowledgement repair, V29 open-only acknowledgement locking, and the V30 concurrent open-feed index |
 
 Ba version space độc lập. Không suy ra analytics contract từ HTTP/Flyway version và ngược lại.
 
@@ -165,9 +165,16 @@ The outbox is at-least-once and does not imply a broker, scheduler, public route
 ## Backend realtime alert contract
 
 The operational alert slice is metadata-only and bounded. `V22` remains
-immutable; current hardening is V23-V28 and remains in progress. These are worker/data
-contracts, not a released public alert feed, acknowledgement API, or browser
-alert center. It uses three table families:
+immutable; worker hardening is V23-V30 and the worker startup gate still pins
+successful V28 plus the latest repeatable grant. The released public surface is
+the exact feed/ack API plus the same-origin browser BFF; the browser panel is
+implemented in source and awaits hosted browser acceptance and merge/release
+promotion. It uses three table families:
+
+| Method | Path | Contract |
+|---|---|---|
+| **GET** | `/api/v1/realtime/alerts` | fixed latest 50 open alerts, no query controls, tenant/profile scoped, payload-free |
+| **POST** | `/api/v1/realtime/alerts/{id}/acknowledgements` | exact empty JSON object, required idempotency key, current-profile observation revision, sanitized not-found/denied behavior |
 
 | Table | Contract |
 |---|---|
@@ -204,7 +211,8 @@ concurrently before Flyway repair/retry, while a valid existing index requires
 operator history reconciliation. V27 does not waive the V23 backfill or validate
 the `NOT VALID` constraints. Transactional V28 preserves the acknowledgement
 function contract while using the named observation constraint to remove its
-ambiguous conflict target. Expected schema version is 28.
+ambiguous conflict target. V29 locks acknowledgement to OPEN alerts and V30
+adds the latest-open-feed index. Expected schema version is 30.
 
 ## Operational identifiers
 
@@ -304,6 +312,7 @@ Backend operational API dùng `/api/v1`; Flyway migration history is the backend
 schema history. It includes outbox tables, realtime read models, tenant summary
 support, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V26
 concurrent scan indexes, the V27 partial invalid-source-evidence readiness
-index, and the V28 acknowledgement-function repair; expected schema version is
-28. Các giá trị này không
+index, the V28 acknowledgement-function repair, V29 open-only acknowledgement
+locking, and the V30 concurrent open-feed index; expected schema version is
+30. Các giá trị này không
 đổi analytics version.

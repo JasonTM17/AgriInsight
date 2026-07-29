@@ -26,16 +26,17 @@ try {
 } finally { Pop-Location }
 ```
 
-`V22` is immutable. The alert-worker hardening is V23-V28 with expected schema
-version 28, but the worker startup gate independently pins successful V28 and
+`V22` is immutable. The alert-worker hardening is V23-V30 with expected schema
+version 30, but the worker startup gate independently pins successful V28 and
 the latest repeatable grant execution; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION`
 remains backend readiness only. V23 is additive and keeps its source/evidence
 checks `NOT VALID`; a bounded idempotent operator backfill is required before
 worker enablement. V24-V27 are one concurrent index each and have explicit
 invalid-index recovery preconditions; V27 is a readiness-only partial index for
 invalid source-evidence rows. Transactional V28 repairs the acknowledgement
-function through its named unique constraint without rewriting V22 or replacing
-the V23 backfill. Repeatable
+function through its named unique constraint without rewriting V22, V29 locks
+acknowledgement to open alerts only, and V30 adds the concurrent latest-open
+feed index. Repeatable
 grants run after versioned migration. Every new migration must keep
 `ENABLE/FORCE ROW LEVEL SECURITY`, update readiness/schema tests, and run fresh
 plus controlled-upgrade integration tests. Follow the pre-enable and recovery
@@ -93,10 +94,14 @@ serialization, not exactly-once or broker ordering.
 Realtime source coverage includes authenticated MockMvc summary-route coverage,
 tenant-scoped RLS/privilege coverage, and Kafka E2E source paths after
 `scripts/run-realtime-e2e-tests.ps1`. The follow-on alert-worker hardening is
-merged on `main` and released in `v0.2.3`. The focused local gate passed 42
-tests; main CI `30413064146` and protected image publication `30413877863`
-passed at commit `3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`. This proves the
-hosted/release boundary, not a production SLA or external deployment.
+merged on `main` and released in `v0.2.3`; that release is worker-only. Phase 2
+feed/ack API and same-origin BFF are verified in PR `#13` / CI `30425647823`,
+and the Phase 3 browser panel source is implemented locally with focused
+Vitest, full web Vitest, typecheck, ESLint, production build, and a two-scenario
+Playwright list. The focused local gate passed 42 tests; main CI `30413064146`
+and protected image publication `30413877863` passed at commit
+`3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`. This proves the hosted/release
+boundary, not a production SLA or external deployment.
 
 ## Role matrix
 

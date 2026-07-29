@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-29 (alert-worker hardening merged on `main` and released as `v0.2.3`; four-image Docker Hub/GHCR publication verified)
+Verified snapshot: 2026-07-29 (alert-worker hardening merged on `main` and released as `v0.2.3`; Phase 2 alert API/BFF verified in PR `#13` / CI `30425647823`; Phase 3 browser panel source implemented locally; four-image Docker Hub/GHCR publication verified)
 
 ## Repository shape
 
@@ -44,6 +44,13 @@ Phase 5-10 browser surface. Product routes are `/overview`, `/farms`,
 `/farms/[farmId]`, `/work`, `/inventory`, `/costs`, `/crop-health`,
 `/data-quality`, `/assistant`, and `/admin`; auth/support routes such as `/login`,
 `/protected`, and `/api/auth/*` exist as shell plumbing.
+
+The alert-center UI lives in `web/src/features/realtime-alerts/` and is now a
+lazy-loaded Field Ledger dialog from the app header. It uses the same-origin
+BFF, 30-second open/visible polling, a 90-second stale clock, abort/cleanup,
+and acknowledgement terminal states for denied, unavailable, and expired
+sessions. The browser bundle is source-implemented; hosted browser acceptance
+still remains pending.
 
 Server loaders resolve scoped Spring UUID masters to canonical codes before
 calling the typed FastAPI Gold read layer. The browser receives aggregated
@@ -178,6 +185,9 @@ The Phase 2 operational alert contract adds:
   `GET /api/v1/cost-entries/{id}`, and `GET /api/v1/cost-summaries`.
 - Cost summaries identify the `OPERATING_COST` lens and never merge
   procurement spend or inventory value.
+- Realtime alerts: `GET /api/v1/realtime/alerts` and
+  `POST /api/v1/realtime/alerts/{id}/acknowledgements` under exact
+  `REALTIME_ALERT_READ` / `REALTIME_ALERT_ACKNOWLEDGE` permissions.
 - OpenAPI/Swagger is disabled by default and only exposed in an explicit
   development profile or authenticated non-development configuration.
 - All unregistered business mappings are denied.
@@ -210,10 +220,12 @@ reports saturation rather than performing unbounded scans.
 
 The worker remains private and metadata-only; it does not define semantic
 agriculture alerts and is not an external deployment. Phase 2 separately adds
-the public Spring feed/acknowledgement operations and same-origin Next BFF. The
-browser alert panel remains Phase 3 work. The worker startup gate independently
-pins successful V28 and the latest repeatable grant, while generic backend
-readiness now expects schema version 30.
+the public Spring feed/acknowledgement operations and same-origin Next BFF.
+Phase 3 browser source is implemented locally with the app-header entry,
+lazy panel, bounded polling, stale clock, and guarded acknowledgement states.
+The worker startup gate independently pins successful V28 and the latest
+repeatable grant, while generic backend readiness now expects schema version
+30.
 
 The official upgrade fixture reconstructs V1-V22 plus the historical
 repeatable from release commit
@@ -223,7 +235,7 @@ and reruns with zero migrations. It preserves representative legacy invalid
 rows and the V23 `NOT VALID` constraints; it does not perform the pre-enable
 backfill.
 
-The worker hardening split is V23-V28. V23 adds `NOT VALID` source/evidence
+The worker hardening split is V23-V30. V23 adds `NOT VALID` source/evidence
 checks and cursor/worker isolation without a table-wide legacy-row update.
 Before enabling the worker, an operator repeats the V23 backfill in at-most
 500-row idempotent batches until both remaining-row checks are false. V24, V25,
@@ -235,11 +247,11 @@ index requires history reconciliation instead of retry. Transactional V28
 replaces the acknowledgement function without changing its public/security
 contract and targets the named observation constraint to avoid PL/pgSQL
 identifier ambiguity. The worker startup gate continues to expect V28 plus the
-latest repeatable grant.
-V29 then restricts the locked acknowledgement function to open alerts, and
-nontransactional V30 adds the exact concurrent partial index used by the
-latest-open feed. These API/read-path migrations advance generic readiness to
-30 without changing the worker's independent V28 startup invariant.
+latest repeatable grant. V29 then restricts the locked acknowledgement
+function to open alerts, and nontransactional V30 adds the exact concurrent
+partial index used by the latest-open feed. These API/read-path migrations
+advance generic readiness to 30 without changing the worker's independent V28
+startup invariant.
 
 ## Verification snapshot
 

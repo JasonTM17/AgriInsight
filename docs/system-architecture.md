@@ -297,20 +297,24 @@ completed alert-worker hardening.
 
 `V22` alert storage is immutable. The isolated worker remains metadata-only and
 does not define semantic agriculture alerts. It hardens transport-health
-evidence already owned by the realtime system. Phase 2 adds a separate,
-permission-first public projection: fixed no-query
-`GET /api/v1/realtime/alerts` returns at most the latest 50 open alerts, while
-idempotent `POST /api/v1/realtime/alerts/{id}/acknowledgements` records a
-current-profile observation revision. PostgreSQL RLS and the runtime tenant/
-profile context remain authoritative; neither operation accepts tenant,
-profile, raw payload, cursor, or proxy-path controls.
+evidence already owned by the realtime system. The public surface is the
+Phase 2 exact feed/acknowledgement API plus the same-origin Next BFF, while
+the Phase 3 browser panel is now implemented in source and awaits hosted
+browser acceptance and merge/release promotion. `GET /api/v1/realtime/alerts`
+returns at most the latest 50 open alerts, while idempotent
+`POST /api/v1/realtime/alerts/{id}/acknowledgements` records a current-profile
+observation revision. PostgreSQL RLS and the runtime tenant/profile context
+remain authoritative; neither operation accepts tenant, profile, raw payload,
+cursor, or proxy-path controls.
 
 The same operations are exposed to the browser only through exact same-origin
 Next BFF handlers with host/origin/CSRF/session/idempotency checks, bounded
 request/response bodies, strict generated schemas, and no bearer-token or
-upstream-body leakage. Phase 3 still owns the browser alert panel and polling.
+upstream-body leakage. The browser panel now uses a lazy Field Ledger entry,
+30-second open/visible polling, a 90-second stale clock, and 401/403/404
+terminal acknowledgement states.
 
-The worker hardening schema is V23-V28. V23 leaves legacy
+The worker hardening schema is V23-V30. V23 leaves legacy
 source/evidence constraints `NOT VALID`; a repeatable 500-row operator
 backfill must finish with no legacy or invalid-shape rows before the worker is
 enabled. V24-V27 each run outside a Flyway transaction with
@@ -320,13 +324,12 @@ invalid-source-evidence index and does not replace the V23 backfill. Invalid
 indexes must be dropped concurrently before repair/retry, while an already
 valid index requires history reconciliation. Transactional V28 replaces the
 acknowledgement function with its signature, security-definer search path, and
-ACL intact while targeting the named observation constraint. The worker startup
+ACL intact while targeting the named observation constraint. V29 restricts the
+locked acknowledgement function to open alerts, and nontransactional V30 adds
+the exact concurrent partial index for the latest-open feed. The worker startup
 gate independently pins successful V28 and the latest repeatable grant;
-`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains generic backend readiness only.
-V29 restricts the locked acknowledgement function to open alerts, and
-nontransactional V30 adds the exact concurrent partial index for the latest-open
-feed. Generic backend readiness therefore expects 30 without broadening the
-worker startup gate.
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` tracks generic backend readiness at 30
+only.
 
 The official upgrade fixture reconstructs the fingerprinted V1-V22 release
 plus its historical repeatable from commit
@@ -389,7 +392,7 @@ the operator backfill remains a separate pre-enable step.
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
 | Backend phase 7 release boundary | Alert-worker hardening is merged on `main`; main CI `30413064146`, protected publication `30413877863`, and release `v0.2.3` are complete. External deployment and recovery-policy ownership remain open. |
 | Realtime alert worker | Source/Compose topology remains private and non-web; hosted acceptance and backend-image publication are verified; semantic agriculture policy and external deployment remain deferred |
-| Realtime alert center Phase 2 | Exact Spring feed/acknowledgement API, same-origin BFF, V29/V30, OpenAPI/web generation, runtime-role RLS proof, and all 10 CI checks verified in PR `#13` / run `30425647823`; Phase 3 browser UX pending |
+| Realtime alert center Phase 2 | Exact Spring feed/acknowledgement API, same-origin BFF, V29/V30, OpenAPI/web generation, runtime-role RLS proof, and all 10 CI checks verified in PR `#13` / run `30425647823`; Phase 3 browser UX source implemented locally, hosted browser acceptance and merge pending |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
