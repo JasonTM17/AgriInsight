@@ -37,8 +37,9 @@ source-side evaluation or a new versioned semantic event. The existing Gold
 alert feeds remain batch analytics with snapshot lineage and keep their own UI
 locations.
 
-Current execution status: Phase 1 worker hardening is in progress. Its confirmed
-migration sequence is V23-V28 with expected schema version 28: V23 remains
+Current execution status: Phase 1 worker hardening is complete, merged on
+`main`, and released in `v0.2.3`. Its confirmed migration sequence is V23-V28
+with expected schema version 28: V23 remains
 additive with `NOT VALID` source/evidence checks and requires bounded operator
 backfill before worker enablement; V24-V26 each create one scan index
 concurrently and V27 adds the readiness-only partial invalid-source-evidence
@@ -54,15 +55,15 @@ BFF route, or UI is complete.
   `GET /api/v1/realtime/summary`, a hardened tokenless Next BFF, batch Gold
   alert panels, and an inert header bell. The current source/Compose change is
   the private worker hardening only.
-- Current in-progress change: a dedicated non-web alert worker with restricted
+- Completed Phase 1 change: a dedicated non-web alert worker with restricted
   login, metadata-only scanner/observer, durable cursors, bounded recovery, and
   no raw payload/error retention. No new broker protocol or domain payload.
 - Complexity: three phases and more than eight files are justified by the
   database/RLS, worker, HTTP/BFF, and browser trust boundaries. Splitting the
   lifecycle, contract, and panel avoids duplicate ownership of a migration or
   public route.
-- Selected scope: Phase 1 remains in progress. A public operations alert center
-  is planned only for later phases after the worker hardening is verified;
+- Selected scope: Phase 1 is complete. A public operations alert center
+  is planned only for later phases;
   domain alert semantics, WebSocket/SSE, email/SMS/push, and public deployment
   remain explicitly deferred.
 
@@ -72,7 +73,7 @@ BFF route, or UI is complete.
 |---|---|
 | Alert source | Metadata-only realtime transport evidence: aged unprocessed outbox events, published-but-unreceived events, and parseable DLT records. |
 | Domain boundary | Do not inspect inventory/work/farm tables from the cross-tenant realtime worker. Do not enrich the v1 event envelope. |
-| Lifecycle | The in-progress worker hardening upserts a stable `(tenant, policy, dedupe key)` alert, uses a durable cursor plus clean-evaluation hysteresis before resolution, and never records raw error text or payload. |
+| Lifecycle | The released Phase 1 worker upserts a stable `(tenant, policy, dedupe key)` alert, uses a durable cursor plus clean-evaluation hysteresis before resolution, and never records raw error text or payload. |
 | User state | Acknowledgement is an immutable per-profile observation revision. A newer observation makes older revisions stale; the same profile can acknowledge the new observation without rewriting history. |
 | Authorization | Introduce dedicated read and acknowledgement permissions rather than silently broadening `REALTIME_READ`. Tenant scope derives only from the authenticated database profile. |
 | API | Exact, bounded backend operations: latest 50 open-alert feed (no history/cursor in v1) and idempotent acknowledgement. Existing `/api/v1/realtime/summary` stays compatible. |
@@ -105,8 +106,9 @@ BFF route, or UI is complete.
 - Cross-tenant UI filters, client-provided tenant/profile/role values, direct
   browser-to-backend calls, raw event payload/error persistence, and changing
   the v1 operational event schema.
-- Public VPS deployment, registry promotion, and production readiness claims
-  until a real target host plus protected environment ownership exist.
+- Public VPS deployment and production readiness claims until a real target
+  host plus production environment ownership exist. Protected registry
+  promotion is complete for `v0.2.3`.
 - The public alert feed/API, acknowledgement UI, and browser alert center until
   Phase 1 worker hardening is verified and Phase 2/3 are implemented.
 
@@ -114,7 +116,7 @@ BFF route, or UI is complete.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | In Progress |
+| 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | Completed and released in `v0.2.3` |
 | 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | Pending |
 | 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | Pending |
 
@@ -122,11 +124,12 @@ BFF route, or UI is complete.
 
 - Uses the internally accepted transport/read-model work in
   [`260727-2026-realtime-analytics-foundation`](../260727-2026-realtime-analytics-foundation/plan.md).
-  Its external Kafka/release-owner gates do not block source implementation,
-  but must not be treated as acceptance or release evidence for this hardening.
+  Production Kafka ownership does not block source implementation. Main CI
+  `30413064146` and protected release `30413877863` are the acceptance and
+  publication evidence for this hardening.
 - Reuses the current opaque-session web candidate in
   [`260722-2342-production-web-platform`](../260722-2342-production-web-platform/plan.md)
-  but does not claim its protected external promotion is complete.
+  and uses its completed protected `v0.2.3` image promotion.
 - Does not depend on the RAG provider-account or hosted latency gates in
   [`260727-2048-deepseek-rag-assistant`](../260727-2048-deepseek-rag-assistant/plan.md).
 - Research basis: [backend and UI scout](./research/codebase-alert-center-scout.md)

@@ -131,10 +131,9 @@ Backend Java 21/Spring Boot là một Maven project riêng trong `backend/`. Ana
 Phase 1-6 đã được nghiệm thu bằng unit/HTTP/security/module test, PostgreSQL
 18/Flyway integration, analytics regression và local image smoke. Phase 7 có
 historical evidence cho outbox/image/recovery. Isolated alert-worker hardening
-đã merged locally với focused contract coverage; existing runner/workflow
-artifacts không phải hosted acceptance, image publication, hoặc external
-deployment của slice này.
-Protected production release/recovery approvals vẫn mở:
+đã merged trên `main`; hosted CI và protected image publication `v0.2.3` đã
+PASS. External production deployment, broker operations và recovery-policy
+ownership vẫn mở:
 
 - application bootstrap và module boundary,
 - security deny-by-default; chỉ exact health allowlist được public,
@@ -146,7 +145,7 @@ Protected production release/recovery approvals vẫn mở:
 - mutation quản trị dùng canonical idempotency bound theo tenant/principal/route; last-admin invariant, optimistic version và authorization-denial audit được giữ trong transaction ordering đã kiểm thử,
 - correlation ID, Problem Detail và security audit không lộ token/provider diagnostics,
 - liveness chỉ phản ánh process; readiness gồm database và Flyway schema history,
-- Flyway migrations cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models, immutable V22 alert storage, và follow-on alert-worker hardening đã merged locally với focused contract coverage,
+- Flyway migrations cùng repeatable helpers/grants tạo tenant anchor, identity/RBAC, tenant audit/idempotency, farm/workforce/activity/harvest/inventory/cost schema, transactional outbox, realtime read models, immutable V22 alert storage, và follow-on alert-worker hardening đã merged trên `main` và released trong `v0.2.3`,
 - `integration` module owns the transactional outbox writer/drain/store boundary; the opt-in worker publishes and consumes the bounded realtime envelope,
 - `realtime-alert-worker` dùng non-web profile và login `agriinsight_alert_worker`; chỉ service này tắt legacy publisher/consumer, scanner/observer chỉ đọc metadata được grant, lưu cursor durable, và không giữ raw payload/error; startup pin successful V28 và latest repeatable grant, không thể hạ bằng backend readiness,
 - activity/assignment/log/harvest API áp dụng manager/worker scope, bounded pagination, immutable correction lineage và KG/TONNE normalization,
@@ -173,7 +172,7 @@ source-evidence backfill trước worker enablement; V24-V27 mỗi migration t�
 concurrent scan index, V27 chỉ là readiness index cho invalid source evidence,
 và V28 sửa conflict target mơ hồ của acknowledgement function bằng forward
 migration mà không thay đổi V22. Follow-on alert-worker hardening đã
-merged locally với focused contract coverage: restricted login,
+merged trên `main` và released trong `v0.2.3`: restricted login,
 metadata-only scanner/observer, durable cursors, bounded pages,
 current-condition recovery, hysteresis, và saturation safety. Startup pin
 successful V28, latest repeatable grant, narrow relation/column privileges,
@@ -188,8 +187,8 @@ test reconstructs the fingerprinted official V1-V22 set plus its historical
 repeatable from commit `6927eeda70981c2461e85a165834e2464ba793d1`, applies
 current V23-V28 plus the current repeatable, validates, reruns zero-op, and
 preserves legacy invalid rows without performing the required pre-enable
-backfill. Không có public alert API/UI, broad semantic agriculture alert,
-hosted acceptance, new Docker Hub/GHCR package, image digest, hay external
+backfill. Hosted acceptance và backend-image publication đã được xác minh;
+không có public alert API/UI, broad semantic agriculture alert, hay external
 deployment cho slice này. Backend inventory/cost vẫn tách khỏi SQLite/Gold;
 procurement spend, inventory value và operating cost không gộp. Identity mặc
 định vẫn tắt cho đến khi deployment cung cấp đầy đủ OIDC contract.

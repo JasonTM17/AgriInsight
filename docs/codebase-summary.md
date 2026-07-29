@@ -1,6 +1,6 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-28 (alert-worker hardening source/Compose merged locally with focused contract coverage; not released)
+Verified snapshot: 2026-07-29 (alert-worker hardening merged on `main` and released as `v0.2.3`; four-image Docker Hub/GHCR publication verified)
 
 ## Repository shape
 
@@ -201,10 +201,9 @@ rechecks the current condition in the same snapshot, applies hysteresis, and
 reports saturation rather than performing unbounded scans.
 
 This is not a public alert feed/API/UI, a semantic agriculture-alert product,
-a hosted acceptance, a new Docker Hub/GHCR package, or an external deployment.
-Implementation and focused contract coverage are merged locally; those actions
-still wait for hosted CI, main merge, and the protected publication/release
-gates. The worker startup gate independently pins successful V28 and the latest
+or an external deployment. Implementation and focused contract coverage are
+merged on `main`; hosted CI and protected `v0.2.3` publication are complete.
+The worker startup gate independently pins successful V28 and the latest
 repeatable grant; `AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend
 readiness only.
 
@@ -306,19 +305,16 @@ identifier ambiguity. Readiness expects schema version 28.
 ## Next boundary
 
 The eight-area production-web implementation and Phase 11 browser gate are
-complete. Phase 12 is an internal container candidate: Dockerfiles, no-push
-build/scan/smoke, release overlays, serialized protected publication contract,
-and owner handoff exist. The alert-worker hardening is a separate boundary
-that is merged locally with focused contract coverage; hosted CI, main merge,
-protected publication, and release/recovery approvals must still complete
-before any protected backend image/package publication. Registry publication
-and any production-release claim remain blocked until the protected
-environment, reviewers/secrets, license, production OIDC/operations, and
-immutable-digest release evidence are approved.
+complete. The serialized Phase 12 publication path produced release `v0.2.3`
+for Python, backend, web, and analytics API with exact Docker Hub/GHCR digest
+agreement. The alert-worker hardening is a separate private boundary merged on
+`main` and carried by the released backend image. External production
+deployment remains blocked on the license decision, production OIDC/broker
+operations, recovery objectives/ownership, observability, and host controls.
 
 ## Unresolved questions
 
 - Production IdP/token fixtures and MFA policy.
 - Production audit retention and backup/restore objectives.
-- Protected release environment secrets/reviewers and release-token rotation owner.
-- Repository license and Docker Hub/GHCR visibility policy for the new images.
+- Release-token rotation owner and GHCR visibility policy.
+- Repository license.

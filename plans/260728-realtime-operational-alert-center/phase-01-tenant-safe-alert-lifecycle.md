@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Tenant-safe alert lifecycle
-status: in-progress
+status: completed
 effort: 2-3d
 ---
 
@@ -10,20 +10,22 @@ effort: 2-3d
 ## Overview
 
 Priority: P1  
-Current status: in progress
+Current status: completed and released in `v0.2.3`
 Owner boundary: backend database + separate realtime worker
 
 Create the durable, metadata-only alert lifecycle before exposing any new UI.
 It evaluates only transport evidence already owned by the outbox/realtime
 system, persists concise tenant alerts under FORCE RLS, and records a current
 profile's acknowledgement without changing the underlying operational fact.
-`V22` is immutable. The current V23-V28 worker hardening is in progress and
-readiness expects schema version 28. V23 adds `NOT VALID` source/evidence
+`V22` is immutable. The V23-V28 worker hardening is merged on `main`, released
+in `v0.2.3`, and readiness expects schema version 28. V23 adds `NOT VALID` source/evidence
 checks, so an operator must complete its idempotent 500-row source-evidence
 backfill before worker enablement. V24-V27 create one index concurrently each;
 V27 is the readiness-only invalid-source-evidence index. V28 repairs the
 acknowledgement function through a forward migration and does not replace the
-V23 backfill. Phase 2/3 public API, BFF, and UI work has not started.
+V23 backfill. The worker remains disabled until the backfill/readiness gate
+passes in the target database. Phase 2/3 public API, BFF, and UI work has not
+started.
 
 ## Context links
 
@@ -132,12 +134,12 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 | Path | Action | Purpose |
 |---|---|---|
 | `D:\AgriInsight\backend\src\main\resources\db\migration\V22__create_realtime_operational_alerts.sql` | Immutable baseline | Alert/revision tables, composite tenant/profile FKs, hysteresis fields, indexes, FORCE RLS policies, permission/role seeds. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V23__harden_realtime_operational_alert_worker.sql` | In progress | Additive `NOT VALID` source/evidence checks, restricted worker RLS/grants, and durable scan cursors; no table-wide legacy-row update/validation. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V24__add_realtime_alert_indexes_concurrently.sql` | In progress | One concurrent backlog scan index with named absent/invalid-index precondition. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V25__add_realtime_alert_delivery_lag_index_concurrently.sql` | In progress | One concurrent delivery-lag scan index with named absent/invalid-index precondition. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql` | In progress | One concurrent unrecovered-DLT scan index with named absent/invalid-index precondition. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V27__add_realtime_alert_evidence_readiness_index_concurrently.sql` | In progress | One concurrent readiness-only invalid-source-evidence scan index. |
-| `D:\AgriInsight\backend\src\main\resources\db\migration\V28__fix_realtime_alert_acknowledgement_function.sql` | In progress | Forward function replacement removes the ambiguous acknowledgement conflict target; application and worker readiness expect 28. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V23__harden_realtime_operational_alert_worker.sql` | Complete | Additive `NOT VALID` source/evidence checks, restricted worker RLS/grants, and durable scan cursors; no table-wide legacy-row update/validation. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V24__add_realtime_alert_indexes_concurrently.sql` | Complete | One concurrent backlog scan index with named absent/invalid-index precondition. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V25__add_realtime_alert_delivery_lag_index_concurrently.sql` | Complete | One concurrent delivery-lag scan index with named absent/invalid-index precondition. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V26__add_realtime_alert_unrecovered_dlt_index_concurrently.sql` | Complete | One concurrent unrecovered-DLT scan index with named absent/invalid-index precondition. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V27__add_realtime_alert_evidence_readiness_index_concurrently.sql` | Complete | One concurrent readiness-only invalid-source-evidence scan index. |
+| `D:\AgriInsight\backend\src\main\resources\db\migration\V28__fix_realtime_alert_acknowledgement_function.sql` | Complete | Forward function replacement removes the ambiguous acknowledgement conflict target; application and worker readiness expect 28. |
 | `D:\AgriInsight\backend\ops\postgres\backfill-realtime-alert-source-evidence.sql` | Run before worker enablement | Idempotent `agriinsight_migrator` backfill, at most 500 valid legacy rows per run; do not enable until both remaining-row checks are false. |
 | `D:\AgriInsight\backend\src\main\resources\db\migration\R__tenant_rls_helpers_and_grants.sql` | Modify | Revoke broad access first, then grant minimum columns to runtime, integration, and the separate alert-worker login without inheritance. |
 | `D:\AgriInsight\backend\src\main\java\com\agriinsight\backend\authorization\domain\Permission.java` | Modify | Add explicit alert read/ack permissions. |
@@ -239,25 +241,26 @@ tenants + outbox_events + realtime_event_receipts + alert metadata
 
 - [x] Freeze policy vocabulary and exclude semantic domain policies.
 - [x] Preserve V22 alert/revision baseline, profile RLS, grants, and permissions as immutable history.
-- [ ] Complete and verify V23-V28: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V27 one concurrent index each, V28 forward acknowledgement repair, expected schema version 28, and named invalid-index recovery.
-- [ ] Prove deterministic dedupe, current-condition recovery, concurrent acknowledgement revision, profile isolation, fair continuation, and saturation semantics.
-- [ ] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible; complete migration/test/review/merge before any protected publication.
+- [x] Complete and verify V23-V28: V23 additive `NOT VALID` evidence/cursor/worker hardening, V24-V27 one concurrent index each, V28 forward acknowledgement repair, expected schema version 28, and named invalid-index recovery.
+- [x] Prove deterministic dedupe, current-condition recovery, concurrent acknowledgement revision, profile isolation, fair continuation, and saturation semantics.
+- [x] Keep v1 event schema, summary endpoint, and existing Kafka tests compatible; complete migration/test/review/merge before protected publication.
 
 ## Success criteria
 
-- [ ] V23-V28 are proven on fresh and existing schema paths; V22 and every
-  applied migration remain untouched. V23 backfill completes before worker
-  enablement, V27 remains readiness-only, and V24-V27 recovery never blindly
-  retries an index migration. V28 preserves the acknowledgement function
-  contract while removing its ambiguous conflict target.
-- [ ] Every alert is deterministically attributable to a valid tenant and
+- [x] V23-V28 are proven on fresh and existing schema paths; V22 and every
+  applied migration remain untouched. The bounded V23 backfill/readiness path
+  prevents worker enablement while legacy rows remain, V27 stays
+  readiness-only, and V24-V27 recovery never blindly retries an index
+  migration. V28 preserves the acknowledgement function contract while
+  removing its ambiguous conflict target.
+- [x] Every alert is deterministically attributable to a valid tenant and
   source condition, with no payload/error/body retention; valid DLT values
   survive extra framework headers and malformed values stay unattributable.
-- [ ] RLS and grants prove runtime/integration least privilege, including
+- [x] RLS and grants prove runtime/integration least privilege, including
   same-tenant profile isolation and context reset.
-- [ ] Duplicate/retry/concurrent evaluation cannot create duplicate alerts;
+- [x] Duplicate/retry/concurrent evaluation cannot create duplicate alerts;
   healthy-duration/clean-streak rules prevent false recovery flapping.
-- [ ] Existing outbox/Kafka DLT behavior remains green; no raw payload/error is
+- [x] Existing outbox/Kafka DLT behavior remains green; no raw payload/error is
   retained by the alert worker.
 
 ## Risk assessment

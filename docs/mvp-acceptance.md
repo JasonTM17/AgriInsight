@@ -44,10 +44,10 @@
 ## Backlog của goal cấp dự án
 
 - [ ] Custom Report Builder tự cấu hình ngoài ba format Cost Analysis đã kiểm soát.
-- [ ] Hoàn tất protected production release/recovery approvals của backend Phase 7; technical, CI, registry và restore evidence đã có, còn authentication/RLS, Phase 4 operations, Phase 5 inventory/procurement và Phase 6 operating-cost đã nghiệm thu riêng.
-- [ ] Xây production frontend role-aware theo CK FE/Stitch design system và versioned OpenAPI contracts.
+- [ ] Hoàn tất external production deployment/recovery approvals của backend Phase 7; technical, CI, protected registry và restore evidence đã có, còn production OIDC/broker operations, RPO/RTO, off-host retention và owner approval.
+- [x] Xây production frontend role-aware theo CK FE/Stitch design system và versioned OpenAPI contracts; hosted seven-persona gate và image `0.2.3` đã được xác minh.
 - [ ] PostgreSQL/ClickHouse, Flyway/dbt và incremental ETL bằng Airflow.
-- [ ] Broad semantic agriculture alerts, public alert API/UI, multi-channel notifications, and mobile field application. The private metadata-only alert-worker hardening is still in progress.
+- [ ] Broad semantic agriculture alerts, public alert API/UI, multi-channel notifications, and mobile field application. The private metadata-only alert-worker hardening is complete and released, but it intentionally implements none of these public/domain features.
 - [ ] ML forecasting, anomaly detection, what-if analysis và model monitoring.
 - [ ] AI Assistant Text-to-SQL với guardrails và audit trail.
 
@@ -62,11 +62,13 @@ Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm
 ## Backend Phase 7 technical verification
 
 - [x] Historical foundation: transactional outbox, typed schema v1, dedicated NOLOGIN integration role, and fenced lease/retry/ack boundary.
-- [ ] In-progress isolated alert-worker hardening: immutable V22 baseline; V23-V28 with expected schema version 28; restricted `agriinsight_alert_worker` login; metadata-only scanner/observer; durable cursors; bounded recovery/hysteresis; and narrow RLS/grants. V23 backfill must finish before enablement, V27 is a readiness-only invalid-source-evidence index, and V28 is the forward acknowledgement-function repair. It still requires hosted tests, review, and merge.
-- [x] Pinned non-root Python/backend images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR workflow contract; manual phase tags đã pull-by-digest smoke ở cả hai registry.
+- [x] Isolated alert-worker hardening: immutable V22 baseline; V23-V28 with expected schema version 28; restricted `agriinsight_alert_worker` login; metadata-only scanner/observer; durable cursors; bounded recovery/hysteresis; and narrow RLS/grants. V23 backfill remains an enablement precondition, V27 is a readiness-only invalid-source-evidence index, and V28 is the forward acknowledgement-function repair. Hosted tests, review, merge, and protected publication passed for `v0.2.3`.
+- [x] Pinned non-root Python/backend/web/analytics API images, allowlisted contexts, local Compose overlay, CI build-without-push và protected Docker Hub/GHCR publication; semantic `0.2.3` and full-SHA tags passed exact-digest scan/smoke in both registries.
 - [x] D-local checksum/metadata backup và timed clean-target restore drill 11.045s; production RPO/RTO/off-host encryption/owner approval còn bắt buộc trước production.
 
 ## Backend Phase 7 production release gate
 
-- [ ] Protected tag-triggered production publish bằng environment secrets/reviewers và phê duyệt RPO/RTO/retention/encrypted off-host storage/restore owner.
-- [ ] No new image tag/digest, Docker Hub/GHCR package publication, public alert center, or external deployment is accepted for the in-progress alert-worker hardening. Protected publication may start only after migration, tests, review, and merge.
+- [x] Protected tag-triggered image publication bằng environment secrets/reviewers; run `30413877863` published `v0.2.3` after main CI.
+- [ ] Phê duyệt RPO/RTO/retention/encrypted off-host storage/restore owner và external production deployment.
+- [x] New image tag/digest and Docker Hub/GHCR package publication are accepted for the alert-worker hardening through the shared backend image.
+- [ ] Public alert center and external deployment remain outside the released worker-hardening boundary.

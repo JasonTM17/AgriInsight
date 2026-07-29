@@ -10,24 +10,24 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
 | Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
-| DeepSeek RAG assistant | Local implementation complete; protected release gate open | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, and versioned retrieval evaluation |
+| DeepSeek RAG assistant | Implemented and included in released images | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, versioned retrieval evaluation, and protected `v0.2.2`/`v0.2.3` image evidence |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
-| Frontend | Internal release candidate extended 2026-07-27 | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and four no-push image candidates |
+| Frontend | Hosted gate and image release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and protected `agriinsight-web:0.2.3` publication |
 
 ## Next backend phases
 
 | Phase | Goal | Dependency/status |
 |---|---|---|
 | Phase 6 | Cost management and reporting boundary | Accepted 2026-07-22; V16-V17 and 26 focused tests green |
-| Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Outbox/realtime foundation has historical evidence. The isolated alert-worker hardening is merged locally with focused contract coverage; hosted CI, main merge, protected publication, and release/recovery owner gates remain open. V27 adds the readiness-only invalid-source-evidence index, and V28 repairs the acknowledgement function without rewriting V22. |
+| Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Alert-worker hardening is merged on `main` and released in `v0.2.3`; main CI and protected four-image publication are green. V27 adds the readiness-only invalid-source-evidence index, and V28 repairs the acknowledgement function without rewriting V22. External deployment, broker ownership, and recovery objectives remain open. |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
-| Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 internal candidate is complete, while registry environment/reviewers/secrets and production operations remain owner-gated |
+| Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 published four verified `v0.2.3` images. Production hosting, OIDC/operations, package visibility, and credential rotation remain owner-gated. |
 
 ## Phase 5 checkpoint
 
-- Accepted locally on `/overview`, `/farms`, and `/farms/[farmId]`; not publicly released.
+- Accepted on `/overview`, `/farms`, and `/farms/[farmId]`; included in the released web image but not publicly deployed.
 - Evidence: [plan](../plans/260722-2342-production-web-platform/plan.md), [phase file](../plans/260722-2342-production-web-platform/phase-05-overview-and-farm-intelligence.md), [report](../plans/260722-2342-production-web-platform/reports/phase-05-overview-farm-intelligence-evidence-2026-07-26.md).
 - Work Operations, Inventory Control, Cost Analysis, Crop Health/Data Quality,
   and Tenant Administration are accepted through the hosted real-platform gate.
@@ -71,10 +71,10 @@ implicitly converted into operating cost.
 
 ## Release and platform backlog
 
-- Phase 7 already has hosted CI, dependency/image scanning, SBOM/provenance,
-  digest smoke, and identical Docker Hub/GHCR phase-image evidence. Keep the
-  protected production release environment and reviewer gates open until the
-  release owner approves them.
+- Release `v0.2.3` completed hosted CI, dependency/image scanning,
+  SBOM/provenance, exact-digest smoke, and identical Docker Hub/GHCR tags for
+  all four first-party images. Preserve the protected environment and reviewer
+  policy for later immutable tags.
 - `V22` alert storage is immutable. The isolated realtime alert worker is a
   private operational slice: V23-V28 target expected schema version 28, the
   worker startup gate independently pins successful V28 and the latest repeatable
@@ -86,18 +86,18 @@ implicitly converted into operating cost.
   non-web restricted login, metadata-only scans, durable cursors, bounded pages,
   recovery hysteresis, and a separate DLT observer. Do not promote it as a
   public alert product, a new REST/UI surface, a semantic agriculture-alert
-  policy, hosted acceptance, or a production release.
+  policy, or an external production deployment.
 - Existing `realtime-e2e` runner/workflow artifacts remain foundation evidence.
-  They are not acceptance for the follow-on hardening. Migration, focused tests,
-  review, main merge, production Kafka ownership, protected Docker Hub/GHCR
-  publication, and external deployment remain owner-gated.
+  Migration, focused tests, review, main merge, and protected Docker Hub/GHCR
+  publication are complete for the hardening. Production Kafka ownership and
+  external deployment remain owner-gated.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
   artifact. Keep the additive bounded GET reads, deterministic 67-path/94-op
   contract, and current 459+100 backend gate intact before any later phase
   reopens the contract surface.
-- Do not promote the manual `0.1.0-phase7`/commit tags as a production release;
-  non-root web and analytics API image candidates now exist, but protected
-  Docker Hub/GHCR publication remains an external release-owner action.
+- Do not promote the manual `0.1.0-phase7`/commit tags as current evidence;
+  use the semantic `0.2.3` and full-SHA tags from protected run `30413877863`.
+  Registry publication does not by itself approve an external deployment.
 - GitHub `main` is now the default branch. About description/topics, Discussions,
   security scanning, Dependabot, templates, CODEOWNERS, and repository labels
   are configured; social-preview upload remains a one-time web-settings action.

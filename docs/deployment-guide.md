@@ -1,10 +1,9 @@
 # Deployment Guide
 
-This guide documents the verified runtime contracts through the production-web
-internal release candidate and Backend Phase 7 core. It is not a production
-deployment approval: protected registry release, environment review, a
-scheduled recovery drill, and production release/recovery approvals remain
-required before production.
+This guide documents the verified runtime contracts through release `v0.2.3`
+and Backend Phase 7 core. It is not an external production deployment approval:
+production OIDC/broker operations, a scheduled recurring recovery drill,
+RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 
 ## Supported execution boundaries
 
@@ -12,11 +11,11 @@ required before production.
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
 | Internal analytics API | FastAPI read-only aggregate surface | Loopback/internal network only; Spring `/api/v1/me` remains the authorization source |
-| Next web platform | Eight-area hosted browser gate passed | Loopback/private internal candidate; external promotion remains protected-gated |
+| Next web platform | Eight-area hosted browser gate and `v0.2.3` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback, runs the alert observer internally, and exposes no broker/public worker API; production broker ownership remains gated |
-| Next web + analytics API images | Hosted-CI release candidate | Digest-pinned, loopback-published deployment only; registry publication remains protected-gated |
+| Next web + analytics API images | Published to Docker Hub/GHCR as `0.2.3` and full-SHA tags | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
 ## Preflight
@@ -409,34 +408,40 @@ The realtime contract is also included when API docs are enabled: `GET /api/v1/r
 
 ## Docker Hub release policy
 
-No production registry push is authorized by a successful local build. Hosted run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5 at commit `8d8463f`; the Temurin 21.0.11 JRE Noble backend image passed Trivy 0.70.0 with zero HIGH/CRITICAL and pull-by-digest smoke. Docker Hub/GHCR phase tags `0.1.0-phase7` and `sha-8d8463f` resolve to `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. These tags are evidence only: production must still use protected CI, immutable semantic-version/Git-SHA tags, SBOM/provenance, exact-digest scan/smoke, and no automatic `latest`. Do not mirror PostgreSQL or other third-party images.
+No registry push is authorized by a successful local build. Release
+[`v0.2.3`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.2.3) uses
+main commit `3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`. Main CI
+[`30413064146`](https://github.com/JasonTM17/AgriInsight/actions/runs/30413064146)
+and protected publication
+[`30413877863`](https://github.com/JasonTM17/AgriInsight/actions/runs/30413877863)
+passed for Python, backend, web, and analytics API. Each semantic `0.2.3` tag
+and full-SHA tag resolves to the same exact digest in Docker Hub and GHCR.
+There is no automatic `latest`; do not mirror PostgreSQL or other third-party
+images.
 
-The same tag-triggered workflow now covers Python, backend, web, and analytics
-API serially (`max-parallel: 1`). It scans and smokes a local candidate before
+The tag-triggered workflow covers Python, backend, web, and analytics API
+serially (`max-parallel: 1`). It scans and smokes a local candidate before
 registry authentication, then publishes both registries with BuildKit
-provenance/SBOM and repeats scan/smoke against the returned digest. New web and
-analytics packages are release targets only until the `release-images`
-environment, reviewers, `DOCKERHUB_USERNAME`, and `DOCKERHUB_TOKEN` are
-configured and an exact tag is approved. See the
+provenance/SBOM and repeats scan/smoke against the returned digest. The
+`release-images` environment, reviewer policy, `DOCKERHUB_USERNAME`, and
+`DOCKERHUB_TOKEN` are configured and approved per immutable tag. See the
 [repository-owner handoff](../plans/260722-2342-production-web-platform/reports/github-social-preview-owner-handoff.md).
 
-The default GHCR path uses the workflow `GITHUB_TOKEN` and requires each
-container package to be linked to this repository. If a legacy user-scoped
-package is intentionally retained but not linked, provide a narrowly scoped
-`GHCR_TOKEN` as an environment secret; it is a compatibility fallback, never a
-repository secret or image build argument.
+All four GHCR packages are linked to `JasonTM17/AgriInsight` and remain private.
+The configured `GHCR_TOKEN` is an environment-scoped legacy-package
+compatibility credential, never a repository secret or image build argument.
 
 ## Production blockers
 
-- Protected tag-triggered production release environment, secrets, reviewers, and promotion approval
-- Docker Hub/GHCR visibility and protected publication evidence for the new web and analytics API packages
 - Repository license decision; candidate images intentionally omit a license
   label until a root license is selected
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership
 - Encrypted off-host backup destination, retention/key owner, and approved recurring restore-drill schedule
+- External host, hostname/TLS, broker operations owner, observability, rollback
+  authority, and digest-pinned production deployment approval
 
 ## Unresolved Questions
 
 - Production OIDC provider and exact access-token contract
 - Audit retention/alerting owner
-- Production Docker Hub namespace/visibility plus least-privilege release-token rotation owner
+- GHCR visibility decision plus least-privilege release-token rotation owner

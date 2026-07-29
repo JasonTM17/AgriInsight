@@ -92,11 +92,11 @@ serialization, not exactly-once or broker ordering.
 
 Realtime source coverage includes authenticated MockMvc summary-route coverage,
 tenant-scoped RLS/privilege coverage, and Kafka E2E source paths after
-`scripts/run-realtime-e2e-tests.ps1`. Existing runner/workflow artifacts are
-foundation evidence only. The follow-on alert-worker hardening is merged
-locally with focused contract coverage: it is not a hosted acceptance, release
-image, Docker Hub/GHCR publication, or production SLA until hosted CI,
-main merge, and the protected release workflow complete.
+`scripts/run-realtime-e2e-tests.ps1`. The follow-on alert-worker hardening is
+merged on `main` and released in `v0.2.3`. The focused local gate passed 42
+tests; main CI `30413064146` and protected image publication `30413877863`
+passed at commit `3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`. This proves the
+hosted/release boundary, not a production SLA or external deployment.
 
 ## Role matrix
 
