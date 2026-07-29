@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: Exact backend alert API and BFF contract
-status: in-progress
+status: completed
 effort: 1.5-2d
 ---
 
@@ -10,8 +10,11 @@ effort: 1.5-2d
 ## Overview
 
 Priority: P1  
-Current status: pending; depends on Phase 1 durable alert lifecycle  
+Current status: completed; verified by PR #13 / CI run 30425647823
 Owner boundary: Spring HTTP contract + Next server BFF
+
+Completion evidence:
+[Phase 2 completion report](./reports/pm-260729-1245-alert-api-bff-completion.md).
 
 Expose the new projection through a narrow, tenant-safe feed and an idempotent
 acknowledgement operation. The existing realtime summary remains unchanged;
@@ -194,24 +197,24 @@ Browser receives typed, bounded, source-labelled view data only
 
 ## Todo list
 
-- [ ] Define closed no-query/latest-50 response and acknowledgement-revision contract/API examples.
-- [ ] Add V29 open-only acknowledgement repair and V30 concurrent exact feed index without rewriting earlier migrations.
-- [ ] Add permission-first tenant/profile service/store route implementation.
-- [ ] Regenerate and verify deterministic OpenAPI/web type contract.
-- [ ] Add same-origin BFF GET/POST handlers with no general-proxy capability.
-- [ ] Prove exact secured-route inventory, HTTP/BFF no-query, profile isolation,
+- [x] Define closed no-query/latest-50 response and acknowledgement-revision contract/API examples.
+- [x] Add V29 open-only acknowledgement repair and V30 concurrent exact feed index without rewriting earlier migrations.
+- [x] Add permission-first tenant/profile service/store route implementation.
+- [x] Regenerate and verify deterministic OpenAPI/web type contract.
+- [x] Add same-origin BFF GET/POST handlers with no general-proxy capability.
+- [x] Prove exact secured-route inventory, HTTP/BFF no-query, profile isolation,
       replay-after-resolution `404`, and idempotency/re-acknowledgement cases.
 
 ## Success criteria
 
-- [ ] Only permitted tenant users can list or acknowledge their own alert data.
-- [ ] Feed is server-fixed at latest 50 open alerts, source-labelled, and never
+- [x] Only permitted tenant users can list or acknowledge their own alert data.
+- [x] Feed is server-fixed at latest 50 open alerts, source-labelled, and never
   exposes raw payload/error/role/profile/tenant input controls or a mutable
   cursor promise.
-- [ ] Acknowledgement is idempotent and replay-safe under a currently valid
+- [x] Acknowledgement is idempotent and replay-safe under a currently valid
   authorization context.
-- [ ] Backend OpenAPI and generated web schema remain deterministic and exact.
-- [ ] BFF never leaks a backend bearer token or accepts proxy-style paths.
+- [x] Backend OpenAPI and generated web schema remain deterministic and exact.
+- [x] BFF never leaks a backend bearer token or accepts proxy-style paths.
 
 ## Risk assessment
 
