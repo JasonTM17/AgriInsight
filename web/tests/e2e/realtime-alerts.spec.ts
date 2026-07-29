@@ -312,13 +312,31 @@ async function expectPanelFitsViewport(
 ): Promise<void> {
   await expect.poll(async () => dialog.evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    return rect.left >= -1
-      && rect.top >= -1
-      && rect.right <= window.innerWidth + 1
-      && rect.bottom <= window.innerHeight + 1
-      && document.documentElement.scrollWidth
-        <= document.documentElement.clientWidth + 1;
-  })).toBe(true);
+    const viewport = {
+      height: window.innerHeight,
+      width: window.innerWidth
+    };
+    const documentWidth = {
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth
+    };
+
+    return {
+      documentFits: documentWidth.scroll <= documentWidth.client + 1,
+      panelFits: rect.left >= -1
+        && rect.top >= -1
+        && rect.right <= viewport.width + 1
+        && rect.bottom <= viewport.height + 1,
+      rect: {
+        bottom: Math.round(rect.bottom),
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        top: Math.round(rect.top)
+      },
+      viewport,
+      documentWidth
+    };
+  })).toMatchObject({ documentFits: true, panelFits: true });
 }
 
 async function expectPanelControlsAreTouchSized(dialog: Locator): Promise<void> {
