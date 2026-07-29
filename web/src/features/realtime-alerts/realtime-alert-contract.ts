@@ -2,6 +2,9 @@ import { z } from "zod";
 
 import type { components } from "@/server/generated/backend/schema";
 
+// These schemas execute in the browser under the nonce-only CSP.
+z.config({ jitless: true });
+
 type GeneratedEvidence = components["schemas"]["Evidence"];
 type GeneratedAlert = components["schemas"]["RealtimeOperationalAlertResponse"];
 type GeneratedFeed =

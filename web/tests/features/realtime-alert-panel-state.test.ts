@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import {
   acknowledgeRealtimeOperationalAlert,
@@ -32,6 +33,10 @@ const generatedAt = "2027-09-01T03:00:00Z";
 describe("realtime alert client and panel state", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("keeps browser response validation compatible with nonce-only CSP", () => {
+    expect(z.config().jitless).toBe(true);
   });
 
   it("gets the fixed same-origin feed with no query controls", async () => {
