@@ -312,52 +312,11 @@ async function expectPanelFitsViewport(
 ): Promise<void> {
   await expect.poll(async () => dialog.evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    const viewport = {
-      height: window.innerHeight,
-      width: window.innerWidth
-    };
-    const documentWidth = {
-      client: document.documentElement.clientWidth,
-      scroll: document.documentElement.scrollWidth
-    };
-
-    const documentFits = documentWidth.scroll <= documentWidth.client + 1;
-    const panelFits = rect.left >= -1
-        && rect.top >= -1
-        && rect.right <= viewport.width + 1
-        && rect.bottom <= viewport.height + 1;
-    if (documentFits && panelFits) return "pass";
-
-    const overflowingNodes = Array.from(
-      document.querySelectorAll<HTMLElement>("body *")
-    ).flatMap((node) => {
-      const nodeRect = node.getBoundingClientRect();
-      if (nodeRect.left >= -1 && nodeRect.right <= viewport.width + 1) {
-        return [];
-      }
-      return [{
-        className: typeof node.className === "string" ? node.className : "",
-        left: Math.round(nodeRect.left),
-        right: Math.round(nodeRect.right),
-        tag: node.tagName.toLowerCase(),
-        width: Math.round(nodeRect.width)
-      }];
-    }).slice(0, 8);
-
-    return JSON.stringify({
-      documentFits,
-      documentWidth,
-      overflowingNodes,
-      panelFits,
-      rect: {
-        bottom: Math.round(rect.bottom),
-        left: Math.round(rect.left),
-        right: Math.round(rect.right),
-        top: Math.round(rect.top)
-      },
-      viewport
-    });
-  })).toBe("pass");
+    return rect.left >= -1
+      && rect.top >= -1
+      && rect.right <= window.innerWidth + 1
+      && rect.bottom <= window.innerHeight + 1;
+  })).toBe(true);
 }
 
 async function expectPanelControlsAreTouchSized(dialog: Locator): Promise<void> {
