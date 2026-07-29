@@ -12,7 +12,10 @@ import {
   getSupplierCatalog,
   getVisibleWarehouses
 } from "@/features/inventory/inventory-generated-client-adapter";
-import { inventoryAnalyticsEnvelopeSchema } from "@/features/inventory/inventory-analytics-contract-schema";
+import {
+  inventoryAnalyticsEnvelopeSchema,
+  parseScopedInventoryAnalytics
+} from "@/features/inventory/inventory-analytics-contract-schema";
 import { loadInventoryViewModel } from "@/features/inventory/load-inventory-view-model";
 import {
   inventoryHref,
@@ -114,6 +117,50 @@ const supplier = {
   version: 1
 } as const;
 
+const forecastEvidence = {
+  asOfDate: "2027-01-01",
+  modelVersion: "mean-daily-usage-90d-v1",
+  coverageStatus: "ready",
+  historyStartDate: "2026-07-06",
+  historyEndDate: "2027-01-01",
+  historyDays: 180,
+  nonzeroDemandDays: 43,
+  horizonDays: 30,
+  forecastQuantity: 19,
+  lowerQuantity: 17,
+  upperQuantity: 23,
+  backtestWindows: 9,
+  backtestMae: 2.5,
+  backtestWapePct: 12.75,
+  forecastDaysOfSupply: 6.5,
+  forecastSuggestedOrderQuantity: 41
+} as const;
+
+const inventoryStatus = {
+  abcClass: "A",
+  averageDailyUsage: 2.37,
+  averageUnitCostVnd: 12_000,
+  baseUnit: "KG",
+  category: "Fertilizer",
+  daysOfSupply: 50.8,
+  daysToExpiry: null,
+  farmCode: "FARM-01",
+  farmName: "Nông trại Trung tâm",
+  forecast: forecastEvidence,
+  inventoryValueVnd: 1_500_000,
+  materialCode: "FERT-001",
+  materialName: "Phân NPK",
+  nearestExpiryDate: "2027-12-31",
+  predicted30dNeed: 71,
+  recommendedOrderQuantity: 81,
+  reorderPoint: 50,
+  stockQuantity: 120.5,
+  stockStatus: "healthy",
+  targetStockLevel: 200,
+  warehouseCode: "WH-01",
+  warehouseName: "Kho trung tâm"
+} as const;
+
 const analyticsEnvelope = {
   freshness: {
     artifactAgeHours: 1,
@@ -130,6 +177,13 @@ const analyticsEnvelope = {
   payload: {
     abc: [],
     alerts: [],
+    forecastHealth: {
+      ready: 0,
+      noDemand: 0,
+      insufficientHistory: 0,
+      unavailable: 0,
+      total: 0
+    },
     items: [],
     page: { hasMore: false, limit: 50, offset: 0, total: 0 },
     summary: {
@@ -351,6 +405,122 @@ describe("inventory route state", () => {
   });
 });
 
+describe("inventory forecast analytics contract", () => {
+  it("accepts only the exact nested forecast evidence and aggregate health shape", () => {
+    const result = inventoryAnalyticsEnvelopeSchema.safeParse({
+      ...analyticsEnvelope,
+      payload: {
+        ...analyticsEnvelope.payload,
+        forecastHealth: {
+          ready: 1,
+          noDemand: 2,
+          insufficientHistory: 3,
+          unavailable: 4,
+          total: 10
+        },
+        items: [inventoryStatus],
+        page: { ...analyticsEnvelope.payload.page, total: 10_001 }
+      }
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) throw result.error;
+    expect(result.data.payload.items[0]?.forecast).toEqual(forecastEvidence);
+    expect(result.data.payload.forecastHealth).toEqual({
+      ready: 1,
+      noDemand: 2,
+      insufficientHistory: 3,
+      unavailable: 4,
+      total: 10
+    });
+  });
+
+  it("rejects foreign, invalid, nonfinite, and extra forecast evidence", () => {
+    const scopedValue = {
+      ...analyticsEnvelope,
+      payload: {
+        ...analyticsEnvelope.payload,
+        forecastHealth: { ready: 1, noDemand: 0, insufficientHistory: 0, unavailable: 0, total: 1 },
+        items: [inventoryStatus]
+      }
+    };
+
+    expect(() => parseScopedInventoryAnalytics({
+      ...scopedValue,
+      payload: {
+        ...scopedValue.payload,
+        items: [{ ...inventoryStatus, warehouseCode: "WH-OTHER" }]
+      }
+    }, "WH-01")).toThrow("Inventory analytics scope mismatch");
+    expect(inventoryAnalyticsEnvelopeSchema.safeParse({
+      ...scopedValue,
+      payload: {
+        ...scopedValue.payload,
+        items: [{
+          ...inventoryStatus,
+          forecast: { ...forecastEvidence, coverageStatus: "unknown" }
+        }]
+      }
+    }).success).toBe(false);
+    expect(inventoryAnalyticsEnvelopeSchema.safeParse({
+      ...scopedValue,
+      payload: {
+        ...scopedValue.payload,
+        items: [{
+          ...inventoryStatus,
+          forecast: { ...forecastEvidence, forecastQuantity: Number.POSITIVE_INFINITY }
+        }]
+      }
+    }).success).toBe(false);
+    expect(inventoryAnalyticsEnvelopeSchema.safeParse({
+      ...scopedValue,
+      payload: {
+        ...scopedValue.payload,
+        items: [{
+          ...inventoryStatus,
+          forecast: { ...forecastEvidence, untrusted: true }
+        }]
+      }
+    }).success).toBe(false);
+    for (const forecast of [
+      { ...forecastEvidence, historyDays: 0 },
+      { ...forecastEvidence, nonzeroDemandDays: 181 },
+      { ...forecastEvidence, horizonDays: 31 },
+      { ...forecastEvidence, backtestWindows: 10 },
+      { ...forecastEvidence, modelVersion: "m".repeat(65) },
+      { ...forecastEvidence, coverageStatus: "unavailable", forecastQuantity: 1 }
+    ]) {
+      expect(inventoryAnalyticsEnvelopeSchema.safeParse({
+        ...scopedValue,
+        payload: {
+          ...scopedValue.payload,
+          items: [{ ...inventoryStatus, forecast }]
+        }
+      }).success).toBe(false);
+    }
+    expect(inventoryAnalyticsEnvelopeSchema.safeParse({
+      ...scopedValue,
+      payload: {
+        ...scopedValue.payload,
+        items: Array.from({ length: 101 }, () => inventoryStatus)
+      }
+    }).success).toBe(false);
+    expect(inventoryAnalyticsEnvelopeSchema.safeParse({
+      ...scopedValue,
+      payload: {
+        ...scopedValue.payload,
+        forecastHealth: {
+          ready: 1,
+          noDemand: 0,
+          insufficientHistory: 0,
+          unavailable: 0,
+          total: 2
+        }
+      }
+    }).success).toBe(false);
+  });
+});
+
 describe("inventory analytics rendering", () => {
   it("renders dynamic ABC shares without CSP-blocked style attributes", () => {
     const data = inventoryAnalyticsEnvelopeSchema.parse({
@@ -382,6 +552,154 @@ describe("inventory analytics rendering", () => {
     expect(markup).toContain('max="100"');
     expect(markup).toContain('value="42.3"');
     expect(markup).not.toContain("style=");
+  });
+
+  it("renders server-provided forecast evidence separately from legacy stock policy", () => {
+    const data = inventoryAnalyticsEnvelopeSchema.parse({
+      ...analyticsEnvelope,
+      payload: {
+        ...analyticsEnvelope.payload,
+        forecastHealth: { ready: 1, noDemand: 0, insufficientHistory: 0, unavailable: 0, total: 1 },
+        items: [inventoryStatus]
+      }
+    });
+    const markup = renderToStaticMarkup(createElement(
+      InventoryAnalyticsPanels,
+      {
+        analytics: { status: "ready", data },
+        hasOperationalFilters: false,
+        selectedWarehouseCode: "WH-01"
+      }
+    ));
+
+    expect(markup).toContain("Bằng chứng dự báo nhu cầu");
+    expect(markup).toContain("Độ mới: Hiện hành");
+    expect(markup).toContain("Dự báo điểm");
+    expect(markup).toContain("19 KG");
+    expect(markup).toContain("17 KG – 23 KG");
+    expect(markup).toContain("41 KG");
+    expect(markup).toContain("6,5 ngày");
+    expect(markup).toContain("Nhu cầu 30 ngày theo chính sách");
+    expect(markup).toContain("71 KG");
+    expect(markup).toContain("Đề xuất nhập theo chính sách");
+    expect(markup).toContain("81 KG");
+    expect(markup).toContain("mean-daily-usage-90d-v1");
+    expect(markup).toContain("Đánh giá ngược");
+  });
+
+  it("names insufficient history and preserves a semantic no-status state", () => {
+    const noHistoryForecast = {
+      asOfDate: "2027-01-01",
+      modelVersion: "mean-daily-usage-90d-v1",
+      coverageStatus: "insufficientHistory",
+      historyStartDate: "2026-12-30",
+      historyEndDate: "2027-01-01",
+      historyDays: 3,
+      nonzeroDemandDays: 1,
+      horizonDays: null,
+      forecastQuantity: null,
+      lowerQuantity: null,
+      upperQuantity: null,
+      backtestWindows: null,
+      backtestMae: null,
+      backtestWapePct: null,
+      forecastDaysOfSupply: null,
+      forecastSuggestedOrderQuantity: null
+    } as const;
+    const evidenceData = inventoryAnalyticsEnvelopeSchema.parse({
+      ...analyticsEnvelope,
+      payload: {
+        ...analyticsEnvelope.payload,
+        forecastHealth: { ready: 0, noDemand: 0, insufficientHistory: 1, unavailable: 0, total: 1 },
+        items: [{ ...inventoryStatus, forecast: noHistoryForecast }]
+      }
+    });
+    const evidenceMarkup = renderToStaticMarkup(createElement(
+      InventoryAnalyticsPanels,
+      {
+        analytics: { status: "ready", data: evidenceData },
+        hasOperationalFilters: false,
+        selectedWarehouseCode: "WH-01"
+      }
+    ));
+    const emptyData = inventoryAnalyticsEnvelopeSchema.parse(analyticsEnvelope);
+    const emptyMarkup = renderToStaticMarkup(createElement(
+      InventoryAnalyticsPanels,
+      {
+        analytics: { status: "ready", data: emptyData },
+        hasOperationalFilters: false,
+        selectedWarehouseCode: "WH-01"
+      }
+    ));
+
+    expect(evidenceMarkup).toContain("Thiếu lịch sử");
+    expect(evidenceMarkup).toContain("Chưa đủ lịch sử để đưa dự báo; không tự nội suy.");
+    expect(emptyMarkup).toContain('role="status"');
+    expect(emptyMarkup).toContain("Không có dòng tình trạng SKU-location trong snapshot này.");
+  });
+
+  it("explains unavailable evidence and translates every forecast freshness status", () => {
+    const unavailableForecast = {
+      ...forecastEvidence,
+      asOfDate: null,
+      modelVersion: null,
+      coverageStatus: "unavailable",
+      historyStartDate: null,
+      historyEndDate: null,
+      historyDays: null,
+      nonzeroDemandDays: null,
+      horizonDays: null,
+      forecastQuantity: null,
+      lowerQuantity: null,
+      upperQuantity: null,
+      backtestWindows: null,
+      backtestMae: null,
+      backtestWapePct: null,
+      forecastDaysOfSupply: null,
+      forecastSuggestedOrderQuantity: null
+    } as const;
+    const unavailableData = inventoryAnalyticsEnvelopeSchema.parse({
+      ...analyticsEnvelope,
+      payload: {
+        ...analyticsEnvelope.payload,
+        forecastHealth: { ready: 0, noDemand: 0, insufficientHistory: 0, unavailable: 1, total: 1 },
+        items: [{ ...inventoryStatus, forecast: unavailableForecast }]
+      }
+    });
+    const unavailableMarkup = renderToStaticMarkup(createElement(
+      InventoryAnalyticsPanels,
+      {
+        analytics: { status: "ready", data: unavailableData },
+        hasOperationalFilters: false,
+        selectedWarehouseCode: "WH-01"
+      }
+    ));
+
+    expect(unavailableMarkup).toContain("Không có dự báo");
+    expect(unavailableMarkup).toContain(
+      "Máy chủ không cung cấp bằng chứng dự báo cho SKU-location này."
+    );
+    for (const [dataStatus, label] of Object.entries({
+      current: "Hiện hành",
+      stale: "Đã cũ",
+      partial: "Một phần",
+      missing: "Thiếu dữ liệu"
+    })) {
+      const data = inventoryAnalyticsEnvelopeSchema.parse({
+        ...analyticsEnvelope,
+        freshness: { ...analyticsEnvelope.freshness, dataStatus }
+      });
+      const markup = renderToStaticMarkup(createElement(
+        InventoryAnalyticsPanels,
+        {
+          analytics: { status: "ready", data },
+          hasOperationalFilters: false,
+          selectedWarehouseCode: "WH-01"
+        }
+      ));
+
+      expect(markup).toContain(`Độ mới: ${label}`);
+    }
   });
 });
 
@@ -453,6 +771,57 @@ describe("inventory view-model loader", () => {
       status: "ready",
       data: { items: [stockBalance] }
     });
+  });
+
+  it("keeps the analytics request warehouse-scoped and degrades an invalid forecast response", async () => {
+    vi.mocked(executeAllowedOperation).mockImplementation(async (_env, operation) => {
+      if (operation === "warehouseCatalog") return Response.json(fixedPage([warehouse]));
+      if (operation === "inventoryBalances") return Response.json(boundedPage([stockBalance], 0));
+      if (operation === "inventoryLots") return Response.json(boundedPage([stockLot], 0));
+      if (operation === "inventoryTransactions") {
+        return Response.json(boundedPage([inventoryTransaction], 0));
+      }
+      if (operation === "analyticsInventory") {
+        return Response.json({
+          ...analyticsEnvelope,
+          payload: {
+            ...analyticsEnvelope.payload,
+            forecastHealth: { ready: 1, noDemand: 0, insufficientHistory: 0, unavailable: 0, total: 1 },
+            items: [{
+              ...inventoryStatus,
+              forecast: { ...forecastEvidence, coverageStatus: "not-a-coverage-status" }
+            }]
+          }
+        });
+      }
+      throw new Error(`Unexpected operation: ${operation}`);
+    });
+
+    const state = parseInventoryRouteState({ warehouseId })!;
+    const result = await loadInventoryViewModel({
+      env: {} as never,
+      accessToken: "server-token",
+      correlationId: "correlation-invalid-forecast",
+      state,
+      canManage: false
+    });
+
+    if (result.kind !== "ready") throw new Error("Expected a ready inventory view");
+    expect(executeAllowedOperation).toHaveBeenCalledWith(
+      expect.anything(),
+      "analyticsInventory",
+      "server-token",
+      "correlation-invalid-forecast",
+      { limit: 50, offset: 0, warehouse_code: "WH-01" }
+    );
+    expect(result.analytics).toMatchObject({
+      status: "failed",
+      message: "Không thể tải phân tích Gold cho kho này."
+    });
+    expect(result.balances.status).toBe("ready");
+    expect(result.lots.status).toBe("ready");
+    expect(result.transactions.status).toBe("ready");
+    expect(result.partial).toBe(true);
   });
 
   it("preserves the server-provided lot order verbatim", async () => {

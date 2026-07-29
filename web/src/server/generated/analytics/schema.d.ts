@@ -759,6 +759,19 @@ export interface components {
             /** Temperaturec */
             readonly temperatureC: number;
         };
+        /** ForecastHealthModel */
+        readonly ForecastHealthModel: {
+            /** Insufficienthistory */
+            readonly insufficientHistory: number;
+            /** Nodemand */
+            readonly noDemand: number;
+            /** Ready */
+            readonly ready: number;
+            /** Total */
+            readonly total: number;
+            /** Unavailable */
+            readonly unavailable: number;
+        };
         /** FreshnessModel */
         readonly FreshnessModel: {
             /** Artifactagehours */
@@ -877,19 +890,49 @@ export interface components {
             /** Warehousename */
             readonly warehouseName: string;
         };
-        /** InventoryPayload */
-        readonly InventoryPayload: {
-            /** Abc */
-            readonly abc: readonly components["schemas"]["InventoryAbcModel"][];
-            /** Alerts */
-            readonly alerts: readonly components["schemas"]["InventoryAlertModel"][];
-            /** Items */
-            readonly items: readonly components["schemas"]["InventoryStatusModel"][];
-            readonly page: components["schemas"]["PageModel"];
-            readonly summary: components["schemas"]["InventorySummaryModel"];
+        /** InventoryForecastModel */
+        readonly InventoryForecastModel: {
+            /** Asofdate */
+            readonly asOfDate: string | null;
+            /** Backtestmae */
+            readonly backtestMae: number | null;
+            /** Backtestwapepct */
+            readonly backtestWapePct: number | null;
+            /** Backtestwindows */
+            readonly backtestWindows: number | null;
+            /**
+             * Coveragestatus
+             * @enum {string}
+             */
+            readonly coverageStatus: "ready" | "noDemand" | "insufficientHistory" | "unavailable";
+            /** Forecastdaysofsupply */
+            readonly forecastDaysOfSupply: number | null;
+            /** Forecastquantity */
+            readonly forecastQuantity: number | null;
+            /** Forecastsuggestedorderquantity */
+            readonly forecastSuggestedOrderQuantity: number | null;
+            /** Historydays */
+            readonly historyDays: number | null;
+            /** Historyenddate */
+            readonly historyEndDate: string | null;
+            /** Historystartdate */
+            readonly historyStartDate: string | null;
+            /** Horizondays */
+            readonly horizonDays: 30 | null;
+            /** Lowerquantity */
+            readonly lowerQuantity: number | null;
+            /** Modelversion */
+            readonly modelVersion: string | null;
+            /** Nonzerodemanddays */
+            readonly nonzeroDemandDays: number | null;
+            /** Upperquantity */
+            readonly upperQuantity: number | null;
         };
-        /** InventoryStatusModel */
-        readonly InventoryStatusModel: {
+        /**
+         * InventoryItemModel
+         * @description Public inventory item; raw forecast columns stay internal to Gold CSV.
+         */
+        readonly InventoryItemModel: {
             /**
              * Abcclass
              * @enum {string}
@@ -911,6 +954,7 @@ export interface components {
             readonly farmCode: string;
             /** Farmname */
             readonly farmName: string;
+            readonly forecast: components["schemas"]["InventoryForecastModel"];
             /** Inventoryvaluevnd */
             readonly inventoryValueVnd: number;
             /** Materialcode */
@@ -935,6 +979,18 @@ export interface components {
             readonly warehouseCode: string;
             /** Warehousename */
             readonly warehouseName: string;
+        };
+        /** InventoryPayload */
+        readonly InventoryPayload: {
+            /** Abc */
+            readonly abc: readonly components["schemas"]["InventoryAbcModel"][];
+            /** Alerts */
+            readonly alerts: readonly components["schemas"]["InventoryAlertModel"][];
+            readonly forecastHealth: components["schemas"]["ForecastHealthModel"];
+            /** Items */
+            readonly items: readonly components["schemas"]["InventoryItemModel"][];
+            readonly page: components["schemas"]["PageModel"];
+            readonly summary: components["schemas"]["InventorySummaryModel"];
         };
         /** InventorySummaryModel */
         readonly InventorySummaryModel: {
@@ -1259,13 +1315,15 @@ export type SchemaFarmPerformanceModel = components['schemas']['FarmPerformanceM
 export type SchemaFarmScopeSummaryModel = components['schemas']['FarmScopeSummaryModel'];
 export type SchemaFarmsPayload = components['schemas']['FarmsPayload'];
 export type SchemaFieldHealthModel = components['schemas']['FieldHealthModel'];
+export type SchemaForecastHealthModel = components['schemas']['ForecastHealthModel'];
 export type SchemaFreshnessModel = components['schemas']['FreshnessModel'];
 export type SchemaInsightEvidenceModel = components['schemas']['InsightEvidenceModel'];
 export type SchemaInsightModel = components['schemas']['InsightModel'];
 export type SchemaInventoryAbcModel = components['schemas']['InventoryAbcModel'];
 export type SchemaInventoryAlertModel = components['schemas']['InventoryAlertModel'];
+export type SchemaInventoryForecastModel = components['schemas']['InventoryForecastModel'];
+export type SchemaInventoryItemModel = components['schemas']['InventoryItemModel'];
 export type SchemaInventoryPayload = components['schemas']['InventoryPayload'];
-export type SchemaInventoryStatusModel = components['schemas']['InventoryStatusModel'];
 export type SchemaInventorySummaryModel = components['schemas']['InventorySummaryModel'];
 export type SchemaJsonValue = components['schemas']['JsonValue'];
 export type SchemaLineageModel = components['schemas']['LineageModel'];

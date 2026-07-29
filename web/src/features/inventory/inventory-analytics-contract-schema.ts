@@ -8,12 +8,79 @@ type InventoryEnvelope =
   components["schemas"]["AnalyticsEnvelope_InventoryPayload_"];
 type InventoryAbc = components["schemas"]["InventoryAbcModel"];
 type InventoryAlert = components["schemas"]["InventoryAlertModel"];
-type InventoryStatus = components["schemas"]["InventoryStatusModel"];
+type InventoryStatus = components["schemas"]["InventoryItemModel"];
 type InventorySummary = components["schemas"]["InventorySummaryModel"];
 type AppliedFilter = components["schemas"]["AppliedFilterModel"];
 
 const finite = z.number().finite();
 const nullableFinite = finite.nullable();
+const nonnegativeInteger = finite.int().nonnegative();
+const nullableNonnegativeFinite = finite.nonnegative().nullable();
+const nullableIsoDate = z.iso.date().nullable();
+const nullableModelVersion = z.string().max(64).nullable();
+const nullableHistoryDays = finite.int().min(1).max(180).nullable();
+const nullableNonzeroDemandDays = nonnegativeInteger.max(180).nullable();
+const nullableHorizonDays = z.literal(30).nullable();
+const nullableBacktestWindows = nonnegativeInteger.max(9).nullable();
+
+const forecastShape = {
+  asOfDate: nullableIsoDate,
+  modelVersion: nullableModelVersion,
+  coverageStatus: z.enum([
+    "ready",
+    "noDemand",
+    "insufficientHistory",
+    "unavailable"
+  ]),
+  historyStartDate: nullableIsoDate,
+  historyEndDate: nullableIsoDate,
+  historyDays: nullableHistoryDays,
+  nonzeroDemandDays: nullableNonzeroDemandDays,
+  horizonDays: nullableHorizonDays,
+  forecastQuantity: nullableNonnegativeFinite,
+  lowerQuantity: nullableNonnegativeFinite,
+  upperQuantity: nullableNonnegativeFinite,
+  backtestWindows: nullableBacktestWindows,
+  backtestMae: nullableNonnegativeFinite,
+  backtestWapePct: nullableNonnegativeFinite,
+  forecastDaysOfSupply: nullableNonnegativeFinite,
+  forecastSuggestedOrderQuantity: nullableNonnegativeFinite
+};
+
+const forecastHealthShape = {
+  ready: nonnegativeInteger,
+  noDemand: nonnegativeInteger,
+  insufficientHistory: nonnegativeInteger,
+  unavailable: nonnegativeInteger,
+  total: nonnegativeInteger
+};
+
+const forecastSchema = z.object(forecastShape).strict().superRefine(
+  (forecast, context) => {
+    if (forecast.coverageStatus !== "unavailable") return;
+    if (Object.entries(forecast).some(([key, value]) => key !== "coverageStatus" && value !== null)) {
+      context.addIssue({
+        code: "custom",
+        message: "Unavailable forecast evidence must be null."
+      });
+    }
+  }
+).readonly();
+const forecastHealthSchema = z.object(forecastHealthShape).strict().superRefine(
+  (health, context) => {
+    const covered =
+      health.ready +
+      health.noDemand +
+      health.insufficientHistory +
+      health.unavailable;
+    if (covered !== health.total) {
+      context.addIssue({
+        code: "custom",
+        message: "Forecast health counters must equal total."
+      });
+    }
+  }
+).readonly();
 
 const abcShape = {
   abcClass: z.enum(["A", "B", "C"]),
@@ -52,6 +119,7 @@ const statusShape = {
   daysToExpiry: nullableFinite,
   farmCode: z.string(),
   farmName: z.string(),
+  forecast: forecastSchema,
   inventoryValueVnd: finite,
   materialCode: z.string(),
   materialName: z.string(),
@@ -109,9 +177,10 @@ export const inventoryAnalyticsEnvelopeSchema = z.object({
     runId: z.string().min(1)
   }).strict().readonly(),
   payload: z.object({
-    abc: z.array(abcSchema).readonly(),
-    alerts: z.array(alertSchema).readonly(),
-    items: z.array(statusSchema).readonly(),
+    abc: z.array(abcSchema).max(100).readonly(),
+    alerts: z.array(alertSchema).max(100).readonly(),
+    forecastHealth: forecastHealthSchema,
+    items: z.array(statusSchema).max(100).readonly(),
     page: z.object({
       hasMore: z.boolean(),
       limit: z.number().int().min(1).max(100),
@@ -132,6 +201,10 @@ export const inventoryAnalyticsEnvelopeSchema = z.object({
 export type InventoryAnalyticsEnvelope = z.output<
   typeof inventoryAnalyticsEnvelopeSchema
 >;
+export type InventoryForecastEvidence = z.output<typeof forecastSchema>;
+export type InventoryForecastHealth = z.output<typeof forecastHealthSchema>;
+export type InventoryForecastCoverageStatus =
+  InventoryForecastEvidence["coverageStatus"];
 
 export function parseScopedInventoryAnalytics(
   value: unknown,

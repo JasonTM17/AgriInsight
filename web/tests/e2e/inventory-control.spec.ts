@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import {
@@ -35,7 +36,24 @@ async function expectNoHorizontalOverflow(
         () => document.documentElement.scrollWidth <= window.innerWidth
       )
     )
-    .toBe(true);
+      .toBe(true);
+}
+
+async function expectForecastPanelAccessible(
+  page: import("@playwright/test").Page
+) {
+  const results = await new AxeBuilder({ page })
+    .include('section[aria-labelledby="forecast-title"]')
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  const blockers = results.violations.filter((violation) =>
+    ["critical", "serious"].includes(violation.impact ?? "")
+  );
+  expect(blockers.map((violation) => ({
+    id: violation.id,
+    impact: violation.impact,
+    targets: violation.nodes.flatMap((node) => node.target)
+  }))).toEqual([]);
 }
 
 test("@inventory manager records a receipt, issue and ETag reversal", async ({
@@ -47,7 +65,9 @@ test("@inventory manager records a receipt, issue and ETag reversal", async ({
 
   await expect(page.getByTestId("inventory-control-page")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Kiểm soát tồn kho" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bằng chứng dự báo nhu cầu" })).toBeVisible();
   await expect(page.getByTestId("inventory-transaction-form")).toBeVisible();
+  await expectForecastPanelAccessible(page);
   await expectNoHorizontalOverflow(page);
 
   const requestKeys: string[] = [];

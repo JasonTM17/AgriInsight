@@ -11,6 +11,10 @@ export function formatQuantity(value: number, unit: string): string {
   return `${numberFormatter.format(value)} ${unit}`;
 }
 
+export function formatCompactNumber(value: number): string {
+  return numberFormatter.format(value);
+}
+
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
@@ -35,4 +39,24 @@ export function formatDateTime(value: string): string {
         dateStyle: "short",
         timeStyle: "short"
       }).format(parsed);
+}
+
+export function formatDataStatus(
+  value: "current" | "stale" | "partial" | "missing"
+): string {
+  return value === "current"
+    ? "Hiện hành"
+    : value === "stale"
+      ? "Đã cũ"
+      : value === "partial"
+        ? "Một phần"
+        : "Thiếu dữ liệu";
+}
+
+export function formatHours(value: number): string {
+  return `${formatCompactNumber(value)} giờ`;
+}
+
+export function formatOptionalDays(value: number | null): string {
+  return value === null ? "Chưa có" : `${formatCompactNumber(value)} ngày`;
 }

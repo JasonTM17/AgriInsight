@@ -1,13 +1,15 @@
-import type {
-  InventoryAnalyticsEnvelope
-} from "../inventory-analytics-contract-schema";
+import type { InventoryAnalyticsEnvelope } from "../inventory-analytics-contract-schema";
 import type { SourceResult } from "../load-inventory-view-model";
 import {
   formatCurrency,
+  formatDataStatus,
   formatDate,
+  formatHours,
+  formatOptionalDays,
   formatQuantity
 } from "../inventory-format";
 import styles from "./inventory-control.module.css";
+import { InventoryForecastEvidencePanel } from "./inventory-forecast-evidence-panel";
 
 export function InventoryAnalyticsPanels({
   analytics,
@@ -38,11 +40,12 @@ export function InventoryAnalyticsPanels({
           <p>
             {hasOperationalFilters
               ? "Tổng hợp Gold vẫn là toàn kho; bộ lọc vận hành chỉ áp dụng cho các bảng Spring."
-              : "ABC, cảnh báo và ngày cung ứng là kết quả đã kiểm chứng từ pipeline analytics."}
+              : "ABC, cảnh báo, chính sách tồn kho và bằng chứng dự báo là kết quả đã kiểm chứng từ pipeline analytics."}
           </p>
         </div>
         <span className={styles.snapshotBadge}>
-          {freshness.dataStatus} · {freshness.artifactAgeHours} giờ tuổi
+          Độ mới: {formatDataStatus(freshness.dataStatus)} ·{" "}
+          {formatHours(freshness.artifactAgeHours)} tuổi
         </span>
       </div>
       <div className={styles.kpiGrid}>
@@ -55,6 +58,11 @@ export function InventoryAnalyticsPanels({
         <AlertQueue alerts={payload.alerts} />
         <AbcPanel abc={payload.abc} />
       </div>
+      <InventoryForecastEvidencePanel
+        freshness={freshness}
+        health={payload.forecastHealth}
+        items={payload.items}
+      />
       <StatusTable items={payload.items} page={payload.page} />
       <p className={styles.lineageNote}>
         Snapshot sinh lúc {formatDate(analytics.data.lineage.generatedAt)} ·
@@ -163,8 +171,8 @@ function StatusTable({
     <section className={styles.panel} aria-labelledby="status-title">
       <div className={styles.panelHeading}>
         <div>
-          <p className="eyebrow">Stock status</p>
-          <h3 id="status-title">Tình trạng theo SKU-location</h3>
+          <p className="eyebrow">Stock policy</p>
+          <h3 id="status-title">Tình trạng và chính sách tồn kho</h3>
         </div>
         <span>
           {page.hasMore
@@ -172,32 +180,43 @@ function StatusTable({
             : `${items.length} dòng trong trang Gold`}
         </span>
       </div>
-      <div className={styles.tableScroll}>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Vật tư</th>
-              <th>Trạng thái</th>
-              <th>Số dư</th>
-              <th>Ngày cung ứng</th>
-              <th>Đề xuất nhập</th>
-              <th>Hạn gần nhất</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={`${item.warehouseCode}-${item.materialCode}`}>
-                <th>{item.materialCode}<small>{item.materialName}</small></th>
-                <td><span className={styles.statusPill}>{item.stockStatus}</span></td>
-                <td>{formatQuantity(item.stockQuantity, item.baseUnit)}</td>
-                <td>{item.daysOfSupply === null ? "—" : `${item.daysOfSupply.toFixed(1)} ngày`}</td>
-                <td>{formatQuantity(item.recommendedOrderQuantity, item.baseUnit)}</td>
-                <td>{formatDate(item.nearestExpiryDate)}</td>
+      {items.length === 0 ? (
+        <p className={styles.emptyState} role="status">
+          Không có dòng tình trạng SKU-location trong snapshot này.
+        </p>
+      ) : (
+        <div className={styles.tableScroll}>
+          <table className={`${styles.dataTable} ${styles.policyTable}`}>
+            <thead>
+              <tr>
+                <th scope="col">Vật tư</th>
+                <th scope="col">Trạng thái</th>
+                <th scope="col">Số dư</th>
+                <th scope="col">Ngày cung ứng hiện hành</th>
+                <th scope="col">Nhu cầu 30 ngày theo chính sách</th>
+                <th scope="col">Đề xuất nhập theo chính sách</th>
+                <th scope="col">Hạn gần nhất</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={`${item.warehouseCode}-${item.materialCode}`}>
+                  <th scope="row">
+                    {item.materialCode}
+                    <small>{item.materialName}</small>
+                  </th>
+                  <td><span className={styles.statusPill}>{item.stockStatus}</span></td>
+                  <td>{formatQuantity(item.stockQuantity, item.baseUnit)}</td>
+                  <td>{formatOptionalDays(item.daysOfSupply)}</td>
+                  <td>{formatQuantity(item.predicted30dNeed, item.baseUnit)}</td>
+                  <td>{formatQuantity(item.recommendedOrderQuantity, item.baseUnit)}</td>
+                  <td>{formatDate(item.nearestExpiryDate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }

@@ -360,6 +360,7 @@
 }
 
 .tableScroll {
+  max-width: 100%;
   overflow-x: auto;
 }
 
@@ -408,6 +409,125 @@
   min-height: 1.5rem;
   padding: 0.22rem 0.4rem;
   font-size: 0.63rem;
+}
+
+.forecastFreshness {
+  max-width: 18rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.forecastHealth {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.forecastHealth > div {
+  min-width: 0;
+  padding: 0.7rem var(--space-4);
+  background: var(--panel-muted);
+}
+
+.forecastHealth dt {
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.35;
+}
+
+.forecastHealth dd {
+  margin: 0.2rem 0 0;
+  color: var(--brand-strong);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.forecastTable {
+  min-width: 76rem;
+}
+
+.policyTable {
+  min-width: 58rem;
+}
+
+.forecastStatus {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 11rem;
+  white-space: normal;
+}
+
+.forecastStatus small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.forecastReady {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-color: #c7ddce;
+}
+
+.forecastNoDemand {
+  color: var(--info);
+  background: #eff5ff;
+  border-color: #c8dbf7;
+}
+
+.forecastInsufficientHistory,
+.forecastUnavailable {
+  color: #8a5a08;
+  background: #fff8e8;
+  border-color: #efd9a1;
+}
+
+.forecastDisclosure {
+  min-width: 15rem;
+  white-space: normal;
+}
+
+.forecastDisclosure summary {
+  color: var(--brand-strong);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.forecastDisclosure summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.forecastDisclosure dl {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+}
+
+.forecastDisclosure dl > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.forecastDisclosure dt {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.forecastDisclosure dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .lineageNote,
@@ -585,6 +705,11 @@
 
   .filterActions {
     justify-content: flex-start;
+  }
+
+  .forecastFreshness {
+    max-width: none;
+    text-align: left;
   }
 }
 
