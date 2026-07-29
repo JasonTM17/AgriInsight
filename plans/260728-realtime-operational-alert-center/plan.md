@@ -49,6 +49,14 @@ replace the V23 backfill.
 Phases 2 and 3 are planned only; no public alert API, acknowledgement route,
 BFF route, or UI is complete.
 
+Phase 2 source validation resolved the remaining HTTP-contract decisions
+before implementation. The runtime API will use a separate query port rather
+than the worker-only mutation store. Transactional V29 will restrict the
+locked acknowledgement function to open alerts, and nontransactional V30 will
+add the explicit severity-rank/latest-observation feed index concurrently.
+Generic backend readiness advances to 30 while the isolated worker verifier
+continues to pin successful V28 plus the latest repeatable grants.
+
 ## Scope challenge
 
 - Existing code: V18-V22 outbox/realtime and immutable alert storage,
@@ -77,6 +85,8 @@ BFF route, or UI is complete.
 | User state | Acknowledgement is an immutable per-profile observation revision. A newer observation makes older revisions stale; the same profile can acknowledge the new observation without rewriting history. |
 | Authorization | Introduce dedicated read and acknowledgement permissions rather than silently broadening `REALTIME_READ`. Tenant scope derives only from the authenticated database profile. |
 | API | Exact, bounded backend operations: latest 50 open-alert feed (no history/cursor in v1) and idempotent acknowledgement. Existing `/api/v1/realtime/summary` stays compatible. |
+| Acknowledgement request | Exact empty JSON `{}` with a required idempotency key. Resolved/foreign alerts share a sanitized 404; a new observation requires a new key. |
+| Evidence/freshness | Backlog uses `TENANT_BACKLOG` without an evidence ID; event-backed policies use `OPERATIONAL_EVENT` with a UUID. Responses expose timestamps plus non-negative age only, never dedupe keys or unowned freshness thresholds. |
 | Browser transport | Same-origin BFF routes only. Panel uses initial load, manual refresh, and a low-frequency poll only while open; no browser bearer token, SSE, or WebSocket. |
 | UI direction | Preserve the reviewed Field Ledger system: dense evidence rows, Vietnamese-first labels, source/freshness provenance, explicit stale/denied/error states, keyboard-first popover. |
 | Deployment | ChatGPT/Codex is not a public VPS. Container build/scan/smoke and compose handoff remain valid; actual external deployment requires a real host and protected credentials/reviewer approval. |
@@ -117,7 +127,7 @@ BFF route, or UI is complete.
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | Completed and released in `v0.2.3` |
-| 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | Pending |
+| 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | In Progress |
 | 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | Pending |
 
 ## Dependencies
