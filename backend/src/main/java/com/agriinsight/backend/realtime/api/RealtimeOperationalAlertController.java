@@ -10,6 +10,7 @@ import com.agriinsight.backend.shared.domain.CanonicalCommandBody;
 import com.agriinsight.backend.shared.security.TenantPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +56,15 @@ public class RealtimeOperationalAlertController {
     @Operation(
             summary = "Acknowledge the current alert observation",
             description = "Writes one immutable current-profile acknowledgement revision and returns the current open alert.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Current open operational alert",
+            content = @io.swagger.v3.oas.annotations.media.Content(
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(
+                            implementation = RealtimeOperationalAlertResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            ref = "#/components/responses/NotFound")
     @PostMapping("/{id}/acknowledgements")
     ResponseEntity<RealtimeOperationalAlertResponse> acknowledge(
             @Parameter(description = "Operational alert identifier", required = true)

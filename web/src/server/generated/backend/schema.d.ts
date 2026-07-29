@@ -1474,8 +1474,9 @@ export interface components {
         };
         readonly Evidence: {
             /** Format: uuid */
-            readonly id?: string;
-            readonly type?: string;
+            readonly id: string | null;
+            /** @enum {string} */
+            readonly type: "TENANT_BACKLOG" | "OPERATIONAL_EVENT";
         };
         readonly ExternalIdentityPageResponse: {
             readonly hasMore?: boolean;
@@ -1943,36 +1944,40 @@ export interface components {
             readonly lastProcessedAt?: string;
         };
         /** @description Exact empty object. Acknowledgement scope and observation are server-derived. */
-        readonly RealtimeOperationalAlertAcknowledgementRequest: unknown;
+        readonly RealtimeOperationalAlertAcknowledgementRequest: Record<string, never>;
         readonly RealtimeOperationalAlertFeedResponse: {
             /** Format: date-time */
-            readonly generatedAt?: string;
-            readonly hasMore?: boolean;
-            readonly items?: readonly components["schemas"]["RealtimeOperationalAlertResponse"][];
+            readonly generatedAt: string;
+            readonly hasMore: boolean;
+            readonly items: readonly components["schemas"]["RealtimeOperationalAlertResponse"][];
             /** Format: int32 */
-            readonly limit?: number;
+            readonly limit: number;
         };
         readonly RealtimeOperationalAlertResponse: {
-            readonly acknowledged?: boolean;
+            readonly acknowledged: boolean;
             /** Format: date-time */
-            readonly acknowledgedAt?: string;
+            readonly acknowledgedAt: string | null;
             /** Format: int64 */
-            readonly ageSeconds?: number;
-            readonly evidence?: components["schemas"]["Evidence"];
+            readonly ageSeconds: number;
+            readonly evidence: components["schemas"]["Evidence"];
             /** Format: uuid */
-            readonly id?: string;
+            readonly id: string;
             /** Format: date-time */
-            readonly lastEvaluatedAt?: string;
+            readonly lastEvaluatedAt: string;
             /** Format: date-time */
-            readonly lastObservedAt?: string;
+            readonly lastObservedAt: string;
             /** Format: date-time */
-            readonly openedAt?: string;
-            readonly policy?: string;
-            readonly severity?: string;
-            readonly source?: string;
+            readonly openedAt: string;
+            /** @enum {string} */
+            readonly policy: "OUTBOX_PUBLISH_BACKLOG" | "REALTIME_DELIVERY_LAG" | "REALTIME_DLT_RECORD";
+            /** @enum {string} */
+            readonly severity: "WARNING" | "CRITICAL";
+            /** @enum {string} */
+            readonly source: "realtime_operational";
             /** Format: date-time */
-            readonly sourceOccurredAt?: string;
-            readonly state?: string;
+            readonly sourceOccurredAt: string;
+            /** @enum {string} */
+            readonly state: "OPEN";
         };
         readonly RealtimeSummaryResponse: {
             /** Format: int64 */
@@ -2343,6 +2348,16 @@ export interface components {
                 readonly "application/problem+json": components["schemas"]["AgriInsightProblemDetail"];
             };
         };
+        /** @description The requested resource does not exist */
+        readonly NotFound: {
+            headers: {
+                readonly "X-Correlation-Id": components["headers"]["X-Correlation-Id"];
+                readonly [name: string]: unknown;
+            };
+            content: {
+                readonly "application/problem+json": components["schemas"]["AgriInsightProblemDetail"];
+            };
+        };
         /** @description Authentication is required */
         readonly Unauthorized: {
             headers: {
@@ -2482,6 +2497,7 @@ export type SchemaWarehouseUpdateRequest = components['schemas']['WarehouseUpdat
 export type ResponseBadRequest = components['responses']['BadRequest'];
 export type ResponseConflict = components['responses']['Conflict'];
 export type ResponseForbidden = components['responses']['Forbidden'];
+export type ResponseNotFound = components['responses']['NotFound'];
 export type ResponseUnauthorized = components['responses']['Unauthorized'];
 export type ParameterIdempotencyKey = components['parameters']['Idempotency-Key'];
 export type ParameterIfMatch = components['parameters']['If-Match'];
@@ -4732,7 +4748,7 @@ export interface operations {
             };
         };
         readonly responses: {
-            /** @description OK */
+            /** @description Current open operational alert */
             readonly 200: {
                 headers: {
                     readonly "X-Correlation-Id": components["headers"]["X-Correlation-Id"];
@@ -4745,6 +4761,7 @@ export interface operations {
             readonly 400: components["responses"]["BadRequest"];
             readonly 401: components["responses"]["Unauthorized"];
             readonly 403: components["responses"]["Forbidden"];
+            readonly 404: components["responses"]["NotFound"];
             readonly 409: components["responses"]["Conflict"];
         };
     };

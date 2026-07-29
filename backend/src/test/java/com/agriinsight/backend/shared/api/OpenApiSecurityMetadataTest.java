@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.agriinsight.backend.identity.IdentitySecurityContext;
 import com.agriinsight.backend.identity.application.IdentityBootstrapPort;
+import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,7 @@ class OpenApiSecurityMetadataTest {
         assertThat(components.get("parameters").propertyNames())
                 .contains("Idempotency-Key", "If-Match", "X-Correlation-Id");
         assertThat(components.get("responses").propertyNames())
-                .contains("BadRequest", "Unauthorized", "Forbidden", "Conflict");
+                .contains("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict");
         assertThat(components.get("schemas").get("AgriInsightProblemDetail")
                 .get("properties").get("expectedVersion").get("format").asString())
                 .isEqualTo("int64");
@@ -78,6 +79,48 @@ class OpenApiSecurityMetadataTest {
         assertThat(root.get("paths").get("/api/v1/farms").get("post")
                 .get("responses").get("409").get("$ref").asString())
                 .isEqualTo("#/components/responses/Conflict");
+        JsonNode acknowledgementResponses = root.get("paths")
+                .get("/api/v1/realtime/alerts/{id}/acknowledgements")
+                .get("post")
+                .get("responses");
+        assertThat(acknowledgementResponses.get("200")).isNotNull();
+        assertThat(acknowledgementResponses.get("404").get("$ref").asString())
+                .isEqualTo("#/components/responses/NotFound");
+
+        JsonNode schemas = components.get("schemas");
+        assertThat(schemas.get("RealtimeOperationalAlertAcknowledgementRequest")
+                .get("additionalProperties")
+                .asBoolean())
+                .isFalse();
+        JsonNode feedSchema = schemas.get("RealtimeOperationalAlertFeedResponse");
+        assertThat(stringSet(feedSchema.get("required")))
+                .containsExactlyInAnyOrder("generatedAt", "hasMore", "items", "limit");
+        assertThat(feedSchema.get("properties").get("items").get("maxItems").asInt())
+                .isEqualTo(50);
+        assertThat(feedSchema.get("properties").get("limit").get("minimum").asInt())
+                .isEqualTo(50);
+        assertThat(feedSchema.get("properties").get("limit").get("maximum").asInt())
+                .isEqualTo(50);
+        JsonNode alertSchema = schemas.get("RealtimeOperationalAlertResponse");
+        assertThat(stringSet(alertSchema.get("required")))
+                .containsExactlyInAnyOrder(
+                        "acknowledged",
+                        "acknowledgedAt",
+                        "ageSeconds",
+                        "evidence",
+                        "id",
+                        "lastEvaluatedAt",
+                        "lastObservedAt",
+                        "openedAt",
+                        "policy",
+                        "severity",
+                        "source",
+                        "sourceOccurredAt",
+                        "state");
+        assertThat(stringSet(alertSchema.get("properties").get("acknowledgedAt").get("type")))
+                .containsExactlyInAnyOrder("string", "null");
+        assertThat(stringSet(schemas.get("Evidence").get("properties").get("id").get("type")))
+                .containsExactlyInAnyOrder("string", "null");
     }
 
     private static void assertHeaderReference(JsonNode root, String path, String method, String name) {
@@ -108,5 +151,11 @@ class OpenApiSecurityMetadataTest {
                 .get("responses").get(status).get("headers").get(name)
                 .get("$ref").asString())
                 .isEqualTo("#/components/headers/" + name);
+    }
+
+    private static Set<String> stringSet(JsonNode array) {
+        Set<String> values = new HashSet<>();
+        array.forEach(value -> values.add(value.asString()));
+        return values;
     }
 }
