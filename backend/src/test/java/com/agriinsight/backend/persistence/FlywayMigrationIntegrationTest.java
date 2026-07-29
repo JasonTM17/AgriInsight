@@ -517,7 +517,8 @@ class FlywayMigrationIntegrationTest {
                         "last_observed_at DESC",
                         "id",
                         "WHERE",
-                        "state = 'OPEN'",
+                        "state",
+                        "'OPEN'",
                         "source_occurred_at IS NOT NULL",
                         "source_event_id IS NULL",
                         "source_event_id IS NOT NULL");
