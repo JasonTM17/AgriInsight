@@ -39,7 +39,8 @@ export async function executeAllowedOperation(
   accessToken: string,
   correlationId: string,
   query: Query = {},
-  pathParameters: PathParameters = {}
+  pathParameters: PathParameters = {},
+  signal?: AbortSignal
 ): Promise<Response> {
   const operation = resolveAllowedOperation(operationName);
   const url = buildOperationUrl(env, operation, query, pathParameters);
@@ -49,7 +50,8 @@ export async function executeAllowedOperation(
       Accept: "application/json",
       Authorization: `Bearer ${accessToken}`,
       "X-Correlation-Id": correlationId
-    }
+    },
+    signal
   });
 }
 
@@ -80,7 +82,8 @@ export async function executeAllowedMutation(
   idempotencyKey: string,
   body: unknown,
   pathParameters: PathParameters,
-  ifMatch?: string
+  ifMatch?: string,
+  signal?: AbortSignal
 ): Promise<Response> {
   const operation = resolveAllowedMutation(operationName);
   validateIdempotencyKey(idempotencyKey);
@@ -111,7 +114,8 @@ export async function executeAllowedMutation(
   return boundedUpstreamFetch(url, {
     method: operation.method,
     body: serializedBody,
-    headers
+    headers,
+    signal
   });
 }
 

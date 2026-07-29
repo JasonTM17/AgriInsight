@@ -189,6 +189,20 @@ describe("exact upstream allowlist", () => {
     });
   });
 
+  it("contains only the exact realtime alert read and acknowledgement operations", () => {
+    expect(ALLOWED_OPERATIONS.realtimeAlerts).toEqual({
+      method: "GET",
+      path: "/api/v1/realtime/alerts",
+      service: "backend"
+    });
+    expect(ALLOWED_MUTATIONS.realtimeAlertAcknowledge).toEqual({
+      method: "POST",
+      path: "/api/v1/realtime/alerts/{id}/acknowledgements",
+      pathParameters: ["id"],
+      service: "backend"
+    });
+  });
+
   it("contains only the frozen tenant-administration resource families", () => {
     expect(ALLOWED_OPERATIONS.adminUsers).toEqual({
       method: "GET",
@@ -348,6 +362,12 @@ describe("exact upstream allowlist", () => {
         method: "POST",
         path: "/api/v1/cost-entries",
         pathParameters: [],
+        service: "backend"
+      },
+      realtimeAlertAcknowledge: {
+        method: "POST",
+        path: "/api/v1/realtime/alerts/{id}/acknowledgements",
+        pathParameters: ["id"],
         service: "backend"
       }
     });
