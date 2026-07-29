@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { RealtimeAlertEntry } from "@/features/realtime-alerts/components/realtime-alert-entry";
 import { Icon } from "@/components/ui/icon";
 import type { AuthorizationContext } from "@/server/auth/authorization-context";
 
@@ -10,6 +11,11 @@ export function AppHeader({
   identity: AuthorizationContext;
   pageLabel: string;
 }) {
+  const canReadRealtimeAlerts = identity.permissions.has("REALTIME_ALERT_READ");
+  const canAcknowledgeRealtimeAlerts = identity.permissions.has(
+    "REALTIME_ALERT_ACKNOWLEDGE"
+  );
+
   return (
     <header className="app-header">
       <div className="app-header__title">
@@ -22,9 +28,11 @@ export function AppHeader({
           <Icon name="search" size={18} />
           <input aria-label="Tìm trong phạm vi hiện hành" placeholder="Tìm trong phạm vi" type="search" />
         </label>
-        <button aria-label="Mở thông báo" className="icon-button" type="button">
-          <Icon name="bell" size={20} />
-        </button>
+        {canReadRealtimeAlerts ? (
+          <RealtimeAlertEntry
+            canAcknowledge={canAcknowledgeRealtimeAlerts}
+          />
+        ) : null}
         <Link
           className="profile-chip"
           href="/protected?module=administration"

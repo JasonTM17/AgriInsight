@@ -2,7 +2,16 @@ import type { SVGProps } from "react";
 
 import type { NavigationIconName } from "@/lib/permission-navigation";
 
-export type IconName = NavigationIconName | "search" | "bell" | "menu" | "x" | "arrow-right" | "refresh";
+export type IconName =
+  | NavigationIconName
+  | "search"
+  | "bell"
+  | "menu"
+  | "x"
+  | "arrow-right"
+  | "refresh"
+  | "alert-triangle"
+  | "alert-octagon";
 
 const paths: Record<IconName, string> = {
   grid: "M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z",
@@ -19,7 +28,9 @@ const paths: Record<IconName, string> = {
   menu: "M4 6h16M4 12h16M4 18h16",
   x: "m6 6 12 12M18 6 6 18",
   "arrow-right": "M4 12h16m-6-6 6 6-6 6",
-  refresh: "M20 11a8 8 0 1 0 1 4m-1-10v6h-6"
+  refresh: "M20 11a8 8 0 1 0 1 4m-1-10v6h-6",
+  "alert-triangle": "m10.3 3.4-7.5 13.1A2 2 0 0 0 4.5 20h15a2 2 0 0 0 1.7-3.5L13.7 3.4a2 2 0 0 0-3.4 0ZM12 9v4m0 3h.01",
+  "alert-octagon": "M7.3 3h9.4L21 7.3v9.4L16.7 21H7.3L3 16.7V7.3L7.3 3ZM12 8v5m0 3h.01"
 };
 
 export function Icon({
