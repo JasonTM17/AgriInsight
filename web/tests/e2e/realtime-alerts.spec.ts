@@ -197,7 +197,7 @@ test("@realtime executive reviews and acknowledges the seeded operational alert"
     const requestCountBeforeRouteChange = feedRequestCount;
     await page.setViewportSize({ width: 1440, height: 900 });
     await page
-      .getByRole("navigation", { name: "Điều hướng chính" })
+      .getByRole("complementary", { name: "Điều hướng chính" })
       .getByRole("link", { name: "Sức khỏe cây trồng", exact: true })
       .click();
     await expect(page).toHaveURL(/\/crop-health$/);
