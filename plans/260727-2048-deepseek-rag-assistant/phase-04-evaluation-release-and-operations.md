@@ -33,6 +33,67 @@ registry evidence.
    after owner approvals, then attach repo screenshots/GIF without sensitive
    traces.
 
+## Current bounded iteration: deterministic mock latency evaluation
+
+This iteration implements the safe part of the open latency gate without
+claiming hosted-provider performance. It must not call DeepSeek, load a local
+key, alter `.env*`, add a normal-CI secret, or change the enabled-by-default
+assistant configuration.
+
+### Scope and file ownership
+
+| Path | Action | Purpose |
+|---|---|---|
+| `src/agriinsight/analytics_api/assistant_latency_evaluation.py` | Create | Pure, deterministic percentile computation over synthetic telemetry events plus an outcome-summary boundary over strictly validated values. The result must expose aggregate counts/latencies only, never correlation IDs, prompts, evidence, answers, tenant data, or provider credentials. |
+| `scripts/run-assistant-latency-evaluation.py` | Create | Explicit mock-only CLI harness using delayed in-memory provider responses. It emits a bounded aggregate JSON summary and no question/evidence/answer or key. |
+| `tests/analytics_api/test_assistant_latency_evaluation.py` | Create | Nearest-rank p50/p95, empty/invalid input, outcome aggregation, redaction, synthetic-event determinism, and concurrent mock-workload coverage. |
+| `plans/260727-2048-deepseek-rag-assistant/phase-04-evaluation-release-and-operations.md` | Modify | Record only the implemented mock-harness evidence; leave hosted provider latency, semantic groundedness, spend-alert ownership, and production promotion open. |
+
+### Design and acceptance criteria
+
+1. The evaluator accepts explicit `AssistantTelemetryEvent` values supplied by
+   the caller, then validates only the allowlisted fields it consumes. It
+   rejects an empty collection, a non-integer latency (including `bool`), a
+   negative latency, or an outcome outside `answered`,
+   `insufficient_evidence`, `rejected`, and `error` with stable validation
+   errors rather than inventing a percentile or serializing arbitrary event
+   text.
+2. Percentiles use the deterministic nearest-rank rule over sorted integer
+   milliseconds: rank `ceil(percentile * n) - 1`, clamped to the sample range.
+   The output carries sample count, p50, p95, and a sorted aggregate outcome
+   count; it contains no individual event fields.
+3. The pure evaluator receives fixed synthetic latency events for deterministic
+   nearest-rank tests. Separately, the CLI uses an explicit in-memory generator
+   with fixed workload delays, exactly six same-tenant requests, and concurrency
+   of three. The workload consists of two answered, two insufficient-evidence,
+   and two provider-error paths, remaining below the service's default 30 RPM
+   and daily reservation quota. It asserts the exact aggregate outcome counts,
+   captures real `perf_counter` telemetry in memory, and prints aggregate JSON
+   only. Actual elapsed values are observed rather than asserted exactly; the
+   CLI is a reproducible workload harness, not a provider benchmark or release
+   gate.
+4. Focused tests prove no prompt, evidence content, answer, correlation ID,
+   tenant ID, provider code, or API key reaches the summary or harness output.
+   They also prove concurrency does not corrupt sample counts, and unknown
+   outcome text cannot enter aggregate output.
+5. The resulting evidence may state deterministic percentile computation over
+   synthetic events and a reproducible mock workload only. Hosted p95
+   TTFB/completed-response thresholds, production-scale semantic groundedness,
+   provider daily-spend ownership, protected secret injection, and image/public
+   deployment promotion remain explicitly open.
+
+### Validation and rollback
+
+- Run the focused latency-evaluation test first, then the existing assistant
+  observability, service, client, retrieval-evaluation, settings, endpoint, and
+  contract tests. Run the mock CLI once and inspect its JSON keys for redaction.
+- This is lightweight Python work; do not invoke Docker, browser, Testcontainers,
+  big-data generation, or local provider traffic while the C/D heavy-work guard
+  is failing.
+- Rollback is deletion of the isolated evaluator/harness files. No persisted
+  schema, secret, runtime configuration, provider setting, or public API is
+  changed by this iteration.
+
 ## Release gates
 
 ### Verified release evidence
