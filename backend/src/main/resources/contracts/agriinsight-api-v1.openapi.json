@@ -5319,6 +5319,147 @@
         "x-required-authority" : "AUTHENTICATED"
       }
     },
+    "/api/v1/realtime/alerts" : {
+      "get" : {
+        "description" : "Returns the fixed latest 50 open, payload-free alerts for the current tenant and profile.",
+        "operationId" : "get_api_v1_realtime_alerts",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/X-Correlation-Id"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RealtimeOperationalAlertFeedResponse"
+                }
+              }
+            },
+            "description" : "OK",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get current realtime operational alerts",
+        "tags" : [ "realtime-operational-alert-controller" ],
+        "x-required-authority" : "REALTIME_ALERT_READ"
+      }
+    },
+    "/api/v1/realtime/alerts/{id}/acknowledgements" : {
+      "post" : {
+        "description" : "Writes one immutable current-profile acknowledgement revision and returns the current open alert.",
+        "operationId" : "post_api_v1_realtime_alerts_id_acknowledgements",
+        "parameters" : [ {
+          "description" : "Operational alert identifier",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "$ref" : "#/components/parameters/Idempotency-Key"
+        }, {
+          "$ref" : "#/components/parameters/X-Correlation-Id"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RealtimeOperationalAlertAcknowledgementRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RealtimeOperationalAlertResponse"
+                }
+              }
+            },
+            "description" : "OK",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          },
+          "409" : {
+            "$ref" : "#/components/responses/Conflict",
+            "headers" : {
+              "X-Correlation-Id" : {
+                "$ref" : "#/components/headers/X-Correlation-Id"
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Acknowledge the current alert observation",
+        "tags" : [ "realtime-operational-alert-controller" ],
+        "x-required-authority" : "REALTIME_ALERT_ACKNOWLEDGE"
+      }
+    },
     "/api/v1/realtime/summary" : {
       "get" : {
         "description" : "Returns at most 100 payload-free metric groups with non-negative freshness.",
@@ -8895,6 +9036,18 @@
           }
         }
       },
+      "Evidence" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        }
+      },
       "ExternalIdentityPageResponse" : {
         "type" : "object",
         "properties" : {
@@ -9988,6 +10141,82 @@
           "lastProcessedAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "RealtimeOperationalAlertAcknowledgementRequest" : {
+        "description" : "Exact empty object. Acknowledgement scope and observation are server-derived."
+      },
+      "RealtimeOperationalAlertFeedResponse" : {
+        "type" : "object",
+        "properties" : {
+          "generatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "hasMore" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RealtimeOperationalAlertResponse"
+            }
+          },
+          "limit" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "RealtimeOperationalAlertResponse" : {
+        "type" : "object",
+        "properties" : {
+          "acknowledged" : {
+            "type" : "boolean"
+          },
+          "acknowledgedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "ageSeconds" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "evidence" : {
+            "$ref" : "#/components/schemas/Evidence"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "lastEvaluatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastObservedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "openedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "policy" : {
+            "type" : "string"
+          },
+          "severity" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "sourceOccurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "state" : {
+            "type" : "string"
           }
         }
       },

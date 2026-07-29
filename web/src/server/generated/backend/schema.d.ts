@@ -765,6 +765,46 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/realtime/alerts": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Get current realtime operational alerts
+         * @description Returns the fixed latest 50 open, payload-free alerts for the current tenant and profile.
+         */
+        readonly get: operations["get_api_v1_realtime_alerts"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/realtime/alerts/{id}/acknowledgements": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /**
+         * Acknowledge the current alert observation
+         * @description Writes one immutable current-profile acknowledgement revision and returns the current open alert.
+         */
+        readonly post: operations["post_api_v1_realtime_alerts_id_acknowledgements"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/realtime/summary": {
         readonly parameters: {
             readonly query?: never;
@@ -1432,6 +1472,11 @@ export interface components {
             readonly jobTitle?: string;
             readonly reasonCode?: string;
         };
+        readonly Evidence: {
+            /** Format: uuid */
+            readonly id?: string;
+            readonly type?: string;
+        };
         readonly ExternalIdentityPageResponse: {
             readonly hasMore?: boolean;
             readonly items?: readonly components["schemas"]["ExternalIdentityResponse"][];
@@ -1897,6 +1942,38 @@ export interface components {
             /** Format: date-time */
             readonly lastProcessedAt?: string;
         };
+        /** @description Exact empty object. Acknowledgement scope and observation are server-derived. */
+        readonly RealtimeOperationalAlertAcknowledgementRequest: unknown;
+        readonly RealtimeOperationalAlertFeedResponse: {
+            /** Format: date-time */
+            readonly generatedAt?: string;
+            readonly hasMore?: boolean;
+            readonly items?: readonly components["schemas"]["RealtimeOperationalAlertResponse"][];
+            /** Format: int32 */
+            readonly limit?: number;
+        };
+        readonly RealtimeOperationalAlertResponse: {
+            readonly acknowledged?: boolean;
+            /** Format: date-time */
+            readonly acknowledgedAt?: string;
+            /** Format: int64 */
+            readonly ageSeconds?: number;
+            readonly evidence?: components["schemas"]["Evidence"];
+            /** Format: uuid */
+            readonly id?: string;
+            /** Format: date-time */
+            readonly lastEvaluatedAt?: string;
+            /** Format: date-time */
+            readonly lastObservedAt?: string;
+            /** Format: date-time */
+            readonly openedAt?: string;
+            readonly policy?: string;
+            readonly severity?: string;
+            readonly source?: string;
+            /** Format: date-time */
+            readonly sourceOccurredAt?: string;
+            readonly state?: string;
+        };
         readonly RealtimeSummaryResponse: {
             /** Format: int64 */
             readonly eventCount?: number;
@@ -2328,6 +2405,7 @@ export type SchemaEmployeeLifecycleRequest = components['schemas']['EmployeeLife
 export type SchemaEmployeePageResponse = components['schemas']['EmployeePageResponse'];
 export type SchemaEmployeeResponse = components['schemas']['EmployeeResponse'];
 export type SchemaEmployeeUpdateRequest = components['schemas']['EmployeeUpdateRequest'];
+export type SchemaEvidence = components['schemas']['Evidence'];
 export type SchemaExternalIdentityPageResponse = components['schemas']['ExternalIdentityPageResponse'];
 export type SchemaExternalIdentityResponse = components['schemas']['ExternalIdentityResponse'];
 export type SchemaFarmAssignmentGrantRequest = components['schemas']['FarmAssignmentGrantRequest'];
@@ -2362,6 +2440,9 @@ export type SchemaOperatingCostPageResponse = components['schemas']['OperatingCo
 export type SchemaOperatingCostPostRequest = components['schemas']['OperatingCostPostRequest'];
 export type SchemaOperatingCostResponse = components['schemas']['OperatingCostResponse'];
 export type SchemaRealtimeMetricResponse = components['schemas']['RealtimeMetricResponse'];
+export type SchemaRealtimeOperationalAlertAcknowledgementRequest = components['schemas']['RealtimeOperationalAlertAcknowledgementRequest'];
+export type SchemaRealtimeOperationalAlertFeedResponse = components['schemas']['RealtimeOperationalAlertFeedResponse'];
+export type SchemaRealtimeOperationalAlertResponse = components['schemas']['RealtimeOperationalAlertResponse'];
 export type SchemaRealtimeSummaryResponse = components['schemas']['RealtimeSummaryResponse'];
 export type SchemaSeasonCreateRequest = components['schemas']['SeasonCreateRequest'];
 export type SchemaSeasonPageResponse = components['schemas']['SeasonPageResponse'];
@@ -4601,6 +4682,70 @@ export interface operations {
             readonly 400: components["responses"]["BadRequest"];
             readonly 401: components["responses"]["Unauthorized"];
             readonly 403: components["responses"]["Forbidden"];
+        };
+    };
+    readonly get_api_v1_realtime_alerts: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: {
+                /** @description Optional caller correlation identifier */
+                readonly "X-Correlation-Id"?: components["parameters"]["X-Correlation-Id"];
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly "X-Correlation-Id": components["headers"]["X-Correlation-Id"];
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "*/*": components["schemas"]["RealtimeOperationalAlertFeedResponse"];
+                };
+            };
+            readonly 400: components["responses"]["BadRequest"];
+            readonly 401: components["responses"]["Unauthorized"];
+            readonly 403: components["responses"]["Forbidden"];
+        };
+    };
+    readonly post_api_v1_realtime_alerts_id_acknowledgements: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Unique command replay key */
+                readonly "Idempotency-Key": components["parameters"]["Idempotency-Key"];
+                /** @description Optional caller correlation identifier */
+                readonly "X-Correlation-Id"?: components["parameters"]["X-Correlation-Id"];
+            };
+            readonly path: {
+                /** @description Operational alert identifier */
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["RealtimeOperationalAlertAcknowledgementRequest"];
+            };
+        };
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly "X-Correlation-Id": components["headers"]["X-Correlation-Id"];
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "*/*": components["schemas"]["RealtimeOperationalAlertResponse"];
+                };
+            };
+            readonly 400: components["responses"]["BadRequest"];
+            readonly 401: components["responses"]["Unauthorized"];
+            readonly 403: components["responses"]["Forbidden"];
+            readonly 409: components["responses"]["Conflict"];
         };
     };
     readonly get_api_v1_realtime_summary: {
