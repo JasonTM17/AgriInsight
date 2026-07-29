@@ -41,6 +41,12 @@ authorized warehouse rows.
 - Modify: relevant web contract/unit/E2E tests
 - Modify: `docs/system-architecture.md`, `docs/project-roadmap.md`, and deployment
   guidance only for verified behavior
+- Create: `docs/assets/inventory-demand-forecast-architecture.svg` and `.png`
+  from the accepted data flow, with readable labels and source provenance
+- Create: `assets/generated/agriinsight-inventory-forecast-loop.gif` from the
+  accepted UI journey; documentation/demo media only
+- Modify: `README.md` to embed the verified diagram, screenshot/GIF, captions,
+  alt text, and links without claiming production accuracy
 
 ## Implementation Steps
 
@@ -52,7 +58,10 @@ authorized warehouse rows.
    model/backtest disclosure, loading/empty/stale/error behavior, and mobile/a11y
    coverage.
 4. Add safe aggregate model-health metrics and operational rollback guidance.
-5. Run focused Python/web tests, full hosted CI, seven-person browser gate,
+5. Generate a publish-grade SVG/PNG architecture diagram and a compact GIF from
+   the accepted UI; verify dimensions, size, alt text, captions, and the
+   demo-evidence boundary before embedding them in docs.
+6. Run focused Python/web tests, full hosted CI, seven-person browser gate,
    candidate image build/scan/smoke, adversarial review, and docs sync.
 
 ## Success Criteria
@@ -61,6 +70,8 @@ authorized warehouse rows.
 - [ ] Browser displays exactly server-provided evidence and no forecast math.
 - [ ] OpenAPI, TypeScript, Python, a11y, responsive, and E2E gates pass.
 - [ ] Hosted CI and four candidate image gates pass at the accepted commit.
+- [ ] README and architecture docs render a verified SVG/PNG system diagram,
+  relevant product image, and compact GIF with accessible text and no secrets.
 - [ ] Docs distinguish baseline forecasting evidence from advanced ML/SLA and
   external production deployment.
 

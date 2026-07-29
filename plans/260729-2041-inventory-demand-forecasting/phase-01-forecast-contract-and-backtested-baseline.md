@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Forecast contract and backtested baseline
-status: in-progress
+status: completed
 priority: P1
 effort: 6h
 dependencies: []
@@ -46,7 +46,10 @@ accuracy metrics.
 ## Related Code Files
 
 - Create: `src/agriinsight/inventory_demand_forecast.py`
+- Create: `src/agriinsight/inventory_demand_forecast_contract.py`
+- Create: `src/agriinsight/inventory_demand_forecast_numeric.py`
 - Create: `tests/test_inventory_demand_forecast.py`
+- Create: `tests/test_inventory_demand_forecast_contract.py`
 - Read: `src/agriinsight/metrics_inventory.py`
 - Read: `src/agriinsight/sqlite_schema.sql`
 - Create: `reports/phase-01-forecast-contract-evidence.md` after acceptance
@@ -57,22 +60,25 @@ accuracy metrics.
    exact as-of cutoff, future-row exclusion, stable schema, interval ordering,
    finite outputs, deterministic rerun, and rolling-origin metrics.
 2. Implement strict input validation and dense daily-series construction over
-   canonical warehouse/material/base-unit groups.
+   canonical warehouse/material/base-unit groups. Validate dates before the
+   cutoff decision; validate all other fields only inside the eligible window
+   so malformed future or expired facts cannot alter an earlier forecast.
 3. Implement the 90-day baseline, empirical 30-day p10/p90 range, and
-   weekly-spaced rolling-origin backtest without external ML libraries.
+   weekly-spaced rolling-origin backtest without external ML libraries. Reject
+   any aggregate that cannot remain a finite non-negative output.
 4. Return stable typed records/DataFrame with explicit status and nullable
    backtest metrics; never silently coerce invalid quantities or dates.
 5. Run focused tests, then inventory/pipeline regressions and Python compile.
 
 ## Success Criteria
 
-- [ ] Tests fail before implementation and pass afterward.
-- [ ] A future transaction cannot change a forecast for an earlier as-of date.
-- [ ] Ready records have at least two complete backtest windows, finite MAE/WAPE,
+- [x] Tests fail before implementation and pass afterward.
+- [x] A future transaction cannot change a forecast for an earlier as-of date.
+- [x] Ready records have at least two complete backtest windows, finite MAE/WAPE,
   ordered non-negative range, and stable model version.
-- [ ] Sparse/no-demand/insufficient inputs return documented states, not
+- [x] Sparse/no-demand/insufficient inputs return documented states, not
   exceptions or fabricated accuracy.
-- [ ] No existing Gold/API/UI contract changes in this phase.
+- [x] No existing Gold/API/UI contract changes in this phase.
 
 ## Risk Assessment
 

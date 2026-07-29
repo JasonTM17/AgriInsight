@@ -37,6 +37,22 @@ image as AI-generated demo evidence and never assigns it an observation ID.
 The local Streamlit theme follows the Field Ledger palette from the CK FE
 design system.
 
+## Inventory demand forecasting
+
+`src/agriinsight/inventory_demand_forecast*.py` adds a Python-only deterministic
+30-day inventory-demand baseline over warehouse/material OUT movements. The
+contract caps history at 180 days, uses the latest 90 days for the point
+forecast, publishes empirical 30-day p10/p90 planning bounds, and reports
+weekly rolling-origin MAE/WAPE with explicit `ready`, `no_demand`, and
+`insufficient_history` states. Validation fails closed on malformed dates,
+identifiers, quantities, or unit-mixing before the forecast can be built.
+
+This slice is not yet wired into Gold, API, or UI surfaces. It does not claim
+yield, pest-risk, anomaly, what-if, or Text-to-SQL capability, and it keeps the
+existing browser/dashboard contracts unchanged. The accepted test surface for
+the slice is 29 passing tests: 26 focused forecast tests plus 3 pipeline
+regressions.
+
 ## Web surface
 
 The web app owns the Next 16 App Router, the opaque session/BFF layer, and the
@@ -309,6 +325,9 @@ startup invariant.
   `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`
   and Python `sha256:ee4090812a36c48f180ee74aaa16995c79eabfedb6821d9764319643d06ba2f6`.
   They are not a new alert-worker image/tag/digest or release claim.
+- Inventory demand forecasting Phase 1: 29 passing tests, split into
+  26 focused forecast tests and 3 pipeline regressions. The implementation is
+  still Python-only and not yet Gold/API/UI integrated.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
