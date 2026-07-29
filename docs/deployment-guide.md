@@ -1,11 +1,12 @@
 # Deployment Guide
 
-This guide documents the verified runtime contracts through release `v0.2.3`,
-Backend Phase 7 core, the merged Phase 3 hosted browser acceptance, and the
-`v0.3.0` source candidate accepted by full CI
-[`30450957275`](https://github.com/JasonTM17/AgriInsight/actions/runs/30450957275)
-at `edb9048`. Its immutable tag and protected registry publication are still
-pending; this is not an external production deployment approval:
+This guide documents the verified runtime contracts through release
+[`v0.3.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.0),
+Backend Phase 7 core, and the merged Phase 3 hosted browser acceptance. Full CI
+[`30452477234`](https://github.com/JasonTM17/AgriInsight/actions/runs/30452477234)
+and protected four-image publication
+[`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056)
+passed at `eabf209`; this is not an external production deployment approval:
 production OIDC/broker operations, a scheduled recurring recovery drill,
 RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 
@@ -19,7 +20,7 @@ RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback and runs the alert observer internally; the Phase 2 feed/ack API and Phase 3 browser panel passed hosted CI acceptance (PR #13 / `30425647823`; PR #14 / `30445148252`) but this neither approves production hosting nor publishes a new image |
-| Next web + analytics API images | `0.2.3` and full-SHA tags are published; `v0.3.0` source candidate passed CI | Digest-pinned, loopback/private deployment only; `v0.3.0` publication waits for its immutable tag and protected approval |
+| Next web + analytics API images | `0.3.0` and full-SHA tags are published after protected approval | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
 ## Preflight
@@ -156,8 +157,8 @@ The JSON output is aggregate-only (`sample_count`, `p50_ms`, `p95_ms`, and
 `outcome_counts`). Any local high-resolution elapsed-time measurements observed
 by the service during this run are local execution measurements, not
 hosted-provider SLO evidence. Hosted latency, groundedness, and provider
-spend-owner gates remain open. The `v0.3.0` source candidate's full CI green
-state does not change those provider/production boundaries.
+spend-owner gates remain open. Release `v0.3.0` does not change those
+provider/production boundaries.
 
 The explicit local demo overlay isolates its Compose project as
 `agriinsight-demo`, uses `backend/.runtime/postgres-demo`, and starts PostgreSQL
@@ -452,12 +453,13 @@ and full-SHA tag resolves to the same exact digest in Docker Hub and GHCR.
 There is no automatic `latest`; do not mirror PostgreSQL or other third-party
 images.
 
-The `v0.3.0` source candidate at `edb9048` passed all ten main CI jobs in
-[`30450957275`](https://github.com/JasonTM17/AgriInsight/actions/runs/30450957275),
-including seven-persona browser, PostgreSQL/Kafka, and four non-pushing
-candidate image builds. It is not yet an image publication: the tag-triggered
-workflow below must receive its protected environment approval and independently
-scan, attest, publish, and smoke-test exact digests.
+Release [`v0.3.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.0)
+at `eabf209` passed all ten main CI jobs in
+[`30452477234`](https://github.com/JasonTM17/AgriInsight/actions/runs/30452477234),
+then passed protected four-image publication in
+[`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056).
+Each image was independently scanned, provenance/SBOM-validated, pulled and
+smoke-tested by exact digest, and matched across Docker Hub/GHCR.
 
 The tag-triggered workflow covers Python, backend, web, and analytics API
 serially (`max-parallel: 1`). It scans and smokes a local candidate before

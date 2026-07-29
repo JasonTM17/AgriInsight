@@ -7,12 +7,14 @@
 
 ![AgriInsight — enterprise agriculture analytics](docs/assets/agriinsight-social-preview.jpg)
 
-AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Mã nguồn
-`main` là release candidate học tập `v0.3.0`: full hosted CI
-[`30450957275`](https://github.com/JasonTM17/AgriInsight/actions/runs/30450957275)
-đã xanh 10/10 trên commit `edb9048`, còn protected Docker Hub/GHCR publication
-chỉ diễn ra sau immutable tag và reviewer approval. `v0.2.3` vẫn là image
-release đã xuất bản trước đó.
+AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Bản
+phát hành học tập [`v0.3.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.0)
+đã qua full hosted CI
+[`30452477234`](https://github.com/JasonTM17/AgriInsight/actions/runs/30452477234)
+và protected Docker Hub/GHCR publication
+[`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056)
+tại commit `eabf209`. `v0.2.3` vẫn được giữ làm bằng chứng lịch sử cho worker
+slice trước đó.
 
 ```text
 Operational simulators → Bronze → Validation & quarantine → Silver
@@ -102,10 +104,9 @@ Các cổng còn mở thuộc phase sau:
 - Phase 7 core đã có focused atomicity/lease/RLS tests và protected registry release `v0.2.3`. Recovery objectives/ownership, production OIDC, broker operations và external deployment vẫn là các gate riêng; vì vậy toàn sản phẩm chưa được tuyên bố production-ready.
 - The alert-worker hardening reuses the released backend image. The exact Phase 2 feed/ack API and Phase 3 browser alert panel are hosted-accepted and merged, while `v0.2.3` remains the worker-only Docker Hub/GHCR release. Phase 3 did not publish a new image and makes no external deployment or semantic agriculture-alert claim.
 - Registry release dùng repository variable `DOCKERHUB_NAMESPACE`, environment secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` và reviewer protection; không có automatic `latest`. Workflow xuất cả Docker Hub và GHCR, tạo SBOM/provenance, scan exact digest rồi smoke-test digest.
-- Release candidate `v0.3.0` đã qua full CI 10/10 tại `edb9048`, gồm browser bảy
-  persona, PostgreSQL/Kafka và bốn candidate image builds. Tag immutable và
-  protected registry publication vẫn là bước riêng; không suy diễn deployment
-  bên ngoài từ CI này.
+- Release `v0.3.0` đã qua full CI 10/10 tại `eabf209` và publish bốn image
+  immutable lên Docker Hub/GHCR với SBOM/provenance, exact-digest scan/smoke và
+  digest agreement. Đây vẫn không phải external production deployment.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
 Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md), [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md), [Backend Phase 7](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase7.md), [backend development](docs/backend-development.md) và [backend deployment/recovery](docs/backend-deployment.md).
