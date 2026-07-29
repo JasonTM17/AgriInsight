@@ -130,7 +130,7 @@ V28 plus the latest repeatable grants.
 |-------|------|--------|
 | 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | Completed and released in `v0.2.3` |
 | 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | Completed |
-| 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | Pending |
+| 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | In Progress |
 
 ## Dependencies
 
