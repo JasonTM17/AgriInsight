@@ -11,7 +11,7 @@ AgriInsight is split into two planes.
 - [Inventory and procurement plane](#inventory-and-procurement-plane) - PostgreSQL operational ledger and RLS.
 - [Operating-cost and reporting plane](#operating-cost-and-reporting-plane) - separate finance lens and summaries.
 - [Transactional outbox](#transactional-outbox) - machine-integration handoff used by the backend only.
-- [Realtime operational alert center](#realtime-operational-alert-center) - metadata-only alert projection and isolated worker boundary.
+- [Realtime operational alert center](#realtime-operational-alert-center) - private metadata-only worker plus exact public API/BFF projection.
 - [Boundaries](#boundaries) - what each plane owns and what it must not touch.
 - [Current status](#current-status) - what is verified today and what is still blocked.
 
@@ -178,14 +178,15 @@ Verified foundation, identity, and tenant-authorization boundary currently prese
 - fixed-size canonical command records for tenant/principal/route-bound idempotency
 - durable role, user, identity, conflict, and authorization-denial audit events
 - correlation IDs and redacted `application/problem+json` responses
-- liveness/readiness split and Flyway V1-V28 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V27 concurrent scan indexes, and the V28 forward acknowledgement-function repair; expected schema version is 28
+- liveness/readiness split and Flyway V1-V30 migrations, including serialized Field/Crop/Season, Employee, farm-assignment, activity-season, inventory-assignment, operating-cost, transactional outbox lifecycle guards, realtime read models, tenant summary index, immutable V22 alert storage, V23 metadata/cursor hardening, V24-V27 concurrent worker indexes, V28 acknowledgement repair, V29 open-only acknowledgement locking, and the V30 concurrent open-feed index; generic expected schema version is 30 while the isolated worker gate remains pinned to V28 plus the latest repeatable grant
 - `integration` module for transactional outbox events, writer port, drain service, and fenced PostgreSQL store
 - Phase 1 contract freeze adds eight additive bounded GET reads:
   activity assignments, activity logs, activity log correction history, user
   roles, external-identity link status, farm assignments, warehouse
   assignments, and tenant audit events.
-- Deterministic OpenAPI export is frozen at 67 paths and 94 operations. Every
-  operation carries `X-Correlation-Id`; 13 versioned detail GETs carry `ETag`.
+- Deterministic OpenAPI export includes the additive Phase 1 reads and exact
+  alert feed/acknowledgement operations. Every operation carries
+  `X-Correlation-Id`; versioned detail GETs carry `ETag`.
 
 ```mermaid
 flowchart LR
@@ -284,7 +285,7 @@ persisted handoff for machine integration. Source includes the opt-in Kafka
 publisher path, tenant realtime read models, and tenant summary API. Historical
 realtime runner/workflow evidence belongs to that foundation; it is not hosted
 acceptance, image publication, or deployment evidence for the current
-in-progress alert-worker hardening.
+completed alert-worker hardening.
 
 - `outbox_events` is committed in the same transaction as the domain command.
 - `agriinsight_integration` is a NOLOGIN role used for claim/read/update fencing.
@@ -294,12 +295,22 @@ in-progress alert-worker hardening.
 
 ## Realtime operational alert center
 
-`V22` alert storage is immutable. The isolated operational alert hardening is
-metadata-only: it does not add a public REST/API or UI alert center, and it
-does not define semantic agriculture alerts. It hardens the backend worker
-boundary around transport-health evidence already owned by the realtime system.
+`V22` alert storage is immutable. The isolated worker remains metadata-only and
+does not define semantic agriculture alerts. It hardens transport-health
+evidence already owned by the realtime system. Phase 2 adds a separate,
+permission-first public projection: fixed no-query
+`GET /api/v1/realtime/alerts` returns at most the latest 50 open alerts, while
+idempotent `POST /api/v1/realtime/alerts/{id}/acknowledgements` records a
+current-profile observation revision. PostgreSQL RLS and the runtime tenant/
+profile context remain authoritative; neither operation accepts tenant,
+profile, raw payload, cursor, or proxy-path controls.
 
-The hardening schema is V23-V28 and readiness expects 28. V23 leaves legacy
+The same operations are exposed to the browser only through exact same-origin
+Next BFF handlers with host/origin/CSRF/session/idempotency checks, bounded
+request/response bodies, strict generated schemas, and no bearer-token or
+upstream-body leakage. Phase 3 still owns the browser alert panel and polling.
+
+The worker hardening schema is V23-V28. V23 leaves legacy
 source/evidence constraints `NOT VALID`; a repeatable 500-row operator
 backfill must finish with no legacy or invalid-shape rows before the worker is
 enabled. V24-V27 each run outside a Flyway transaction with
@@ -311,11 +322,15 @@ valid index requires history reconciliation. Transactional V28 replaces the
 acknowledgement function with its signature, security-definer search path, and
 ACL intact while targeting the named observation constraint. The worker startup
 gate independently pins successful V28 and the latest repeatable grant;
-`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains backend readiness only.
+`AGRIINSIGHT_SCHEMA_EXPECTED_VERSION` remains generic backend readiness only.
+V29 restricts the locked acknowledgement function to open alerts, and
+nontransactional V30 adds the exact concurrent partial index for the latest-open
+feed. Generic backend readiness therefore expects 30 without broadening the
+worker startup gate.
 
 The official upgrade fixture reconstructs the fingerprinted V1-V22 release
 plus its historical repeatable from commit
-`6927eeda70981c2461e85a165834e2464ba793d1`, then applies current V23-V28 and
+`6927eeda70981c2461e85a165834e2464ba793d1`, then applies current V23-V30 and
 the current repeatable. It validates, reruns with zero migrations, preserves
 representative legacy invalid rows, and leaves the V23 checks `NOT VALID`;
 the operator backfill remains a separate pre-enable step.
@@ -373,18 +388,19 @@ the operator backfill remains a separate pre-enable step.
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
 | Backend phase 7 release boundary | Alert-worker hardening is merged on `main`; main CI `30413064146`, protected publication `30413877863`, and release `v0.2.3` are complete. External deployment and recovery-policy ownership remain open. |
-| Realtime alert worker | Source/Compose topology is private and non-web; hosted acceptance and backend-image publication are verified, while no public alert API/UI, semantic agriculture policy, or external deployment is claimed |
+| Realtime alert worker | Source/Compose topology remains private and non-web; hosted acceptance and backend-image publication are verified; semantic agriculture policy and external deployment remain deferred |
+| Realtime alert center Phase 2 | Exact Spring feed/acknowledgement API, same-origin BFF, V29/V30, OpenAPI/web generation, runtime-role RLS proof, and all 10 CI checks verified in PR `#13` / run `30425647823`; Phase 3 browser UX pending |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
-| Hosted CI | Main run `30413064146` passed Java, Python, web, secret/dependency, PostgreSQL/Kafka, seven-persona browser, and all four candidate-image gates at commit `3e72ab5` |
+| Hosted CI | Main run `30413064146` remains the accepted release baseline; PR `#13` run `30425647823` passed Java, Python, web, secret/configuration, real PostgreSQL/Kafka, seven-persona browser, and all four candidate-image gates at implementation SHA `d781fe4` |
 | Protected image workflow | Run `30413877863` published all four `0.2.3` and full-SHA tags to Docker Hub/GHCR with SBOM/provenance, exact-digest scan/smoke, and cross-registry digest agreement |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
 The right way to read the repo is: analytics and backend phases 1-6 are
 accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI
 artifact, and Phase 7 has current hosted/release evidence. The isolated
-alert-worker hardening is a separate private slice merged on `main` and released
-through the backend `0.2.3` image. Production identity configuration,
-recovery-policy ownership, broker operations, and external deployment remain
-open.
+alert-worker hardening is the private worker slice released through backend
+`0.2.3`; the separate Alert Center Phase 2 API/BFF is verified and awaits its
+Phase 3 browser UX. Production identity configuration, recovery-policy
+ownership, broker operations, and external deployment remain open.
