@@ -100,7 +100,7 @@
 .statusSummary,
 .boundaryNote,
 .emptyState { padding: var(--space-3) var(--space-4); background: var(--panel-muted); border-bottom: 1px solid var(--border); }
-.statusSummaryWarning { color: var(--ochre); }
+.statusSummaryWarning { color: var(--ochre-strong); }
 .statusSummaryError { color: var(--danger); }
 .boundaryNote { border-top: 1px solid var(--border); border-bottom: 0; }
 
