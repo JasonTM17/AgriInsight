@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "API dashboard and hosted acceptance"
-status: pending
+status: in-progress
 priority: P1
 effort: "1d"
 dependencies: [2]
@@ -18,11 +18,15 @@ and Inventory UI paths, then complete hosted security/browser/image acceptance.
 
 - Reuse Spring-resolved tenant/warehouse scope; never trust client scope.
 - Add bounded forecast response models and OpenAPI/codegen drift checks.
+- Nest forecast evidence under each scoped inventory item; retain legacy policy
+  fields as distinct values and expose only aggregate scoped model health.
 - Show point/range/model/status/backtest evidence in Vietnamese-first UI.
 - Render insufficient-history and stale states honestly; no client forecast
   computation and no automatic procurement mutation.
 - Add aggregate model-health counters without warehouse/material/customer
   labels that create high-cardinality or tenant leakage.
+- Cap ABC and serialized API output below the BFF response limit, with a
+  sanitized fail-closed error when the response cannot fit safely.
 
 ## Architecture
 
@@ -30,9 +34,17 @@ Authorized request → FastAPI snapshot/reconciliation gate → scoped forecast
 rows → tokenless Next BFF → Inventory evidence panel. Browser receives only its
 authorized warehouse rows.
 
+The public response adopts a nested `forecast` object per inventory item with
+explicit nullability for unavailable evidence. `forecastHealth` contains only
+scoped status counters. The API serializes and bounds the finished envelope
+before it returns it; no browser-side forecast calculation or scope selection is
+permitted.
+
 ## Related Code Files
 
 - Modify: `src/agriinsight/analytics_api/routers/inventory.py`
+- Modify: `src/agriinsight/analytics_api/record_models.py`, response models,
+  and scoped inventory read model
 - Modify: relevant analytics response models discovered during implementation
 - Modify: `tests/analytics_api/test_endpoints.py` and inventory contract tests
 - Modify: `web/src/features/inventory/inventory-analytics-contract-schema.ts`
@@ -53,7 +65,8 @@ authorized warehouse rows.
 1. Add failing API scope/size/stale/invalid-contract tests and web runtime-schema
    tests before changing public responses.
 2. Extend the analytics response and OpenAPI contract with bounded forecast
-   evidence, preserving the current authorization and snapshot gates.
+   evidence, a response-byte cap, and deterministic ABC cap while preserving
+   the current authorization and snapshot gates.
 3. Extend the Inventory view model and panel with forecast range, data status,
    model/backtest disclosure, loading/empty/stale/error behavior, and mobile/a11y
    coverage.
