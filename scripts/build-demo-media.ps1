@@ -3,6 +3,7 @@ param(
     [string] $CaptureRoot = "artifacts/media-capture",
     [string] $OutputRoot = "docs/assets/screens",
     [string] $GifPath = "docs/assets/agriinsight-tour.gif",
+    [string] $ForecastGifPath = "assets/generated/agriinsight-inventory-forecast-loop.gif",
     [int] $StillWidth = 1280,
     [int] $GifWidth = 960,
     [int] $GifDelayCentiseconds = 180
@@ -27,6 +28,14 @@ function Resolve-Magick {
     }
     $command = Get-Command "magick" -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
+    $isWindowsPlatform = (
+        [System.Environment]::OSVersion.Platform -eq
+        [System.PlatformID]::Win32NT
+    )
+    if (-not $isWindowsPlatform) {
+        $command = Get-Command "convert" -ErrorAction SilentlyContinue
+        if ($command) { return $command.Source }
+    }
     # Bounded probe of the default installer layout. A recursive sweep of
     # Program Files can take minutes, so only the one directory level is checked.
     foreach ($base in @("$env:ProgramFiles", "${env:ProgramFiles(x86)}")) {
@@ -39,9 +48,37 @@ function Resolve-Magick {
         if ($candidate) { return $candidate }
     }
     throw (
-        "ImageMagick (magick.exe) is required to build documentation media. " +
-        "Install it or set AGRIINSIGHT_MAGICK_PATH."
+        "ImageMagick (magick or convert) is required to build documentation " +
+        "media. Install it or set AGRIINSIGHT_MAGICK_PATH."
     )
+}
+
+function Build-Gif {
+    param(
+        [System.IO.FileInfo[]] $Frames,
+        [string] $OutputPath,
+        [string] $Label
+    )
+    $frameCount = @($Frames).Count
+    if ($frameCount -lt 2) {
+        throw "$Label needs at least two frames; found $frameCount"
+    }
+    New-Item -ItemType Directory -Force `
+        -Path (Split-Path -Parent $OutputPath) | Out-Null
+    $framePaths = $Frames | ForEach-Object { $_.FullName }
+    & $magick -delay $GifDelayCentiseconds -loop 0 @framePaths `
+        -resize "${GifWidth}x>" -layers OptimizeTransparency -colors 200 `
+        $OutputPath
+    if ($LASTEXITCODE -ne 0) { throw "Failed to assemble $OutputPath" }
+
+    $gifMb = [math]::Round((Get-Item -LiteralPath $OutputPath).Length / 1MB, 2)
+    Write-Output (
+        "MEDIA_GIF label={0} frames={1} size={2} MB" -f
+        $Label, $frameCount, $gifMb
+    )
+    if ($gifMb -gt 8) {
+        throw "$Label is ${gifMb} MB, which is too heavy for a repository README"
+    }
 }
 
 $magick = Resolve-Magick
@@ -66,18 +103,13 @@ foreach ($shot in $captured) {
 
 $frames = @(Get-ChildItem -LiteralPath $framesIn -Filter "tour-*.png" -ErrorAction SilentlyContinue |
     Sort-Object Name)
-if ($frames.Count -lt 2) {
-    throw "The tour GIF needs at least two frames; found $($frames.Count) in $framesIn"
-}
-New-Item -ItemType Directory -Force -Path (Split-Path -Parent $gifOut) | Out-Null
-$framePaths = $frames | ForEach-Object { $_.FullName }
-& $magick -delay $GifDelayCentiseconds -loop 0 @framePaths `
-    -resize "${GifWidth}x>" -layers OptimizeTransparency -colors 200 $gifOut
-if ($LASTEXITCODE -ne 0) { throw "Failed to assemble $gifOut" }
-
-$gifMb = [math]::Round((Get-Item -LiteralPath $gifOut).Length / 1MB, 2)
-Write-Output ("MEDIA_GIF frames={0} size={1} MB" -f $frames.Count, $gifMb)
-if ($gifMb -gt 8) {
-    throw "The tour GIF is ${gifMb} MB, which is too heavy for a repository README"
-}
+$forecastGifOut = Join-Path $repositoryRoot $ForecastGifPath
+$forecastFrames = @(
+    Get-ChildItem -LiteralPath $framesIn -Filter "forecast-*.png" `
+        -ErrorAction SilentlyContinue |
+        Sort-Object Name
+)
+Build-Gif -Frames $frames -OutputPath $gifOut -Label "Tour GIF"
+Build-Gif -Frames $forecastFrames -OutputPath $forecastGifOut `
+    -Label "Inventory forecast GIF"
 Write-Output "MEDIA_BUILD=PASS"

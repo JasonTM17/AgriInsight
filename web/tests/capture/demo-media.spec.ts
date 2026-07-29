@@ -55,10 +55,26 @@ async function shoot(page: Page, name: string) {
   });
 }
 
+async function shootViewport(page: Page, name: string) {
+  await mkdir(SCREEN_DIR, { recursive: true });
+  await page.screenshot({
+    path: resolve(SCREEN_DIR, `${name}.png`),
+    fullPage: false
+  });
+}
+
 async function frame(page: Page, index: number) {
   await mkdir(FRAME_DIR, { recursive: true });
   await page.screenshot({
     path: resolve(FRAME_DIR, `tour-${String(index).padStart(2, "0")}.png`),
+    fullPage: false
+  });
+}
+
+async function forecastFrame(page: Page, index: number) {
+  await mkdir(FRAME_DIR, { recursive: true });
+  await page.screenshot({
+    path: resolve(FRAME_DIR, `forecast-${String(index).padStart(2, "0")}.png`),
     fullPage: false
   });
 }
@@ -103,7 +119,31 @@ test("@capture warehouse inventory control", async ({ page }) => {
   await expectPopulated(page, "Kiểm soát tồn kho");
   await shoot(page, "04-inventory-control");
 
+  const forecastPanel = page.locator('section[aria-labelledby="forecast-title"]');
+  const forecastTableScroll = forecastPanel.locator("table").locator("..");
+  await expect(
+    page.getByRole("heading", { name: "Bằng chứng dự báo nhu cầu" })
+  ).toBeVisible();
+  await forecastPanel.scrollIntoViewIfNeeded();
+  await shootViewport(page, "inventory-demand-forecast-desktop");
+  await forecastFrame(page, 1);
+
+  await forecastTableScroll.evaluate((element) => {
+    element.scrollLeft = element.scrollWidth;
+  });
+  const firstDisclosure = forecastPanel.locator("details").first();
+  await firstDisclosure.locator("summary").click();
+  await expect(firstDisclosure).toHaveAttribute("open", "");
+  await forecastFrame(page, 2);
+
+  await forecastTableScroll.evaluate((element) => {
+    element.scrollLeft = element.scrollWidth / 2;
+  });
+  await forecastFrame(page, 3);
+
   await page.setViewportSize(MOBILE);
+  await forecastPanel.scrollIntoViewIfNeeded();
+  await shootViewport(page, "inventory-demand-forecast-mobile");
   await expect(page.getByTestId("inventory-transaction-form")).toBeVisible();
   await shoot(page, "05-inventory-mobile");
 });

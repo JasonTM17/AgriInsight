@@ -139,10 +139,10 @@ jobs:
           node-version: "24.18.0"
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Install PostgreSQL client
+      - name: Install PostgreSQL and media clients
         run: |
           sudo apt-get update
-          sudo apt-get install --yes postgresql-client
+          sudo apt-get install --yes imagemagick postgresql-client
       - name: Install analytics and browser dependencies
         run: |
           python -m pip install ".[dev,dashboard,reports]"
@@ -156,7 +156,23 @@ jobs:
       - name: Run real Keycloak, PostgreSQL, Spring, analytics and Chrome gate
         shell: pwsh
         run: |
-          ./scripts/run-web-e2e-tests.ps1 -HostedCi
+          ./scripts/run-web-e2e-tests.ps1 -HostedCi -CaptureMedia
+      - name: Build verified documentation media
+        shell: pwsh
+        run: ./scripts/build-demo-media.ps1
+      - name: Upload inventory forecast media evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: inventory-forecast-media-${{ github.sha }}
+          path: |
+            artifacts/media-capture/screens/inventory-demand-forecast-desktop.png
+            artifacts/media-capture/screens/inventory-demand-forecast-mobile.png
+            artifacts/media-capture/frames/forecast-*.png
+            docs/assets/screens/inventory-demand-forecast-desktop.webp
+            docs/assets/screens/inventory-demand-forecast-mobile.webp
+            assets/generated/agriinsight-inventory-forecast-loop.gif
+          if-no-files-found: error
+          retention-days: 7
 
   images:
     name: Build ${{ matrix.name }} image without push
