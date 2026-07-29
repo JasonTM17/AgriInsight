@@ -39,23 +39,25 @@ locations.
 
 Current execution status: Phase 1 worker hardening is complete, merged on
 `main`, and released in `v0.2.3`. Its confirmed migration sequence is V23-V28
-with expected schema version 28: V23 remains
+with an independent worker startup invariant at V28: V23 remains
 additive with `NOT VALID` source/evidence checks and requires bounded operator
 backfill before worker enablement; V24-V26 each create one scan index
 concurrently and V27 adds the readiness-only partial invalid-source-evidence
 index. V28 repairs the V22 acknowledgement function through a forward
 `CREATE OR REPLACE FUNCTION` migration without rewriting V22. V27 does not
 replace the V23 backfill.
-Phases 2 and 3 are planned only; no public alert API, acknowledgement route,
-BFF route, or UI is complete.
+Phase 2 is implemented and verified by PR `#13` / CI run `30425647823`.
+The exact Spring feed and acknowledgement API, generated OpenAPI/TypeScript
+contract, hardened same-origin Next BFF, V29/V30 migrations, and runtime-role
+tenant/profile query proof are complete. Phase 3 browser alert UX remains
+pending.
 
-Phase 2 source validation resolved the remaining HTTP-contract decisions
-before implementation. The runtime API will use a separate query port rather
-than the worker-only mutation store. Transactional V29 will restrict the
-locked acknowledgement function to open alerts, and nontransactional V30 will
-add the explicit severity-rank/latest-observation feed index concurrently.
-Generic backend readiness advances to 30 while the isolated worker verifier
-continues to pin successful V28 plus the latest repeatable grants.
+The runtime API uses a separate query port rather than the worker-only mutation
+store. Transactional V29 restricts the locked acknowledgement function to open
+alerts, and nontransactional V30 adds the explicit
+severity-rank/latest-observation feed index concurrently. Generic backend
+readiness is 30 while the isolated worker verifier continues to pin successful
+V28 plus the latest repeatable grants.
 
 ## Scope challenge
 
@@ -70,8 +72,8 @@ continues to pin successful V28 plus the latest repeatable grants.
   database/RLS, worker, HTTP/BFF, and browser trust boundaries. Splitting the
   lifecycle, contract, and panel avoids duplicate ownership of a migration or
   public route.
-- Selected scope: Phase 1 is complete. A public operations alert center
-  is planned only for later phases;
+- Selected scope: Phases 1 and 2 are complete. The browser operations alert
+  center remains Phase 3 work;
   domain alert semantics, WebSocket/SSE, email/SMS/push, and public deployment
   remain explicitly deferred.
 
@@ -119,15 +121,15 @@ continues to pin successful V28 plus the latest repeatable grants.
 - Public VPS deployment and production readiness claims until a real target
   host plus production environment ownership exist. Protected registry
   promotion is complete for `v0.2.3`.
-- The public alert feed/API, acknowledgement UI, and browser alert center until
-  Phase 1 worker hardening is verified and Phase 2/3 are implemented.
+- The acknowledgement UI and browser alert center until Phase 3 is
+  implemented. The Phase 2 public feed/API and BFF contract are complete.
 
 ## Phases
 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Tenant-safe alert lifecycle](./phase-01-tenant-safe-alert-lifecycle.md) | Completed and released in `v0.2.3` |
-| 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | In Progress |
+| 2 | [Exact backend alert API and BFF contract](./phase-02-exact-backend-alert-api-and-bff-contract.md) | Completed |
 | 3 | [Live operations UX and acceptance](./phase-03-live-operations-ux-and-acceptance.md) | Pending |
 
 ## Dependencies
