@@ -229,6 +229,11 @@
 
 @media (max-height: 34rem) and (orientation: landscape) {
   .panel.panelPosition {
+    position: fixed;
+    top: auto;
+    right: calc(var(--space-2) + env(safe-area-inset-right));
+    bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+    min-height: 0;
     max-height: calc(
       100dvh
       - var(--space-4)
