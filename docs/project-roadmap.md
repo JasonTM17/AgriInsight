@@ -10,12 +10,12 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
 | Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
-| DeepSeek RAG assistant | Implemented and included in released images | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, versioned retrieval evaluation, and protected `v0.2.2`/`v0.2.3` image evidence |
+| DeepSeek RAG assistant | Implemented; `v0.3.0` source candidate accepted | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, versioned retrieval evaluation, and mock-only telemetry evaluator; CI `30450957275` is green, while hosted provider SLO/groundedness/spend ownership remain open |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
 | Realtime alert center | Phases 2–3 hosted-accepted and merged | Exact latest-50 open-alert feed, idempotent acknowledgement, same-origin BFF, V29/V30, generated OpenAPI/web contract, and the Field Ledger browser panel verified in PR #13 / CI `30425647823` and PR #14 / CI `30445148252` (feature head `e8a02a2`, rebase-merged at `bd724503`) |
-| Frontend | Hosted gate and image release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and protected `agriinsight-web:0.2.3` publication |
+| Frontend | Hosted gate accepted; `v0.3.0` source candidate ready | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, protected `agriinsight-web:0.2.3` publication, and full CI `30450957275` at `edb9048`; `v0.3.0` registry publication is pending |
 
 ## Next backend phases
 
@@ -73,6 +73,12 @@ implicitly converted into operating cost.
 
 ## Release and platform backlog
 
+- The `v0.3.0` educational source candidate passed all ten hosted CI jobs in
+  [`30450957275`](https://github.com/JasonTM17/AgriInsight/actions/runs/30450957275)
+  at `edb9048`, including browser, PostgreSQL/Kafka, secret/configuration, and
+  four non-pushing candidate-image gates. Its immutable tag and protected
+  Docker Hub/GHCR publication remain pending; CI is not external deployment or
+  DeepSeek-provider SLO evidence.
 - Release `v0.2.3` completed hosted CI, dependency/image scanning,
   SBOM/provenance, exact-digest smoke, and identical Docker Hub/GHCR tags for
   all four first-party images. Preserve the protected environment and reviewer
