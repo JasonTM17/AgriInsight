@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-const OUTPUT_ROOT = resolve(__dirname, "../../../artifacts/media-capture");
+const OUTPUT_ROOT = resolve(
+  import.meta.dirname,
+  "../../../artifacts/media-capture"
+);
 const SCREEN_DIR = resolve(OUTPUT_ROOT, "screens");
 const FRAME_DIR = resolve(OUTPUT_ROOT, "frames");
 const DESKTOP = { width: 1440, height: 900 } as const;
