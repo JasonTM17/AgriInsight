@@ -1,0 +1,5 @@
+# Contract generators compare exact text; keep sources and outputs platform-stable.
+backend/src/main/resources/contracts/agriinsight-api-v1.openapi.json text eol=lf
+docs/contracts/agriinsight-analytics-v1.openapi.json text eol=lf
+web/src/server/generated/backend/schema.d.ts text eol=lf
+web/src/server/generated/analytics/schema.d.ts text eol=lf
