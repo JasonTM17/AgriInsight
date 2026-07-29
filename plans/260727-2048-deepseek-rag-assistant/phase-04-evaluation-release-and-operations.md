@@ -46,7 +46,10 @@ assistant configuration.
 |---|---|---|
 | `src/agriinsight/analytics_api/assistant_latency_evaluation.py` | Create | Pure, deterministic percentile computation over synthetic telemetry events plus an outcome-summary boundary over strictly validated values. The result must expose aggregate counts/latencies only, never correlation IDs, prompts, evidence, answers, tenant data, or provider credentials. |
 | `scripts/run-assistant-latency-evaluation.py` | Create | Explicit mock-only CLI harness using delayed in-memory provider responses. It emits a bounded aggregate JSON summary and no question/evidence/answer or key. |
-| `tests/analytics_api/test_assistant_latency_evaluation.py` | Create | Nearest-rank p50/p95, empty/invalid input, outcome aggregation, redaction, synthetic-event determinism, and concurrent mock-workload coverage. |
+| `tests/analytics_api/test_assistant_latency_evaluation.py` | Create | Nearest-rank p50/p95, empty/invalid input, outcome aggregation, synthetic-event determinism, and aggregate redaction. |
+| `tests/analytics_api/test_assistant_latency_workload.py` | Create | Six-request in-memory `AssistantService` workload proof for answered, local-refusal, and provider-error telemetry outcomes. |
+| `tests/analytics_api/test_assistant_latency_cli.py` | Create | Run the actual mock-only CLI and verify one redacted aggregate JSON line, expected counts, and no stderr. |
+| `plans/260727-2048-deepseek-rag-assistant/reports/mock-latency-evaluation-2026-07-29.md` | Create | Bounded local evidence and the explicit hosted/provider boundary. |
 | `plans/260727-2048-deepseek-rag-assistant/phase-04-evaluation-release-and-operations.md` | Modify | Record only the implemented mock-harness evidence; leave hosted provider latency, semantic groundedness, spend-alert ownership, and production promotion open. |
 
 ### Design and acceptance criteria
@@ -93,6 +96,21 @@ assistant configuration.
 - Rollback is deletion of the isolated evaluator/harness files. No persisted
   schema, secret, runtime configuration, provider setting, or public API is
   changed by this iteration.
+
+### Implemented mock-only evidence (2026-07-29)
+
+- `assistant_latency_evaluation.py` now validates exact telemetry event/value
+  types and the four service outcomes before computing synthetic-event
+  nearest-rank p50/p95 and aggregate-only JSON.
+- `run-assistant-latency-evaluation.py` executes exactly six same-tenant,
+  in-memory requests at concurrency three. It verifies the aggregate is two
+  `answered`, two `insufficient_evidence`, and two `error`, then emits one
+  redacted JSON object.
+- Focused evaluator, workload, CLI, observability, service, client,
+  retrieval-evaluation, settings, endpoint, and contract tests passed 55/55.
+  See [mock latency evidence](./reports/mock-latency-evaluation-2026-07-29.md).
+- This is not hosted-provider or production SLO evidence. The open gates below
+  remain unchanged.
 
 ## Release gates
 
