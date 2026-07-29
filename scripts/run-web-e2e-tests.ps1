@@ -734,7 +734,8 @@ try {
         Write-Output "MEDIA_CAPTURE_START"
         Invoke-Checked "npm" @(
             "--prefix", "web", "exec", "--",
-            "playwright", "test", "--config", "playwright.capture.config.ts"
+            "playwright", "test", "--config",
+            "web/playwright.capture.config.ts"
         ) "Documentation media capture failed"
         Write-Output "MEDIA_CAPTURE=PASS"
     }

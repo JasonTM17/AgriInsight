@@ -95,6 +95,13 @@ describe("real-platform E2E runner", () => {
     expect(runner).not.toContain("AGRIINSIGHT_WEB_LOGIN_CLIENT_LIMIT");
   });
 
+  it("resolves the opt-in media config from the repository root", () => {
+    expect(runner).toContain('"web/playwright.capture.config.ts"');
+    expect(runner).not.toContain(
+      '"playwright", "test", "--config", "playwright.capture.config.ts"'
+    );
+  });
+
   it("selects only live activities and starts new assignments at version zero", () => {
     expect(adminDatabaseHelper).toContain(
       "activity.status IN ('PLANNED', 'STARTED')"
