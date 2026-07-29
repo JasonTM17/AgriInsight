@@ -85,6 +85,7 @@ test("@realtime executive reviews and acknowledges the seeded operational alert"
 
     const backgroundPage = await page.context().newPage();
     await backgroundPage.bringToFront();
+    await setDocumentVisibilityState(page, "hidden");
     await expect.poll(() =>
       page.evaluate(() => document.visibilityState)
     ).toBe("hidden");
@@ -97,6 +98,7 @@ test("@realtime executive reviews and acknowledges the seeded operational alert"
       "/api/realtime/alerts"
     );
     await page.bringToFront();
+    await setDocumentVisibilityState(page, "visible");
     await readSeededFeed(await visibilityRefresh, fixture.alertId);
     await backgroundPage.close();
 
@@ -242,6 +244,19 @@ function waitForAlertResponse(page: Page, method: string, pathname: string) {
     return request.method() === method
       && new URL(response.url()).pathname === pathname;
   });
+}
+
+async function setDocumentVisibilityState(
+  page: Page,
+  state: "hidden" | "visible"
+) {
+  await page.evaluate((nextState) => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => nextState
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, state);
 }
 
 async function readSeededFeed(
