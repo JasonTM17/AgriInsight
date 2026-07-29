@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from datetime import date
@@ -40,6 +41,8 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert (root / "gold" / "cost_summary.csv").exists()
     assert (root / "gold" / "procurement_detail.csv").exists()
     assert (root / "gold" / "inventory_status.csv").exists()
+    forecast_path = root / "gold" / "inventory_demand_forecast.csv"
+    assert forecast_path.exists()
     assert (root / "gold" / "field_health_status.csv").exists()
     assert manifest["row_counts"]["quarantine"]["activities"] >= 2
     assert manifest["row_counts"]["quarantine"]["harvests"] >= 2
@@ -82,6 +85,7 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     )
 
     inventory_status = pd.read_csv(root / "gold" / "inventory_status.csv")
+    inventory_forecast = pd.read_csv(forecast_path)
     inventory_summary = pd.read_csv(root / "gold" / "inventory_summary.csv").iloc[0]
     inventory_abc = pd.read_csv(root / "gold" / "inventory_abc.csv")
     assert set(inventory_status["stock_status"]) <= {
@@ -91,6 +95,32 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
         "overstock",
     }
     assert set(inventory_status["abc_class"]) <= {"A", "B", "C"}
+    assert set(inventory_status["forecast_coverage_status"]) <= {
+        "ready",
+        "no_demand",
+        "insufficient_history",
+        "unavailable",
+    }
+    assert not inventory_forecast.duplicated(
+        ["warehouse_code", "material_code"]
+    ).any()
+    assert inventory_forecast["as_of_date"].eq(
+        small_config.as_of_date.isoformat()
+    ).all()
+    assert inventory_forecast[
+        ["warehouse_code", "material_code"]
+    ].to_records(index=False).tolist() == sorted(
+        inventory_forecast[
+            ["warehouse_code", "material_code"]
+        ].to_records(index=False).tolist()
+    )
+    assert (
+        manifest["row_counts"]["gold"]["inventory_demand_forecast"]
+        == len(inventory_forecast)
+    )
+    assert manifest["checksums"][
+        "gold/inventory_demand_forecast.csv"
+    ] == hashlib.sha256(forecast_path.read_bytes()).hexdigest()
     assert inventory_summary["total_inventory_value_vnd"] == pytest.approx(
         inventory_status["inventory_value_vnd"].sum()
     )
@@ -123,6 +153,8 @@ def test_pipeline_is_reproducible_for_same_seed(
         Path("gold/farm_performance.csv"),
         Path("gold/cost_summary.csv"),
         Path("gold/procurement_detail.csv"),
+        Path("gold/inventory_demand_forecast.csv"),
+        Path("gold/inventory_status.csv"),
         Path("quality/data_quality_report.json"),
     ):
         assert (first_root / relative_path).read_bytes() == (second_root / relative_path).read_bytes()

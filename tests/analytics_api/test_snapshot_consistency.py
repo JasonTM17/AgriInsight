@@ -102,6 +102,93 @@ def test_checksum_valid_but_malformed_csv_fails_contract(
     assert captured.value.code == "snapshot_contract_invalid"
 
 
+def test_checksum_valid_but_nonfinite_forecast_evidence_fails_contract(
+    analytics_artifact_root: Path,
+    tmp_path: Path,
+) -> None:
+    copied = tmp_path / "artifacts"
+    shutil.copytree(analytics_artifact_root, copied)
+    csv_path = copied / "gold" / "inventory_status.csv"
+    frame = pd.read_csv(csv_path)
+    available = frame["forecast_coverage_status"] != "unavailable"
+    assert available.any()
+    frame.loc[available.idxmax(), "forecast_quantity"] = float("inf")
+    frame.to_csv(csv_path, index=False)
+    manifest_path = copied / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["checksums"]["gold/inventory_status.csv"] = hashlib.sha256(
+        csv_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ApiProblem) as captured:
+        SnapshotCache(copied).current()
+
+    assert captured.value.code == "snapshot_contract_invalid"
+
+
+def test_checksum_valid_but_wrong_forecast_decision_evidence_fails_contract(
+    analytics_artifact_root: Path,
+    tmp_path: Path,
+) -> None:
+    copied = tmp_path / "artifacts"
+    shutil.copytree(analytics_artifact_root, copied)
+    csv_path = copied / "gold" / "inventory_status.csv"
+    frame = pd.read_csv(csv_path)
+    available = frame["forecast_coverage_status"] != "unavailable"
+    assert available.any()
+    row_index = available.idxmax()
+    frame.loc[row_index, "forecast_suggested_order_quantity"] = (
+        float(frame.loc[row_index, "forecast_suggested_order_quantity"]) + 1.0
+    )
+    frame.to_csv(csv_path, index=False)
+    manifest_path = copied / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["checksums"]["gold/inventory_status.csv"] = hashlib.sha256(
+        csv_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ApiProblem) as captured:
+        SnapshotCache(copied).current()
+
+    assert captured.value.code == "snapshot_contract_invalid"
+
+
+@pytest.mark.parametrize(
+    ("column", "value"),
+    (
+        ("forecast_history_start_date", "2099-01-01"),
+        ("forecast_backtest_windows", 999),
+    ),
+)
+def test_checksum_valid_but_impossible_forecast_history_fails_contract(
+    analytics_artifact_root: Path,
+    tmp_path: Path,
+    column: str,
+    value: object,
+) -> None:
+    copied = tmp_path / "artifacts"
+    shutil.copytree(analytics_artifact_root, copied)
+    csv_path = copied / "gold" / "inventory_status.csv"
+    frame = pd.read_csv(csv_path)
+    available = frame["forecast_coverage_status"] != "unavailable"
+    assert available.any()
+    frame.loc[available.idxmax(), column] = value
+    frame.to_csv(csv_path, index=False)
+    manifest_path = copied / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["checksums"]["gold/inventory_status.csv"] = hashlib.sha256(
+        csv_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ApiProblem) as captured:
+        SnapshotCache(copied).current()
+
+    assert captured.value.code == "snapshot_contract_invalid"
+
+
 def test_oversized_manifest_fails_closed(
     analytics_artifact_root: Path,
     tmp_path: Path,

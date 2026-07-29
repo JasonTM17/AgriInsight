@@ -5,6 +5,11 @@ from datetime import date
 
 import pandas as pd
 
+from agriinsight.metrics_inventory_forecast import (
+    attach_inventory_demand_forecast,
+    build_inventory_demand_forecast_gold,
+)
+
 
 def _inventory_alerts(status: pd.DataFrame) -> pd.DataFrame:
     alerts: list[dict[str, object]] = []
@@ -211,6 +216,15 @@ def build_inventory_gold(
         how="left",
         validate="many_to_one",
     )
+    inventory_demand_forecast = build_inventory_demand_forecast_gold(
+        connection,
+        as_of_date,
+    )
+    inventory_status = attach_inventory_demand_forecast(
+        inventory_status,
+        inventory_demand_forecast,
+        as_of_date,
+    )
 
     alerts = _inventory_alerts(inventory_status)
     finite_supply = inventory_status["days_of_supply"].dropna()
@@ -252,8 +266,8 @@ def build_inventory_gold(
     return {
         "inventory_summary": inventory_summary,
         "inventory_status": inventory_status,
+        "inventory_demand_forecast": inventory_demand_forecast,
         "inventory_abc": material_value,
         "inventory_movements_monthly": movements,
         "inventory_alerts": alerts,
     }
-

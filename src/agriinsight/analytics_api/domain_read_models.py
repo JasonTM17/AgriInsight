@@ -12,6 +12,7 @@ from agriinsight.analytics_api.models import (
     PageModel,
 )
 from agriinsight.analytics_api.response_shaping import json_safe, records
+from agriinsight.analytics_api.record_models import InventoryStatusModel
 from agriinsight.analytics_snapshot import ArtifactSnapshot
 
 
@@ -34,10 +35,11 @@ def inventory_payload(
         ["warehouse_code", "material_code"], kind="stable"
     )
     page = status.iloc[offset : offset + limit]
+    public_page = page.loc[:, list(InventoryStatusModel.model_fields)]
     return InventoryPayload(
         abc=records(_inventory_abc(status)),
         alerts=records(alerts.head(100)),
-        items=records(page),
+        items=records(public_page),
         page=PageModel(
             has_more=offset + limit < len(status),
             limit=limit,

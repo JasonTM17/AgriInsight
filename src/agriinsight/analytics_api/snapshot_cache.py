@@ -37,6 +37,12 @@ from agriinsight.analytics_snapshot import (
     MAX_MANIFEST_BYTES,
     load_artifact_snapshot,
 )
+from agriinsight.metrics_inventory_forecast_contract import (
+    INVENTORY_STATUS_FORECAST_COLUMNS,
+)
+from agriinsight.metrics_inventory_forecast_status_contract import (
+    validate_inventory_forecast_status,
+)
 
 AGGREGATE_CSV_DATASETS = {
     "cost_activity_detail": "gold/cost_activity_detail.csv",
@@ -119,7 +125,8 @@ EXPECTED_COLUMNS = {
     "farm_performance": set(FarmPerformanceModel.model_fields),
     "field_health_status": set(FieldHealthModel.model_fields),
     "inventory_alerts": set(InventoryAlertModel.model_fields),
-    "inventory_status": set(InventoryStatusModel.model_fields),
+    "inventory_status": set(InventoryStatusModel.model_fields)
+    | set(INVENTORY_STATUS_FORECAST_COLUMNS),
     "monthly_financials": set(MonthlyFinancialModel.model_fields),
     "pest_incidents_weekly": set(PestIncidentModel.model_fields),
     "procurement_detail": {
@@ -259,7 +266,10 @@ def _validate_snapshot(snapshot: ArtifactSnapshot) -> None:
         for name, expected in EXPECTED_COLUMNS.items()
     )
     invalid = invalid or any(
-        not _valid_csv_records(snapshot.csv[name], model)
+        not _valid_csv_records(
+            _model_validation_frame(name, snapshot.csv[name], model),
+            model,
+        )
         for name, model in CSV_MODELS.items()
     )
     invalid = invalid or not _valid_cost_season(snapshot.csv["cost_season"])
@@ -267,6 +277,13 @@ def _validate_snapshot(snapshot: ArtifactSnapshot) -> None:
         snapshot.csv["procurement_detail"]
     )
     invalid = invalid or not _valid_filter_facts(snapshot)
+    try:
+        validate_inventory_forecast_status(
+            snapshot.csv["inventory_status"],
+            str(snapshot.manifest.get("as_of_date", "")),
+        )
+    except (TypeError, ValueError):
+        invalid = True
     insights = snapshot.json.get("insights")
     quality = snapshot.json.get("quality")
     invalid = invalid or not isinstance(insights, dict)
@@ -321,6 +338,12 @@ def _valid_csv_records(frame, model: type) -> bool:
     except (TypeError, ValueError, ValidationError):
         return False
     return True
+
+
+def _model_validation_frame(name: str, frame, model: type):
+    if name != "inventory_status":
+        return frame
+    return frame.loc[:, list(model.model_fields)]
 
 
 def _valid_cost_season(frame) -> bool:

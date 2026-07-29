@@ -40,7 +40,13 @@ def test_all_read_endpoints_return_typed_bounded_envelopes(api_factory) -> None:
         assert body["scope"]["tenantId"].endswith("0001")
     assert responses[2].json()["payload"]["page"]["limit"] == 2
     assert len(responses[2].json()["payload"]["items"]) <= 2
-    assert len(responses[3].json()["payload"]["items"]) <= 2
+    inventory_items = responses[3].json()["payload"]["items"]
+    assert len(inventory_items) <= 2
+    assert all(
+        not key.startswith("forecast")
+        for item in inventory_items
+        for key in item
+    )
     crop_payload = responses[4].json()["payload"]
     assert len(crop_payload["fields"]) <= 2
     for field in crop_payload["fields"]:
