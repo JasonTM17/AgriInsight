@@ -228,6 +228,101 @@ describe("bounded upstream client", () => {
     expect(forwardedSignal?.aborted).toBe(true);
   });
 
+  it("forwards alert GET cancellation without accepting query controls", async () => {
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        void input;
+        void init;
+        return Response.json({});
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const controller = new AbortController();
+
+    await executeAllowedOperation(
+      env,
+      "realtimeAlerts",
+      "server-held-token",
+      "correlation-alert",
+      {},
+      {},
+      controller.signal
+    );
+
+    const [input, init] = fetchMock.mock.calls[0]!;
+    expect(String(input)).toBe(
+      "http://127.0.0.1:8080/api/v1/realtime/alerts"
+    );
+    expect(init?.signal?.aborted).toBe(false);
+    controller.abort();
+    expect(init?.signal?.aborted).toBe(true);
+    await expect(
+      executeAllowedOperation(
+        env,
+        "realtimeAlerts",
+        "server-held-token",
+        "correlation-alert",
+        { tenantId: "unsafe" }
+      )
+    ).rejects.toThrow("not allowlisted");
+  });
+
+  it("posts exact alert acknowledgement JSON and forwards cancellation", async () => {
+    const fetchMock = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        void input;
+        void init;
+        return Response.json({});
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const controller = new AbortController();
+    const alertId = "3eb92f10-60dd-45cb-9160-7c569c3258b4";
+
+    await executeAllowedMutation(
+      env,
+      "realtimeAlertAcknowledge",
+      "server-held-token",
+      "correlation-alert",
+      "ack-alert-1",
+      {},
+      { id: alertId },
+      undefined,
+      controller.signal
+    );
+
+    const [input, init] = fetchMock.mock.calls[0]!;
+    expect(String(input)).toBe(
+      `http://127.0.0.1:8080/api/v1/realtime/alerts/${alertId}/acknowledgements`
+    );
+    expect(init?.body).toBe("{}");
+    expect(init?.signal?.aborted).toBe(false);
+    controller.abort();
+    expect(init?.signal?.aborted).toBe(true);
+    expect(init?.headers).not.toHaveProperty("If-Match");
+  });
+
+  it("applies the two-megabyte response cap to the alert operation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response("{}", {
+          status: 200,
+          headers: { "Content-Length": String(2 * 1024 * 1024 + 1) }
+        })
+      )
+    );
+
+    await expect(
+      executeAllowedOperation(
+        env,
+        "realtimeAlerts",
+        "server-held-token",
+        "correlation-alert"
+      )
+    ).rejects.toThrow("byte limit");
+  });
+
   it("interpolates both exact UUIDs into the correction POST path", async () => {
     const fetchMock = vi.fn(
       async (input: string | URL | Request, init?: RequestInit) => {

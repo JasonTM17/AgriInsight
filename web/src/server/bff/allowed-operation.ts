@@ -354,6 +354,11 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     ],
     service: "backend"
   },
+  realtimeAlerts: {
+    method: "GET",
+    path: "/api/v1/realtime/alerts",
+    service: "backend"
+  },
   materialCatalog: {
     method: "GET",
     path: "/api/v1/materials",
@@ -505,6 +510,12 @@ export const ALLOWED_MUTATIONS = Object.freeze({
     method: "POST",
     path: "/api/v1/cost-entries",
     pathParameters: [],
+    service: "backend"
+  },
+  realtimeAlertAcknowledge: {
+    method: "POST",
+    path: "/api/v1/realtime/alerts/{id}/acknowledgements",
+    pathParameters: ["id"],
     service: "backend"
   }
 } as const satisfies Record<string, AllowedMutation>);
