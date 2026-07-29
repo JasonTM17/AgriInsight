@@ -10,7 +10,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
 | Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
-| Inventory demand forecasting | Phase 1 accepted 2026-07-29; Python-only baseline | Deterministic 30-day inventory-demand contract over warehouse/material OUT movements with a 180-day history cap, 90-day lookback, empirical p10/p90 planning range, weekly rolling-origin MAE/WAPE, explicit fail-closed status states, and 29 passing focused+pipeline tests |
+| Inventory demand forecasting | Phase 2 accepted 2026-07-29 | Deterministic 30-day inventory-demand contract over warehouse/material OUT movements with a 180-day history cap, 90-day lookback, empirical p10/p90 planning range, weekly rolling-origin MAE/WAPE, checksummed Gold integration, explicit fail-closed status states, and legacy API projection preserved until Phase 3; hosted CI `30464080148` passed 10/10 |
 | DeepSeek RAG assistant | Implemented; `v0.3.0` released | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, versioned retrieval evaluation, and mock-only telemetry evaluator; full CI `30452477234` and protected image publication `30453840056` passed, while hosted provider SLO/groundedness/spend ownership remain open |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
@@ -118,7 +118,7 @@ implicitly converted into operating cost.
 
 ## Future product tracks
 
-- Inventory-demand forecasting Phase 1 is accepted as a Python-only baseline. It does not yet extend Gold, API, or UI, and it does not satisfy yield, pest-risk, anomaly, what-if, or Text-to-SQL work.
+- Inventory-demand forecasting Phase 2 is accepted for the Gold integration boundary. It does not yet claim public API promotion or UI exposure; Phase 3 owns explicit scoped contract adoption.
 - Phase 3 for that track will add the evidence-backed SVG/PNG architecture diagram and UI GIF only after behavior acceptance; do not create or claim those assets now.
 - Keep the completed eight-area production-web route set behind the protected
   release boundary; the `openid-client` OIDC boundary is implemented, while

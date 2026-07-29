@@ -230,7 +230,7 @@ adds the latest-open-feed index. Expected schema version is 30.
 |---|---|---|---|
 | Farm operations | farms, fields, crops, seasons, activities, harvests | khóa chuẩn, kg, chi phí không âm | executive, monthly financials, farm performance, crop profitability |
 | Cost analysis | activities, harvests, inventory transactions | chi phí hoạt động và giao dịch mua đã chuẩn hóa | cost summary/month/farm/season/activity/detail, procurement summary/detail, reconciliation |
-| Inventory | warehouses, materials, suppliers, inventory transactions | đơn vị cơ sở, quan hệ supplier/SKU/location hợp lệ | inventory status, ABC, movements, alerts, 30-day need |
+| Inventory | warehouses, materials, suppliers, inventory transactions | đơn vị cơ sở, quan hệ supplier/SKU/location hợp lệ | inventory status, ABC, movements, alerts, versioned 30-day demand forecast |
 | Crop health | sensors, readings, weather, pest types, observations | range hợp lệ, timestamp và field relation hợp lệ | field risk status, environment daily, pest weekly, alerts |
 | Data quality | dữ liệu lỗi có chủ ý | records đã qua gate | report before/after và remediation counts |
 
@@ -276,6 +276,55 @@ Các cột chi phí hoạt động dùng tiền tố `operating_`; giao dịch m
 spend. `inventory_value_vnd` là giá trị tồn kho tại thời điểm chốt. Ba measure này
 không được cộng với nhau. Chưa có allocation ledger nối giao dịch outbound với
 `activity_id`, vì vậy hệ thống chưa tuyên bố COGS theo hoạt động hoặc mùa vụ.
+
+## Gold Inventory Demand Forecast
+
+`inventory_demand_forecast.csv` có grain một
+`warehouse_code + material_code + base_unit` khi SKU-location có ít nhất một
+giao dịch hợp lệ trong cửa sổ 180 ngày kết thúc tại `as_of_date`. Dữ liệu chỉ
+dùng OUT movement để dự báo; IN movement vẫn thiết lập lịch sử để trạng thái
+`no_demand` không bị biến thành thiếu dữ liệu. `history_start_date` là ngày
+giao dịch sớm nhất trong cửa sổ inclusive, `history_end_date` luôn bằng
+`as_of_date`, và `history_days` phải khớp chính xác span inclusive trong
+1..180 ngày.
+
+| Nhóm cột | Contract |
+|---|---|
+| Identity | `as_of_date`, warehouse/material/base-unit, `model_version=mean-daily-usage-90d-v1` |
+| Coverage | `forecast_status`, history start/end/days, nonzero-demand days |
+| Forecast | horizon 30, point quantity, empirical rolling-30-day p10/p90 bounds |
+| Backtest | weekly rolling origins, window count, MAE, WAPE; metrics null khi chưa đủ bằng chứng |
+
+`inventory_status.csv` giữ nguyên `recommended_order_quantity` và
+`predicted_30d_need` lịch sử để không thay đổi chính sách hiện hành. Các cột
+`forecast_*` được nối one-to-one theo warehouse/material sau khi kiểm tra base
+unit. `forecast_coverage_status=unavailable` và toàn bộ evidence null khi
+SKU-location không có lịch sử đủ để tạo row forecast.
+`forecast_status` chỉ nhận `ready`, `no_demand`, hoặc `insufficient_history`;
+`forecast_coverage_status` trong `inventory_status.csv` mở rộng thêm giá trị
+`unavailable` cho join thiếu evidence. `forecast_suggested_order_quantity`
+chỉ là `max(forecast_upper_quantity - max(stock_quantity, 0), 0)`; hệ thống
+không tự tạo đơn mua hoặc sửa ledger. `forecast_days_of_supply` dùng point
+forecast, và validator snapshot chấp nhận sai số tròn số trong giới hạn 2 ULP
+hoặc 1e-9 để không làm hỏng byte-stable CSV round-trip.
+
+Pipeline fail closed khi grain trùng, as-of/history-end stale, history span sai
+inclusive, unit lệch, model hoặc status sai, backtest windows sai cadence, hay
+giá trị số/derived không hữu hạn. Forecast `ready` phải có backtest evidence
+không null; `no_demand` phải có `nonzero_demand_days=0` và mọi forecast range /
+backtest metric bằng 0 hoặc null theo contract; `insufficient_history` giữ
+metric accuracy null nhưng vẫn phải qua temporal span và deterministic backtest
+window checks. Manifest tự ghi row count và SHA-256 exact bytes cho
+`gold/inventory_demand_forecast.csv`; rerun cùng input/as-of phải byte-stable.
+
+Phase 2 chỉ mở rộng Gold nội bộ. Snapshot gate xác minh exact extended schema
+nhưng FastAPI vẫn project đúng model Inventory cũ; forecast fields chưa xuất
+hiện trong public response/OpenAPI cho tới Phase 3 có scope, codegen, UI và
+browser acceptance. `metrics_inventory_forecast.py` tạo Gold forecast và nối
+evidence vào `inventory_status.csv`; `analytics_api/snapshot_cache.py` xác minh
+manifest fingerprint và extended schema, còn
+`analytics_api/domain_read_models.py` chỉ phát public legacy model cho tới khi
+Phase 3 version hóa contract.
 
 Mỗi Gold frame được kiểm tra exact key set, thứ tự cột, logical pandas type và
 giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm pipeline fail closed.

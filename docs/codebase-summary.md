@@ -47,11 +47,24 @@ weekly rolling-origin MAE/WAPE with explicit `ready`, `no_demand`, and
 `insufficient_history` states. Validation fails closed on malformed dates,
 identifiers, quantities, or unit-mixing before the forecast can be built.
 
-This slice is not yet wired into Gold, API, or UI surfaces. It does not claim
-yield, pest-risk, anomaly, what-if, or Text-to-SQL capability, and it keeps the
-existing browser/dashboard contracts unchanged. The accepted test surface for
-the slice is 29 passing tests: 26 focused forecast tests plus 3 pipeline
-regressions.
+`src/agriinsight/metrics_inventory_forecast.py` materializes the Gold forecast
+CSV and appends forecast evidence to `inventory_status.csv` without rewriting
+the current `recommended_order_quantity` policy. The paired contract modules
+`metrics_inventory_forecast_contract.py`,
+`metrics_inventory_forecast_status_contract.py`, and
+`metrics_inventory_forecast_temporal_contract.py` enforce exact schema,
+inclusive history spans, deterministic weekly backtest windows, and ULP-safe
+derived evidence after CSV round-trip. The analytics snapshot boundary then
+loads those exact bytes through `analytics_api/snapshot_cache.py`, while
+`analytics_api/domain_read_models.py` keeps projecting the legacy inventory
+response until Phase 3 adopts the new fields publicly.
+
+This slice does not yet claim yield, pest-risk, anomaly, what-if, or
+Text-to-SQL capability, and it keeps the existing browser/dashboard contracts
+unchanged. Phase 2 evidence at `8149ee1` is 317 Python passes with 3
+intentional skips, independent contract review at 96/100, and hosted CI
+[`30464080148`](https://github.com/JasonTM17/AgriInsight/actions/runs/30464080148)
+passing all 10 jobs. Phase 3 remains the public API/UI boundary.
 
 ## Web surface
 
@@ -325,9 +338,10 @@ startup invariant.
   `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`
   and Python `sha256:ee4090812a36c48f180ee74aaa16995c79eabfedb6821d9764319643d06ba2f6`.
   They are not a new alert-worker image/tag/digest or release claim.
-- Inventory demand forecasting Phase 1: 29 passing tests, split into
-  26 focused forecast tests and 3 pipeline regressions. The implementation is
-  still Python-only and not yet Gold/API/UI integrated.
+- Inventory demand forecasting Phase 2 local review: deterministic Gold
+  forecast and joined inventory evidence, exact snapshot contract validation,
+  and legacy API projection are complete at `8149ee1`. Phase 3 must expose the
+  authorized public contract and UI before any browser-facing forecast claim.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.

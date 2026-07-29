@@ -96,6 +96,14 @@ closed. `/health/live` is process-only and `/health/ready` is the
 reconciliation gate. Analytics reads remain GET-only; the optional assistant
 adds one authenticated `POST /internal/v1/assistant/query`.
 
+When the inventory forecast code, movement seed, or Gold schema changes, the
+API deployment must use freshly regenerated `gold/inventory_demand_forecast.csv`
+and `gold/inventory_status.csv` from the matching run, plus the updated
+manifest. The analytics snapshot cache checks the exact manifest fingerprint
+and validates the extended inventory forecast contract at load time; stale
+forecast artifacts or a mismatched manifest fail closed before the API can
+serve readiness.
+
 ## DeepSeek RAG assistant
 
 The assistant is disabled by default. Enable it only on the internal analytics
