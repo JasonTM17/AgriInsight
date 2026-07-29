@@ -10,6 +10,7 @@ export type RealtimeAlertPanelStatus =
   | "loading"
   | "partial"
   | "ready"
+  | "session-expired"
   | "stale";
 
 export type RealtimeAlertPanelFailure = Readonly<{
@@ -20,10 +21,21 @@ export type RealtimeAlertPanelFailure = Readonly<{
 
 export type RealtimeAlertAcknowledgement =
   | Readonly<{ status: "idle" }>
-  | Readonly<{ idempotencyKey: string; status: "acknowledging" }>
-  | Readonly<{ acknowledgedAt: string; status: "acknowledged" }>
   | Readonly<{
       idempotencyKey: string;
+      observedAt: string;
+      status: "acknowledging";
+    }>
+  | Readonly<{
+      acknowledgedAt: string;
+      observedAt: string;
+      status: "acknowledged";
+    }>
+  | Readonly<{ observedAt: string; status: "acknowledgement-denied" }>
+  | Readonly<{ observedAt: string; status: "alert-unavailable" }>
+  | Readonly<{
+      idempotencyKey: string;
+      observedAt: string;
       status: "acknowledgement-unknown";
     }>;
 
@@ -41,6 +53,8 @@ export type RealtimeAlertPanelState = Readonly<{
 }>;
 
 const IDLE_ACKNOWLEDGEMENT: RealtimeAlertAcknowledgement = { status: "idle" };
+
+export const REALTIME_ALERT_STALE_AFTER_MS = 90_000;
 
 export function createRealtimeAlertPanelState(): RealtimeAlertPanelState {
   return {
@@ -70,6 +84,10 @@ export function receiveRealtimeAlertFeed(
   };
   return {
     ...state,
+    acknowledgements: reconcileAcknowledgements(
+      state.acknowledgements,
+      data.items
+    ),
     failure: null,
     feed,
     status: feed.isPartial ? "partial" : feed.isStale ? "stale" : "ready"
@@ -81,6 +99,16 @@ export function failRealtimeAlertFeedLoad(
   failure: RealtimeAlertPanelFailure
 ): RealtimeAlertPanelState {
   return { ...state, failure, status: "failed" };
+}
+
+export function handleRealtimeAlertFeedFailure(
+  state: RealtimeAlertPanelState,
+  failure: RealtimeAlertPanelFailure,
+  status: number
+): RealtimeAlertPanelState {
+  if (status === 401) return expireRealtimeAlertPanelSession(state);
+  if (status === 403) return denyRealtimeAlertPanel(state);
+  return failRealtimeAlertFeedLoad(state, failure);
 }
 
 export function denyRealtimeAlertPanel(
@@ -95,6 +123,18 @@ export function denyRealtimeAlertPanel(
   };
 }
 
+export function expireRealtimeAlertPanelSession(
+  state: RealtimeAlertPanelState
+): RealtimeAlertPanelState {
+  return {
+    ...state,
+    acknowledgements: {},
+    failure: null,
+    feed: null,
+    status: "session-expired"
+  };
+}
+
 export function closeRealtimeAlertPanel(
   state: RealtimeAlertPanelState
 ): RealtimeAlertPanelState {
@@ -106,16 +146,29 @@ export function beginRealtimeAlertAcknowledgement(
   alertId: string,
   requestedKey: string
 ): RealtimeAlertPanelState {
-  const current = getRealtimeAlertAcknowledgement(state, alertId);
   const alert = state.feed?.data.items.find((item) => item.id === alertId);
-  if (!alert || alert.acknowledged || current.status === "acknowledging") {
+  const current = getRealtimeAlertAcknowledgement(state, alertId);
+  const currentForObservation = isAcknowledgementForObservation(
+    current,
+    alert?.lastObservedAt
+  )
+    ? current
+    : IDLE_ACKNOWLEDGEMENT;
+  if (
+    !alert
+    || alert.acknowledged
+    || currentForObservation.status === "acknowledging"
+    || currentForObservation.status === "acknowledgement-denied"
+    || currentForObservation.status === "alert-unavailable"
+  ) {
     return state;
   }
-  const idempotencyKey = current.status === "acknowledgement-unknown"
-    ? current.idempotencyKey
+  const idempotencyKey = currentForObservation.status === "acknowledgement-unknown"
+    ? currentForObservation.idempotencyKey
     : requestedKey;
   return withAcknowledgement(state, alertId, {
     idempotencyKey,
+    observedAt: alert.lastObservedAt,
     status: "acknowledging"
   });
 }
@@ -128,6 +181,7 @@ export function markRealtimeAlertAcknowledgementUnknown(
   if (current.status !== "acknowledging") return state;
   return withAcknowledgement(state, alertId, {
     idempotencyKey: current.idempotencyKey,
+    observedAt: current.observedAt,
     status: "acknowledgement-unknown"
   });
 }
@@ -140,6 +194,7 @@ export function completeRealtimeAlertAcknowledgement(
   const current = getRealtimeAlertAcknowledgement(state, alertId);
   if (
     current.status !== "acknowledging"
+    || current.observedAt !== alert.lastObservedAt
     || alert.id !== alertId
     || !alert.acknowledged
     || alert.acknowledgedAt === null
@@ -156,7 +211,11 @@ export function completeRealtimeAlertAcknowledgement(
   return withAcknowledgement(
     { ...state, feed },
     alertId,
-    { acknowledgedAt: alert.acknowledgedAt, status: "acknowledged" }
+    {
+      acknowledgedAt: alert.acknowledgedAt,
+      observedAt: alert.lastObservedAt,
+      status: "acknowledged"
+    }
   );
 }
 
@@ -169,6 +228,43 @@ export function clearRealtimeAlertAcknowledgement(
     Object.entries(state.acknowledgements).filter(([id]) => id !== alertId)
   );
   return { ...state, acknowledgements };
+}
+
+export function denyRealtimeAlertAcknowledgement(
+  state: RealtimeAlertPanelState,
+  alertId: string
+): RealtimeAlertPanelState {
+  const observedAt = getAlertObservedAt(state, alertId);
+  if (!observedAt) return state;
+  return withAcknowledgement(state, alertId, {
+    observedAt,
+    status: "acknowledgement-denied"
+  });
+}
+
+export function markRealtimeAlertUnavailable(
+  state: RealtimeAlertPanelState,
+  alertId: string
+): RealtimeAlertPanelState {
+  const observedAt = getAlertObservedAt(state, alertId);
+  if (!observedAt) return state;
+  return withAcknowledgement(state, alertId, {
+    observedAt,
+    status: "alert-unavailable"
+  });
+}
+
+export function handleRealtimeAlertAcknowledgementFailure(
+  state: RealtimeAlertPanelState,
+  alertId: string,
+  status: number
+): RealtimeAlertPanelState {
+  if (status === 401) return expireRealtimeAlertPanelSession(state);
+  if (status === 403) {
+    return denyRealtimeAlertAcknowledgement(state, alertId);
+  }
+  if (status === 404) return markRealtimeAlertUnavailable(state, alertId);
+  return clearRealtimeAlertAcknowledgement(state, alertId);
 }
 
 export function getRealtimeAlertAcknowledgement(
@@ -212,6 +308,12 @@ export function isRealtimeAlertPollingEligible(
   return isOpen && !requestInFlight && documentVisibility === "visible";
 }
 
+export function isRealtimeAlertPanelTerminalStatus(
+  status: RealtimeAlertPanelStatus
+): boolean {
+  return status === "denied" || status === "session-expired";
+}
+
 function withAcknowledgement(
   state: RealtimeAlertPanelState,
   alertId: string,
@@ -221,4 +323,53 @@ function withAcknowledgement(
     ...state,
     acknowledgements: { ...state.acknowledgements, [alertId]: acknowledgement }
   };
+}
+
+function getAlertObservedAt(
+  state: RealtimeAlertPanelState,
+  alertId: string
+): string | undefined {
+  return state.feed?.data.items.find((item) => item.id === alertId)?.lastObservedAt;
+}
+
+function isAcknowledgementForObservation(
+  acknowledgement: RealtimeAlertAcknowledgement,
+  observedAt: string | undefined
+): boolean {
+  return acknowledgement.status !== "idle"
+    && observedAt !== undefined
+    && acknowledgement.observedAt === observedAt;
+}
+
+function reconcileAcknowledgements(
+  acknowledgements: Readonly<Record<string, RealtimeAlertAcknowledgement>>,
+  alerts: readonly RealtimeOperationalAlert[]
+): Readonly<Record<string, RealtimeAlertAcknowledgement>> {
+  const next = { ...acknowledgements };
+  for (const alert of alerts) {
+    const current = next[alert.id];
+    if (alert.acknowledged && alert.acknowledgedAt !== null) {
+      next[alert.id] = {
+        acknowledgedAt: alert.acknowledgedAt,
+        observedAt: alert.lastObservedAt,
+        status: "acknowledged"
+      };
+      continue;
+    }
+    if (
+      current
+      && current.status !== "idle"
+      && current.observedAt !== alert.lastObservedAt
+    ) {
+      delete next[alert.id];
+      continue;
+    }
+    if (
+      current?.status === "acknowledged"
+      && current.observedAt === alert.lastObservedAt
+    ) {
+      delete next[alert.id];
+    }
+  }
+  return next;
 }
