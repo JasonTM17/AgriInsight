@@ -1602,6 +1602,45 @@
         "title": "FieldHealthModel",
         "type": "object"
       },
+      "ForecastHealthModel": {
+        "additionalProperties": false,
+        "properties": {
+          "insufficientHistory": {
+            "minimum": 0.0,
+            "title": "Insufficienthistory",
+            "type": "integer"
+          },
+          "noDemand": {
+            "minimum": 0.0,
+            "title": "Nodemand",
+            "type": "integer"
+          },
+          "ready": {
+            "minimum": 0.0,
+            "title": "Ready",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "unavailable": {
+            "minimum": 0.0,
+            "title": "Unavailable",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ready",
+          "noDemand",
+          "insufficientHistory",
+          "unavailable",
+          "total"
+        ],
+        "title": "ForecastHealthModel",
+        "type": "object"
+      },
       "FreshnessModel": {
         "additionalProperties": false,
         "properties": {
@@ -1883,6 +1922,8 @@
             "type": "string"
           },
           "cumulativeValueSharePct": {
+            "maximum": 100.0,
+            "minimum": 0.0,
             "title": "Cumulativevaluesharepct",
             "type": "number"
           },
@@ -1903,6 +1944,8 @@
             "type": "integer"
           },
           "valueSharePct": {
+            "maximum": 100.0,
+            "minimum": 0.0,
             "title": "Valuesharepct",
             "type": "number"
           }
@@ -1999,49 +2042,227 @@
         "title": "InventoryAlertModel",
         "type": "object"
       },
-      "InventoryPayload": {
+      "InventoryForecastModel": {
         "additionalProperties": false,
         "properties": {
-          "abc": {
-            "items": {
-              "$ref": "#/components/schemas/InventoryAbcModel"
-            },
-            "title": "Abc",
-            "type": "array"
+          "asOfDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asofdate"
           },
-          "alerts": {
-            "items": {
-              "$ref": "#/components/schemas/InventoryAlertModel"
-            },
-            "title": "Alerts",
-            "type": "array"
+          "backtestMae": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backtestmae"
           },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/InventoryStatusModel"
-            },
-            "title": "Items",
-            "type": "array"
+          "backtestWapePct": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backtestwapepct"
           },
-          "page": {
-            "$ref": "#/components/schemas/PageModel"
+          "backtestWindows": {
+            "anyOf": [
+              {
+                "maximum": 9.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backtestwindows"
           },
-          "summary": {
-            "$ref": "#/components/schemas/InventorySummaryModel"
+          "coverageStatus": {
+            "enum": [
+              "ready",
+              "noDemand",
+              "insufficientHistory",
+              "unavailable"
+            ],
+            "title": "Coveragestatus",
+            "type": "string"
+          },
+          "forecastDaysOfSupply": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecastdaysofsupply"
+          },
+          "forecastQuantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecastquantity"
+          },
+          "forecastSuggestedOrderQuantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecastsuggestedorderquantity"
+          },
+          "historyDays": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historydays"
+          },
+          "historyEndDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historyenddate"
+          },
+          "historyStartDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historystartdate"
+          },
+          "horizonDays": {
+            "anyOf": [
+              {
+                "const": 30,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizondays"
+          },
+          "lowerQuantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lowerquantity"
+          },
+          "modelVersion": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelversion"
+          },
+          "nonzeroDemandDays": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nonzerodemanddays"
+          },
+          "upperQuantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upperquantity"
           }
         },
         "required": [
-          "abc",
-          "alerts",
-          "items",
-          "page",
-          "summary"
+          "asOfDate",
+          "modelVersion",
+          "coverageStatus",
+          "historyStartDate",
+          "historyEndDate",
+          "historyDays",
+          "nonzeroDemandDays",
+          "horizonDays",
+          "forecastQuantity",
+          "lowerQuantity",
+          "upperQuantity",
+          "backtestWindows",
+          "backtestMae",
+          "backtestWapePct",
+          "forecastDaysOfSupply",
+          "forecastSuggestedOrderQuantity"
         ],
-        "title": "InventoryPayload",
+        "title": "InventoryForecastModel",
         "type": "object"
       },
-      "InventoryStatusModel": {
+      "InventoryItemModel": {
         "additionalProperties": false,
+        "description": "Public inventory item; raw forecast columns stay internal to Gold CSV.",
         "properties": {
           "abcClass": {
             "enum": [
@@ -2097,6 +2318,9 @@
           "farmName": {
             "title": "Farmname",
             "type": "string"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/InventoryForecastModel"
           },
           "inventoryValueVnd": {
             "title": "Inventoryvaluevnd",
@@ -2175,9 +2399,58 @@
           "stockStatus",
           "recommendedOrderQuantity",
           "predicted30dNeed",
-          "abcClass"
+          "abcClass",
+          "forecast"
         ],
-        "title": "InventoryStatusModel",
+        "title": "InventoryItemModel",
+        "type": "object"
+      },
+      "InventoryPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "abc": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAbcModel"
+            },
+            "maxItems": 100,
+            "title": "Abc",
+            "type": "array"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAlertModel"
+            },
+            "maxItems": 100,
+            "title": "Alerts",
+            "type": "array"
+          },
+          "forecastHealth": {
+            "$ref": "#/components/schemas/ForecastHealthModel"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryItemModel"
+            },
+            "maxItems": 100,
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageModel"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/InventorySummaryModel"
+          }
+        },
+        "required": [
+          "abc",
+          "alerts",
+          "forecastHealth",
+          "items",
+          "page",
+          "summary"
+        ],
+        "title": "InventoryPayload",
         "type": "object"
       },
       "InventorySummaryModel": {

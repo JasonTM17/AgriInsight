@@ -10,6 +10,9 @@ from agriinsight.analytics_api.dependencies import (
 from agriinsight.analytics_api.domain_read_models import inventory_payload
 from agriinsight.analytics_api.models import AnalyticsEnvelope, InventoryPayload
 from agriinsight.analytics_api.response_envelope import envelope
+from agriinsight.analytics_api.response_bounds import (
+    require_serialized_response_within_limit,
+)
 from agriinsight.analytics_api.routers.common import (
     assert_snapshot_current,
     require_warehouse_filter,
@@ -49,4 +52,5 @@ async def get_inventory(
         missing=payload.page.total == 0,
     )
     assert_snapshot_current(request, snapshot)
+    require_serialized_response_within_limit(response)
     return response

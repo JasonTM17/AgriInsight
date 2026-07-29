@@ -8,12 +8,41 @@ from agriinsight.analytics_api.auth_scope import AuthorizedScope
 from agriinsight.analytics_api.models import (
     CropHealthPayload,
     EvidenceSignalModel,
+    ForecastHealthModel,
     InventoryPayload,
     PageModel,
 )
-from agriinsight.analytics_api.response_shaping import json_safe, records
+from agriinsight.analytics_api.response_shaping import camel, json_safe, records
 from agriinsight.analytics_api.record_models import InventoryStatusModel
 from agriinsight.analytics_snapshot import ArtifactSnapshot
+
+_FORECAST_COLUMNS = {
+    "forecast_as_of_date": "as_of_date",
+    "forecast_model_version": "model_version",
+    "forecast_coverage_status": "coverage_status",
+    "forecast_history_start_date": "history_start_date",
+    "forecast_history_end_date": "history_end_date",
+    "forecast_history_days": "history_days",
+    "forecast_nonzero_demand_days": "nonzero_demand_days",
+    "forecast_horizon_days": "horizon_days",
+    "forecast_quantity": "forecast_quantity",
+    "forecast_lower_quantity": "lower_quantity",
+    "forecast_upper_quantity": "upper_quantity",
+    "forecast_backtest_windows": "backtest_windows",
+    "forecast_backtest_mae": "backtest_mae",
+    "forecast_backtest_wape_pct": "backtest_wape_pct",
+    "forecast_days_of_supply": "forecast_days_of_supply",
+    "forecast_suggested_order_quantity": "forecast_suggested_order_quantity",
+}
+_FORECAST_EVIDENCE_KEYS = tuple(
+    camel(name) for name in _FORECAST_COLUMNS.values() if name != "coverage_status"
+)
+_PUBLIC_COVERAGE_STATUS = {
+    "ready": "ready",
+    "no_demand": "noDemand",
+    "insufficient_history": "insufficientHistory",
+    "unavailable": "unavailable",
+}
 
 
 def inventory_payload(
@@ -35,11 +64,11 @@ def inventory_payload(
         ["warehouse_code", "material_code"], kind="stable"
     )
     page = status.iloc[offset : offset + limit]
-    public_page = page.loc[:, list(InventoryStatusModel.model_fields)]
     return InventoryPayload(
         abc=records(_inventory_abc(status)),
         alerts=records(alerts.head(100)),
-        items=records(public_page),
+        forecast_health=_forecast_health(status),
+        items=_inventory_items(page),
         page=PageModel(
             has_more=offset + limit < len(status),
             limit=limit,
@@ -47,6 +76,38 @@ def inventory_payload(
             total=len(status),
         ),
         summary=json_safe(_inventory_summary(status, alerts)),
+    )
+
+
+def _inventory_items(page: pd.DataFrame) -> list[dict[str, Any]]:
+    legacy_items = records(page.loc[:, list(InventoryStatusModel.model_fields)])
+    forecast_items = records(
+        page.loc[:, list(_FORECAST_COLUMNS)].rename(columns=_FORECAST_COLUMNS)
+    )
+    return [
+        {**legacy, "forecast": _public_forecast(forecast)}
+        for legacy, forecast in zip(legacy_items, forecast_items, strict=True)
+    ]
+
+
+def _public_forecast(forecast: dict[str, Any]) -> dict[str, Any]:
+    coverage = _PUBLIC_COVERAGE_STATUS[forecast["coverageStatus"]]
+    if coverage == "unavailable":
+        return {
+            **{key: None for key in _FORECAST_EVIDENCE_KEYS},
+            "coverageStatus": coverage,
+        }
+    return {**forecast, "coverageStatus": coverage}
+
+
+def _forecast_health(status: pd.DataFrame) -> ForecastHealthModel:
+    coverage = status["forecast_coverage_status"]
+    return ForecastHealthModel(
+        ready=int(coverage.eq("ready").sum()),
+        no_demand=int(coverage.eq("no_demand").sum()),
+        insufficient_history=int(coverage.eq("insufficient_history").sum()),
+        unavailable=int(coverage.eq("unavailable").sum()),
+        total=int(len(status)),
     )
 
 
@@ -136,17 +197,28 @@ def _inventory_abc(status: pd.DataFrame) -> pd.DataFrame:
             inventory_value_vnd=("inventory_value_vnd", "sum"),
             stock_locations=("warehouse_code", "nunique"),
         )
-        .sort_values("inventory_value_vnd", ascending=False, kind="stable")
+        .sort_values(
+            ["inventory_value_vnd", "material_code", "material_name", "category"],
+            ascending=[False, True, True, True],
+            kind="stable",
+        )
     )
     total = float(grouped["inventory_value_vnd"].sum())
     grouped["value_share_pct"] = (
         grouped["inventory_value_vnd"] / total * 100 if total else 0.0
     )
-    grouped["cumulative_value_share_pct"] = grouped["value_share_pct"].cumsum()
+    grouped["value_share_pct"] = grouped["value_share_pct"].clip(
+        lower=0.0,
+        upper=100.0,
+    )
+    grouped["cumulative_value_share_pct"] = grouped["value_share_pct"].cumsum().clip(
+        lower=0.0,
+        upper=100.0,
+    )
     grouped["abc_class"] = grouped["cumulative_value_share_pct"].map(
         lambda value: "A" if value <= 80 else ("B" if value <= 95 else "C")
     )
-    return grouped
+    return grouped.head(100)
 
 
 def _crop_summary(fields: pd.DataFrame) -> dict[str, Any]:

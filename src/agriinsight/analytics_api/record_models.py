@@ -3,7 +3,15 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Any, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    FiniteFloat,
+    field_validator,
+    model_validator,
+)
 
 
 def _camel(value: str) -> str:
@@ -132,8 +140,8 @@ class InventoryAbcModel(RecordModel):
     category: str
     inventory_value_vnd: float
     stock_locations: int
-    value_share_pct: float
-    cumulative_value_share_pct: float
+    value_share_pct: FiniteFloat = Field(ge=0, le=100)
+    cumulative_value_share_pct: FiniteFloat = Field(ge=0, le=100)
     abc_class: Literal["A", "B", "C"]
 
 
@@ -175,6 +183,58 @@ class InventoryStatusModel(RecordModel):
     recommended_order_quantity: float
     predicted_30d_need: float
     abc_class: Literal["A", "B", "C"]
+
+
+class InventoryForecastModel(RecordModel):
+    as_of_date: date | None
+    model_version: str | None = Field(max_length=64)
+    coverage_status: Literal[
+        "ready", "noDemand", "insufficientHistory", "unavailable"
+    ]
+    history_start_date: date | None
+    history_end_date: date | None
+    history_days: int | None = Field(ge=1, le=180)
+    nonzero_demand_days: int | None = Field(ge=0, le=180)
+    horizon_days: Literal[30] | None
+    forecast_quantity: FiniteFloat | None = Field(ge=0)
+    lower_quantity: FiniteFloat | None = Field(ge=0)
+    upper_quantity: FiniteFloat | None = Field(ge=0)
+    backtest_windows: int | None = Field(ge=0, le=9)
+    backtest_mae: FiniteFloat | None = Field(ge=0)
+    backtest_wape_pct: FiniteFloat | None = Field(ge=0)
+    forecast_days_of_supply: FiniteFloat | None = Field(ge=0)
+    forecast_suggested_order_quantity: FiniteFloat | None = Field(ge=0)
+
+    @model_validator(mode="after")
+    def unavailable_has_no_evidence(self) -> "InventoryForecastModel":
+        if self.coverage_status == "unavailable" and any(
+            value is not None
+            for value in (
+                self.as_of_date,
+                self.model_version,
+                self.history_start_date,
+                self.history_end_date,
+                self.history_days,
+                self.nonzero_demand_days,
+                self.horizon_days,
+                self.forecast_quantity,
+                self.lower_quantity,
+                self.upper_quantity,
+                self.backtest_windows,
+                self.backtest_mae,
+                self.backtest_wape_pct,
+                self.forecast_days_of_supply,
+                self.forecast_suggested_order_quantity,
+            )
+        ):
+            raise ValueError("unavailable forecast evidence must be null")
+        return self
+
+
+class InventoryItemModel(InventoryStatusModel):
+    """Public inventory item; raw forecast columns stay internal to Gold CSV."""
+
+    forecast: InventoryForecastModel
 
 
 class InventorySummaryModel(RecordModel):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Generic, Literal, TypeAlias, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from agriinsight.analytics_api.record_models import (
     CatalogFarmModel,
@@ -28,7 +28,7 @@ from agriinsight.analytics_api.record_models import (
     InsightModel,
     InventoryAbcModel,
     InventoryAlertModel,
-    InventoryStatusModel,
+    InventoryItemModel,
     InventorySummaryModel,
     MonthlyFinancialModel,
     PestIncidentModel,
@@ -126,10 +126,31 @@ class FarmsPayload(ApiModel):
     page: PageModel
 
 
+class ForecastHealthModel(ApiModel):
+    ready: int = Field(ge=0)
+    no_demand: int = Field(ge=0)
+    insufficient_history: int = Field(ge=0)
+    unavailable: int = Field(ge=0)
+    total: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def counters_match_total(self) -> "ForecastHealthModel":
+        count = (
+            self.ready
+            + self.no_demand
+            + self.insufficient_history
+            + self.unavailable
+        )
+        if count != self.total:
+            raise ValueError("forecast health counters must equal total")
+        return self
+
+
 class InventoryPayload(ApiModel):
-    abc: list[InventoryAbcModel]
-    alerts: list[InventoryAlertModel]
-    items: list[InventoryStatusModel]
+    abc: list[InventoryAbcModel] = Field(max_length=100)
+    alerts: list[InventoryAlertModel] = Field(max_length=100)
+    forecast_health: ForecastHealthModel
+    items: list[InventoryItemModel] = Field(max_length=100)
     page: PageModel
     summary: InventorySummaryModel
 

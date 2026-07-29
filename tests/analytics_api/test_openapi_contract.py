@@ -7,6 +7,14 @@ from agriinsight.analytics_api.openapi_contract import canonical_openapi_bytes
 CONTRACT = Path("docs/contracts/agriinsight-analytics-v1.openapi.json")
 
 
+def _non_null_variant(schema: dict) -> dict:
+    return next(
+        variant
+        for variant in schema["anyOf"]
+        if variant.get("type") != "null"
+    )
+
+
 def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
     import json
 
@@ -86,6 +94,60 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "seasonCode",
     }
     assert "appliedFilter" in schemas["ScopeModel"]["properties"]
+    inventory_payload = schemas["InventoryPayload"]
+    assert inventory_payload["properties"]["abc"]["maxItems"] == 100
+    assert inventory_payload["properties"]["alerts"]["maxItems"] == 100
+    assert inventory_payload["properties"]["items"]["maxItems"] == 100
+    assert inventory_payload["properties"]["items"]["items"]["$ref"] == (
+        "#/components/schemas/InventoryItemModel"
+    )
+    forecast = schemas["InventoryForecastModel"]
+    assert forecast["additionalProperties"] is False
+    assert set(forecast["properties"]) == {
+        "asOfDate",
+        "modelVersion",
+        "coverageStatus",
+        "historyStartDate",
+        "historyEndDate",
+        "historyDays",
+        "nonzeroDemandDays",
+        "horizonDays",
+        "forecastQuantity",
+        "lowerQuantity",
+        "upperQuantity",
+        "backtestWindows",
+        "backtestMae",
+        "backtestWapePct",
+        "forecastDaysOfSupply",
+        "forecastSuggestedOrderQuantity",
+    }
+    assert set(forecast["required"]) == set(forecast["properties"])
+    assert forecast["properties"]["coverageStatus"]["enum"] == [
+        "ready",
+        "noDemand",
+        "insufficientHistory",
+        "unavailable",
+    ]
+    assert _non_null_variant(forecast["properties"]["historyDays"])["minimum"] == 1
+    assert _non_null_variant(forecast["properties"]["historyDays"])["maximum"] == 180
+    assert _non_null_variant(forecast["properties"]["backtestWindows"])["maximum"] == 9
+    assert _non_null_variant(forecast["properties"]["horizonDays"])["const"] == 30
+    health = schemas["ForecastHealthModel"]
+    assert health["additionalProperties"] is False
+    assert set(health["properties"]) == {
+        "ready",
+        "noDemand",
+        "insufficientHistory",
+        "unavailable",
+        "total",
+    }
+    assert all(
+        health["properties"][name]["minimum"] == 0
+        for name in health["properties"]
+    )
+    abc = schemas["InventoryAbcModel"]["properties"]
+    assert abc["valueSharePct"]["maximum"] == 100
+    assert abc["cumulativeValueSharePct"]["maximum"] == 100
     for path, path_item in contract["paths"].items():
         operation = (
             path_item["post"]

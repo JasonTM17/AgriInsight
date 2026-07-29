@@ -4,11 +4,36 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 
+import pandas as pd
 import pytest
+
+from agriinsight.analytics_api import response_bounds
+from agriinsight.analytics_api.domain_read_models import _inventory_abc
+from agriinsight.metrics_inventory_forecast_contract import (
+    INVENTORY_STATUS_FORECAST_COLUMNS,
+)
 
 HEADERS = {
     "Authorization": "Bearer test-token",
     "X-Correlation-Id": "phase2-test-001",
+}
+FORECAST_KEYS = {
+    "asOfDate",
+    "modelVersion",
+    "coverageStatus",
+    "historyStartDate",
+    "historyEndDate",
+    "historyDays",
+    "nonzeroDemandDays",
+    "horizonDays",
+    "forecastQuantity",
+    "lowerQuantity",
+    "upperQuantity",
+    "backtestWindows",
+    "backtestMae",
+    "backtestWapePct",
+    "forecastDaysOfSupply",
+    "forecastSuggestedOrderQuantity",
 }
 
 
@@ -40,13 +65,24 @@ def test_all_read_endpoints_return_typed_bounded_envelopes(api_factory) -> None:
         assert body["scope"]["tenantId"].endswith("0001")
     assert responses[2].json()["payload"]["page"]["limit"] == 2
     assert len(responses[2].json()["payload"]["items"]) <= 2
-    inventory_items = responses[3].json()["payload"]["items"]
+    inventory_payload = responses[3].json()["payload"]
+    inventory_items = inventory_payload["items"]
     assert len(inventory_items) <= 2
     assert all(
-        not key.startswith("forecast")
-        for item in inventory_items
-        for key in item
+        set(item["forecast"]) == FORECAST_KEYS for item in inventory_items
     )
+    assert all(
+        item["forecast"]["coverageStatus"]
+        in {"ready", "noDemand", "insufficientHistory", "unavailable"}
+        for item in inventory_items
+    )
+    assert set(inventory_payload["forecastHealth"]) == {
+        "ready",
+        "noDemand",
+        "insufficientHistory",
+        "unavailable",
+        "total",
+    }
     crop_payload = responses[4].json()["payload"]
     assert len(crop_payload["fields"]) <= 2
     for field in crop_payload["fields"]:
@@ -57,6 +93,163 @@ def test_all_read_endpoints_return_typed_bounded_envelopes(api_factory) -> None:
     for incident in crop_payload["pestIncidentsWeekly"]:
         assert date.fromisoformat(incident["week"])
     assert spring.closed is True
+
+
+def test_inventory_forecast_is_nested_and_preserves_legacy_policy(
+    api_factory,
+) -> None:
+    app, client, _spring = api_factory()
+    status = app.state.snapshot_cache.current().csv["inventory_status"]
+    source = status.loc[
+        status["forecast_coverage_status"] != "unavailable"
+    ].iloc[0]
+
+    with client:
+        response = client.get(
+            "/internal/v1/inventory",
+            params={"warehouse_code": source["warehouse_code"]},
+            headers=HEADERS,
+        )
+
+    assert response.status_code == 200, response.text
+    item = next(
+        item
+        for item in response.json()["payload"]["items"]
+        if item["materialCode"] == source["material_code"]
+    )
+    forecast = item["forecast"]
+    assert set(item).isdisjoint(FORECAST_KEYS)
+    assert {key for key in item if key.startswith("forecast")} == {"forecast"}
+    assert item["predicted30dNeed"] == source["predicted_30d_need"]
+    assert item["recommendedOrderQuantity"] == source["recommended_order_quantity"]
+    assert forecast["coverageStatus"] == {
+        "ready": "ready",
+        "no_demand": "noDemand",
+        "insufficient_history": "insufficientHistory",
+    }[source["forecast_coverage_status"]]
+    assert forecast["asOfDate"] == source["forecast_as_of_date"]
+    assert forecast["modelVersion"] == source["forecast_model_version"]
+    assert forecast["historyStartDate"] == source["forecast_history_start_date"]
+    assert forecast["historyEndDate"] == source["forecast_history_end_date"]
+    assert forecast["historyDays"] == source["forecast_history_days"]
+    assert forecast["nonzeroDemandDays"] == source["forecast_nonzero_demand_days"]
+    assert forecast["horizonDays"] == source["forecast_horizon_days"]
+    assert forecast["forecastQuantity"] == pytest.approx(source["forecast_quantity"])
+    assert forecast["lowerQuantity"] == pytest.approx(source["forecast_lower_quantity"])
+    assert forecast["upperQuantity"] == pytest.approx(source["forecast_upper_quantity"])
+    assert forecast["forecastDaysOfSupply"] == pytest.approx(
+        source["forecast_days_of_supply"]
+    )
+    assert forecast["forecastSuggestedOrderQuantity"] == pytest.approx(
+        source["forecast_suggested_order_quantity"]
+    )
+    if pd.isna(source["forecast_backtest_mae"]):
+        assert forecast["backtestMae"] is None
+        assert forecast["backtestWapePct"] is None
+    else:
+        assert forecast["backtestMae"] == pytest.approx(
+            source["forecast_backtest_mae"]
+        )
+        assert forecast["backtestWapePct"] == pytest.approx(
+            source["forecast_backtest_wape_pct"]
+        )
+
+
+def test_inventory_forecast_unavailable_evidence_is_null(api_factory) -> None:
+    app, client, _spring = api_factory()
+    status = app.state.snapshot_cache.current().csv["inventory_status"]
+    source = status.iloc[0].copy()
+    status.loc[source.name, "forecast_coverage_status"] = "unavailable"
+    for column in INVENTORY_STATUS_FORECAST_COLUMNS:
+        if column != "forecast_coverage_status":
+            status.loc[source.name, column] = None
+
+    with client:
+        response = client.get(
+            "/internal/v1/inventory",
+            params={"warehouse_code": source["warehouse_code"]},
+            headers=HEADERS,
+        )
+
+    assert response.status_code == 200, response.text
+    item = next(
+        item
+        for item in response.json()["payload"]["items"]
+        if item["materialCode"] == source["material_code"]
+    )
+    forecast = item["forecast"]
+    assert forecast["coverageStatus"] == "unavailable"
+    assert all(
+        forecast[key] is None for key in FORECAST_KEYS - {"coverageStatus"}
+    )
+
+
+def test_inventory_forecast_health_is_limited_to_the_scoped_status_frame(
+    api_factory,
+) -> None:
+    app, client, spring = api_factory()
+    status = app.state.snapshot_cache.current().csv["inventory_status"]
+    warehouse_code = spring.warehouses[0].code
+    scoped = status.loc[status["warehouse_code"] == warehouse_code]
+    assert 0 < len(scoped) < len(status)
+
+    with client:
+        response = client.get(
+            "/internal/v1/inventory",
+            params={"warehouse_code": warehouse_code},
+            headers=HEADERS,
+        )
+
+    assert response.status_code == 200, response.text
+    health = response.json()["payload"]["forecastHealth"]
+    assert health == {
+        "ready": int((scoped["forecast_coverage_status"] == "ready").sum()),
+        "noDemand": int(
+            (scoped["forecast_coverage_status"] == "no_demand").sum()
+        ),
+        "insufficientHistory": int(
+            (scoped["forecast_coverage_status"] == "insufficient_history").sum()
+        ),
+        "unavailable": int(
+            (scoped["forecast_coverage_status"] == "unavailable").sum()
+        ),
+        "total": len(scoped),
+    }
+    assert {
+        item["warehouseCode"] for item in response.json()["payload"]["items"]
+    } == {warehouse_code}
+
+
+def test_inventory_abc_is_deterministically_capped_at_one_hundred() -> None:
+    source = pd.DataFrame(
+        {
+            "material_code": [f"MAT-{number:03}" for number in range(101)],
+            "material_name": [f"Material {number:03}" for number in range(101)],
+            "category": ["fertilizer"] * 101,
+            "inventory_value_vnd": [float(101 - number) for number in range(101)],
+            "warehouse_code": ["WH-001"] * 101,
+        }
+    )
+
+    abc = _inventory_abc(source)
+
+    assert len(abc) == 100
+    assert list(abc["material_code"][:2]) == ["MAT-000", "MAT-001"]
+    assert (abc["value_share_pct"] <= 100).all()
+    assert (abc["cumulative_value_share_pct"] <= 100).all()
+
+
+def test_inventory_response_cap_is_sanitized(api_factory, monkeypatch) -> None:
+    _app, client, _spring = api_factory()
+    monkeypatch.setattr(response_bounds, "MAX_SERIALIZED_RESPONSE_BYTES", 1)
+
+    with client:
+        response = client.get("/internal/v1/inventory", headers=HEADERS)
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "analytics_response_too_large"
+    assert "artifacts" not in response.text
+    assert "inventory_status" not in response.text
 
 
 @pytest.mark.parametrize(
