@@ -148,8 +148,10 @@ filesystem, and use explicit `/tmp` tmpfs mounts. Semantic-version and full-SHA
 tags may be published to Docker Hub and GHCR only after candidate scan/smoke;
 BuildKit SBOM/provenance and exact-digest scan/smoke are mandatory. `latest` is
 not part of the tag model. The alert-worker hardening reuses the backend image,
-is merged locally with focused contract coverage, and still has no released
-tag, digest, package visibility, or external deployment.
+is merged on `main`, and is carried by released backend tag `0.2.3` at digest
+`sha256:8c17efc5371cc45efa65f23b1ca964784286ed692e2014d81e9a763b080cd418`.
+GHCR packages are private and linked to `JasonTM17/AgriInsight`; no external
+deployment is claimed.
 
 `deploy/compose.release-overlay.yaml` replaces local builds with digest-pinned
 first-party images and orders backend/web migrations before readiness. The
@@ -370,19 +372,19 @@ the operator backfill remains a separate pre-enable step.
 | Backend phase 5 inventory | Accepted 2026-07-22; 32 focused tests and guarded full gate green; schema V15 |
 | Backend phase 6 operating cost | Accepted 2026-07-22; 26 focused tests, guarded 442/96 gate green; schema V17 |
 | Backend phase 1 contract freeze | Verified 2026-07-23; eight additive bounded GET reads, deterministic OpenAPI export, and current 459+100 backend gate |
-| Backend phase 7 release boundary | Outbox/realtime foundation has historical evidence; isolated alert-worker hardening is merged locally with focused contract coverage and still needs hosted CI, main merge, protected publication, and release/recovery gates |
-| Realtime alert worker | Source/Compose topology is private and non-web; no public alert API/UI, semantic agriculture policy, hosted acceptance, image publication, or external deployment is claimed |
+| Backend phase 7 release boundary | Alert-worker hardening is merged on `main`; main CI `30413064146`, protected publication `30413877863`, and release `v0.2.3` are complete. External deployment and recovery-policy ownership remain open. |
+| Realtime alert worker | Source/Compose topology is private and non-web; hosted acceptance and backend-image publication are verified, while no public alert API/UI, semantic agriculture policy, or external deployment is claimed |
 | Disposable web auth spike | `openid-client` 6.8.4 won; Better Auth 1.6.24 rejected on executable refresh fencing; spike remains non-production |
 | Production web Phase 5 | Accepted locally 2026-07-26; overview and scoped farm intelligence routes verified |
 | Production web Phase 6 | Accepted locally 2026-07-26; mobile Work reads, idempotent append, append-only correction, bounded immutable history, and 6/6 real-browser gate verified |
-| Hosted CI | Run `29932250984` passed Java, Python, secret/dependency, and both image scan/smoke gates 5/5 at commit `8d8463f` |
-| Protected image workflow | Historical Phase 7 tags are separate evidence; any new backend image/package publication for this slice waits for migration, tests, review, merge, protected environment approval, and an exact returned digest |
+| Hosted CI | Main run `30413064146` passed Java, Python, web, secret/dependency, PostgreSQL/Kafka, seven-persona browser, and all four candidate-image gates at commit `3e72ab5` |
+| Protected image workflow | Run `30413877863` published all four `0.2.3` and full-SHA tags to Docker Hub/GHCR with SBOM/provenance, exact-digest scan/smoke, and cross-registry digest agreement |
 | Backend runtime verification | Digest-pinned Temurin 21.0.11 JRE Noble; Trivy 0.70.0 zero HIGH/CRITICAL; UID/GID 10001 pull-by-digest smoke passed |
 
 The right way to read the repo is: analytics and backend phases 1-6 are
 accepted, Phase 1 contract freeze is verified in the checked-in OpenAPI
-artifact, and Phase 7 has historical outbox/image/recovery evidence. The
-isolated alert-worker hardening is a separate private slice that is merged
-locally with focused contract coverage but still unreleased. Production identity
-configuration, protected release approval, recovery-policy ownership, and all
-external promotion remain open.
+artifact, and Phase 7 has current hosted/release evidence. The isolated
+alert-worker hardening is a separate private slice merged on `main` and released
+through the backend `0.2.3` image. Production identity configuration,
+recovery-policy ownership, broker operations, and external deployment remain
+open.

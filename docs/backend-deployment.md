@@ -1,11 +1,10 @@
 # Backend deployment and recovery
 
-Phase 7 supplies a local/staging delivery contract. The alert-worker hardening
-is merged on a local feature branch with focused contract coverage, but it is
-still not released: hosted CI, main merge, protected publication, and
-release/recovery approvals remain open. Existing realtime runner/workflow
-artifacts are foundation evidence only; they do not accept, publish, or deploy
-the current alert-worker slice.
+Phase 7 supplies a local/staging delivery contract. The private alert-worker
+hardening is merged on `main` and released in `v0.2.3`: hosted CI, protected
+publication, exact-digest verification, and repository-linked GHCR packages
+are complete. This release does not approve an external production deployment,
+production broker ownership, OIDC operations, or recovery objectives.
 
 ## Optional local Compose profile
 
@@ -29,7 +28,7 @@ docker compose --env-file .env.backend.local -f compose.yaml -f compose.backend.
   -f compose.realtime.yaml --profile backend --profile realtime up --build
 ```
 
-Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password setup, service `realtime-worker`, và service `realtime-alert-worker` non-web. Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD` và `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; biến sau chỉ được map vào datasource của login `agriinsight_alert_worker`, không được commit. Broker bind ra `127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored `backend/.runtime/kafka` trên D. Chỉ service `realtime-alert-worker` giữ `AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=false` và `AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=false`; DLT observer riêng vẫn hoạt động ở worker đó. `realtime-worker` là legacy publisher/consumer path riêng. Không có HTTP listener/public worker API. Cùng backend image được dùng cho source/Compose local; hiện chưa có image tag, digest, Docker Hub/GHCR package publication, hay external deployment mới cho slice này.
+Overlay này thêm Kafka KRaft `apache/kafka:4.3.1`, one-shot realtime password setup, service `realtime-worker`, và service `realtime-alert-worker` non-web. Nó yêu cầu `AGRIINSIGHT_DB_REALTIME_PASSWORD` và `AGRIINSIGHT_DB_ALERT_WORKER_PASSWORD`; biến sau chỉ được map vào datasource của login `agriinsight_alert_worker`, không được commit. Broker bind ra `127.0.0.1:${AGRIINSIGHT_KAFKA_PORT:-9094}` và ghi broker log vào ignored `backend/.runtime/kafka` trên D. Chỉ service `realtime-alert-worker` giữ `AGRIINSIGHT_REALTIME_PUBLISHER_ENABLED=false` và `AGRIINSIGHT_REALTIME_CONSUMER_ENABLED=false`; DLT observer riêng vẫn hoạt động ở worker đó. `realtime-worker` là legacy publisher/consumer path riêng. Không có HTTP listener/public worker API. Cùng backend image được dùng cho source/Compose local và bản phát hành `agriinsight-backend:0.2.3`; không có image `agriinsight-realtime` riêng và chưa có external deployment cho slice này.
 
 The alert-only datasource fixes pgJDBC `socketTimeout=65`, which is larger than the worker's configuration-capped 60-second query bound and leaves the API datasource's default fail-fast timeout unchanged. Its distinct terminal observer topic receives only a compact headerless marker on observer failure; it never forwards the original Kafka key, value, headers, or exception text. Receipt recording and DLT source attribution share a transaction-scoped advisory lock per event, so the DLT transaction waits and rechecks receipt after acquiring the lock; that is serialization, not exactly-once or broker ordering.
 
@@ -43,9 +42,9 @@ The protected release workflow publishes four first-party images:
 `agriinsight-python`, `agriinsight-backend`, `agriinsight-web`, and
 `agriinsight-analytics-api`. Pull-request CI builds the same four images with
 `push: false`. The isolated alert worker reuses `agriinsight-backend`; there is
-no separate `agriinsight-realtime` image. This in-progress slice does not
-establish a new backend tag, digest, Docker Hub/GHCR package visibility, or
-release. Dockerfiles pin base-image manifest digests, use allowlisted build
+no separate `agriinsight-realtime` image. Release `v0.2.3` establishes the
+versioned backend tag and exact digest shown below; GHCR packages remain private
+and are linked to `JasonTM17/AgriInsight`. Dockerfiles pin base-image manifest digests, use allowlisted build
 contexts, add OCI source/revision/version labels and expose deterministic smoke
 checks. The backend runtime is Temurin 21.0.11 JRE Noble at
 `sha256:373787d1d45a87f084fda43e7de0e9acf5eedee049446efac738f13587ec4c64` and
@@ -71,9 +70,23 @@ ghcr.io/<github-owner>/agriinsight-web
 ghcr.io/<github-owner>/agriinsight-analytics-api
 ```
 
-There is intentionally no automatic `latest`. BuildKit emits SBOM/provenance; Trivy scans the exact returned digest; both registry tags are resolved back to that digest; and a non-root smoke command runs against the digest. A failed post-publish evidence step fails the release and requires an audited new tag/republish rather than tag mutation. The published phase digests are evidence only until the protected production release environment is approved.
+There is intentionally no automatic `latest`. BuildKit emits SBOM/provenance; Trivy scans the exact returned digest; both registry tags are resolved back to that digest; and a non-root smoke command runs against the digest. A failed post-publish evidence step fails the release and requires an audited new tag/republish rather than tag mutation.
 
-Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This is historical non-production evidence for an earlier Phase 7 image path, not evidence that the current alert-worker hardening is hosted, published, or deployable.
+Release [`v0.2.3`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.2.3)
+was published from commit `3e72ab5226a17d85fc42cb4f0cacb1900a416a1a`.
+Main CI [`30413064146`](https://github.com/JasonTM17/AgriInsight/actions/runs/30413064146)
+and protected publication
+[`30413877863`](https://github.com/JasonTM17/AgriInsight/actions/runs/30413877863)
+passed. Docker Hub and GHCR returned the same digest for each `0.2.3` tag:
+
+| Image | Exact digest |
+|---|---|
+| `agriinsight-python` | `sha256:ea8dc5d97b493833e526a7d01a76b76c13a70f2c94af30cd1f7f3ba2ce7829ec` |
+| `agriinsight-backend` | `sha256:8c17efc5371cc45efa65f23b1ca964784286ed692e2014d81e9a763b080cd418` |
+| `agriinsight-web` | `sha256:7930dd4468bf7664b7196288421e1d79737e36c9bba6759597e53bf513aecad2` |
+| `agriinsight-analytics-api` | `sha256:c4e56c3f8084c6d505f50dc1e38848c9cd1b4ca77b6d44b4b285d8cd6e3c4677` |
+
+Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This remains historical evidence for the earlier Phase 7 image path; `v0.2.3` is the current release evidence.
 
 ## Backup
 

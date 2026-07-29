@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.9
-Updated: 2026-07-28
-Status: backend core, Analytics Phase 2, and eight-area web are verified; the alert-worker hardening is merged locally with focused contract coverage, while hosted CI, main merge, and protected production release/recovery approvals remain open
+Version: 0.10
+Updated: 2026-07-29
+Status: backend core, Analytics Phase 2, eight-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.2.3` are verified; external production deployment and recovery ownership remain open
 
 ## Product goal
 
@@ -39,8 +39,8 @@ hiding them in dashboards.
    Phase 7 provides the versioned transactional outbox, fenced drain, and an
    opt-in Kafka consumer that materializes PostgreSQL realtime summaries.
    `V22` alert storage is immutable; the metadata-only isolated alert-worker
-   hardening is V23-V28 with expected schema version 28 and is merged locally
-   with focused contract coverage, but it is still unreleased. V23 requires its
+   hardening is V23-V28 with expected schema version 28 and is merged on `main`
+   with focused contract coverage and released in `v0.2.3`. V23 requires its
    bounded source-evidence backfill before worker enablement, and V27 is a
    readiness-only invalid-source-evidence index. V28 is the forward
    acknowledgement-function repair that leaves V22 unchanged.
@@ -99,10 +99,10 @@ and [architecture](./architecture.md) for the normative boundaries.
 | 4 | Farm/season/workforce/activity/harvest | Accepted |
 | 5 | Inventory/procurement, V12-V15, role-aware warehouse RLS, OpenAPI | Accepted 2026-07-22 |
 | 6 | Operating-cost ledger/reporting boundary, V16-V17 | Accepted 2026-07-22 |
-| 7 | Outbox, realtime read-model foundation, isolated alert-worker hardening, CI/images, SBOM/provenance, backup/restore | Outbox/realtime foundation has historical evidence. Alert-worker hardening is merged locally with focused contract coverage; hosted CI, main merge, protected publication, and recovery/release approvals remain open. V27 is the readiness-only invalid-source-evidence index, and V28 is the forward acknowledgement-function repair. |
+| 7 | Outbox, realtime read-model foundation, isolated alert-worker hardening, CI/images, SBOM/provenance, backup/restore | Alert-worker hardening is merged on `main`; main CI `30413064146`, protected publication `30413877863`, and release `v0.2.3` are complete. V27 is the readiness-only invalid-source-evidence index, and V28 is the forward acknowledgement-function repair. External deployment and recovery-policy ownership remain open. |
 | Web 5–10 | Eight product areas over tokenless BFF and real upstream contracts | Accepted 2026-07-27 |
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
-| Web 12 | Four-image release contract, overlays, docs, and repository metadata | Internal candidate complete; external promotion blocked |
+| Web 12 | Four-image release contract, overlays, docs, and repository metadata | Released as `v0.2.3`; all four Docker Hub/GHCR digests verified and GHCR packages linked to the repository |
 | Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Accepted and consumed by the web platform |
 
 Phase 5 acceptance evidence is recorded in
@@ -124,7 +124,7 @@ Phase 7 foundation evidence is recorded in
 622 backend tests (98 Failsafe) at the prior core checkpoint, hosted CI run
 `29932250984` passing 5/5 for the image path, and successful full workflow
 `30337950699` with realtime job `90207600976` logging
-`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. The current alert-worker slice has a separate local gate of 600 main + 302 test classes compiled and 38 focused unit tests passed; the historical backend/Python digests remain non-production evidence, not current hardening acceptance.
+`REALTIME_E2E result=PASS freshness_seconds=0 recovery_millis=5094 freshness_p95_millis=130 samples=20`. The current alert-worker slice has a separate local gate of 600 main + 302 test sources compiled and 42 focused tests passed; main CI `30413064146` and protected image release `30413877863` provide its hosted acceptance.
 
 ## Non-functional requirements
 
@@ -139,7 +139,8 @@ Phase 7 foundation evidence is recorded in
   future outbox event share one transaction; replay reconstructs a safe current
   representation. The in-progress alert worker uses bounded metadata scans,
   durable cursors, current-condition recovery, hysteresis, and saturation
-  signals; it is not yet an externally released service.
+  signals; it is released as a private backend-image capability, not an
+  externally deployed service.
 - **Operability:** C/D disk guard before heavy work; Maven/temp/cache on D;
   readiness includes database/schema; local binds remain loopback-only.
 - **Maintainability:** focused modules, conventional commits, tests at the
@@ -150,10 +151,10 @@ Phase 7 foundation evidence is recorded in
 
 Broad semantic agriculture alerts, a public API/UI alert center, ClickHouse/dbt/
 Airflow, mobile, ML forecasting, what-if analysis, AI Text-to-SQL, and direct
-Gold writes are deferred. The metadata-only alert-worker hardening has no
-hosted release, Docker Hub/GHCR promotion, or external deployment claim.
-Public promotion of the new web/analytics images, production identity/MFA,
-hostname/TLS, observability, and backup policy remain owner-gated.
+Gold writes are deferred. The metadata-only alert-worker hardening has hosted
+and registry release evidence through `v0.2.3`, but no external deployment
+claim. Production identity/MFA, hostname/TLS, observability, broker operations,
+and backup policy remain owner-gated.
 
 ## Success metrics
 
