@@ -137,6 +137,24 @@ Restart the analytics service after changing the flag. The route then returns
 Process-local quota counters reset on restart, so do not treat them as the
 authoritative cross-replica spend ledger.
 
+### Local mock latency evaluation
+
+Use the dedicated local harness when you need a quick latency sanity check for
+assistant telemetry:
+
+```powershell
+python scripts/run-assistant-latency-evaluation.py
+```
+
+This command is mock-only. It uses in-memory telemetry, synthetic evidence, and
+local aggregate summarization only; it does not call DeepSeek, load a provider
+key, read any provider/network secret, or change runtime assistant settings.
+The JSON output is aggregate-only (`sample_count`, `p50_ms`, `p95_ms`, and
+`outcome_counts`). Any local high-resolution elapsed-time measurements observed
+by the service during this run are local execution measurements, not
+hosted-provider SLO evidence. Hosted latency, groundedness, and provider
+spend-owner gates remain open.
+
 The explicit local demo overlay isolates its Compose project as
 `agriinsight-demo`, uses `backend/.runtime/postgres-demo`, and starts PostgreSQL
 with the server-side marker `app.agriinsight_demo_database=true`. The wrapper

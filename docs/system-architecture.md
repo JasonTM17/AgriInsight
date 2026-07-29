@@ -278,6 +278,15 @@ cross-replica spend boundary. The UI renders answer/citations as text rather
 than HTML and exposes a real request-cancellation action. Telemetry records
 operational counters only and no conversation content.
 
+The local mock latency harness is separate from hosted/provider evaluation.
+`scripts/run-assistant-latency-evaluation.py` drives in-memory telemetry events
+through `assistant_latency_evaluation.py` and prints only aggregate counts and
+percentiles (`sample_count`, `p50_ms`, `p95_ms`, `outcome_counts`). It does not
+call DeepSeek, read a provider key, or depend on any provider/network secret.
+Any local high-resolution elapsed-time measurements surfaced by the service
+during that run are local execution timings, not hosted latency, groundedness,
+or spend-owner evidence. Those hosted gates remain open.
+
 ## Transactional outbox
 
 Phase 7 adds the `integration` module transactional outbox boundary. It is the
