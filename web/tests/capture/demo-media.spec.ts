@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const OUTPUT_ROOT = resolve(
   import.meta.dirname,
@@ -76,6 +76,15 @@ async function forecastFrame(page: Page, index: number) {
   });
 }
 
+async function alignPanelAtViewportTop(page: Page, panel: Locator) {
+  await panel.evaluate((element) => {
+    element.scrollIntoView({ block: "start", inline: "nearest" });
+  });
+  // Leave a small visual margin so the section boundary and eyebrow remain
+  // visible instead of touching the screenshot edge.
+  await page.evaluate(() => window.scrollBy(0, -32));
+}
+
 test("@capture executive intelligence surfaces", async ({ page }) => {
   await page.setViewportSize(DESKTOP);
   await login(
@@ -135,25 +144,33 @@ test("@capture warehouse inventory control", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Bằng chứng dự báo nhu cầu" })
   ).toBeVisible();
-  await forecastPanel.scrollIntoViewIfNeeded();
+  await forecastTableScroll.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  await alignPanelAtViewportTop(page, forecastPanel);
   await shootViewport(page, "inventory-demand-forecast-desktop");
   await forecastFrame(page, 1);
 
-  await forecastTableScroll.evaluate((element) => {
-    element.scrollLeft = element.scrollWidth;
-  });
   const firstDisclosure = forecastPanel.locator("details").first();
   await firstDisclosure.locator("summary").click();
   await expect(firstDisclosure).toHaveAttribute("open", "");
+  await forecastTableScroll.evaluate((element) => {
+    element.scrollLeft = element.scrollWidth - element.clientWidth;
+  });
+  await alignPanelAtViewportTop(page, forecastPanel);
   await forecastFrame(page, 2);
 
   await forecastTableScroll.evaluate((element) => {
-    element.scrollLeft = element.scrollWidth / 2;
+    element.scrollLeft = (element.scrollWidth - element.clientWidth) / 2;
   });
+  await alignPanelAtViewportTop(page, forecastPanel);
   await forecastFrame(page, 3);
 
   await page.setViewportSize(MOBILE);
-  await forecastPanel.scrollIntoViewIfNeeded();
+  await forecastTableScroll.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  await alignPanelAtViewportTop(page, forecastPanel);
   await shootViewport(page, "inventory-demand-forecast-mobile");
   await expect(page.getByTestId("inventory-transaction-form")).toBeVisible();
   await shoot(page, "05-inventory-mobile");
