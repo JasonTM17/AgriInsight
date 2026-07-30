@@ -1,12 +1,12 @@
 # Deployment Guide
 
 This guide documents the verified runtime contracts through release
-[`v0.3.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.0),
+[`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1),
 Backend Phase 7 core, and the merged Phase 3 hosted browser acceptance. Full CI
-[`30452477234`](https://github.com/JasonTM17/AgriInsight/actions/runs/30452477234)
+[`30506056691`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
 and protected four-image publication
-[`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056)
-passed at `eabf209`; this is not an external production deployment approval:
+[`30506807548`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548)
+passed at `7f669bc6907b483a87b27d397ceb3453b3bec01f`; this is not an external production deployment approval:
 production OIDC/broker operations, a scheduled recurring recovery drill,
 RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 
@@ -16,11 +16,11 @@ RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
 | Internal analytics API | FastAPI read-only aggregate surface | Loopback/internal network only; Spring `/api/v1/me` remains the authorization source |
-| Next web platform | Eight-area hosted browser gate and `v0.2.3` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
+| Next web platform | Nine-area hosted browser gate and `v0.3.1` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback and runs the alert observer internally; the Phase 2 feed/ack API and Phase 3 browser panel passed hosted CI acceptance (PR #13 / `30425647823`; PR #14 / `30445148252`) but this neither approves production hosting nor publishes a new image |
-| Next web + analytics API images | `0.3.0` and full-SHA tags are published after protected approval | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
+| Next web + analytics API images | `0.3.1` and full-SHA tags are published after protected approval | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
 ## Preflight
@@ -481,6 +481,21 @@ then passed protected four-image publication in
 [`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056).
 Each image was independently scanned, provenance/SBOM-validated, pulled and
 smoke-tested by exact digest, and matched across Docker Hub/GHCR.
+
+Release [`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1)
+at `7f669bc6907b483a87b27d397ceb3453b3bec01f` passed exact-head CI
+[`30506056691`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
+10/10 and protected publication
+[`30506807548`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548)
+4/4. Semantic `0.3.1` and full-SHA tags were inspected independently in both
+registries and resolved to these immutable digests:
+
+| Image | Digest |
+|---|---|
+| Python | `sha256:325c43937580febde3b95fe908eac58b62073a2407d6efb0f471adb79bdab32f` |
+| Backend | `sha256:43764cc3d6aafe54cd2d2acde9af4ed195bb4f6b56b744ec8aba5142f98e3909` |
+| Web | `sha256:1065ab6b202a04a7712cd15f2b83180f39a961b53c94f0f47c790b003aaaa945` |
+| Analytics API | `sha256:9452becc98009e72e7b32407c58619fae7a088b8ca19310d037d74b3838a23f9` |
 
 The tag-triggered workflow covers Python, backend, web, and analytics API
 serially (`max-parallel: 1`). It scans and smokes a local candidate before

@@ -8,13 +8,13 @@
 ![AgriInsight — enterprise agriculture analytics](docs/assets/agriinsight-social-preview.jpg)
 
 AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Bản
-phát hành học tập [`v0.3.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.0)
-đã qua full hosted CI
-[`30452477234`](https://github.com/JasonTM17/AgriInsight/actions/runs/30452477234)
+phát hành học tập [`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1)
+đã qua exact-head hosted CI
+[`30506056691`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
 và protected Docker Hub/GHCR publication
-[`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056)
-tại commit `eabf209`. `v0.2.3` vẫn được giữ làm bằng chứng lịch sử cho worker
-slice trước đó.
+[`30506807548`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548)
+tại commit `7f669bc6907b483a87b27d397ceb3453b3bec01f`. `v0.3.0` và `v0.2.3`
+được giữ làm bằng chứng lịch sử cho RAG và worker slices trước đó.
 
 ```text
 Operational simulators → Bronze → Validation & quarantine → Silver
@@ -104,7 +104,7 @@ Bằng chứng hiện tại:
 
 - Local gate for the merged hardening slice: 600 main + 302 test sources compiled and 42 focused tests passed. Docker/Testcontainers stayed off the disk-constrained workstation; hosted CI supplied the PostgreSQL/Kafka, seven-persona browser, and four-image gates.
 - Historical Phase 7 evidence: disk guard PASS trước các tác vụ nặng; guarded Maven `verify` từng đạt 622 test (gồm 98 Failsafe integration test) trên PostgreSQL 18 sạch, zero failures/errors/skips, gồm Flyway apply/validate, fresh install, RLS, assignment lifecycle, cost correction concurrency, outbox lease/dead-letter, query plans và reconciliation. Đây là bằng chứng foundation trước slice hardening hiện tại, không phải acceptance mới.
-- Current release evidence includes `scripts/run-realtime-e2e-tests.ps1`, authenticated MockMvc/RLS coverage, the green main CI run, and the protected four-image release run. Docker Hub and GHCR tags `0.2.3` were resolved back to the exact returned digest for every first-party image; this is publication evidence, not an external production deployment claim.
+- Historical worker release evidence includes `scripts/run-realtime-e2e-tests.ps1`, authenticated MockMvc/RLS coverage, the green main CI run, and the protected four-image release run. Docker Hub and GHCR tags `0.2.3` were resolved back to the exact returned digest for every first-party image; this is publication evidence, not an external production deployment claim.
 - Hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) xanh 5/5 tại commit `8d8463f`; backend dùng Temurin 21.0.11 JRE Noble được pin digest, Trivy 0.70.0 có zero HIGH/CRITICAL, chạy non-root `10001:10001`.
 - Docker Hub và GHCR cùng trả backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d` cho tags `0.1.0-phase7` và `sha-8d8463f`; pull-by-digest smoke và OCI revision đều PASS.
 - OIDC kiểm tra signature/asymmetric algorithm, issuer, API audience, `exp`, `nbf`, subject và access-token discriminator; `(iss, sub)` được resolve chính xác, rồi profile/tenant/role/permission được nạp dưới tenant context mà không tin JWT role/tenant claim.
@@ -124,9 +124,10 @@ Các cổng còn mở thuộc phase sau:
 - Phase 7 core đã có focused atomicity/lease/RLS tests và protected registry release `v0.2.3`. Recovery objectives/ownership, production OIDC, broker operations và external deployment vẫn là các gate riêng; vì vậy toàn sản phẩm chưa được tuyên bố production-ready.
 - The alert-worker hardening reuses the released backend image. The exact Phase 2 feed/ack API and Phase 3 browser alert panel are hosted-accepted and merged, while `v0.2.3` remains the worker-only Docker Hub/GHCR release. Phase 3 did not publish a new image and makes no external deployment or semantic agriculture-alert claim.
 - Registry release dùng repository variable `DOCKERHUB_NAMESPACE`, environment secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` và reviewer protection; không có automatic `latest`. Workflow xuất cả Docker Hub và GHCR, tạo SBOM/provenance, scan exact digest rồi smoke-test digest.
-- Release `v0.3.0` đã qua full CI 10/10 tại `eabf209` và publish bốn image
-  immutable lên Docker Hub/GHCR với SBOM/provenance, exact-digest scan/smoke và
-  digest agreement. Đây vẫn không phải external production deployment.
+- Release `v0.3.1` đã qua full CI 10/10 tại `7f669bc` và protected publish
+  4/4. Cả 16 semantic/full-SHA references của bốn image trên Docker Hub/GHCR
+  trùng exact digest sau SBOM/provenance, scan, pull và smoke. Đây vẫn không
+  phải external production deployment.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
 Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md), [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md), [Backend Phase 7](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase7.md), [backend development](docs/backend-development.md) và [backend deployment/recovery](docs/backend-deployment.md).

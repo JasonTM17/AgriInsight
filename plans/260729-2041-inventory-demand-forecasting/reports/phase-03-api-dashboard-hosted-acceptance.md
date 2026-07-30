@@ -4,6 +4,9 @@
 - Accepted implementation: `aa12c8728bd580ae42abe5ac680d7e9b7a1364c8`
 - Behavior CI: [30469892794](https://github.com/JasonTM17/AgriInsight/actions/runs/30469892794)
 - Closeout CI: [30504951460](https://github.com/JasonTM17/AgriInsight/actions/runs/30504951460)
+- Release head: `7f669bc6907b483a87b27d397ceb3453b3bec01f`
+- Exact-head CI: [30506056691](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
+- Protected release: [v0.3.1](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1) / [30506807548](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548)
 
 ## Accepted scope
 
@@ -36,6 +39,8 @@
 | Capture config discovery | 4 scenarios listed |
 | Behavior hosted CI | 10/10 jobs passed |
 | Closeout hosted CI | 10/10 jobs passed |
+| Exact release-head CI | 10/10 jobs passed |
+| Protected registry publication | 4/4 jobs passed; 8 non-empty `.dockerbuild` records |
 | Real platform | Keycloak, PostgreSQL, Spring, FastAPI, Next, Chrome, seven personas, 1.05M readings |
 | Candidate images | Python, backend, web, analytics API built, scanned, and smoked without push |
 
@@ -83,9 +88,22 @@ C had 13.81 GiB free and D had 14.51 GiB free at closeout. Docker, browser,
 big-data, and four-image work stayed on guarded hosted storage. No unrelated
 container or user-owned untracked path was removed.
 
-The closeout run built four candidates without push. Registry publication
-remains a separate protected tag workflow with reviewer, digest, SBOM,
-provenance, scan, pull, and smoke gates.
+The closeout run built four candidates without push. After exact-head CI
+`30506056691` passed, annotated tag `v0.3.1` triggered the protected
+`release-images` workflow. All four serial jobs passed candidate scan/smoke,
+SBOM/provenance checks, exact-digest scan/pull/smoke, and cross-registry
+agreement:
+
+| Image | Immutable digest |
+|---|---|
+| Python | `sha256:325c43937580febde3b95fe908eac58b62073a2407d6efb0f471adb79bdab32f` |
+| Backend | `sha256:43764cc3d6aafe54cd2d2acde9af4ed195bb4f6b56b744ec8aba5142f98e3909` |
+| Web | `sha256:1065ab6b202a04a7712cd15f2b83180f39a961b53c94f0f47c790b003aaaa945` |
+| Analytics API | `sha256:9452becc98009e72e7b32407c58619fae7a088b8ca19310d037d74b3838a23f9` |
+
+All 16 Docker Hub/GHCR semantic/full-SHA references were independently
+inspected and matched. GHCR packages remain private, repository-linked, and
+owner-gated by policy.
 
 ## Unresolved questions
 

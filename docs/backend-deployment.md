@@ -86,7 +86,7 @@ passed. Docker Hub and GHCR returned the same digest for each `0.2.3` tag:
 | `agriinsight-web` | `sha256:7930dd4468bf7664b7196288421e1d79737e36c9bba6759597e53bf513aecad2` |
 | `agriinsight-analytics-api` | `sha256:c4e56c3f8084c6d505f50dc1e38848c9cd1b4ca77b6d44b4b285d8cd6e3c4677` |
 
-Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This remains historical evidence for the earlier Phase 7 image path; `v0.2.3` is the current release evidence.
+Phase evidence at commit `8d8463f9fe576aa98498125ae3dc845d9b432d82`: hosted CI run [`29932250984`](https://github.com/JasonTM17/AgriInsight/actions/runs/29932250984) passed 5/5; Trivy 0.70.0 reported zero HIGH/CRITICAL findings; Docker Hub and GHCR tags `0.1.0-phase7` and `sha-8d8463f` resolve to backend digest `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`. This remains historical evidence for the earlier Phase 7 image path; the current four-image release is documented in the [deployment guide](deployment-guide.md#docker-hub-release-policy).
 
 ## Backup
 

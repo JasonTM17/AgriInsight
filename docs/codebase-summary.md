@@ -2,7 +2,7 @@
 
 Verified snapshot: 2026-07-30 (inventory-demand forecast Phases 1–3 are
 accepted through scoped API/browser evidence; the protected four-image
-`v0.3.0` release remains the latest published registry evidence; external
+`v0.3.1` release is the latest published registry evidence; external
 production deployment remains owner-gated)
 
 ## Repository shape
@@ -355,9 +355,10 @@ startup invariant.
 - Inventory demand forecasting Phases 1–3: deterministic Gold forecast,
   exact joined snapshot validation, authorized nested API contract, strict
   generated web schema, Vietnamese evidence panel and visually reviewed media
-  are complete through `aa12c87`; hosted CI `30504951460` passed all ten jobs.
-  Candidate images were built/scanned/smoked without push; this is not a new
-  registry release.
+  are complete through `aa12c87`; closeout docs/media head `7f669bc` passed
+  exact-head CI `30506056691` 10/10. Protected release `v0.3.1` then passed
+  publication `30506807548` 4/4; all 16 Docker Hub/GHCR semantic/full-SHA
+  references resolved to the expected four immutable digests.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.

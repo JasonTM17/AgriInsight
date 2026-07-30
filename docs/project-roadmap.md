@@ -10,13 +10,13 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 |---|---|---|
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
 | Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
-| Inventory demand forecasting | Phases 1–3 accepted 2026-07-30 | Deterministic 30-day warehouse/material forecast, 180-day history cap, 90-day baseline, empirical p10/p90 planning range, rolling-origin MAE/WAPE, checksummed Gold, nested scoped API evidence, strict generated web contract, Vietnamese browser panel and verified media; behavior CI `30469892794` and closeout CI `30504951460` passed 10/10 |
+| Inventory demand forecasting | Phases 1–3 accepted and `v0.3.1` released 2026-07-30 | Deterministic 30-day warehouse/material forecast, 180-day history cap, 90-day baseline, empirical p10/p90 planning range, rolling-origin MAE/WAPE, checksummed Gold, nested scoped API evidence, strict generated web contract, Vietnamese browser panel and verified media; exact-head CI `30506056691` passed 10/10 and protected publication `30506807548` passed 4/4 |
 | DeepSeek RAG assistant | Implemented; `v0.3.0` released | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, versioned retrieval evaluation, and mock-only telemetry evaluator; full CI `30452477234` and protected image publication `30453840056` passed, while hosted provider SLO/groundedness/spend ownership remain open |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
 | Realtime alert center | Phases 2–3 hosted-accepted and merged | Exact latest-50 open-alert feed, idempotent acknowledgement, same-origin BFF, V29/V30, generated OpenAPI/web contract, and the Field Ledger browser panel verified in PR #13 / CI `30425647823` and PR #14 / CI `30445148252` (feature head `e8a02a2`, rebase-merged at `bd724503`) |
-| Frontend | Hosted gate and `v0.3.0` release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, and protected `agriinsight-web:0.3.0` publication verified by CI `30452477234` and release workflow `30453840056` |
+| Frontend | Hosted gate and `v0.3.1` release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, forecast evidence UX, and protected `agriinsight-web:0.3.1` publication verified by CI `30506056691` and release workflow `30506807548` |
 
 ## Next backend phases
 
@@ -74,6 +74,13 @@ implicitly converted into operating cost.
 
 ## Release and platform backlog
 
+- Educational release [`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1)
+  passed exact-head CI 10/10 in
+  [`30506056691`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
+  at `7f669bc`, then protected Docker Hub/GHCR publication 4/4 in
+  [`30506807548`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548).
+  All 16 semantic/full-SHA references match four immutable digests. This is
+  registry evidence, not external deployment or an advanced-model SLA.
 - Educational release [`v0.3.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.0)
   passed all ten hosted CI jobs in
   [`30452477234`](https://github.com/JasonTM17/AgriInsight/actions/runs/30452477234)

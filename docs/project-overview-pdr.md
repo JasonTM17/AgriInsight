@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.11
+Version: 0.12
 Updated: 2026-07-30
-Status: backend core, scoped inventory-demand forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.3.0` are verified; external production deployment and recovery ownership remain open
+Status: backend core, scoped inventory-demand forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.3.1` are verified; external production deployment and recovery ownership remain open
 
 ## Product goal
 
@@ -108,7 +108,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Released as `v0.2.3`; all four Docker Hub/GHCR digests verified and GHCR packages linked to the repository |
 | Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Accepted and consumed by the web platform |
-| Inventory forecast 1–3 | Baseline/backtest, checksummed Gold integration, scoped nested API, Vietnamese evidence UI and verified media | Accepted 2026-07-30; behavior CI `30469892794` and closeout CI `30504951460` passed 10/10 |
+| Inventory forecast 1–3 | Baseline/backtest, checksummed Gold integration, scoped nested API, Vietnamese evidence UI and verified media | Accepted 2026-07-30; exact-head CI `30506056691` passed 10/10 and protected `v0.3.1` publication `30506807548` passed 4/4 |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
