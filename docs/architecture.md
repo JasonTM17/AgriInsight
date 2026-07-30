@@ -162,6 +162,13 @@ ownership vẫn mở:
 
 Phase 5 keeps the operational inventory ledger in PostgreSQL: warehouses, materials, suppliers, and profile-to-warehouse assignments feed immutable transactions; receipts create lots, issues allocate lots by deterministic FEFO, and balances are projections reconciled from signed ledger effects. Reversals are linked, bounded, and service-generated. V15 binds tenant and profile context transaction-locally and separates read/write RLS by role and assignment. This plane does not mutate the Python Gold inventory contract or write `artifacts/`.
 
+The analytics plane now adds a separate deterministic inventory-demand forecast
+over validated warehouse/material OUT movements. It publishes checksummed Gold
+evidence, then exposes only Spring-scoped warehouse rows through the bounded
+FastAPI/Next path. Legacy run-rate policy stays distinct. The browser formats
+model/status/range/backtest evidence but does not calculate it; neither plane
+creates a purchase order from the forecast.
+
 Phase 5 đã đóng inventory/procurement boundary: PostgreSQL ledger, lots,
 allocations, balances, reversals, warehouse assignments, role-aware RLS và
 OpenAPI examples. Phase 6 đã đóng operating-cost boundary bằng ledger,
@@ -210,5 +217,6 @@ Compose, image, backup/restore và production approval nằm ở
 2. Chuyển warehouse adapter sang PostgreSQL/ClickHouse cùng migration có version.
 3. Thêm incremental load, dbt tests, Airflow observability và source freshness SLA.
 4. Phát sự kiện IoT/inventory qua Kafka và xử lý cảnh báo realtime.
-5. Version feature sets cho dự báo sản lượng, nhu cầu kho và sâu bệnh.
+5. Extend the accepted inventory baseline with separately versioned feature
+   sets for yield, advanced inventory-demand, and pest-risk forecasting.
 6. Thêm AI Assistant Text-to-SQL chỉ đọc, allowlist schema, timeout và audit log.

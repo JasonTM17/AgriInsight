@@ -317,14 +317,22 @@ metric accuracy null nhưng vẫn phải qua temporal span và deterministic bac
 window checks. Manifest tự ghi row count và SHA-256 exact bytes cho
 `gold/inventory_demand_forecast.csv`; rerun cùng input/as-of phải byte-stable.
 
-Phase 2 chỉ mở rộng Gold nội bộ. Snapshot gate xác minh exact extended schema
-nhưng FastAPI vẫn project đúng model Inventory cũ; forecast fields chưa xuất
-hiện trong public response/OpenAPI cho tới Phase 3 có scope, codegen, UI và
-browser acceptance. `metrics_inventory_forecast.py` tạo Gold forecast và nối
-evidence vào `inventory_status.csv`; `analytics_api/snapshot_cache.py` xác minh
-manifest fingerprint và extended schema, còn
-`analytics_api/domain_read_models.py` chỉ phát public legacy model cho tới khi
-Phase 3 version hóa contract.
+Phase 3 phát hành evidence qua public analytics envelope sau khi Spring scope đã
+được xác minh và warehouse filter được áp dụng. Mỗi inventory item có object
+`forecast` cố định với `coverageStatus` (`ready`, `noDemand`,
+`insufficientHistory`, `unavailable`) cùng model/as-of/history/horizon,
+point/range, backtest, days-of-supply và suggested-order evidence có nullability
+rõ ràng. Hai field legacy `predicted30dNeed` và
+`recommendedOrderQuantity` vẫn là chính sách run-rate độc lập; không được đổi
+tên hoặc dùng thay forecast. `forecastHealth` chỉ chứa năm counter đã scope và
+tổng bốn trạng thái phải bằng `total`; không chứa tenant, warehouse hoặc
+material label.
+
+FastAPI giữ authorization → warehouse filter → verified snapshot →
+scope/reconciliation → response shaping theo đúng thứ tự. ABC, alerts và item
+arrays bị cap 100; body JSON UTF-8 hoàn chỉnh bị cap 1 MiB và trả lỗi 503 đã
+sanitized khi không thể fit. OpenAPI và generated TypeScript schema giữ exact
+nested shape; browser chỉ format evidence, không tính lại forecast.
 
 Mỗi Gold frame được kiểm tra exact key set, thứ tự cột, logical pandas type và
 giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm pipeline fail closed.

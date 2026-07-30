@@ -104,6 +104,19 @@ and validates the extended inventory forecast contract at load time; stale
 forecast artifacts or a mismatched manifest fail closed before the API can
 serve readiness.
 
+The public Inventory response keeps authorization and warehouse filtering ahead
+of shaping. Forecast evidence is nested per item, status counters are scoped and
+label-free, ABC/alerts/items are capped at 100, and the exact serialized UTF-8
+body must remain at or below 1 MiB. An oversized body fails with sanitized
+`503 analytics_response_too_large`; do not raise the BFF limit to mask the
+failure.
+
+Rollback is contract-level: deploy the previous matching analytics/web image
+pair and its matching Gold manifest rather than serving a new snapshot through
+an old generated client. Keep the legacy run-rate policy fields during rollback.
+If forecast evidence cannot be verified, use explicit `unavailable` null
+evidence or keep analytics readiness closed; never synthesize browser values.
+
 ## DeepSeek RAG assistant
 
 The assistant is disabled by default. Enable it only on the internal analytics

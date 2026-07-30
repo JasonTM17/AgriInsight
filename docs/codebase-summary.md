@@ -1,6 +1,9 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-29 (alert-worker hardening merged on `main` and released as `v0.2.3`; Phase 2 alert API/BFF verified in PR `#13` / CI `30425647823`; Phase 3 browser panel accepted in PR `#14` / CI `30445148252` and merged on `main`; four-image Docker Hub/GHCR publication remains Phase 1 worker evidence)
+Verified snapshot: 2026-07-30 (inventory-demand forecast Phases 1–3 are
+accepted through scoped API/browser evidence; the protected four-image
+`v0.3.0` release remains the latest published registry evidence; external
+production deployment remains owner-gated)
 
 ## Repository shape
 
@@ -56,15 +59,26 @@ the current `recommended_order_quantity` policy. The paired contract modules
 inclusive history spans, deterministic weekly backtest windows, and ULP-safe
 derived evidence after CSV round-trip. The analytics snapshot boundary then
 loads those exact bytes through `analytics_api/snapshot_cache.py`, while
-`analytics_api/domain_read_models.py` keeps projecting the legacy inventory
-response until Phase 3 adopts the new fields publicly.
+`analytics_api/domain_read_models.py` preserves the raw extended snapshot
+contract.
 
-This slice does not yet claim yield, pest-risk, anomaly, what-if, or
-Text-to-SQL capability, and it keeps the existing browser/dashboard contracts
-unchanged. Phase 2 evidence at `8149ee1` is 317 Python passes with 3
-intentional skips, independent contract review at 96/100, and hosted CI
+Phase 3 maps that snapshot into a warehouse-scoped nested `forecast` object,
+keeps the two legacy inventory-policy values as siblings, exposes label-free
+`forecastHealth` counters, caps ABC/alerts/items at 100, and rejects a final
+serialized response above 1 MiB. The Next Inventory contract validates the
+exact nested shape and renders Vietnamese status, freshness, range, model and
+backtest evidence without browser-side forecast math.
+
+The track does not claim yield, pest-risk, anomaly, what-if, advanced ML SLA,
+or Text-to-SQL capability. Phase 2 evidence at `8149ee1` is 317 Python passes
+with 3 intentional skips, independent contract review at 96/100, and hosted CI
 [`30464080148`](https://github.com/JasonTM17/AgriInsight/actions/runs/30464080148)
-passing all 10 jobs. Phase 3 remains the public API/UI boundary.
+passing all 10 jobs. Phase 3 implementation at `ce47ce5` passed hosted CI
+[`30469892794`](https://github.com/JasonTM17/AgriInsight/actions/runs/30469892794)
+10/10. Final media and image hardening at `aa12c87` passed hosted CI
+[`30504951460`](https://github.com/JasonTM17/AgriInsight/actions/runs/30504951460)
+10/10, including the real seven-persona browser, verified forecast media
+artifact and four candidate-image gates without registry publication.
 
 ## Web surface
 
@@ -338,10 +352,12 @@ startup invariant.
   `sha256:2fb346c3b85f03022866e74ae321a8a952b224fc23e43cb0560a440730019a5d`
   and Python `sha256:ee4090812a36c48f180ee74aaa16995c79eabfedb6821d9764319643d06ba2f6`.
   They are not a new alert-worker image/tag/digest or release claim.
-- Inventory demand forecasting Phase 2 local review: deterministic Gold
-  forecast and joined inventory evidence, exact snapshot contract validation,
-  and legacy API projection are complete at `8149ee1`. Phase 3 must expose the
-  authorized public contract and UI before any browser-facing forecast claim.
+- Inventory demand forecasting Phases 1–3: deterministic Gold forecast,
+  exact joined snapshot validation, authorized nested API contract, strict
+  generated web schema, Vietnamese evidence panel and visually reviewed media
+  are complete through `aa12c87`; hosted CI `30504951460` passed all ten jobs.
+  Candidate images were built/scanned/smoked without push; this is not a new
+  registry release.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
@@ -371,7 +387,7 @@ startup invariant.
 
 ## Next boundary
 
-The eight-area production-web implementation, Phase 11 browser gate, and
+The nine-area production-web implementation, Phase 11 browser gate, and
 serialized Phase 12 four-image publication are complete. Alert Center Phases
 2–3 have verified API/BFF and hosted browser acceptance evidence; Phase 3 is
 merged on `main`. External production deployment remains blocked on the license

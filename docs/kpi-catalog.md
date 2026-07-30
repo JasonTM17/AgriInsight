@@ -19,8 +19,13 @@
 | Inventory value | `max(stock, 0) × weighted average inbound unit cost` |
 | Average daily usage | Tổng xuất 30 ngày / 30 |
 | Days of supply | Stock / average daily usage |
-| Predicted 30-day need | Average daily usage × 30 |
-| Recommended order | `max(target stock − current stock, 0)` |
+| Predicted 30-day need (legacy policy) | Average daily usage × 30 |
+| Recommended order (legacy policy) | `max(target stock − current stock, 0)` |
+| Forecast quantity | Mean daily OUT demand over the latest 90 dense days × 30-day horizon |
+| Forecast planning range | Empirical rolling 30-day p10/p90, clamped around the point forecast; not a probabilistic confidence interval |
+| Forecast days of supply | Current stock / (`forecast quantity / 30`); null when evidence is unavailable or point demand is zero |
+| Forecast suggested order | `max(forecast upper quantity − max(current stock, 0), 0)`; decision support only |
+| Forecast backtest MAE/WAPE | Weekly rolling-origin errors; null until the contract has sufficient windows |
 | Low stock | `0 < stock ≤ reorder point` |
 | Stockout | `stock ≤ 0` |
 | Overstock | `stock > 150% × target stock` |
@@ -35,6 +40,11 @@ Expiry alert trong Gold vẫn dùng ngày hết hạn gần nhất của inbound
 trong lịch sử. Backend Phase 5 now owns batch-level FEFO depletion, allocation,
 and reversal truth in PostgreSQL; a future versioned ETL may consume it without
 changing the current Gold contract.
+
+Run-rate policy and forecast evidence are deliberately separate. UI/API clients
+must not relabel `predicted30dNeed` or `recommendedOrderQuantity` as forecast
+outputs. Forecast status is `ready`, `noDemand`, `insufficientHistory`, or
+`unavailable`; none of these states automatically submits a purchase order.
 
 ## Cost Analysis
 

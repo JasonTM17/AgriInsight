@@ -3,7 +3,7 @@ title: Inventory Demand Forecasting
 description: >-
   Add a deterministic, backtested 30-day inventory-demand forecast and carry it
   from warehouse facts through Gold, API, and dashboard evidence.
-status: pending
+status: completed
 priority: P1
 branch: main
 tags:
@@ -39,7 +39,7 @@ plans after this first forecasting contract is accepted end-to-end.
 |-------|------|--------|
 | 1 | [Forecast contract and backtested baseline](./phase-01-forecast-contract-and-backtested-baseline.md) | Completed |
 | 2 | [Gold pipeline and decision integration](./phase-02-gold-pipeline-and-decision-integration.md) | Completed |
-| 3 | [API dashboard and hosted acceptance](./phase-03-api-dashboard-and-hosted-acceptance.md) | Pending |
+| 3 | [API dashboard and hosted acceptance](./phase-03-api-dashboard-and-hosted-acceptance.md) | Completed |
 
 ## Dependencies
 

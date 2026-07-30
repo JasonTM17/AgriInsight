@@ -83,13 +83,13 @@ authorization decision.
 
 ## Web platform
 
-The Next 16 App Router is the browser boundary for eight product areas:
+The Next 16 App Router is the browser boundary for nine product areas:
 `/overview`, `/farms` (including `/farms/[farmId]`), `/work`, `/inventory`,
-`/costs`, `/crop-health`, `/data-quality`, and `/admin`. The browser holds only
-an opaque encrypted session cookie. OIDC tokens remain in the PostgreSQL-backed
-server session, and the server refreshes Spring `/api/v1/me` before relying on
-current permissions. Exact operation allowlists prevent the browser from
-turning the BFF into a general upstream proxy.
+`/costs`, `/crop-health`, `/data-quality`, `/assistant`, and `/admin`. The
+browser holds only an opaque encrypted session cookie. OIDC tokens remain in
+the PostgreSQL-backed server session, and the server refreshes Spring
+`/api/v1/me` before relying on current permissions. Exact operation allowlists
+prevent the browser from turning the BFF into a general upstream proxy.
 
 Overview and farm routes combine Spring-scoped UUID masters with canonical
 analytics codes before calling the read-only FastAPI plane. Work Operations
@@ -113,9 +113,26 @@ material sits outside session scope. Balances, lots, ledger rows, and
 material/supplier catalogs come from exact Spring GET operations in 50-row
 windows under the same 10,000 offset ceiling, and the browser preserves upstream
 ordering: warehouse/material code order for balances, FEFO for lots, and
-newest-first for the ledger. ABC classes, alerts, days of supply, and reorder
-suggestions render verbatim from the FastAPI Gold envelope, so an analytics
-denial or outage degrades that section alone and leaves the Spring ledger live.
+newest-first for the ledger. ABC classes, alerts, days of supply, legacy
+run-rate reorder policy, and nested demand-forecast evidence render verbatim
+from the FastAPI Gold envelope, so an analytics denial or outage degrades that
+section alone and leaves the Spring ledger live.
+
+Forecast delivery preserves authorization order: Spring-resolved scope,
+warehouse filtering, immutable snapshot/checksum and reconciliation checks,
+then public shaping. Each item carries one exact `forecast` object and the
+envelope carries only scoped label-free health counters. ABC, alerts, and item
+arrays stop at 100 entries; FastAPI measures the final UTF-8 JSON body and fails
+with a sanitized 503 above 1 MiB. Next validates the generated exact schema and
+formats the evidence only. It never chooses tenant/model scope, recalculates a
+forecast, or creates a purchase order.
+
+![Inventory demand forecast verified evidence flow](assets/inventory-demand-forecast-architecture.png)
+
+The publish-grade source is
+[`inventory-demand-forecast-architecture.svg`](assets/inventory-demand-forecast-architecture.svg).
+It describes the accepted baseline and delivery path, not external production
+deployment or an advanced-ML accuracy SLA.
 
 Two exact inventory POST operations carry commands: a receipt/issue transaction
 and a linked reversal. Both follow the Work trust-boundary order. The reversal
@@ -391,6 +408,7 @@ the operator backfill remains a separate pre-enable step.
 | Area | Status |
 |---|---|
 | Analytics MVP | Verified by its existing regression suite |
+| Inventory demand forecast Phases 1–3 | Deterministic baseline/backtest, checksummed Gold, scoped nested API, Vietnamese evidence UI and hosted media accepted; behavior CI `30469892794` and closeout CI `30504951460` passed 10/10 |
 | Backend phase 1 foundation | Accepted 2026-07-19 |
 | Backend phase 2 OIDC identity | Accepted 2026-07-20 |
 | Backend phase 3 tenant RBAC/RLS | Accepted 2026-07-20; current backend regression gate remains green |

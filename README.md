@@ -36,6 +36,26 @@ Operational simulators → Bronze → Validation & quarantine → Silver
   trích dẫn bắt buộc và từ chối khi không đủ bằng chứng.
 - Chạy lặp lại an toàn theo seed/ngày chốt dữ liệu, có manifest, row count và SHA-256 checksum.
 
+## Dự báo nhu cầu kho có bằng chứng
+
+![Luồng bằng chứng dự báo nhu cầu kho từ warehouse facts đến giao diện](docs/assets/inventory-demand-forecast-architecture.png)
+
+Baseline deterministic dự báo nhu cầu 30 ngày từ warehouse/material OUT facts,
+giữ tối đa 180 ngày lịch sử và dùng 90 ngày dense gần nhất. Mỗi SKU-location
+mang theo trạng thái coverage, model version, mốc dữ liệu, dải lập kế hoạch,
+days-of-supply và rolling-origin MAE/WAPE. Hai chỉ số run-rate cũ vẫn tách biệt;
+giao diện không tính lại dự báo và không tự tạo purchase order.
+
+![Bảng bằng chứng dự báo nhu cầu kho trên desktop](docs/assets/screens/inventory-demand-forecast-desktop.webp)
+
+![Vòng lặp mở bằng chứng model và cuộn qua các trường dự báo](assets/generated/agriinsight-inventory-forecast-loop.gif)
+
+Ảnh và GIF được chụp từ hosted real-platform gate
+[`30504951460`](https://github.com/JasonTM17/AgriInsight/actions/runs/30504951460)
+trên Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome thật. Đây là bằng chứng
+documentation/demo của baseline đã nghiệm thu, không phải external production
+deployment, ground truth nông học hay cam kết accuracy/SLA của mô hình nâng cao.
+
 ## Backend vận hành đang triển khai
 
 Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 có transactional outbox, image hardening, CI, recovery wrappers và protected image publication đã được xác minh trong `v0.2.3`. Production deployment, OIDC operations và recovery-policy ownership vẫn là cổng riêng, chưa được bản phát hành container này phê duyệt. Nền tảng Next 16 hiện phủ chín khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality`, `/assistant` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
@@ -141,7 +161,7 @@ Dashboard mặc định mở tại `http://localhost:8501`. Navigation bên trá
 
 Cost Analysis có hai lens tách biệt: chi phí vận hành và mua hàng. Web `/costs` dùng Spring ledger cho operating append/correction và FastAPI snapshot cho procurement read-only; cả hai đều có filter ngày bounded, source/lineage, bảng evidence, KPI/trend và export CSV/PDF qua BFF. Dashboard Streamlit local vẫn giữ form Gold cũ với capability-gated XLSX; PDF cục bộ cần `reports` extra như lệnh cài đặt trên.
 
-Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Nền tảng Next 16 đã thay fixture runtime bằng Spring/FastAPI thật cho cả tám khu vực sản phẩm; Crop Health luôn giữ cảnh báo ảnh AI-demo, Data Quality giữ nguyên taxonomy/lineage từ batch, Inventory giữ warehouse scope/idempotency/ETag và Tenant Administration chỉ gọi các resource family đã khóa. Public production release vẫn bị chặn bởi external controls, không phải bởi fallback dữ liệu UI. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
+Frontend discovery cho Inventory Control có fixture chỉ đọc, cố định phạm vi `WH-001`, đối soát 10 cảnh báo và 15 SKU-location từ Gold/Silver. Nền tảng Next 16 đã thay fixture runtime bằng Spring/FastAPI thật cho cả chín khu vực sản phẩm; Crop Health luôn giữ cảnh báo ảnh AI-demo, Data Quality giữ nguyên taxonomy/lineage từ batch, Inventory giữ warehouse scope/idempotency/ETag và Tenant Administration chỉ gọi các resource family đã khóa. Public production release vẫn bị chặn bởi external controls, không phải bởi fallback dữ liệu UI. Xem [`inventory-control-review.md`](./plans/260719-0753-backend-auth-rbac/design-system/prototypes/inventory-control-review.md).
 
 Dashboard Streamlit hiện là công cụ local/internal; chưa có authentication, RBAC hoặc row-level authorization. Không public port 8501 ra Internet trước khi milestone bảo mật hoàn thành.
 

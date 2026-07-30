@@ -19,6 +19,9 @@
 - [x] Inventory: tồn hiện tại, giá trị, low stock, stockout, overstock và expiry alert.
 - [x] ABC Analysis theo tỷ trọng giá trị tồn kho.
 - [x] Nhu cầu kho 30 ngày và recommended order quantity theo run-rate.
+- [x] Dự báo nhu cầu kho 30 ngày deterministic có model/status/range/backtest,
+  checksummed Gold, scoped API và browser evidence; tách khỏi run-rate policy,
+  không tự tạo purchase order.
 - [x] Crop Health: cảm biến, thời tiết, sâu bệnh, sensor freshness và risk score khu vực.
 - [x] Data Quality dashboard hiển thị before/after, lỗi Bronze và remediation actions.
 - [x] Cost Analysis lọc farm/crop/season/activity/month, hiển thị cost/budget/cost per unit, activity drivers và procurement lens riêng.
@@ -48,7 +51,8 @@
 - [x] Xây production frontend role-aware theo CK FE/Stitch design system và versioned OpenAPI contracts; hosted seven-persona gate và image `0.2.3` đã được xác minh.
 - [ ] PostgreSQL/ClickHouse, Flyway/dbt và incremental ETL bằng Airflow.
 - [ ] Broad semantic agriculture alerts, public alert API/UI, multi-channel notifications, and mobile field application. The private metadata-only alert-worker hardening is complete and released, but it intentionally implements none of these public/domain features.
-- [ ] ML forecasting, anomaly detection, what-if analysis và model monitoring.
+- [ ] Forecasting nâng cao ngoài inventory baseline đã nghiệm thu, anomaly
+  detection, what-if analysis và model monitoring.
 - [ ] AI Assistant Text-to-SQL với guardrails và audit trail.
 
 Checklist này xác nhận phase Data Analytics MVP; nó không thu hẹp phạm vi cuối cùng của AgriInsight.

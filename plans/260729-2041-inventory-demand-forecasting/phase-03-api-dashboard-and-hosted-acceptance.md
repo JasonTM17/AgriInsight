@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "API dashboard and hosted acceptance"
-status: in-progress
+status: completed
 priority: P1
 effort: "1d"
 dependencies: [2]
@@ -79,13 +79,13 @@ permitted.
 
 ## Success Criteria
 
-- [ ] Cross-tenant/cross-warehouse forecast access fails closed.
-- [ ] Browser displays exactly server-provided evidence and no forecast math.
-- [ ] OpenAPI, TypeScript, Python, a11y, responsive, and E2E gates pass.
-- [ ] Hosted CI and four candidate image gates pass at the accepted commit.
-- [ ] README and architecture docs render a verified SVG/PNG system diagram,
+- [x] Cross-tenant/cross-warehouse forecast access fails closed.
+- [x] Browser displays exactly server-provided evidence and no forecast math.
+- [x] OpenAPI, TypeScript, Python, a11y, responsive, and E2E gates pass.
+- [x] Hosted CI and four candidate image gates pass at the accepted commit.
+- [x] README and architecture docs render a verified SVG/PNG system diagram,
   relevant product image, and compact GIF with accessible text and no secrets.
-- [ ] Docs distinguish baseline forecasting evidence from advanced ML/SLA and
+- [x] Docs distinguish baseline forecasting evidence from advanced ML/SLA and
   external production deployment.
 
 ## Risk Assessment

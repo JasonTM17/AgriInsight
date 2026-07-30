@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.10
-Updated: 2026-07-29
-Status: backend core, Analytics Phase 2, eight-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.2.3` are verified; external production deployment and recovery ownership remain open
+Version: 0.11
+Updated: 2026-07-30
+Status: backend core, scoped inventory-demand forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.3.0` are verified; external production deployment and recovery ownership remain open
 
 ## Product goal
 
@@ -32,7 +32,7 @@ hiding them in dashboards.
 2. **Operational plane** — Java/Spring owns authenticated operational commands,
    tenant/profile authorization, PostgreSQL source facts, inventory ledgers,
    assignments, audit/idempotency, and health/readiness.
-3. **Browser plane** — Next 16 owns the Vietnamese-first eight-area product
+3. **Browser plane** — Next 16 owns the Vietnamese-first nine-area product
    shell, opaque PostgreSQL sessions, OIDC authorization-code/PKCE flow, exact
    Spring/FastAPI BFF allowlists, and server-rendered permission boundaries.
 4. **Integration boundary** — No direct Gold mutation or shared mutable storage.
@@ -54,6 +54,10 @@ and [architecture](./architecture.md) for the normative boundaries.
 - Ingest and validate operational datasets with Bronze/Silver/quarantine gates.
 - Materialize stable Gold KPI, alert, cost, procurement, inventory, crop-health,
   and data-quality contracts with deterministic manifests.
+- Materialize a deterministic, versioned 30-day inventory-demand baseline with
+  explicit coverage state, empirical planning range and rolling-origin
+  backtest; expose the same scoped server evidence without browser math or
+  automatic procurement.
 - Provide bounded, versioned REST APIs under `/api/v1` for identity, tenants,
   farms, fields, crops, seasons, workforce, activities, harvests, warehouses,
   materials, suppliers, warehouse assignments, balances, lots, movements, and
@@ -83,7 +87,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 - Use contextual first-party visuals with provenance/alt descriptions; label
   generated Crop Health imagery as demo evidence and never treat it as a source
   observation.
-- Provide all eight product areas through the tokenless Next BFF with real
+- Provide all nine product areas through the tokenless Next BFF with real
   loading, empty, degraded, conflict, and forbidden states; Supplier is denied.
 - Package Python, backend, web, and analytics API as independently scanned
   non-root candidates, with protected serialized immutable publication and no
@@ -104,6 +108,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | Web 11 | Seven-persona real-OIDC browser, accessibility, security, responsive, and Big Data performance gate | Accepted on hosted CI 2026-07-27 |
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Released as `v0.2.3`; all four Docker Hub/GHCR digests verified and GHCR packages linked to the repository |
 | Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Accepted and consumed by the web platform |
+| Inventory forecast 1–3 | Baseline/backtest, checksummed Gold integration, scoped nested API, Vietnamese evidence UI and verified media | Accepted 2026-07-30; behavior CI `30469892794` and closeout CI `30504951460` passed 10/10 |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
@@ -150,8 +155,9 @@ Phase 7 foundation evidence is recorded in
 ## Explicit non-goals for the current release
 
 Broad semantic agriculture alerts, a public API/UI alert center, ClickHouse/dbt/
-Airflow, mobile, ML forecasting, what-if analysis, AI Text-to-SQL, and direct
-Gold writes are deferred. The metadata-only alert-worker hardening has hosted
+Airflow, mobile, forecasting beyond the accepted deterministic inventory
+baseline, model monitoring, what-if analysis, AI Text-to-SQL, and direct Gold
+writes are deferred. The metadata-only alert-worker hardening has hosted
 and registry release evidence through `v0.2.3`, but no external deployment
 claim. Production identity/MFA, hostname/TLS, observability, broker operations,
 and backup policy remain owner-gated.
