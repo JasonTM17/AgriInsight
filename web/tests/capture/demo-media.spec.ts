@@ -30,12 +30,9 @@ async function login(page: Page, userEnv: string, passwordEnv: string, returnTo:
  * This refuses to capture an empty, denied, loading or error surface, so a bad
  * frame fails the run instead of landing in the README.
  */
-async function expectPopulated(page: Page, heading?: string) {
+async function expectReadyPage(page: Page) {
   const title = page.getByRole("heading", { level: 1 }).first();
   await expect(title).toBeVisible();
-  if (heading) {
-    await expect(title).toContainText(heading);
-  }
   // A one-character heading would satisfy a loose matcher while the page is
   // still a shell, so require real text before anything is photographed.
   await expect
@@ -44,9 +41,6 @@ async function expectPopulated(page: Page, heading?: string) {
   const body = page.locator("body");
   await expect(body).not.toContainText(/không có quyền|Liên kết .* không hợp lệ/i);
   await expect(body).not.toContainText(/Đang tải|Chưa có dữ liệu/i);
-  await expect
-    .poll(async () => page.locator("main :is(table tbody tr, article, li)").count())
-    .toBeGreaterThan(0);
   await page.waitForLoadState("networkidle");
 }
 
@@ -92,18 +86,29 @@ test("@capture executive intelligence surfaces", async ({ page }) => {
   );
 
   await expect(page).toHaveURL(/\/overview$/);
-  await expectPopulated(page);
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Điểm cần xem xét" })
+  ).toBeVisible();
+  await expect(page.getByText("Phiên dữ liệu")).toBeVisible();
   await shoot(page, "01-overview");
 
   await page.goto("/farms");
-  await expectPopulated(page);
-  await shoot(page, "02-farms");
-
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Hiệu quả nông trại" })
+  ).toBeVisible();
   const firstFarm = page.locator('main a[href^="/farms/"]').first();
   await expect(firstFarm).toBeVisible();
+  await shoot(page, "02-farms");
+
   await firstFarm.click();
   await expect(page).toHaveURL(/\/farms\/[0-9a-f-]{36}/);
-  await expectPopulated(page);
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Trạng thái hiện hành" })
+  ).toBeVisible();
+  await expect(page.getByText("Mã nông trại")).toBeVisible();
   await shoot(page, "03-farm-detail");
 });
 
@@ -119,7 +124,10 @@ test("@capture warehouse inventory control", async ({ page }) => {
   await expect(page).toHaveURL(/\/inventory\?warehouseId=[0-9a-f-]{36}$/);
   await expect(page.getByTestId("inventory-control-page")).toBeVisible();
   await expect(page.getByTestId("inventory-balance-table")).toBeVisible();
-  await expectPopulated(page, "Kiểm soát tồn kho");
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Kiểm soát tồn kho" })
+  ).toBeVisible();
   await shoot(page, "04-inventory-control");
 
   const forecastPanel = page.locator('section[aria-labelledby="forecast-title"]');
@@ -179,17 +187,29 @@ test("@capture navigation tour frames", async ({ page }) => {
     "/overview"
   );
 
-  await expectPopulated(page);
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Điểm cần xem xét" })
+  ).toBeVisible();
+  await expect(page.getByText("Phiên dữ liệu")).toBeVisible();
   await frame(page, 1);
 
   await page.goto("/farms");
-  await expectPopulated(page);
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Hiệu quả nông trại" })
+  ).toBeVisible();
+  const firstFarm = page.locator('main a[href^="/farms/"]').first();
+  await expect(firstFarm).toBeVisible();
   await frame(page, 2);
 
-  const firstFarm = page.locator('main a[href^="/farms/"]').first();
   await firstFarm.click();
   await expect(page).toHaveURL(/\/farms\/[0-9a-f-]{36}/);
-  await expectPopulated(page);
+  await expectReadyPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Trạng thái hiện hành" })
+  ).toBeVisible();
+  await expect(page.getByText("Mã nông trại")).toBeVisible();
   await frame(page, 3);
   await page.mouse.wheel(0, 700);
   await page.waitForTimeout(400);
