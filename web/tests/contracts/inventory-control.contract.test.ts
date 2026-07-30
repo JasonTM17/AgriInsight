@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InventoryAnalyticsPanels } from "@/features/inventory/components/inventory-analytics-panels";
+import { InventoryOperationalTables } from "@/features/inventory/components/inventory-operational-tables";
 import {
   getInventoryTransactionPage,
   getMaterialCatalog,
@@ -86,6 +87,8 @@ const stockLot = {
 } as const;
 
 const inventoryTransaction = {
+  batchCode: undefined,
+  expiryDate: undefined,
   id: "9b2bd575-194d-42c9-9f72-2038ad623c7a",
   warehouseId,
   materialId,
@@ -96,6 +99,11 @@ const inventoryTransaction = {
   procurementEffectVnd: 1_200_000,
   occurredAt: "2027-01-01T08:00:00Z",
   recordedByProfileId: "a4b5d235-1d78-49ea-924f-a2f865c73238",
+  reason: undefined,
+  referenceCode: undefined,
+  reversalOf: undefined,
+  supplierId: undefined,
+  unitCostVnd: undefined,
   version: 0
 } as const;
 
@@ -591,7 +599,8 @@ describe("inventory analytics rendering", () => {
     expect(markup).toContain(
       'aria-label="Bảng chính sách tồn kho có thể cuộn"'
     );
-    expect(markup.match(/role="region" tabindex="0"/g)).toHaveLength(2);
+    expect(markup.match(/role="region"/g)).toHaveLength(2);
+    expect(markup.match(/tabindex="0"/g)).toHaveLength(2);
   });
 
   it("names insufficient history and preserves a semantic no-status state", () => {
@@ -707,6 +716,37 @@ describe("inventory analytics rendering", () => {
 
       expect(markup).toContain(`Độ mới: ${label}`);
     }
+  });
+});
+
+describe("inventory operational rendering", () => {
+  it("names every keyboard-scrollable operational table", () => {
+    const routeState = parseInventoryRouteState({ warehouseId })!;
+    const markup = renderToStaticMarkup(createElement(
+      InventoryOperationalTables,
+      {
+        balances: {
+          status: "ready",
+          data: boundedPage([stockBalance], 0)
+        },
+        lots: {
+          status: "ready",
+          data: boundedPage([stockLot], 0)
+        },
+        materials: [material],
+        routeState,
+        transactions: {
+          status: "ready",
+          data: boundedPage([inventoryTransaction], 0)
+        }
+      }
+    ));
+
+    expect(markup).toContain('aria-label="Bảng số dư vật tư có thể cuộn"');
+    expect(markup).toContain('aria-label="Bảng lô tồn kho có thể cuộn"');
+    expect(markup).toContain('aria-label="Sổ giao dịch kho có thể cuộn"');
+    expect(markup.match(/role="region"/g)).toHaveLength(3);
+    expect(markup.match(/tabindex="0"/g)).toHaveLength(3);
   });
 });
 

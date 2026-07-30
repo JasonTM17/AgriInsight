@@ -366,7 +366,7 @@
 
 .tableScroll:focus-visible {
   outline: 3px solid var(--focus);
-  outline-offset: 3px;
+  outline-offset: -3px;
 }
 
 .dataTable {
