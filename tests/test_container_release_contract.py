@@ -93,6 +93,19 @@ def test_web_standalone_runtime_exposes_an_unauthenticated_liveness_route() -> N
     assert '"alive"' in health_route
 
 
+def test_analytics_runtime_omits_python_build_tooling() -> None:
+    dockerfile = (
+        ROOT / "deploy" / "docker" / "analytics-api.Dockerfile"
+    ).read_text(encoding="utf-8")
+    build_stage, runtime_stage = dockerfile.split(
+        "FROM python:3.13-slim@sha256:", maxsplit=2
+    )[1:]
+
+    assert "pip install --upgrade pip" not in build_stage
+    assert "pip uninstall --yes pip setuptools wheel" in build_stage
+    assert " pip " not in runtime_stage
+
+
 def test_images_do_not_claim_a_license_before_the_owner_selects_one() -> None:
     dockerfiles = (
         ROOT / "Dockerfile",
