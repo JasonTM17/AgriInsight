@@ -5,6 +5,8 @@ param(
     [string] $GifPath = "docs/assets/agriinsight-tour.gif",
     [string] $ForecastGifPath = "assets/generated/agriinsight-inventory-forecast-loop.gif",
     [int] $StillWidth = 1280,
+    [ValidateRange(1, 16000)]
+    [int] $StillMaxHeight = 12000,
     [int] $GifWidth = 960,
     [int] $GifDelayCentiseconds = 180
 )
@@ -95,7 +97,9 @@ if ($captured.Count -eq 0) {
 New-Item -ItemType Directory -Force -Path $screensOut | Out-Null
 foreach ($shot in $captured) {
     $target = Join-Path $screensOut ($shot.BaseName + ".webp")
-    & $magick $shot.FullName -resize "${StillWidth}x>" -strip -quality 82 $target
+    & $magick $shot.FullName `
+        -resize "${StillWidth}x${StillMaxHeight}>" `
+        -strip -quality 82 $target
     if ($LASTEXITCODE -ne 0) { throw "Failed to convert $($shot.Name)" }
     $kb = [math]::Round((Get-Item -LiteralPath $target).Length / 1KB, 1)
     Write-Output ("MEDIA_STILL {0} {1} KB" -f $shot.BaseName, $kb)

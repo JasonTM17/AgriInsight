@@ -12,6 +12,10 @@ const demoBootstrap = readFileSync(
   resolve(repoRoot, "scripts/bootstrap-demo-environment.ps1"),
   "utf8"
 );
+const mediaBuilder = readFileSync(
+  resolve(repoRoot, "scripts/build-demo-media.ps1"),
+  "utf8"
+);
 const adminDatabaseHelper = readFileSync(
   resolve(repoRoot, "web/tests/e2e/helpers/admin-governance-database.ts"),
   "utf8"
@@ -99,6 +103,13 @@ describe("real-platform E2E runner", () => {
     expect(runner).toContain('"web/playwright.capture.config.ts"');
     expect(runner).not.toContain(
       '"playwright", "test", "--config", "playwright.capture.config.ts"'
+    );
+  });
+
+  it("bounds documentation stills below the WebP canvas limit", () => {
+    expect(mediaBuilder).toContain("[int] $StillMaxHeight = 12000");
+    expect(mediaBuilder).toContain(
+      '-resize "${StillWidth}x${StillMaxHeight}>"'
     );
   });
 
