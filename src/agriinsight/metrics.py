@@ -119,9 +119,8 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
                 GROUP BY farm_key
             ),
             season_area AS (
-                SELECT s.farm_key, SUM(f.area_ha) AS operated_area_ha
+                SELECT farm_key, SUM(season_area_ha) AS operated_area_ha
                 FROM dim_season s
-                JOIN dim_field f USING (field_key)
                 GROUP BY s.farm_key
             ),
             farm_cost AS (
@@ -129,13 +128,21 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
                 FROM fact_crop_activity
                 GROUP BY farm_key
             ),
+            harvested_season AS (
+                SELECT h.farm_key,
+                       h.season_key,
+                       SUM(h.harvest_quantity_kg) AS harvest_quantity_kg,
+                       SUM(h.revenue_vnd) AS total_revenue_vnd
+                FROM fact_harvest h
+                GROUP BY h.farm_key, h.season_key
+            ),
             farm_harvest AS (
                 SELECT h.farm_key,
                        SUM(h.harvest_quantity_kg) AS harvest_quantity_kg,
-                       SUM(h.revenue_vnd) AS total_revenue_vnd,
-                       SUM(f.area_ha) AS harvested_area_ha
-                FROM fact_harvest h
-                JOIN dim_field f USING (field_key)
+                       SUM(h.total_revenue_vnd) AS total_revenue_vnd,
+                       SUM(s.season_area_ha) AS harvested_area_ha
+                FROM harvested_season h
+                JOIN dim_season s USING (season_key)
                 GROUP BY h.farm_key
             )
             SELECT f.farm_code,
@@ -166,9 +173,8 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
             connection,
             """
             WITH crop_area AS (
-                SELECT s.crop_key, SUM(f.area_ha) AS operated_area_ha
+                SELECT crop_key, SUM(season_area_ha) AS operated_area_ha
                 FROM dim_season s
-                JOIN dim_field f USING (field_key)
                 GROUP BY s.crop_key
             ),
             crop_cost AS (

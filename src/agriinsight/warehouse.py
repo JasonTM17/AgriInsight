@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import numpy as np
 
 from agriinsight.config import GenerationConfig
+from agriinsight.season_snapshot_validation import timezone_free_timestamp_mask
 
 
 def _surrogate_dimension(
@@ -17,6 +19,89 @@ def _surrogate_dimension(
     dimension = frame.sort_values(sort_column).reset_index(drop=True).copy()
     dimension.insert(0, key_name, range(1, len(dimension) + 1))
     return dimension
+
+
+def _validate_season_contract(tables: dict[str, pd.DataFrame]) -> None:
+    seasons = tables["seasons"]
+    required = {
+        "season_code",
+        "start_date",
+        "expected_harvest_date",
+        "season_area_ha",
+        "completed_at",
+        "status",
+    }
+    missing = sorted(required - set(seasons.columns))
+    if missing:
+        raise ValueError(f"season snapshot columns missing: {', '.join(missing)}")
+
+    start_dates = pd.to_datetime(seasons["start_date"], errors="coerce")
+    expected_harvest_dates = pd.to_datetime(seasons["expected_harvest_date"], errors="coerce")
+    completion_format = timezone_free_timestamp_mask(seasons["completed_at"])
+    completed_at = pd.to_datetime(seasons["completed_at"], errors="coerce")
+    season_area = pd.to_numeric(seasons["season_area_ha"], errors="coerce")
+    status = seasons["status"].astype("string").str.strip().str.lower()
+    invalid = (
+        start_dates.isna()
+        | expected_harvest_dates.isna()
+        | season_area.isna()
+        | (season_area <= 0)
+        | ~np.isfinite(season_area)
+        | ~status.isin(("active", "completed"))
+        | (start_dates >= expected_harvest_dates)
+        | (status.eq("completed") & completed_at.isna())
+        | (status.eq("completed") & (start_dates >= completed_at.dt.normalize()))
+        | (status.eq("active") & seasons["completed_at"].notna())
+        | (
+            seasons["completed_at"].notna()
+            & (~completion_format | completed_at.isna())
+        )
+    )
+    if bool(invalid.any()):
+        season_codes = ", ".join(
+            seasons.loc[invalid, "season_code"].astype("string").head(5).tolist()
+        )
+        raise ValueError(f"invalid season snapshot contract: {season_codes}")
+
+
+def _validate_harvest_contract(tables: dict[str, pd.DataFrame]) -> None:
+    harvests = tables["harvests"]
+    required = {"harvest_id", "harvested_at", "season_code", "harvest_quantity_kg"}
+    missing = sorted(required - set(harvests.columns))
+    if missing:
+        raise ValueError(f"harvest columns missing: {', '.join(missing)}")
+    seasons = tables["seasons"].set_index("season_code")
+    harvested_format = timezone_free_timestamp_mask(harvests["harvested_at"])
+    harvested_at = pd.to_datetime(
+        harvests["harvested_at"].where(harvested_format),
+        errors="coerce",
+    )
+    season_status = harvests["season_code"].map(seasons["status"]).fillna("")
+    season_start = pd.to_datetime(
+        harvests["season_code"].map(seasons["start_date"]),
+        errors="coerce",
+    )
+    season_completed = pd.to_datetime(
+        harvests["season_code"].map(seasons["completed_at"]),
+        errors="coerce",
+    )
+    invalid = (
+        harvested_at.isna()
+        | ~season_status.astype("string").str.strip().str.lower().eq("completed")
+        | season_start.isna()
+        | season_completed.isna()
+        | (harvested_at < season_start)
+        | (harvested_at > season_completed)
+        | (harvests["harvested_at"].notna() & ~harvested_format)
+        | harvests["harvest_quantity_kg"].isna()
+        | (harvests["harvest_quantity_kg"] < 0)
+        | ~np.isfinite(harvests["harvest_quantity_kg"])
+    )
+    if bool(invalid.any()):
+        harvest_ids = ", ".join(
+            harvests.loc[invalid, "harvest_id"].astype("string").head(5).tolist()
+        )
+        raise ValueError(f"invalid harvest completion chronology: {harvest_ids}")
 
 
 def _build_dimensions(tables: dict[str, pd.DataFrame], as_of_date: str) -> dict[str, pd.DataFrame]:
@@ -79,6 +164,7 @@ def _build_dimensions(tables: dict[str, pd.DataFrame], as_of_date: str) -> dict[
         [
             pd.to_datetime(tables["seasons"]["start_date"], errors="raise"),
             pd.to_datetime(tables["seasons"]["expected_harvest_date"], errors="raise"),
+            pd.to_datetime(tables["seasons"]["completed_at"], errors="coerce").dropna(),
             pd.to_datetime(tables["activities"]["occurred_at"], errors="raise"),
             pd.to_datetime(tables["harvests"]["harvested_at"], errors="raise"),
             pd.to_datetime(tables["inventory_transactions"]["transaction_date"], errors="raise"),
@@ -310,6 +396,8 @@ def build_warehouse(
         temp_path.unlink()
 
     schema = resources.files("agriinsight").joinpath("sqlite_schema.sql").read_text(encoding="utf-8")
+    _validate_season_contract(tables)
+    _validate_harvest_contract(tables)
     dimensions = _build_dimensions(tables, config.as_of_date.isoformat())
     facts = _build_facts(tables, dimensions)
 

@@ -4,13 +4,24 @@ from datetime import date
 from typing import Any
 
 import pandas as pd
+import numpy as np
+
+from agriinsight.season_snapshot_validation import timezone_free_timestamp_mask
 
 
 REQUIRED_COLUMNS = {
     "farms": ("farm_code", "farm_name", "registered_area_ha"),
     "fields": ("field_code", "farm_code", "area_ha"),
     "crops": ("crop_code", "crop_name", "category"),
-    "seasons": ("season_code", "field_code", "crop_code", "start_date"),
+    "seasons": (
+        "season_code",
+        "field_code",
+        "crop_code",
+        "start_date",
+        "expected_harvest_date",
+        "season_area_ha",
+        "status",
+    ),
     "activities": ("activity_id", "occurred_at", "field_code", "season_code"),
     "harvests": ("harvest_id", "harvested_at", "field_code", "season_code"),
     "warehouses": ("warehouse_code", "farm_code", "warehouse_name"),
@@ -70,13 +81,95 @@ FRESHNESS_COLUMNS = (
 )
 
 
+def _series_or_missing(frame: pd.DataFrame, column: str) -> pd.Series:
+    if column in frame:
+        return frame[column]
+    return pd.Series(pd.NA, index=frame.index, dtype="object")
+
+
+def _season_validity_mask(tables: dict[str, pd.DataFrame]) -> pd.Series:
+    seasons = tables["seasons"]
+    start_dates = pd.to_datetime(_series_or_missing(seasons, "start_date"), errors="coerce")
+    expected_harvest_dates = pd.to_datetime(
+        _series_or_missing(seasons, "expected_harvest_date"),
+        errors="coerce",
+    )
+    completed_values = _series_or_missing(seasons, "completed_at")
+    completed_format = timezone_free_timestamp_mask(completed_values)
+    completed_at = pd.to_datetime(
+        completed_values.where(completed_format),
+        errors="coerce",
+    )
+    season_area = pd.to_numeric(_series_or_missing(seasons, "season_area_ha"), errors="coerce")
+    status = _series_or_missing(seasons, "status").astype("string").str.strip().str.lower()
+    completed = status.eq("completed")
+    active = status.eq("active")
+    return (
+        start_dates.isna()
+        | expected_harvest_dates.isna()
+        | season_area.isna()
+        | (season_area <= 0)
+        | ~np.isfinite(season_area)
+        | ~status.isin(("active", "completed"))
+        | (start_dates >= expected_harvest_dates)
+        | (completed & completed_at.isna())
+        | (completed & (start_dates >= completed_at.dt.normalize()))
+        | (active & completed_values.notna())
+        | (
+            completed_values.notna()
+            & (~completed_format | completed_at.isna())
+        )
+    )
+
+
+def _harvest_chronology_mask(tables: dict[str, pd.DataFrame]) -> pd.Series:
+    harvests = tables["harvests"]
+    # Uniqueness is scored separately. Use the same deterministic first-row
+    # policy as the Bronze transform so duplicate dimension keys cannot make
+    # the diagnostic quality report itself crash.
+    seasons = (
+        tables["seasons"]
+        .drop_duplicates("season_code", keep="first")
+        .set_index("season_code")
+    )
+    harvested_values = _series_or_missing(harvests, "harvested_at")
+    harvested_format = timezone_free_timestamp_mask(harvested_values)
+    harvested_at = pd.to_datetime(
+        harvested_values.where(harvested_format),
+        errors="coerce",
+    )
+    season_status = harvests["season_code"].map(
+        _series_or_missing(seasons, "status")
+    ).fillna("")
+    season_start = pd.to_datetime(
+        harvests["season_code"].map(_series_or_missing(seasons, "start_date")),
+        errors="coerce",
+    )
+    season_completed = pd.to_datetime(
+        harvests["season_code"].map(_series_or_missing(seasons, "completed_at")),
+        errors="coerce",
+    )
+    return (
+        harvested_at.isna()
+        | ~season_status.astype("string").str.strip().str.lower().eq("completed")
+        | season_start.isna()
+        | season_completed.isna()
+        | (harvested_at < season_start)
+        | (harvested_at > season_completed)
+        | (harvested_values.notna() & ~harvested_format)
+    )
+
+
 def _completeness(tables: dict[str, pd.DataFrame]) -> float:
     required_cells = 0
     missing_cells = 0
     for name, columns in REQUIRED_COLUMNS.items():
         frame = tables[name]
         required_cells += len(frame) * len(columns)
-        missing_cells += int(frame[list(columns)].isna().sum().sum())
+        present_columns = [column for column in columns if column in frame]
+        missing_cells += len(frame) * (len(columns) - len(present_columns))
+        if present_columns:
+            missing_cells += int(frame[present_columns].isna().sum().sum())
     if required_cells == 0:
         return 100.0
     return round(100 * (1 - missing_cells / required_cells), 4)
@@ -102,6 +195,7 @@ def _validity_masks(
     readings = tables["sensor_readings"]
     weather = tables["weather_daily"]
     health = tables["crop_health_observations"]
+    season_invalid = _season_validity_mask(tables)
 
     if silver:
         activity_numeric = ("quantity_kg", "labor_hours", "material_cost_vnd", "labor_cost_vnd")
@@ -117,6 +211,7 @@ def _validity_masks(
         harvest_invalid = harvests[list(harvest_numeric)].isna().any(axis=1) | (
             harvests[list(harvest_numeric)] < 0
         ).any(axis=1)
+        harvest_invalid |= _harvest_chronology_mask(tables)
         inventory_invalid = inventory[list(inventory_numeric)].isna().any(axis=1) | (
             inventory[list(inventory_numeric)] < 0
         ).any(axis=1)
@@ -131,6 +226,7 @@ def _validity_masks(
         harvest_invalid = harvests[list(harvest_numeric)].isna().any(axis=1) | (
             harvests[list(harvest_numeric)] < 0
         ).any(axis=1)
+        harvest_invalid |= _harvest_chronology_mask(tables)
         inventory_invalid = inventory[list(inventory_numeric)].isna().any(axis=1) | (
             inventory[list(inventory_numeric)] < 0
         ).any(axis=1)
@@ -175,6 +271,7 @@ def _validity_masks(
     )
 
     return {
+        "seasons": season_invalid,
         "activities": activity_invalid,
         "harvests": harvest_invalid,
         "inventory_transactions": inventory_invalid,
@@ -209,7 +306,12 @@ def _freshness(tables: dict[str, pd.DataFrame], as_of_date: date) -> tuple[float
 def _checks(tables: dict[str, pd.DataFrame], *, silver: bool) -> list[dict[str, Any]]:
     checks: list[dict[str, Any]] = []
     for name, columns in REQUIRED_COLUMNS.items():
-        failed = int(tables[name][list(columns)].isna().any(axis=1).sum())
+        missing_columns = [column for column in columns if column not in tables[name]]
+        failed = (
+            len(tables[name]) if not missing_columns else max(len(tables[name]), 1)
+        )
+        if not missing_columns:
+            failed = int(tables[name][list(columns)].isna().any(axis=1).sum())
         checks.append(
             {
                 "table": name,

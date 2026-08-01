@@ -151,19 +151,25 @@ def generate_bronze(config: GenerationConfig) -> dict[str, pd.DataFrame]:
                 }
             )
 
-            for year in (2025, 2026):
+            for year in (2024, 2025, 2026):
                 season_code = f"SEASON-{year}-{field_number:04d}"
                 start_month = 1 + ((field_index + farm_index) % 3)
                 start_day = 3 + ((field_number * 5) % 20)
                 start_date = datetime(year, start_month, start_day).date()
                 expected_harvest_date = start_date + timedelta(days=crop["duration_days"])
                 status = "completed" if expected_harvest_date <= config.as_of_date else "active"
+                completed_at = (
+                    datetime.combine(expected_harvest_date, time(hour=18)).isoformat()
+                    if status == "completed"
+                    else None
+                )
+                season_area_ha = field_area
                 target_yield = round(
-                    field_area * float(crop["yield_kg_ha"]) * rng.uniform(0.94, 1.08),
+                    season_area_ha * float(crop["yield_kg_ha"]) * rng.uniform(0.94, 1.08),
                     2,
                 )
                 budget_cost = _round_money(
-                    field_area * float(crop["cost_vnd_ha"]) * rng.uniform(0.94, 1.08)
+                    season_area_ha * float(crop["cost_vnd_ha"]) * rng.uniform(0.94, 1.08)
                 )
                 seasons.append(
                     {
@@ -172,6 +178,8 @@ def generate_bronze(config: GenerationConfig) -> dict[str, pd.DataFrame]:
                         "crop_code": crop["crop_code"],
                         "start_date": start_date.isoformat(),
                         "expected_harvest_date": expected_harvest_date.isoformat(),
+                        "season_area_ha": season_area_ha,
+                        "completed_at": completed_at,
                         "target_yield_kg": target_yield,
                         "budget_cost_vnd": budget_cost,
                         "status": status,
@@ -212,7 +220,9 @@ def generate_bronze(config: GenerationConfig) -> dict[str, pd.DataFrame]:
                         "Bảo dưỡng": "Nhiên liệu và phụ tùng",
                     }[activity_type]
                     quantity_kg = (
-                        round(field_area * rng.uniform(4.0, 16.0), 3) if has_material else 0.0
+                        round(season_area_ha * rng.uniform(4.0, 16.0), 3)
+                        if has_material
+                        else 0.0
                     )
                     activity_cost = _round_money(
                         season_actual_cost

@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from agriinsight.config import GenerationConfig
+from agriinsight.metrics import build_gold_datasets
 from agriinsight.pipeline import run_pipeline
 
 
@@ -59,9 +60,37 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert quality["scores"]["after"]["uniqueness_pct"] == 100
     assert quality["remediation_actions"]["units_converted_to_kg"] > 0
 
+    seasons = pd.read_csv(root / "silver" / "seasons.csv")
+    assert {"season_area_ha", "completed_at"}.issubset(seasons.columns)
+    season_years = set(
+        pd.to_datetime(seasons["start_date"], errors="raise").dt.year.tolist()
+    )
+    assert {2024, 2025, 2026}.issubset(season_years)
+    completed = seasons["status"].astype("string").str.lower().eq("completed")
+    active = seasons["status"].astype("string").str.lower().eq("active")
+    assert completed.any()
+    assert active.any()
+    assert seasons.loc[completed, "season_area_ha"].gt(0).all()
+    assert seasons.loc[completed, "completed_at"].notna().all()
+    assert seasons.loc[active, "completed_at"].isna().all()
+
     connection = sqlite3.connect(root / "warehouse" / "agriinsight.db")
     try:
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+        valid_season_snapshots = connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM dim_season
+            WHERE season_area_ha > 0
+              AND (
+                  (status = 'completed' AND completed_at IS NOT NULL)
+                  OR (status = 'active' AND completed_at IS NULL)
+              )
+            """
+        ).fetchone()[0]
+        cohort_2024 = connection.execute(
+            "SELECT COUNT(*) FROM dim_season WHERE substr(start_date, 1, 4) = '2024'"
+        ).fetchone()[0]
         activity_rows = connection.execute("SELECT COUNT(*) FROM fact_crop_activity").fetchone()[0]
         harvest_rows = connection.execute("SELECT COUNT(*) FROM fact_harvest").fetchone()[0]
         inventory_rows = connection.execute(
@@ -78,6 +107,8 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert harvest_rows == manifest["row_counts"]["silver"]["harvests"]
     assert inventory_rows == manifest["row_counts"]["silver"]["inventory_transactions"]
     assert sensor_rows == manifest["row_counts"]["silver"]["sensor_readings"]
+    assert valid_season_snapshots == manifest["row_counts"]["silver"]["seasons"]
+    assert cohort_2024 > 0
     executive = pd.read_csv(root / "gold" / "executive_summary.csv").iloc[0]
     assert executive["total_revenue_vnd"] == pytest.approx(warehouse_revenue)
     assert executive["profit_vnd"] == pytest.approx(
@@ -134,6 +165,69 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert (
         field_health.loc[field_health["risk_status"] == "watch", "risk_score"].between(25, 49)
     ).all()
+
+
+def test_farm_performance_uses_immutable_season_area_snapshot(
+    tmp_path: Path, small_config: GenerationConfig
+) -> None:
+    root = tmp_path / "artifacts"
+    run_pipeline(root, small_config)
+    db_path = root / "warehouse" / "agriinsight.db"
+
+    connection = sqlite3.connect(db_path)
+    try:
+        farm_code, field_key, season_area = connection.execute(
+            """
+            SELECT f.farm_code, s.field_key, s.season_area_ha
+            FROM dim_season s
+            JOIN dim_farm f USING (farm_key)
+            JOIN fact_harvest h USING (season_key)
+            ORDER BY s.season_code
+            LIMIT 1
+            """
+        ).fetchone()
+        expected_harvested_area = float(
+            connection.execute(
+                """
+                SELECT COALESCE(SUM(s.season_area_ha), 0)
+                FROM (
+                    SELECT DISTINCT season_key, farm_key
+                    FROM fact_harvest
+                    WHERE farm_key = (SELECT farm_key FROM dim_farm WHERE farm_code = ?)
+                ) harvested
+                JOIN dim_season s USING (season_key)
+                """,
+                (farm_code,),
+            ).fetchone()[0]
+        )
+        expected_operated_area = float(
+            connection.execute(
+                """
+                SELECT COALESCE(SUM(season_area_ha), 0)
+                FROM dim_season
+                WHERE farm_key = (SELECT farm_key FROM dim_farm WHERE farm_code = ?)
+                """,
+                (farm_code,),
+            ).fetchone()[0]
+        )
+        connection.execute(
+            "UPDATE dim_field SET area_ha = ? WHERE field_key = ?",
+            (float(season_area) * 9, field_key),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    farm_metrics = build_gold_datasets(db_path)["farm_performance"]
+    row = farm_metrics.loc[farm_metrics["farm_code"] == farm_code].iloc[0]
+
+    assert row["harvested_area_ha"] == pytest.approx(expected_harvested_area)
+    assert row["yield_kg_per_ha"] == pytest.approx(
+        row["harvest_quantity_kg"] / expected_harvested_area
+    )
+    assert row["cost_vnd_per_ha"] == pytest.approx(
+        row["total_cost_vnd"] / expected_operated_area
+    )
 
 
 def test_pipeline_is_reproducible_for_same_seed(

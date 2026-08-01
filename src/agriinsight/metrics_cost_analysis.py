@@ -108,11 +108,10 @@ def _cost_farm(connection: sqlite3.Connection) -> pd.DataFrame:
             SELECT s.farm_key,
                    COUNT(*) AS season_count,
                    COUNT(DISTINCT s.field_key) AS field_count,
-                   SUM(fi.area_ha) AS season_area_ha,
+                   SUM(s.season_area_ha) AS season_area_ha,
                    SUM(s.budget_cost_vnd) AS budget_cost_vnd,
                    SUM(s.target_yield_kg) AS target_yield_kg
             FROM dim_season s
-            JOIN dim_field fi USING (field_key)
             GROUP BY s.farm_key
         ),
         farm_cost AS (
@@ -195,7 +194,7 @@ def _cost_season(connection: sqlite3.Connection) -> pd.DataFrame:
                s.status AS season_status,
                s.start_date,
                s.expected_harvest_date,
-               fi.area_ha,
+               s.season_area_ha AS area_ha,
                s.budget_cost_vnd AS budget_operating_cost_vnd,
                s.target_yield_kg,
                COALESCE(h.harvest_quantity_kg, 0) AS harvest_quantity_kg,
@@ -209,8 +208,8 @@ def _cost_season(connection: sqlite3.Connection) -> pd.DataFrame:
                     THEN 100.0 * (h.revenue_vnd - COALESCE(sc.total_cost_vnd, 0))
                         / h.revenue_vnd
                     ELSE 0 END AS operating_profit_margin_pct,
-               CASE WHEN fi.area_ha > 0
-                    THEN COALESCE(sc.total_cost_vnd, 0) / fi.area_ha
+               CASE WHEN s.season_area_ha > 0
+                    THEN COALESCE(sc.total_cost_vnd, 0) / s.season_area_ha
                     ELSE 0 END AS operating_cost_per_ha_vnd,
                CASE WHEN COALESCE(h.harvest_quantity_kg, 0) > 0
                     THEN COALESCE(sc.total_cost_vnd, 0) / h.harvest_quantity_kg

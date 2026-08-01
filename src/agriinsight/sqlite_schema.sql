@@ -48,9 +48,20 @@ CREATE TABLE dim_season (
     crop_key INTEGER NOT NULL REFERENCES dim_crop(crop_key),
     start_date TEXT NOT NULL,
     expected_harvest_date TEXT NOT NULL,
+    season_area_ha REAL NOT NULL CHECK (season_area_ha > 0),
+    completed_at TEXT,
     target_yield_kg REAL NOT NULL CHECK (target_yield_kg > 0),
     budget_cost_vnd REAL NOT NULL CHECK (budget_cost_vnd > 0),
-    status TEXT NOT NULL CHECK (status IN ('active', 'completed'))
+    status TEXT NOT NULL CHECK (status IN ('active', 'completed')),
+    CHECK (date(start_date) < date(expected_harvest_date)),
+    CHECK (
+        (status = 'active' AND completed_at IS NULL)
+        OR (status = 'completed' AND completed_at IS NOT NULL)
+    ),
+    CHECK (
+        completed_at IS NULL
+        OR julianday(completed_at) > julianday(start_date)
+    )
 );
 
 CREATE TABLE dim_activity_type (

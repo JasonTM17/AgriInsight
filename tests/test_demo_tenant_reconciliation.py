@@ -35,7 +35,7 @@ def test_exact_verified_catalog_passes(reconciliation_inputs) -> None:
         "farms": 3,
         "fields": 6,
         "crops": 5,
-        "seasons": 12,
+        "seasons": 18,
         "warehouses": 3,
         "materials": 5,
         "suppliers": 8,

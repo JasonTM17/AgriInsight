@@ -108,7 +108,7 @@ def _season_sql(
         farm_code = fields.loc[row.field_code, "farm_code"]
         status = str(row.status).upper()
         started_on = row.start_date if status in {"ACTIVE", "COMPLETED"} else None
-        ended_on = row.expected_harvest_date if status == "COMPLETED" else None
+        ended_on = str(row.completed_at)[:10] if status == "COMPLETED" else None
         lines.append(
             master_upsert(
                 "seasons",
@@ -123,9 +123,7 @@ def _season_sql(
                     "planned_end_date": row.expected_harvest_date,
                     "started_on": started_on,
                     "ended_on": ended_on,
-                    "planted_area_hectares": fields.loc[
-                        row.field_code, "area_ha"
-                    ],
+                    "planted_area_hectares": row.season_area_ha,
                     "budget_vnd": row.budget_cost_vnd,
                     "status": status,
                 },

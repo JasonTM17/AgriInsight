@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import MappingProxyType
+from datetime import datetime, timezone
+from uuid import uuid4
 
 import pandas as pd
 import pytest
 
+from agriinsight.analytics_snapshot import ArtifactSnapshot
 from agriinsight.demo_tenant_bootstrap import (
     create_demo_bundle,
     write_demo_bundle,
 )
 from agriinsight.demo_tenant_contract import load_demo_contract
+from agriinsight.demo_tenant_master_sql import master_catalog_sql
 from agriinsight.demo_tenant_sample_sql import (
     FIELD_WORKER_EMPLOYEE_CODE,
     WORK_ASSIGNMENT_LIMIT,
@@ -210,6 +215,83 @@ def test_demo_bundle_seeds_supplier_master_from_silver_artifact(
             {"display_name": row.supplier_name, "active": True},
         )
         assert expected_sql in bundle.seed_sql
+
+
+def test_master_catalog_uses_completed_at_and_season_area_snapshot() -> None:
+    contract = load_demo_contract(CONTRACT)
+    snapshot = ArtifactSnapshot(
+        csv=MappingProxyType(
+            {
+                "farms": pd.DataFrame(
+                    [{"farm_code": "FARM-001", "farm_name": "Farm 1"}]
+                ),
+                "crops": pd.DataFrame(
+                    [{"crop_code": "RICE", "crop_name": "Rice"}]
+                ),
+                "fields": pd.DataFrame(
+                    [
+                        {
+                            "field_code": "FIELD-001",
+                            "farm_code": "FARM-001",
+                            "field_name": "Field 1",
+                            "area_ha": 99.0,
+                            "latitude": 10.1,
+                            "longitude": 105.2,
+                            "soil_type": "Loam",
+                            "irrigation_type": "Drip",
+                        }
+                    ]
+                ),
+                "seasons": pd.DataFrame(
+                    [
+                        {
+                            "season_code": "SEASON-2025-0001",
+                            "field_code": "FIELD-001",
+                            "crop_code": "RICE",
+                            "start_date": "2025-01-10",
+                            "expected_harvest_date": "2025-05-10",
+                            "season_area_ha": 12.5,
+                            "completed_at": "2025-05-12T18:30:00",
+                            "budget_cost_vnd": 1_000_000,
+                            "status": "completed",
+                        }
+                    ]
+                ),
+                "warehouses": pd.DataFrame(
+                    [{"warehouse_code": "WH-001", "farm_code": "FARM-001", "warehouse_name": "Main"}]
+                ),
+                "materials": pd.DataFrame(
+                    [
+                        {
+                            "material_code": "MAT-001",
+                            "material_name": "Material 1",
+                            "base_unit": "kg",
+                            "reorder_point": 10.0,
+                        }
+                    ]
+                ),
+                "suppliers": pd.DataFrame(
+                    [{"supplier_code": "SUP-001", "supplier_name": "Supplier 1"}]
+                ),
+            }
+        ),
+        generated_at=datetime(2026, 7, 18, tzinfo=timezone.utc),
+        json=MappingProxyType({}),
+        manifest=MappingProxyType({}),
+        manifest_fingerprint=str(uuid4()),
+        source_fingerprint=str(uuid4()),
+    )
+
+    season_sql = next(
+        line
+        for line in master_catalog_sql(contract, snapshot)
+        if line.startswith("INSERT INTO seasons")
+    )
+
+    assert "'2025-05-12'" in season_sql
+    assert "'2025-05-12T18:30:00'" not in season_sql
+    assert ", 12.5, 1000000, 'COMPLETED')" in season_sql
+    assert "99.0" not in season_sql
 
 
 def test_artifact_text_cannot_be_promoted_to_raw_sql() -> None:

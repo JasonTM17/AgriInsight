@@ -3,7 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pandas as pd
+import numpy as np
 
+from agriinsight.season_snapshot_validation import (
+    format_timezone_free_timestamps,
+    timezone_free_timestamp_mask,
+)
 from agriinsight.transform_crop_health import clean_crop_health
 from agriinsight.transform_inventory import clean_inventory
 
@@ -30,6 +35,12 @@ def _combine_quarantine(parts: list[pd.DataFrame], columns: list[str]) -> pd.Dat
     if not non_empty:
         return pd.DataFrame(columns=[*columns, "quarantine_reason"])
     return pd.concat(non_empty, ignore_index=True)
+
+
+def _series_or_missing(frame: pd.DataFrame, column: str) -> pd.Series:
+    if column in frame:
+        return frame[column]
+    return pd.Series(pd.NA, index=frame.index, dtype="object")
 
 
 def clean_bronze(raw: dict[str, pd.DataFrame]) -> TransformResult:
@@ -104,19 +115,51 @@ def clean_bronze(raw: dict[str, pd.DataFrame]) -> TransformResult:
         original = seasons[column].astype("string")
         seasons[column] = _canonical_code(seasons[column])
         actions["codes_canonicalized"] += int((original != seasons[column]).sum())
-    for column in ("start_date", "expected_harvest_date"):
-        seasons[column] = pd.to_datetime(seasons[column], errors="coerce").dt.date.astype("string")
+    start_dates = pd.to_datetime(_series_or_missing(seasons, "start_date"), errors="coerce")
+    expected_harvest_dates = pd.to_datetime(
+        _series_or_missing(seasons, "expected_harvest_date"),
+        errors="coerce",
+    )
+    completed_values = _series_or_missing(seasons, "completed_at")
+    completed_format = timezone_free_timestamp_mask(completed_values)
+    completed_at = pd.to_datetime(
+        completed_values.where(completed_format),
+        errors="coerce",
+    )
+    seasons["start_date"] = start_dates.dt.date.astype("string")
+    seasons["expected_harvest_date"] = expected_harvest_dates.dt.date.astype("string")
+    seasons["completed_at"] = format_timezone_free_timestamps(completed_at)
+    seasons.loc[completed_at.isna(), "completed_at"] = None
+    seasons["status"] = _series_or_missing(seasons, "status").astype("string").str.strip().str.lower()
+    seasons["season_area_ha"] = pd.to_numeric(
+        _series_or_missing(seasons, "season_area_ha"),
+        errors="coerce",
+    )
     for column in ("target_yield_kg", "budget_cost_vnd"):
         seasons[column] = pd.to_numeric(seasons[column], errors="coerce")
     season_duplicate = seasons.duplicated("season_code", keep="first")
+    completed_status = seasons["status"].eq("completed")
+    active_status = seasons["status"].eq("active")
     season_invalid = (
         seasons["season_code"].isna()
         | ~seasons["field_code"].isin(fields["field_code"])
         | ~seasons["crop_code"].isin(crops["crop_code"])
         | seasons["start_date"].isna()
         | seasons["expected_harvest_date"].isna()
+        | seasons["season_area_ha"].isna()
+        | (seasons["season_area_ha"] <= 0)
+        | ~np.isfinite(seasons["season_area_ha"])
         | (seasons["target_yield_kg"] <= 0)
         | (seasons["budget_cost_vnd"] <= 0)
+        | ~seasons["status"].isin(("active", "completed"))
+        | (start_dates >= expected_harvest_dates)
+        | (completed_status & completed_at.isna())
+        | (completed_status & (start_dates >= completed_at.dt.normalize()))
+        | (active_status & completed_values.notna())
+        | (
+            completed_values.notna()
+            & (~completed_format | completed_at.isna())
+        )
     )
     season_quarantine = [
         _quarantine_rows(seasons, season_duplicate, "duplicate_primary_key"),
@@ -185,7 +228,12 @@ def clean_bronze(raw: dict[str, pd.DataFrame]) -> TransformResult:
         original = harvests[column].astype("string")
         harvests[column] = _canonical_code(harvests[column])
         actions["codes_canonicalized"] += int((original != harvests[column]).sum())
-    harvests["harvested_at"] = pd.to_datetime(harvests["harvested_at"], errors="coerce")
+    harvested_values = harvests["harvested_at"].copy()
+    harvested_format = timezone_free_timestamp_mask(harvested_values)
+    harvests["harvested_at"] = pd.to_datetime(
+        harvested_values.where(harvested_format),
+        errors="coerce",
+    )
     for column in ("quantity", "waste_quantity_kg", "revenue_vnd"):
         harvests[column] = pd.to_numeric(harvests[column], errors="coerce")
     normalized_harvest_unit = harvests["unit"].astype("string").str.strip().str.lower()
@@ -200,6 +248,9 @@ def clean_bronze(raw: dict[str, pd.DataFrame]) -> TransformResult:
     valid_crop_season = set(
         zip(seasons["season_code"], seasons["field_code"], seasons["crop_code"], strict=False)
     )
+    season_context = seasons.set_index("season_code")[
+        ["status", "start_date", "completed_at"]
+    ]
     valid_harvest_relation = pd.Series(
         [
             (season_code, field_code, crop_code) in valid_crop_season
@@ -216,17 +267,34 @@ def clean_bronze(raw: dict[str, pd.DataFrame]) -> TransformResult:
     valid_harvest_farm = harvests.apply(
         lambda row: field_farm_lookup.get(row["field_code"]) == row["farm_code"], axis=1
     )
+    season_status = harvests["season_code"].map(season_context["status"]).fillna("")
+    season_start = pd.to_datetime(
+        harvests["season_code"].map(season_context["start_date"]),
+        errors="coerce",
+    )
+    season_completed = pd.to_datetime(
+        harvests["season_code"].map(season_context["completed_at"]),
+        errors="coerce",
+    )
     harvest_invalid = (
         harvests["harvest_id"].isna()
         | harvests["harvested_at"].isna()
+        | (harvested_values.notna() & ~harvested_format)
         | ~valid_harvest_relation
         | ~valid_harvest_farm
+        | ~season_status.eq("completed")
+        | season_completed.isna()
+        | (harvests["harvested_at"] < season_start)
+        | (harvests["harvested_at"] > season_completed)
         | ~harvests["unit"].eq("kg")
         | harvests[["harvest_quantity_kg", "waste_quantity_kg", "revenue_vnd"]]
         .isna()
         .any(axis=1)
         | (harvests[["harvest_quantity_kg", "waste_quantity_kg", "revenue_vnd"]] < 0).any(axis=1)
         | (harvests["waste_quantity_kg"] > harvests["harvest_quantity_kg"])
+        | ~np.isfinite(
+            harvests[["harvest_quantity_kg", "waste_quantity_kg", "revenue_vnd"]]
+        ).all(axis=1)
     )
     harvest_quarantine = [
         _quarantine_rows(harvests, duplicate_harvest, "duplicate_primary_key"),
@@ -237,7 +305,9 @@ def clean_bronze(raw: dict[str, pd.DataFrame]) -> TransformResult:
         ),
     ]
     harvests = harvests.loc[~duplicate_harvest & ~harvest_invalid].copy()
-    harvests["harvested_at"] = harvests["harvested_at"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+    harvests["harvested_at"] = format_timezone_free_timestamps(
+        harvests["harvested_at"]
+    )
     harvests = harvests.drop(columns=["quantity", "unit"]).reset_index(drop=True)
     quarantine["harvests"] = _combine_quarantine(
         harvest_quarantine, list(raw["harvests"].columns)
