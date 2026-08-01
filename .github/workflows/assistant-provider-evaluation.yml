@@ -35,6 +35,13 @@ jobs:
           set -euo pipefail
           checked_out_sha="$(git rev-parse HEAD)"
           test "$checked_out_sha" = "$GITHUB_SHA"
+      - name: Verify hash-locked source import
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python -c 'from agriinsight.analytics_api.assistant_provider_evaluation_workload import run_provider_evaluation'
       - name: Run the bounded provider evaluation
         shell: bash
         env:

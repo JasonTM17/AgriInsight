@@ -127,7 +127,7 @@ pull-request/main CI completely secretless.
 | `src/agriinsight/analytics_api/assistant_provider_evaluation.py` | Create | Validate and aggregate case outcomes, buffered completed-response latency, citations, token usage, and a dated V4 Flash price snapshot without retaining per-case content. |
 | `src/agriinsight/analytics_api/assistant_provider_evaluation_workload.py` | Create | Load the closed fixture, exercise the real `AssistantService`/retriever/client boundary through a non-logging telemetry collector plus an in-memory provider-latency wrapper, and keep questions, evidence, answers, case IDs, tenant IDs, correlation IDs, provider diagnostics, and credentials in memory only. |
 | `scripts/run-assistant-provider-evaluation.py` | Create | Fail-closed CLI that reads only the key from the process environment, constructs validated in-process assistant settings for the harness, and prints exactly one aggregate JSON line on success. |
-| `requirements/assistant-provider-evaluation.lock` | Create | Hash-pin the CPython 3.13 runtime imports used before the protected step receives a provider credential, including `analytics_api` package-init imports; workflow source runs from `src/` without resolving the project dependency ranges. |
+| `requirements/assistant-provider-evaluation.lock` | Create | Hash-pin the complete CPython 3.13 `analytics_api` package-init import closure; verify the import before the protected step receives a provider credential. Workflow source runs from `src/` without resolving project dependency ranges. |
 | `tests/analytics_api/test_assistant_provider_evaluation.py` | Create | Pure aggregation, validation, percentile, semantic-concept, citation, cost, and redaction tests. |
 | `tests/analytics_api/test_assistant_provider_evaluation_workload.py` | Create | Mock-transport integration proof for the exact 15-case service workload, two repetitions, concurrency three, and zero cross-scope/provider calls for refusal cases. |
 | `tests/analytics_api/test_assistant_provider_evaluation_cli.py` | Create | Prove missing credentials fail closed without leaking configuration or producing a false aggregate. |
@@ -217,8 +217,9 @@ pull-request/main CI completely secretless.
    aggregate JSON artifact, and never passes the secret to normal CI, Docker
    builds, PR artifacts, screenshots, logs, or release images.
 7. The manual job must reject every ref except `refs/heads/main`, install its
-   dedicated runtime lock with `pip --require-hashes --only-binary=:all:` before
-   importing the source, and never resolve `pyproject.toml` dependency ranges
+   dedicated complete runtime lock with `pip --require-hashes --only-binary=:all:`,
+   and import the evaluation workload with `PYTHONPATH=src` before the
+   secret-scoped step. It must never resolve `pyproject.toml` dependency ranges
    in its secret-scoped process.
 8. The workflow must assert `git rev-parse HEAD == GITHUB_SHA` before loading
    the secret and write that exact SHA into the aggregate. Hosted acceptance
