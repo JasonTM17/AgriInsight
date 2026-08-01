@@ -26,4 +26,3 @@ def test_provider_evaluation_cli_fails_closed_without_secret() -> None:
     assert completed.returncode != 0
     assert completed.stdout == ""
     assert completed.stderr.strip() == "assistant provider evaluation failed"
-
