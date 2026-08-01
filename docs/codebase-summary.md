@@ -1,8 +1,8 @@
 # Codebase Summary
 
-Verified snapshot: 2026-07-30 (inventory-demand forecast Phases 1–3 are
-accepted through scoped API/browser evidence; the protected four-image
-`v0.3.1` release is the latest published registry evidence; external
+Verified snapshot: 2026-08-01 (inventory-demand and yield forecast Phases 1–3
+are accepted through scoped API/browser/media evidence; the protected
+four-image `v0.3.1` release is the latest published registry evidence; external
 production deployment remains owner-gated)
 
 ## Repository shape
@@ -69,7 +69,7 @@ serialized response above 1 MiB. The Next Inventory contract validates the
 exact nested shape and renders Vietnamese status, freshness, range, model and
 backtest evidence without browser-side forecast math.
 
-The track does not claim yield, pest-risk, anomaly, what-if, advanced ML SLA,
+The inventory track does not claim yield, pest-risk, anomaly, what-if, advanced ML SLA,
 or Text-to-SQL capability. Phase 2 evidence at `8149ee1` is 317 Python passes
 with 3 intentional skips, independent contract review at 96/100, and hosted CI
 [`30464080148`](https://github.com/JasonTM17/AgriInsight/actions/runs/30464080148)
@@ -79,6 +79,35 @@ passing all 10 jobs. Phase 3 implementation at `ce47ce5` passed hosted CI
 [`30504951460`](https://github.com/JasonTM17/AgriInsight/actions/runs/30504951460)
 10/10, including the real seven-persona browser, verified forecast media
 artifact and four candidate-image gates without registry publication.
+
+## Yield forecasting
+
+`yield_forecast.py`, `yield_forecast_contract.py`,
+`yield_forecast_backtest.py`, and their numeric/input-validation helpers build
+the leakage-safe `crop-median-yield-per-ha-v1` baseline. The contract is one
+active season per canonical identity; training labels become eligible only when
+their completion time is strictly before the candidate season's forecast
+origin. Gold materialization and reconciliation reject malformed, stale,
+non-finite, duplicate, relationship-invalid, or area/quantity-inconsistent
+rows before `gold/yield_forecast.csv` becomes a checksummed snapshot.
+
+`analytics_api/routers/yield_forecast.py` exposes the additive
+`GET /internal/v1/yield-forecast` route through the read model in
+`analytics_api/yield_forecast_read_models.py`. It preserves FARMS scope and
+authorization order, accepts only canonical farm/field/crop/season filters plus
+bounded pagination, fixes ordering to expected harvest then season code, caps a
+page at 100 rows and the final response at 1 MiB. The Next exact BFF allowlist,
+generated types and `yield-forecast-contract-schema.ts` validate that shape;
+the Farm detail panel presents server evidence and can degrade independently of
+farm identity and realized performance.
+
+Phase 3 acceptance at `54947ab` passed hosted CI
+[`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895)
+10/10: real Keycloak/PostgreSQL/Spring/FastAPI/Chrome browser coverage,
+visual-reviewed desktop/mobile WebP and two-frame GIF with a verified seven-file
+media manifest, and four candidate-image gates. It is documentation/demo and
+internal decision support evidence, not external deployment, agronomic ground
+truth, a confidence interval, or an accuracy/SLA claim.
 
 ## Web surface
 

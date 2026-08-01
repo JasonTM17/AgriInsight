@@ -56,6 +56,28 @@ trên Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome thật. Đây là bằng ch
 documentation/demo của baseline đã nghiệm thu, không phải external production
 deployment, ground truth nông học hay cam kết accuracy/SLA của mô hình nâng cao.
 
+## Dự báo năng suất có bằng chứng
+
+![Luồng bằng chứng dự báo năng suất từ seasonal facts tới Farm detail](docs/assets/yield-forecast-architecture.png)
+
+Baseline `crop-median-yield-per-ha-v1` chỉ dùng harvest của các mùa cùng cây đã
+hoàn tất trước forecast origin. Gold snapshot mang forecast kg/ha và gross kg,
+dải lịch sử mô tả, model/version, cutoff, history và rolling-origin
+MAE/WAPE. `GET /internal/v1/yield-forecast` chỉ nhận filter canonical
+farm/field/crop/season với pagination tối đa 100 dòng và 1 MiB; BFF và browser
+không chọn tenant/model/sort, không tính lại forecast và không tạo mutation.
+
+![Bảng bằng chứng dự báo năng suất theo mùa trên desktop](docs/assets/screens/yield-forecast-desktop.webp)
+
+![Vòng lặp mở phần evidence của dự báo năng suất](assets/generated/agriinsight-yield-forecast-loop.gif)
+
+Ảnh và GIF được chụp từ hosted real-platform gate
+[`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895)
+trên Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome thật. Đây là bằng chứng
+documentation/demo của snapshot đã nghiệm thu, không phải external production
+deployment, ground truth nông học, confidence interval hay cam kết
+accuracy/SLA.
+
 ## Backend vận hành đang triển khai
 
 Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 có transactional outbox, image hardening, CI, recovery wrappers và protected image publication đã được xác minh trong `v0.2.3`. Production deployment, OIDC operations và recovery-policy ownership vẫn là cổng riêng, chưa được bản phát hành container này phê duyệt. Nền tảng Next 16 hiện phủ chín khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality`, `/assistant` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.

@@ -37,3 +37,27 @@ is the paired 1280 × 800 still.
 - Boundary: verified documentation/demo evidence only; not external production
   deployment, agronomic ground truth, model accuracy SLA, or purchase-order
   authorization
+
+## Yield forecast evidence
+
+`agriinsight-yield-forecast-loop.gif` is a 960 × 600, two-frame loop showing
+the accepted Farm detail Yield panel and its scrollable evidence disclosure.
+The paired WebP stills are `yield-forecast-desktop.webp` (1280 × 800) and
+`yield-forecast-mobile.webp` (780 × 1688).
+
+- Source: real Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome hosted gate,
+  commit `ecfe58ccceee923e43951ce6b3a942581e62a298`
+- Evidence: GitHub Actions
+  [`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895),
+  artifact `yield-forecast-media-ecfe58ccceee923e43951ce6b3a942581e62a298`
+- Processing: ImageMagick 6.9.12.98; WebP quality 82; palette GIF with 1.8 s
+  frame delay and infinite loop
+- Desktop WebP SHA-256:
+  `d16e37cc75d0c20b253f61dc9db6d47a923f831d856f2e80e429ea388beffb73`
+- Mobile WebP SHA-256:
+  `a508fc698ea4fa5c34d3b6ee46e2312bed8a3fb2377b42257821565648843124`
+- Forecast GIF SHA-256:
+  `5262363262f15055bcd2ffd63955268c4ff129fa907ed0f3a5fb74eae199198c`
+- Boundary: verified documentation/demo evidence only; not external production
+  deployment, agronomic ground truth, a confidence interval, accuracy SLA, or
+  operational authorization

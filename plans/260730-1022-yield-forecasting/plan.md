@@ -4,7 +4,7 @@ description: >-
   Add a deterministic, leakage-safe yield baseline for active seasons and carry
   its backtest evidence from warehouse facts through Gold, a scoped API, and the
   existing farm-detail experience.
-status: in-progress
+status: completed
 priority: P1
 branch: feature/yield-forecasting
 tags:
@@ -40,7 +40,7 @@ and Overview contracts keep their meaning.
 |-------|------|--------|
 | 1 | [Leakage-safe forecast contract and backtested baseline](./phase-01-leakage-safe-forecast-contract-and-backtested-baseline.md) | Completed |
 | 2 | [Gold pipeline and snapshot integration](./phase-02-gold-pipeline-and-snapshot-integration.md) | Completed |
-| 3 | [Scoped API farm dashboard and hosted acceptance](./phase-03-scoped-api-farm-dashboard-and-hosted-acceptance.md) | Pending |
+| 3 | [Scoped API farm dashboard and hosted acceptance](./phase-03-scoped-api-farm-dashboard-and-hosted-acceptance.md) | Completed 2026-08-01 |
 | 4 | [Protected release and package publication](./phase-04-protected-release-and-package-publication.md) | Pending |
 
 ## Dependencies
@@ -76,3 +76,13 @@ and Overview contracts keep their meaning.
 - This milestone does not implement pest-risk forecasting, anomaly detection,
   what-if analysis, Text-to-SQL, advanced ML, automatic operational mutations,
   or external production deployment.
+
+## Phase 3 acceptance
+
+Hosted CI [`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895)
+passed all 10 jobs for feature head `54947ab`, including the real seven-persona
+browser/media gate and four candidate-image build/scan gates. The accepted
+Yield media artifact is tied to merge SHA
+`ecfe58ccceee923e43951ce6b3a942581e62a298`; hashes, visual review and open
+external-deployment/security boundaries are recorded in
+[the Phase 3 acceptance report](./reports/phase-03-api-dashboard-hosted-acceptance.md).

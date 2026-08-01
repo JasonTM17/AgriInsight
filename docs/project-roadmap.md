@@ -11,6 +11,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Analytics MVP | Scale/visual checkpoint accepted 2026-07-22 | Bronze/Silver/Gold, reporting, dashboard, exports; Python 76 passed and 3 optional PDF skips; guarded 1.05M-reading profile |
 | Analytics read API | Phase 2 completed locally; Phase 5 filters accepted 2026-07-26 | Spring `/me` tenant gate, scoped FastAPI GETs, guarded seven-persona demo bootstrap, deterministic OpenAPI, real PostgreSQL reconciliation, and canonical Phase 5 filter extensions |
 | Inventory demand forecasting | Phases 1–3 accepted and `v0.3.1` released 2026-07-30 | Deterministic 30-day warehouse/material forecast, 180-day history cap, 90-day baseline, empirical p10/p90 planning range, rolling-origin MAE/WAPE, checksummed Gold, nested scoped API evidence, strict generated web contract, Vietnamese browser panel and verified media; exact-head CI `30506056691` passed 10/10 and protected publication `30506807548` passed 4/4 |
+| Yield forecasting | Phases 1–3 hosted-accepted 2026-08-01 | Leakage-safe same-crop median baseline, active-season Gold contract and reconciliation, FARMS-scoped fixed-order GET, exact BFF/runtime schema, Vietnamese Farm detail evidence UI, hosted still/GIF, and four candidate-image gates; CI [`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895) passed 10/10. This is decision support, not external deployment or an agronomic accuracy/SLA claim. |
 | DeepSeek RAG assistant | Implemented; `v0.3.0` released | Scoped Gold retrieval, V4 Flash adapter, strict citations/refusal, tokenless BFF, Vietnamese UI, security tests, versioned retrieval evaluation, and mock-only telemetry evaluator; full CI `30452477234` and protected image publication `30453840056` passed, while hosted provider SLO/groundedness/spend ownership remain open |
 | Backend phases 1-4 | Accepted | Foundation, OIDC/RBAC/RLS, farm/workforce/activity/harvest contracts |
 | Backend phase 5 | Accepted 2026-07-22 | Inventory masters, warehouse assignments, immutable ledger/projections, reversals, reconciliation, role-aware V15 RLS, OpenAPI examples |
@@ -136,7 +137,8 @@ implicitly converted into operating cost.
   production OIDC configuration and approval remain open.
 - Broad semantic agriculture alerts beyond the current exact alert API/BFF,
   advanced Kafka analytics, and mobile field workflows.
-- Yield, pest-risk forecasting, anomaly detection, what-if analysis, and model
+- Advanced yield forecasting beyond the accepted deterministic baseline,
+  pest-risk forecasting, anomaly detection, what-if analysis, and model
   monitoring.
 - Guardrailed RAG assistant is implemented locally; keep Text-to-SQL,
   embeddings, model monitoring, and auditable SQL execution as separately

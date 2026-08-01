@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Scoped API farm dashboard and hosted acceptance"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies:
@@ -111,23 +111,37 @@ Registry publication is isolated in Phase 4.
 
 ## Success Criteria
 
-- [ ] Unauthorized or cross-farm forecast access fails closed; health counters
+- [x] Unauthorized or cross-farm forecast access fails closed; health counters
   reflect only rows authorized for the request.
-- [ ] Existing `/farms`, `/overview`, cost, inventory, and assistant public
+- [x] Existing `/farms`, `/overview`, cost, inventory, and assistant public
   contracts remain stable.
-- [ ] Browser renders exact server evidence and performs no point/range/error
+- [x] Browser renders exact server evidence and performs no point/range/error
   calculations.
-- [ ] Forecast failure does not hide verified farm identity or realized
+- [x] Forecast failure does not hide verified farm identity or realized
   performance.
-- [ ] Pagination is deterministic under the fixed expected-harvest/season-code
+- [x] Pagination is deterministic under the fixed expected-harvest/season-code
   ordering and exposes no browser-controlled sort.
-- [ ] Python, OpenAPI, generated TypeScript, runtime schema, unit, a11y,
+- [x] Python, OpenAPI, generated TypeScript, runtime schema, unit, a11y,
   responsive, Playwright, security, build, and candidate-image gates pass.
-- [ ] README/docs include visually reviewed architecture PNG/SVG, hosted UI
+- [x] README/docs include visually reviewed architecture PNG/SVG, hosted UI
   still/GIF, alt text, captions, hashes, and an explicit synthetic-baseline
   accuracy boundary.
-- [ ] External VPS deployment and production model SLA remain explicitly open,
+- [x] External VPS deployment and production model SLA remain explicitly open,
   not falsely marked accepted.
+
+## Acceptance evidence
+
+- Feature head `54947ab` passed all 10 hosted CI jobs in
+  [`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895).
+  Evidence includes the real Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome
+  journey and four no-push candidate-image build/scan gates.
+- Artifact `yield-forecast-media-ecfe58ccceee923e43951ce6b3a942581e62a298`
+  contains seven SHA-256-verified files for merge SHA
+  `ecfe58ccceee923e43951ce6b3a942581e62a298`: two stills, two raw frames, a
+  desktop/mobile WebP pair and the two-frame GIF.
+- The source architecture SVG and rendered PNG, hosted desktop/mobile WebP,
+  and GIF were visually reviewed. External VPS promotion, ingress rate limit,
+  successful-read audit retention and any production agronomic SLA remain open.
 
 ## Risks and rollback
 
