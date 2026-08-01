@@ -189,6 +189,22 @@ describe("exact upstream allowlist", () => {
     });
   });
 
+  it("contains the exact scoped yield forecast read operation", () => {
+    expect(ALLOWED_OPERATIONS.analyticsYieldForecast).toEqual({
+      method: "GET",
+      path: "/internal/v1/yield-forecast",
+      queryParameters: [
+        "farm_code",
+        "field_code",
+        "crop_code",
+        "season_code",
+        "limit",
+        "offset"
+      ],
+      service: "analytics"
+    });
+  });
+
   it("contains only the exact realtime alert read and acknowledgement operations", () => {
     expect(ALLOWED_OPERATIONS.realtimeAlerts).toEqual({
       method: "GET",

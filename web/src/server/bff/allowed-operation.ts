@@ -125,6 +125,19 @@ export const ALLOWED_OPERATIONS = Object.freeze({
     ],
     service: "analytics"
   },
+  analyticsYieldForecast: {
+    method: "GET",
+    path: "/internal/v1/yield-forecast",
+    queryParameters: [
+      "farm_code",
+      "field_code",
+      "crop_code",
+      "season_code",
+      "limit",
+      "offset"
+    ],
+    service: "analytics"
+  },
   analyticsInventory: {
     method: "GET",
     path: "/internal/v1/inventory",
