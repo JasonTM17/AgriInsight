@@ -125,8 +125,9 @@ pull-request/main CI completely secretless.
 |---|---|---|
 | `tests/fixtures/assistant-retrieval-evaluation-v1.json` | Modify | Add versioned `expectedAnswerConcepts` arrays (canonical lower-case phrases) for the existing 10 answerable cases without weakening the five refusal/cross-scope cases. |
 | `src/agriinsight/analytics_api/assistant_provider_evaluation.py` | Create | Validate and aggregate case outcomes, buffered completed-response latency, citations, token usage, and a dated V4 Flash price snapshot without retaining per-case content. |
-| `src/agriinsight/analytics_api/assistant_provider_evaluation_workload.py` | Create | Load the closed fixture, exercise the real `AssistantService`/retriever/client boundary, and keep questions, evidence, answers, case IDs, tenant IDs, correlation IDs, provider diagnostics, and credentials in memory only. |
-| `scripts/run-assistant-provider-evaluation.py` | Create | Fail-closed CLI that reads the key from the process environment and prints exactly one aggregate JSON line on success. |
+| `src/agriinsight/analytics_api/assistant_provider_evaluation_workload.py` | Create | Load the closed fixture, exercise the real `AssistantService`/retriever/client boundary through a non-logging telemetry collector plus an in-memory provider-latency wrapper, and keep questions, evidence, answers, case IDs, tenant IDs, correlation IDs, provider diagnostics, and credentials in memory only. |
+| `scripts/run-assistant-provider-evaluation.py` | Create | Fail-closed CLI that reads only the key from the process environment, constructs validated in-process assistant settings for the harness, and prints exactly one aggregate JSON line on success. |
+| `requirements/assistant-provider-evaluation.lock` | Create | Hash-pin the minimal CPython 3.13 runtime imports used before the protected step receives a provider credential; workflow source runs from `src/` without resolving the project dependency ranges. |
 | `tests/analytics_api/test_assistant_provider_evaluation.py` | Create | Pure aggregation, validation, percentile, semantic-concept, citation, cost, and redaction tests. |
 | `tests/analytics_api/test_assistant_provider_evaluation_workload.py` | Create | Mock-transport integration proof for the exact 15-case service workload, two repetitions, concurrency three, and zero cross-scope/provider calls for refusal cases. |
 | `tests/analytics_api/test_assistant_provider_evaluation_cli.py` | Create | Prove missing credentials fail closed without leaking configuration or producing a false aggregate. |
@@ -134,13 +135,46 @@ pull-request/main CI completely secretless.
 | `.github/workflows/assistant-provider-evaluation.yml` | Create | Manual protected workflow that installs the locked project, runs the aggregate-only harness, enforces gates, and retains the result for seven days. |
 | `plans/260727-2048-deepseek-rag-assistant/reports/` | Modify later | Record the accepted local/hosted run IDs and aggregate metrics only after immutable evidence exists. |
 
+### Current code constraints (verified)
+
+- `AssistantService.answer` records telemetry on reject, error, and success, and
+  the default `AssistantTelemetry.record` logger currently emits
+  `correlation_id`. The evaluation workload must therefore inject a custom
+  in-memory collector instead of process logging, otherwise the manual workflow
+  would leak request correlation IDs into stdout/stderr
+  (`src/agriinsight/analytics_api/assistant_service.py:55`,
+  `src/agriinsight/analytics_api/assistant_observability.py:20`).
+- `create_app` wires the assistant only when `assistant.enabled` is true, while
+  `AssistantSettings` defaults to `enabled=False`. The manual workflow should
+  not export an enable flag or alter deployment defaults just to run this
+  harness; it should construct validated settings in-process around the single
+  injected API key (`src/agriinsight/analytics_api/app.py:49`,
+  `src/agriinsight/analytics_api/assistant_settings.py:16`,
+  `src/agriinsight/analytics_api/assistant_settings.py:85`).
+- `DeepSeekAssistantClient` already disables thinking and buffers the full
+  non-streaming response before validation. The evaluation may measure only
+  completed-response latency for the provider path; it must not invent or label
+  a token-level TTFB metric
+  (`src/agriinsight/analytics_api/deepseek_assistant_client.py:51`,
+  `src/agriinsight/analytics_api/deepseek_assistant_client.py:194`,
+  `src/agriinsight/analytics_api/deepseek_assistant_client.py:197`).
+- The current retrieval fixture and gate prove exact retrieval recall, refusal
+  precision, and cross-scope isolation only. Semantic answer scoring needs new
+  explicit concept fields in the fixture without relaxing the five refusal
+  cases (`tests/analytics_api/test_assistant_retrieval_evaluation.py:68`,
+  `tests/analytics_api/test_assistant_retrieval_evaluation.py:69`,
+  `tests/analytics_api/test_assistant_retrieval_evaluation.py:72`,
+  `tests/fixtures/assistant-retrieval-evaluation-v1.json:2`,
+  `tests/fixtures/assistant-retrieval-evaluation-v1.json:145`).
+
 ### Exact workload and acceptance criteria
 
 1. Reuse the versioned 15-case Vietnamese/English fixture: 10 answerable cases
    and five unanswerable, ambiguous, prompt-injection, or cross-tenant cases.
    Run two repetitions at concurrency three: exactly 30 service requests, 20
-   provider requests, and 10 local refusals. This stays at the existing 30 RPM
-   process limit and uses no browser-supplied provider controls.
+   provider requests, and 10 local refusals with no automatic retries. This is
+   exactly the existing 30 RPM process limit and uses no browser-supplied
+   provider controls.
 2. Answerable cases pass only when the buffered provider response is
    `answered`, its citations are drawn only from the expected evidence IDs,
    every canonical concept listed in `expectedAnswerConcepts` is present after
@@ -148,31 +182,51 @@ pull-request/main CI completely secretless.
    validated every factual sentence/citation marker.
    Refusal cases pass only with `insufficient_evidence`, zero citations, zero
    provider tokens, and no provider call.
-3. The aggregate must contain sample/provider/refusal counts, provider p50/p95
+3. Before provider traffic, serialize every closed-corpus request and prove it
+   is at most 8,000 UTF-8 bytes while the evaluation-only output cap is 512
+   tokens. Together these stay below the existing 10,000-token reservation even
+   under byte-level tokenization. Reject the workload before the first call if
+   any request exceeds the bound. Reject any returned per-call usage above
+   10,000 tokens, stop scheduling further work, and enforce an aggregate maximum
+   of 200,000 provider tokens for the 20 provider cases. The pricing snapshot
+   must make the maximum possible run cost explicit; it does not replace
+   provider-account alerts.
+4. The aggregate must contain the evaluated source SHA,
+   sample/provider/refusal counts, provider p50/p95
    completed-response latency measured from generator dispatch until the full
    non-streaming response body is consumed, answer/refusal/error counts,
-   semantic-case pass rate, citation precision, refusal precision,
+   closed-corpus concept/citation-ID pass rate, citation precision, refusal precision,
    cache-hit/cache-miss/output tokens, and a dated official V4 Flash pricing
    snapshot in the provider's published currency. If a USD equivalent is
    emitted, it must remain explicitly labeled as derived and carry its own FX
    source/date alongside the pricing snapshot. The aggregate must contain no
    per-case record or sensitive field.
-4. The protected evaluation gate requires zero provider errors, answerable
-   semantic-case pass rate `1.00` over the 20 provider-backed answerable
+5. The protected evaluation gate requires zero provider errors, answerable
+   closed-corpus concept/citation-ID pass rate `1.00` over the 20 provider-backed answerable
    requests, citation precision `1.00`, refusal precision `1.00`, zero
-   provider calls for refusal cases, per-request `total_tokens <= 10,000` so
-   the existing reservation ceiling remains enforceable, and provider p95
+   provider calls for refusal cases, every request `total_tokens <= 10,000`,
+   aggregate provider usage `<= 200,000` tokens, and provider p95
    completed response `<= 12,000 ms`. Non-streaming V1 exposes no token-level
-   TTFB metric, so the workflow must not invent or label one.
-5. The workflow is `workflow_dispatch` only, uses the
+   TTFB metric, so the workflow must not invent or label one. This finite
+   closed-corpus metric is not open-ended semantic entailment or
+   production-scale model accuracy.
+6. The workflow is `workflow_dispatch` only, uses the
    `assistant-provider-evaluation` GitHub Environment, receives only
-   `AGRIINSIGHT_LLM_API_KEY` for the evaluation step, uploads only the aggregate
-   JSON artifact, and never passes the secret to normal CI, Docker builds, PR
-   artifacts, screenshots, logs, or release images.
-6. Hosted acceptance requires a protected-environment required reviewer,
+   `AGRIINSIGHT_LLM_API_KEY` as a secret for the evaluation step, keeps all
+   other evaluation constants pinned in repository code, uploads only the
+   aggregate JSON artifact, and never passes the secret to normal CI, Docker
+   builds, PR artifacts, screenshots, logs, or release images.
+7. The manual job must reject every ref except `refs/heads/main`, install its
+   dedicated runtime lock with `pip --require-hashes --only-binary=:all:` before
+   importing the source, and never resolve `pyproject.toml` dependency ranges
+   in its secret-scoped process.
+8. The workflow must assert `git rev-parse HEAD == GITHUB_SHA` before loading
+   the secret and write that exact SHA into the aggregate. Hosted acceptance
+   requires a protected-environment required reviewer,
    branch policy for `main`, a successful exact-head normal CI run, and a
-   successful manual evaluation run. The exact normal-CI SHA, the evaluated
-   workflow checkout SHA, and the manual evaluation artifact SHA must match
+   successful manual evaluation run. The current `main` SHA, exact normal-CI
+   `headSha`, manual evaluation `headSha`, evaluated workflow checkout SHA, and
+   manual evaluation artifact `source_sha` must all match
    before any follow-up evidence commit is accepted. Provider-account
    spend-alert ownership and a production telemetry-retention owner remain
    external promotion gates; repository evidence must not claim either is
@@ -186,7 +240,8 @@ pull-request/main CI completely secretless.
   any provider-backed request reports `total_tokens > 10,000`.
 - Use the ignored local key for one bounded pre-push run only after the offline
   tests pass. Do not print the key, prompt, evidence, answer, tenant, case ID,
-  correlation ID, or provider error body.
+  correlation ID, or provider error body. Do not persist an
+  assistant-enabled `.env` toggle for this run.
 - Merge the disabled/manual tooling only after normal CI and security review.
   Configure the protected environment secret out of band, then run the
   workflow on exact `main` and record immutable evidence in a follow-up docs
@@ -199,17 +254,20 @@ pull-request/main CI completely secretless.
 
 ### Verified release evidence
 
-- Hosted CI run [30284795208](https://github.com/JasonTM17/AgriInsight/actions/runs/30284795208)
-  succeeded with Python, Java, web, dependency/secret scan, the real
-  seven-person Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome topology, and all
-  four candidate images.
-- Protected v0.2.2 image release
-  [30285933144](https://github.com/JasonTM17/AgriInsight/actions/runs/30285933144)
-  succeeded with owner approvals, provenance/SBOM, exact-digest scanning,
+- Exact-head hosted CI run
+  [30697294137](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+  succeeded 10/10 on release commit `616527dcc7f4a03720fb48e617f9310ab9614873`
+  with Python, Java, web, dependency/secret scan, the real seven-persona
+  Keycloak/PostgreSQL/Spring/FastAPI/Next/Chrome topology, and all four
+  candidate images.
+- Protected v0.4.0 image release
+  [30697808763](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+  succeeded 4/4 with owner approvals, provenance/SBOM, exact-digest scanning,
   explicit pull-by-digest, and non-root/read-only smoke for Python, backend,
   web, and analytics-api.
-- GitHub Release [v0.2.2](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.2.2)
-  exists.
+- GitHub Release
+  [v0.4.0](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
+  exists and was published at `2026-08-01T12:01:05Z`.
 
 ### Still open
 
@@ -234,7 +292,7 @@ previous immutable image digest.
   queue, tenant rate/token quota, strict sentence citation, and pending-request
   cancellation pass.
 - Hosted CI, protected image release, digest parity across Docker Hub/GHCR, and
-  the GitHub Release tag are verified for v0.2.2.
+  the GitHub Release tag are verified for v0.4.0.
 - Hosted latency/load measurement, production-scale semantic groundedness, and
   provider-account daily-spend alert ownership remain open. See
   [evaluation report](./reports/evaluation-2026-07-27.md).
