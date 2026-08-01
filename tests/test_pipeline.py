@@ -44,6 +44,8 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert (root / "gold" / "inventory_status.csv").exists()
     forecast_path = root / "gold" / "inventory_demand_forecast.csv"
     assert forecast_path.exists()
+    yield_forecast_path = root / "gold" / "yield_forecast.csv"
+    assert yield_forecast_path.exists()
     assert (root / "gold" / "field_health_status.csv").exists()
     assert manifest["row_counts"]["quarantine"]["activities"] >= 2
     assert manifest["row_counts"]["quarantine"]["harvests"] >= 2
@@ -117,6 +119,8 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
 
     inventory_status = pd.read_csv(root / "gold" / "inventory_status.csv")
     inventory_forecast = pd.read_csv(forecast_path)
+    yield_forecast = pd.read_csv(yield_forecast_path)
+    cost_season = pd.read_csv(root / "gold" / "cost_season.csv")
     inventory_summary = pd.read_csv(root / "gold" / "inventory_summary.csv").iloc[0]
     inventory_abc = pd.read_csv(root / "gold" / "inventory_abc.csv")
     assert set(inventory_status["stock_status"]) <= {
@@ -152,6 +156,30 @@ def test_pipeline_builds_valid_bronze_to_gold_artifacts(
     assert manifest["checksums"][
         "gold/inventory_demand_forecast.csv"
     ] == hashlib.sha256(forecast_path.read_bytes()).hexdigest()
+    eligible_active = cost_season.loc[
+        cost_season["season_status"].eq("active")
+        & (pd.to_datetime(cost_season["start_date"]) <= pd.Timestamp(small_config.as_of_date))
+        & (
+            pd.to_datetime(cost_season["expected_harvest_date"])
+            > pd.Timestamp(small_config.as_of_date)
+        ),
+        ["farm_code", "field_code", "season_code", "crop_code"],
+    ]
+    assert not yield_forecast.duplicated("season_code").any()
+    assert yield_forecast["as_of_date"].eq(small_config.as_of_date.isoformat()).all()
+    assert set(yield_forecast["forecast_status"]) <= {"ready", "insufficient_history"}
+    assert set(
+        map(
+            tuple,
+            yield_forecast[
+                ["farm_code", "field_code", "season_code", "crop_code"]
+            ].itertuples(index=False, name=None),
+        )
+    ) == set(map(tuple, eligible_active.itertuples(index=False, name=None)))
+    assert manifest["row_counts"]["gold"]["yield_forecast"] == len(yield_forecast)
+    assert manifest["checksums"]["gold/yield_forecast.csv"] == hashlib.sha256(
+        yield_forecast_path.read_bytes()
+    ).hexdigest()
     assert inventory_summary["total_inventory_value_vnd"] == pytest.approx(
         inventory_status["inventory_value_vnd"].sum()
     )
@@ -249,6 +277,7 @@ def test_pipeline_is_reproducible_for_same_seed(
         Path("gold/procurement_detail.csv"),
         Path("gold/inventory_demand_forecast.csv"),
         Path("gold/inventory_status.csv"),
+        Path("gold/yield_forecast.csv"),
         Path("quality/data_quality_report.json"),
     ):
         assert (first_root / relative_path).read_bytes() == (second_root / relative_path).read_bytes()

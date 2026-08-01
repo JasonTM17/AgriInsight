@@ -9,6 +9,7 @@ import pandas as pd
 from agriinsight.metrics_crop_health import build_crop_health_gold
 from agriinsight.metrics_cost_analysis import build_cost_analysis_gold
 from agriinsight.metrics_inventory import build_inventory_gold
+from agriinsight.metrics_yield_forecast import build_yield_forecast_gold
 
 
 def _query(connection: sqlite3.Connection, sql: str) -> pd.DataFrame:
@@ -267,6 +268,7 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
         inventory_gold = build_inventory_gold(connection, as_of_date)
         crop_health_gold = build_crop_health_gold(connection, as_of_date)
         cost_analysis_gold = build_cost_analysis_gold(connection)
+        yield_forecast_gold = build_yield_forecast_gold(connection, as_of_date)
 
         inventory_risk_count = int(
             inventory_gold["inventory_alerts"]["severity"].isin(("critical", "warning")).sum()
@@ -293,4 +295,5 @@ def build_gold_datasets(db_path: Path) -> dict[str, pd.DataFrame]:
         **inventory_gold,
         **crop_health_gold,
         **cost_analysis_gold,
+        "yield_forecast": yield_forecast_gold,
     }
