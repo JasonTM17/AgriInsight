@@ -8,13 +8,15 @@
 ![AgriInsight — enterprise agriculture analytics](docs/assets/agriinsight-social-preview.jpg)
 
 AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Bản
-phát hành học tập [`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1)
-đã qua exact-head hosted CI
-[`30506056691`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
-và protected Docker Hub/GHCR publication
-[`30506807548`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548)
-tại commit `7f669bc6907b483a87b27d397ceb3453b3bec01f`. `v0.3.0` và `v0.2.3`
-được giữ làm bằng chứng lịch sử cho RAG và worker slices trước đó.
+phát hành công khai [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
+được publish lúc `2026-08-01T12:01:05Z`; tag object
+`4c27b343eecd32cf7daac462e5f661011e2af0df` peels to main SHA
+`616527dcc7f4a03720fb48e617f9310ab9614873`. Exact-head CI
+[`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+passed 10/10 trước khi tag, và protected Docker Hub/GHCR publication
+[`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+passed 4/4. `v0.3.1`, `v0.3.0` và `v0.2.3` được giữ làm bằng chứng
+lịch sử cho inventory forecasting, RAG và worker slices trước đó.
 
 ```text
 Operational simulators → Bronze → Validation & quarantine → Silver
@@ -146,10 +148,11 @@ Các cổng còn mở thuộc phase sau:
 - Phase 7 core đã có focused atomicity/lease/RLS tests và protected registry release `v0.2.3`. Recovery objectives/ownership, production OIDC, broker operations và external deployment vẫn là các gate riêng; vì vậy toàn sản phẩm chưa được tuyên bố production-ready.
 - The alert-worker hardening reuses the released backend image. The exact Phase 2 feed/ack API and Phase 3 browser alert panel are hosted-accepted and merged, while `v0.2.3` remains the worker-only Docker Hub/GHCR release. Phase 3 did not publish a new image and makes no external deployment or semantic agriculture-alert claim.
 - Registry release dùng repository variable `DOCKERHUB_NAMESPACE`, environment secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` và reviewer protection; không có automatic `latest`. Workflow xuất cả Docker Hub và GHCR, tạo SBOM/provenance, scan exact digest rồi smoke-test digest.
-- Release `v0.3.1` đã qua full CI 10/10 tại `7f669bc` và protected publish
-  4/4. Cả 16 semantic/full-SHA references của bốn image trên Docker Hub/GHCR
-  trùng exact digest sau SBOM/provenance, scan, pull và smoke. Đây vẫn không
-  phải external production deployment.
+- Release `v0.4.0` đã qua exact-head CI `30697294137` 10/10 tại
+  `616527dcc7f4a03720fb48e617f9310ab9614873`, sau đó protected publication
+  `30697808763` 4/4. Cả 16 semantic/full-SHA references của bốn image trên
+  Docker Hub/GHCR trùng exact digest sau SBOM/provenance, scan, pull và
+  smoke. Đây vẫn không phải external production deployment.
 - PostgreSQL 18 chỉ được lấy từ upstream cho integration test, tuyệt đối không republish dưới namespace AgriInsight.
 
 Xem [báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md), [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md), [Backend Phase 7](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase7.md), [backend development](docs/backend-development.md) và [backend deployment/recovery](docs/backend-deployment.md).
@@ -294,9 +297,9 @@ Web Phases 5–10 đã hoàn tất cho Overview/Farms, Work Operations, Inventor
 Cost Analysis, Crop Health/Data Quality và Tenant Administration. Hành vi
 mobile, idempotency/ETag, taxonomy batch, cảnh báo ảnh AI-demo, conflict/403 và
 Supplier denial đều được kiểm tra qua backend/analytics thật. Phase 11 browser
-gate đã xanh; Phase 12 đạt internal release candidate. Public production
-release vẫn bị chặn ở protected registry environment, reviewer/secrets,
-production OIDC/operations và quyết định license. Xem
+gate đã xanh; Phase 12 đạt internal release candidate. External production
+deployment vẫn bị chặn bởi production OIDC/broker operations,
+recovery/observability/host controls và quyết định license. Xem
 [kế hoạch và evidence](plans/260722-2342-production-web-platform/plan.md).
 
 ## Big-data demo và visual assets

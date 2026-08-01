@@ -2,7 +2,7 @@
 
 Verified snapshot: 2026-08-01 (inventory-demand and yield forecast Phases 1–3
 are accepted through scoped API/browser/media evidence; the protected
-four-image `v0.3.1` release is the latest published registry evidence; external
+four-image `v0.4.0` release is the latest published registry evidence; external
 production deployment remains owner-gated)
 
 ## Repository shape
@@ -108,6 +108,16 @@ visual-reviewed desktop/mobile WebP and two-frame GIF with a verified seven-file
 media manifest, and four candidate-image gates. It is documentation/demo and
 internal decision support evidence, not external deployment, agronomic ground
 truth, a confidence interval, or an accuracy/SLA claim.
+
+The public GitHub Release `v0.4.0` published that accepted yield package set at
+`2026-08-01T12:01:05Z` from tag object
+`4c27b343eecd32cf7daac462e5f661011e2af0df` to main SHA
+`616527dcc7f4a03720fb48e617f9310ab9614873`. Exact-head CI
+[`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+passed 10/10 and protected publication
+[`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+passed 4/4. Docker Hub/GHCR semantic and full-SHA refs matched the four
+immutable digests recorded in the deployment guide.
 
 ## Web surface
 
@@ -388,6 +398,15 @@ startup invariant.
   exact-head CI `30506056691` 10/10. Protected release `v0.3.1` then passed
   publication `30506807548` 4/4; all 16 Docker Hub/GHCR semantic/full-SHA
   references resolved to the expected four immutable digests.
+- Yield forecasting public release `v0.4.0`: 16/16 Docker Hub/GHCR
+  semantic/full-SHA references resolved to the four immutable digests
+  `0c4889671ce010e8d806f949d508c69938d55effa2429e428e71ba5e7ef77420`,
+  `c8a21a01b83386d75d4f259103245dbf8f7ffa0730a2ac9ee4e39686c407f3d9`,
+  `da49816d51c349391676b7800beffb5270fd27186be3e1d3b9e95aa128fbc345`,
+  and `ce0ff7e0d40ad2851355b2274b729059677380d0351b51993582377316928c02`
+  after exact-head CI `30697294137` and protected publication `30697808763`.
+  The public release is registry evidence only, not external deployment or an
+  agronomic SLA claim.
 - Cost focused suite: 26/26; fresh PostgreSQL 18 containers validate V1-V17,
   RLS, correction concurrency, query plans, and bounded projections. The
   inventory focused suite remains 32/32.
