@@ -1,7 +1,7 @@
 # Phase 3 Yield Forecast Security Audit
 
-Date: 2026-08-01  
-Scope: `9682be4d83e398851d4d2d55152643b4624ad60a..4d895c473c8fe91e53025ef205ec7ab364e0dc2e`  
+Date: 2026-08-01
+Scope: `9682be4d83e398851d4d2d55152643b4624ad60a..4d895c473c8fe91e53025ef205ec7ab364e0dc2e`
 Method: STRIDE + OWASP Top 10, read-only review.
 
 ## Summary
