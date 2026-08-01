@@ -1,12 +1,15 @@
 # Deployment Guide
 
-This guide documents the verified runtime contracts through release
-[`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1),
-Backend Phase 7 core, and the merged Phase 3 hosted browser acceptance. Full CI
-[`30506056691`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506056691)
-and protected four-image publication
-[`30506807548`](https://github.com/JasonTM17/AgriInsight/actions/runs/30506807548)
-passed at `7f669bc6907b483a87b27d397ceb3453b3bec01f`; this is not an external production deployment approval:
+This guide documents the verified runtime contracts through the public
+[`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
+release, Backend Phase 7 core, and the merged Phase 3 hosted browser
+acceptance. The tag object
+`4c27b343eecd32cf7daac462e5f661011e2af0df` peels to main SHA
+`616527dcc7f4a03720fb48e617f9310ab9614873`; exact-head CI
+[`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+passed 10/10 and protected four-image publication
+[`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+passed 4/4. This is not an external production deployment approval:
 production OIDC/broker operations, a scheduled recurring recovery drill,
 RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 
@@ -16,11 +19,11 @@ RPO/RTO/retention ownership, hostname/TLS, and host controls remain required.
 |---|---|---|
 | Python pipeline/dashboard | Local analytics MVP | Dashboard binds locally; do not expose publicly |
 | Internal analytics API | FastAPI read-only aggregate surface | Loopback/internal network only; Spring `/api/v1/me` remains the authorization source |
-| Next web platform | Nine-area hosted browser gate and `v0.3.1` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
+| Next web platform | Nine-area hosted browser gate and `v0.4.0` image release passed | Digest-pinned private/internal deployment; external hosting remains owner-gated |
 | Java backend, identity disabled | Foundation/health verification | Loopback or loopback-published container only |
 | Java backend, identity enabled | Locally verified OIDC, tenant RBAC/RLS, and tenant administration | Keep private until production IdP/operations and later domain/release gates pass |
 | Isolated alert worker | Disabled by default; internal metadata-only alert slice | Private only; compose overlay binds broker to loopback and runs the alert observer internally; the Phase 2 feed/ack API and Phase 3 browser panel passed hosted CI acceptance (PR #13 / `30425647823`; PR #14 / `30445148252`) but this neither approves production hosting nor publishes a new image |
-| Next web + analytics API images | `0.3.1` and full-SHA tags are published after protected approval | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
+| Next web + analytics API images | `0.4.0` and full-SHA tags are published after protected approval | Digest-pinned, loopback/private deployment only; publication is not production hosting approval |
 | PostgreSQL 18 | Upstream Testcontainers dependency | Never mirror/push as an AgriInsight image |
 
 ## Preflight
@@ -495,6 +498,26 @@ then passed protected four-image publication in
 [`30453840056`](https://github.com/JasonTM17/AgriInsight/actions/runs/30453840056).
 Each image was independently scanned, provenance/SBOM-validated, pulled and
 smoke-tested by exact digest, and matched across Docker Hub/GHCR.
+
+Release [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
+at `616527dcc7f4a03720fb48e617f9310ab9614873` passed exact-head CI
+[`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+10/10, then protected publication
+[`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+4/4. Semantic and full-SHA tags were inspected independently in both
+registries and resolved to these immutable digests:
+
+| Image | Digest |
+|---|---|
+| Python | `sha256:0c4889671ce010e8d806f949d508c69938d55effa2429e428e71ba5e7ef77420` |
+| Backend | `sha256:c8a21a01b83386d75d4f259103245dbf8f7ffa0730a2ac9ee4e39686c407f3d9` |
+| Web | `sha256:da49816d51c349391676b7800beffb5270fd27186be3e1d3b9e95aa128fbc345` |
+| Analytics API | `sha256:ce0ff7e0d40ad2851355b2274b729059677380d0351b51993582377316928c02` |
+
+The public GitHub Release was published at `2026-08-01T12:01:05Z`. This is
+registry evidence, not external deployment approval. Docker Hub/GHCR parity is
+proven for all 16 semantic/full-SHA references, but do not overclaim
+attestation signature/content or Docker Hub referrer parity.
 
 Release [`v0.3.1`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.3.1)
 at `7f669bc6907b483a87b27d397ceb3453b3bec01f` passed exact-head CI

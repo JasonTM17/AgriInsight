@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.13
+Version: 0.14
 Updated: 2026-08-01
-Status: backend core, scoped inventory-demand and yield forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.3.1` are verified; external production deployment and recovery ownership remain open
+Status: backend core, scoped inventory-demand and yield forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.4.0` are verified; external production deployment and recovery ownership remain open
 
 ## Product goal
 
@@ -115,6 +115,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Accepted and consumed by the web platform |
 | Inventory forecast 1–3 | Baseline/backtest, checksummed Gold integration, scoped nested API, Vietnamese evidence UI and verified media | Accepted 2026-07-30; exact-head CI `30506056691` passed 10/10 and protected `v0.3.1` publication `30506807548` passed 4/4 |
 | Yield forecast 1–3 | Leakage-safe seasonal baseline/backtest, checksummed Gold snapshot, scoped internal API, Farm detail evidence UI and verified media | Accepted 2026-08-01; hosted CI [`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895) passed 10/10 including real browser/media and four candidate-image gates; no external deployment or model SLA is implied |
+| Release v0.4.0 | Protected package publication for the accepted yield feature set | Public GitHub Release published 2026-08-01T12:01:05Z; tag object `4c27b343eecd32cf7daac462e5f661011e2af0df` peels to main SHA `616527dcc7f4a03720fb48e617f9310ab9614873`; exact-head CI `30697294137` passed 10/10 before tagging and protected publication `30697808763` passed 4/4; 16 Docker Hub/GHCR semantic/full-SHA references matched four immutable digests; no external deployment is implied |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
