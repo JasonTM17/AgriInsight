@@ -40,11 +40,6 @@ export type FarmListViewModel = Readonly<{
   }>;
 }>;
 
-export type FarmDetailViewModel = Readonly<{
-  farm: OperationalFarm;
-  analytics: SourceResult<FarmAnalyticsEnvelope>;
-}>;
-
 export async function loadFarmListViewModel({
   env,
   accessToken,
@@ -148,48 +143,7 @@ export async function loadFarmListViewModel({
   };
 }
 
-export async function loadFarmDetailViewModel({
-  env,
-  accessToken,
-  correlationId,
-  farmId,
-  filters
-}: {
-  env: WebEnvironment;
-  accessToken: string;
-  correlationId: string;
-  farmId: string;
-  filters: OverviewFilters;
-}): Promise<FarmDetailViewModel> {
-  const resolved = await resolveOperationalAnalyticsMasters(
-    { env, accessToken, correlationId },
-    { ...filters, farmId }
-  );
-  const farm = resolved.farm;
-  if (!farm) throw new Error("Resolved farm master is required");
-  try {
-    const analytics = await getAnalyticsPayload(
-      env,
-      "analyticsFarms",
-      accessToken,
-      correlationId,
-      {
-        ...toAnalyticsFilterQuery(filters, resolved),
-        farm_code: farm.code,
-        limit: 1,
-        offset: 0,
-        sort: "farm_code"
-      }
-    );
-    return { farm, analytics: { status: "ready", data: analytics } };
-  } catch {
-    return {
-      farm,
-      analytics: {
-        status: "failed",
-        message: "Thông tin nông trại đã xác minh, nhưng dữ liệu Gold đang gián đoạn.",
-        correlationId
-      }
-    };
-  }
-}
+export {
+  loadFarmDetailViewModel,
+  type FarmDetailViewModel
+} from "./load-farm-detail-view-model";

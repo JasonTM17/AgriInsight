@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertCurrentAnalyticsFilterSupport,
+  parseForecastOffset,
   parseOverviewFilters,
   toFilterQuery,
   UnsupportedAnalyticsFilterError
@@ -47,6 +48,13 @@ describe("overview and farm route contracts", () => {
     );
     expect(() => parseOverviewFilters({ status: "deleted" })).toThrow();
     expect(() => parseOverviewFilters({ tenantId: farms[0].id })).toThrow();
+  });
+
+  it("parses the bounded detail-only forecast pagination offset", () => {
+    expect(parseForecastOffset({ forecastOffset: "50" })).toBe(50);
+    expect(parseOverviewFilters({ forecastOffset: "50" })).toMatchObject({ page: 1 });
+    expect(() => parseForecastOffset({ forecastOffset: "51.5" })).toThrow();
+    expect(() => parseForecastOffset({ forecastOffset: "9951" })).toThrow();
   });
 
   it("accepts canonical filters and requires a season for season-to-date", () => {
