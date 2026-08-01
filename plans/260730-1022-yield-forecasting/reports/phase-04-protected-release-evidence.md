@@ -1,6 +1,6 @@
 # Phase 4 — protected release and package publication
 
-Status: in progress 2026-08-01; immutable release accepted, post-release docs CI pending
+Status: completed 2026-08-01
 
 ## Release coordinates
 
@@ -72,9 +72,11 @@ records all three SHA-256 values.
 ## Documentation and final gate
 
 The release updates `README.md`, the deployment guide, project overview,
-roadmap, codebase summary, Phase 3 linkage, and this Phase 4 evidence. The first
-post-release documentation commit and its hosted CI have not yet run; Phase 4
-remains `in-progress` until that gate passes.
+roadmap, codebase summary, Phase 3 linkage, and this Phase 4 evidence.
+Post-release documentation commit
+`337391bc76dd82123dc12af7f22e039884df28f2` passed all 10 jobs in hosted CI
+[`30699659447`](https://github.com/JasonTM17/AgriInsight/actions/runs/30699659447).
+That final acceptance gate completes Phase 4.
 
 ## Rollback and evidence boundary
 

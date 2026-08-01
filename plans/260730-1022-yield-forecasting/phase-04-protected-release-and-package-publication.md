@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Protected release and package publication"
-status: in-progress
+status: completed
 priority: P1
 effort: "6h"
 dependencies:
@@ -70,7 +70,7 @@ misrepresent Phase 3 acceptance.
 - [x] GitHub Release contains verified yield still/GIF assets and hashes.
 - [x] Docs distinguish hosted release publication from external deployment and
   real agronomic/model SLA.
-- [ ] Post-release documentation commit passes hosted CI before Phase 4 is
+- [x] Post-release documentation commit passes hosted CI before Phase 4 is
   marked completed.
 
 ## Acceptance evidence
@@ -89,8 +89,10 @@ misrepresent Phase 3 acceptance.
   [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
   contains the accepted desktop/mobile WebP and GIF with matching byte counts
   and SHA-256 values.
-- Immutable release evidence is complete. Phase status remains `in-progress`
-  only until the post-release documentation commit passes hosted CI.
+- Post-release documentation commit
+  `337391bc76dd82123dc12af7f22e039884df28f2` passed all 10 jobs in hosted CI
+  [`30699659447`](https://github.com/JasonTM17/AgriInsight/actions/runs/30699659447).
+  Phase 4 is completed on that immutable evidence.
 
 ## Risks and rollback
 
