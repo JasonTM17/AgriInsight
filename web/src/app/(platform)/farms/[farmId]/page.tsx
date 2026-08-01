@@ -6,6 +6,7 @@ import { loadFarmDetailViewModel } from "@/features/farms/load-farm-intelligence
 import { loadPlatformPageContext } from "@/features/overview/load-platform-page-context";
 import {
   assertCurrentAnalyticsFilterSupport,
+  parseForecastOffset,
   parseOverviewFilters,
   toFilterQuery,
   type FilterInput
@@ -27,23 +28,32 @@ export default async function FarmDetailPage({
   if (!context.identity.permissions.has("FARM_READ")) forbidden();
   let viewModel: Awaited<ReturnType<typeof loadFarmDetailViewModel>> | null = null;
   let backHref = "/farms";
+  let forecastPageHref = (offset: number) => `/farms/${farmId}?forecastOffset=${offset}`;
   try {
-    const filters = parseOverviewFilters(await searchParams);
+    const input = await searchParams;
+    const filters = parseOverviewFilters(input);
+    const forecastOffset = parseForecastOffset(input);
     assertCurrentAnalyticsFilterSupport(filters);
     const query = toFilterQuery(filters, { farmId: undefined });
     backHref = `/farms${query.size > 0 ? `?${query}` : ""}`;
+    forecastPageHref = (offset: number) => {
+      const forecastQuery = new URLSearchParams(query);
+      if (offset > 0) forecastQuery.set("forecastOffset", String(offset));
+      return `/farms/${farmId}${forecastQuery.size > 0 ? `?${forecastQuery}` : ""}`;
+    };
     viewModel = await loadFarmDetailViewModel({
       env: context.env,
       accessToken: context.accessToken,
       correlationId: context.correlationId,
       farmId,
-      filters
+      filters,
+      forecastOffset
     });
   } catch (error) {
     if (error instanceof ScopeResolutionError) notFound();
   }
   return viewModel
-    ? <FarmDetail backHref={backHref} viewModel={viewModel} />
+    ? <FarmDetail backHref={backHref} forecastPageHref={forecastPageHref} viewModel={viewModel} />
     : (
       <StatePanel
         actionHref={backHref}
