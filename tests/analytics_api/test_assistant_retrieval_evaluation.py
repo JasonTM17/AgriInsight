@@ -22,7 +22,7 @@ TENANT_ID = UUID("20000000-0000-4000-8000-000000000001")
 
 def test_retrieval_evaluation_release_gates() -> None:
     payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    assert payload["version"] == "1.0.0"
+    assert payload["version"] == "1.1.0"
     corpus = [_chunk(item) for item in payload["corpus"]]
     retriever = EvidenceRetriever(max_items=5, max_characters=12_000)
     scope = AuthorizedScope(
