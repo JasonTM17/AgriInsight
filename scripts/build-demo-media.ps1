@@ -95,7 +95,9 @@ function Resolve-ImageIdentify {
     $candidate = Join-Path (Split-Path -Parent $MagickPath) ("identify" + $extension)
     if (Test-Path -LiteralPath $candidate) { return $candidate }
 
-    throw "ImageMagick identify is required to record media dimensions and frame counts."
+    # ImageMagick 7 on Windows commonly installs only magick.exe. It provides
+    # identify as a subcommand, while ImageMagick 6 exposes identify directly.
+    return $MagickPath
 }
 
 function Get-MediaManifestEntry {
@@ -107,9 +109,15 @@ function Get-MediaManifestEntry {
     )
 
     $item = Get-Item -LiteralPath $Path
-    $metadata = @(
-        & $ImageIdentifyPath -format "%w %h %n`n" $item.FullName
+    $identifyArguments = @("-format", "%w %h %n`n", $item.FullName)
+    $isMagickCommand = (
+        [IO.Path]::GetFileNameWithoutExtension($ImageIdentifyPath) -ieq "magick"
     )
+    $metadata = if ($isMagickCommand) {
+        @(& $ImageIdentifyPath identify @identifyArguments)
+    } else {
+        @(& $ImageIdentifyPath @identifyArguments)
+    }
     if ($LASTEXITCODE -ne 0 -or $metadata.Count -eq 0) {
         throw "Could not inspect media dimensions: $Path"
     }
