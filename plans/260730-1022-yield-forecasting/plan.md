@@ -39,7 +39,7 @@ and Overview contracts keep their meaning.
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Leakage-safe forecast contract and backtested baseline](./phase-01-leakage-safe-forecast-contract-and-backtested-baseline.md) | Completed |
-| 2 | [Gold pipeline and snapshot integration](./phase-02-gold-pipeline-and-snapshot-integration.md) | In progress |
+| 2 | [Gold pipeline and snapshot integration](./phase-02-gold-pipeline-and-snapshot-integration.md) | Completed |
 | 3 | [Scoped API farm dashboard and hosted acceptance](./phase-03-scoped-api-farm-dashboard-and-hosted-acceptance.md) | Pending |
 | 4 | [Protected release and package publication](./phase-04-protected-release-and-package-publication.md) | Pending |
 

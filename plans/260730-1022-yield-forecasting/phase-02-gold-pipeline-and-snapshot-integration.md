@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Gold pipeline and snapshot integration"
-status: in-progress
+status: completed
 priority: P1
 effort: "8h"
 dependencies:
@@ -73,17 +73,17 @@ artifact. Existing farm and cost Gold files remain unchanged.
 
 ## Success Criteria
 
-- [ ] `gold/yield_forecast.csv` covers every active warehouse season exactly
+- [x] `gold/yield_forecast.csv` covers every active warehouse season exactly
   once and contains no completed season.
-- [ ] Manifest row count/checksum and identical-rerun bytes are verified.
-- [ ] Future facts, duplicate events, multiple harvests, or mismatched
+- [x] Manifest row count/checksum and identical-rerun bytes are verified.
+- [x] Future facts, duplicate events, multiple harvests, or mismatched
   season/farm/field/crop relationships cannot corrupt published evidence.
-- [ ] Every history label used by a row was complete strictly before that
+- [x] Every history label used by a row was complete strictly before that
   row's season-start forecast origin.
-- [ ] Corrupt but checksum-valid forecast files fail snapshot startup/reload
+- [x] Corrupt but checksum-valid forecast files fail snapshot startup/reload
   before request handling.
-- [ ] Existing farm/cost/inventory Gold and API contracts remain unchanged.
-- [ ] Focused and hosted full Python gates pass.
+- [x] Existing farm/cost/inventory Gold and API contracts remain unchanged.
+- [x] Focused and hosted full Python gates pass.
 
 ## Risks and rollback
 
