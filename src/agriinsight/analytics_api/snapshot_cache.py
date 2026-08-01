@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from threading import RLock
 
@@ -43,6 +43,12 @@ from agriinsight.metrics_inventory_forecast_contract import (
 from agriinsight.metrics_inventory_forecast_status_contract import (
     validate_inventory_forecast_status,
 )
+from agriinsight.metrics_yield_forecast_contract import (
+    ACTIVE_SEASON_COLUMNS,
+    YIELD_FORECAST_GOLD_COLUMNS,
+    validate_yield_forecast_gold,
+)
+from agriinsight.metrics_yield_forecast_validation import dates
 
 AGGREGATE_CSV_DATASETS = {
     "cost_activity_detail": "gold/cost_activity_detail.csv",
@@ -62,6 +68,7 @@ AGGREGATE_CSV_DATASETS = {
     "pest_incidents_weekly": "gold/pest_incidents_weekly.csv",
     "procurement_detail": "gold/procurement_detail.csv",
     "risk_alerts": "gold/risk_alerts.csv",
+    "yield_forecast": "gold/yield_forecast.csv",
     "harvests": "silver/harvests.csv",
 }
 AGGREGATE_JSON_DATASETS = {
@@ -153,6 +160,7 @@ EXPECTED_COLUMNS = {
         "expiry_date",
     },
     "risk_alerts": set(RiskAlertModel.model_fields),
+    "yield_forecast": set(YIELD_FORECAST_GOLD_COLUMNS),
     "harvests": {
         "crop_code",
         "farm_code",
@@ -200,6 +208,7 @@ MAX_ROWS = {
     "pest_incidents_weekly": 2_000,
     "procurement_detail": 100_000,
     "risk_alerts": 1_000,
+    "yield_forecast": 10_000,
     "harvests": 100_000,
 }
 
@@ -282,7 +291,18 @@ def _validate_snapshot(snapshot: ArtifactSnapshot) -> None:
             snapshot.csv["inventory_status"],
             str(snapshot.manifest.get("as_of_date", "")),
         )
-    except (TypeError, ValueError):
+    except (AttributeError, TypeError, ValueError):
+        invalid = True
+    try:
+        validate_yield_forecast_gold(
+            snapshot.csv["yield_forecast"],
+            date.fromisoformat(str(snapshot.manifest.get("as_of_date", ""))),
+            _eligible_yield_forecast_seasons(
+                snapshot.csv["cost_season"],
+                str(snapshot.manifest.get("as_of_date", "")),
+            ),
+        )
+    except (AttributeError, TypeError, ValueError):
         invalid = True
     insights = snapshot.json.get("insights")
     quality = snapshot.json.get("quality")
@@ -454,3 +474,48 @@ def _valid_filter_facts(snapshot: ArtifactSnapshot) -> bool:
         and (pd.to_numeric(frame[column], errors="coerce") >= 0).all()
         for frame, column in numeric_columns
     )
+
+
+def _eligible_yield_forecast_seasons(
+    cost_season: pd.DataFrame,
+    as_of_date: str,
+) -> pd.DataFrame:
+    required = {
+        "farm_code",
+        "field_code",
+        "season_code",
+        "crop_code",
+        "season_status",
+        "start_date",
+        "expected_harvest_date",
+        "area_ha",
+        "target_yield_kg",
+    }
+    if not required.issubset(cost_season.columns):
+        raise ValueError("cost season context is incomplete")
+    as_of = date.fromisoformat(as_of_date)
+    start_dates = dates(cost_season["start_date"], "cost season start")
+    expected_dates = dates(
+        cost_season["expected_harvest_date"], "cost season expected harvest"
+    )
+    eligible = cost_season.loc[
+        cost_season["season_status"].eq("active")
+        & (start_dates <= as_of)
+        & (expected_dates > as_of),
+        [
+            "farm_code",
+            "field_code",
+            "season_code",
+            "crop_code",
+            "start_date",
+            "expected_harvest_date",
+            "area_ha",
+            "target_yield_kg",
+        ],
+    ].rename(
+        columns={
+            "start_date": "season_start_date",
+            "area_ha": "season_area_ha",
+        }
+    )
+    return eligible.loc[:, ACTIVE_SEASON_COLUMNS]

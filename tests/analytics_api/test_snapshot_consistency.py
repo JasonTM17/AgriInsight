@@ -189,6 +189,78 @@ def test_checksum_valid_but_impossible_forecast_history_fails_contract(
     assert captured.value.code == "snapshot_contract_invalid"
 
 
+def test_checksum_valid_but_corrupt_yield_forecast_fails_contract(
+    analytics_artifact_root: Path,
+    tmp_path: Path,
+) -> None:
+    copied = tmp_path / "artifacts"
+    shutil.copytree(analytics_artifact_root, copied)
+    csv_path = copied / "gold" / "yield_forecast.csv"
+    frame = pd.read_csv(csv_path)
+    assert not frame.empty
+    frame.loc[frame.index[0], "forecast_quantity_kg"] = float("inf")
+    frame.to_csv(csv_path, index=False)
+    manifest_path = copied / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["checksums"]["gold/yield_forecast.csv"] = hashlib.sha256(
+        csv_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ApiProblem) as captured:
+        SnapshotCache(copied).current()
+
+    assert captured.value.code == "snapshot_contract_invalid"
+
+
+def test_checksum_valid_but_timezone_yield_forecast_fails_contract(
+    analytics_artifact_root: Path,
+    tmp_path: Path,
+) -> None:
+    copied = tmp_path / "artifacts"
+    shutil.copytree(analytics_artifact_root, copied)
+    csv_path = copied / "gold" / "yield_forecast.csv"
+    frame = pd.read_csv(csv_path)
+    assert not frame.empty
+    frame.loc[frame.index[0], "history_start_at"] = "2021-10-02T12:00:00+07:00"
+    frame.to_csv(csv_path, index=False)
+    manifest_path = copied / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["checksums"]["gold/yield_forecast.csv"] = hashlib.sha256(
+        csv_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ApiProblem) as captured:
+        SnapshotCache(copied).current()
+
+    assert captured.value.code == "snapshot_contract_invalid"
+
+
+def test_checksum_valid_but_nonfinite_yield_target_fails_contract(
+    analytics_artifact_root: Path,
+    tmp_path: Path,
+) -> None:
+    copied = tmp_path / "artifacts"
+    shutil.copytree(analytics_artifact_root, copied)
+    csv_path = copied / "gold" / "yield_forecast.csv"
+    frame = pd.read_csv(csv_path)
+    assert not frame.empty
+    frame.loc[frame.index[0], "target_yield_kg"] = float("inf")
+    frame.to_csv(csv_path, index=False)
+    manifest_path = copied / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["checksums"]["gold/yield_forecast.csv"] = hashlib.sha256(
+        csv_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ApiProblem) as captured:
+        SnapshotCache(copied).current()
+
+    assert captured.value.code == "snapshot_contract_invalid"
+
+
 def test_oversized_manifest_fails_closed(
     analytics_artifact_root: Path,
     tmp_path: Path,
