@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 840" role="img" aria-labelledby="title desc">
+  <title id="title">AgriInsight yield forecast evidence delivery</title>
+  <desc id="desc">Season and harvest facts feed a deterministic baseline and verified Gold snapshot. A farm-scoped FastAPI route flows through a strict Next BFF allowlist to the Farm detail yield forecast panel.</desc>
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#2563eb"/></marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#7c3aed"/></marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#059669"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.13"/></filter>
+    <style>
+      .canvas { fill: #f8fafc; }
+      .title { font: 700 27px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #475569; }
+      .group { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; stroke-dasharray: 6 5; }
+      .group-title { font: 700 13px Arial, sans-serif; fill: #334155; letter-spacing: .04em; }
+      .node-title { font: 700 17px Arial, sans-serif; fill: #0f172a; }
+      .node-copy { font: 400 13px Arial, sans-serif; fill: #334155; }
+      .node-mono { font: 600 12px ui-monospace, SFMono-Regular, Consolas, monospace; fill: #334155; }
+      .label { font: 600 12px Arial, sans-serif; fill: #334155; }
+      .note-title { font: 700 14px Arial, sans-serif; fill: #0f172a; }
+      .note-copy { font: 400 12px Arial, sans-serif; fill: #334155; }
+      .legend { font: 600 12px Arial, sans-serif; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1200" height="840"/>
+  <text class="title" x="60" y="58">Yield forecast — luồng bằng chứng có phạm vi</text>
+  <text class="subtitle" x="60" y="84">Snapshot Gold bất biến được phân phối qua API nội bộ và BFF; trình duyệt chỉ trình bày evidence đã trả về.</text>
+
+  <rect class="group" x="44" y="112" width="1112" height="190" rx="16"/>
+  <text class="group-title" x="68" y="140">1. MATERIALIZE SNAPSHOT</text>
+
+  <g filter="url(#shadow)">
+    <rect x="76" y="166" width="252" height="102" rx="12" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.5"/>
+    <text class="node-title" x="98" y="199">Season &amp; harvest facts</text>
+    <text class="node-copy" x="98" y="223">field · crop · season · harvest</text>
+    <text class="node-copy" x="98" y="244">normalized yield per hectare</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="444" y="166" width="310" height="102" rx="12" fill="#f3e8ff" stroke="#a855f7" stroke-width="1.5"/>
+    <text class="node-title" x="466" y="199">Deterministic baseline</text>
+    <text class="node-mono" x="466" y="223">crop-median-yield-per-ha-v1</text>
+    <text class="node-copy" x="466" y="244">fixed cutoff + rolling backtest</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="870" y="166" width="252" height="102" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+    <text class="node-title" x="892" y="199">Gold contract</text>
+    <text class="node-mono" x="892" y="223">gold/yield_forecast.csv</text>
+    <text class="node-copy" x="892" y="244">manifest SHA + reconciliation</text>
+  </g>
+  <path d="M328 217 H444" fill="none" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+  <rect x="348" y="194" width="76" height="20" rx="4" fill="#f8fafc" opacity=".96"/>
+  <text class="label" x="356" y="208">facts</text>
+  <path d="M754 217 H870" fill="none" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+  <rect x="773" y="194" width="78" height="20" rx="4" fill="#f8fafc" opacity=".96"/>
+  <text class="label" x="781" y="208">forecast</text>
+
+  <rect class="group" x="44" y="332" width="1112" height="214" rx="16"/>
+  <text class="group-title" x="68" y="360">2. SCOPED DELIVERY</text>
+
+  <g filter="url(#shadow)">
+    <rect x="76" y="394" width="286" height="114" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text class="node-title" x="98" y="426">FastAPI internal route</text>
+    <text class="node-mono" x="98" y="450">GET /internal/v1/yield-forecast</text>
+    <text class="node-copy" x="98" y="473">FARMS permission · farm scope</text>
+    <text class="node-copy" x="98" y="493">canonical filters · 100 rows / 1 MB</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="458" y="394" width="286" height="114" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text class="node-title" x="480" y="426">Next server BFF</text>
+    <text class="node-copy" x="480" y="450">exact GET allowlist only</text>
+    <text class="node-copy" x="480" y="473">server-held bearer token</text>
+    <text class="node-copy" x="480" y="493">validated, bounded response</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="840" y="394" width="282" height="114" rx="12" fill="#fff7ed" stroke="#f97316" stroke-width="1.5"/>
+    <text class="node-title" x="862" y="426">Farm detail — Yield panel</text>
+    <text class="node-copy" x="862" y="450">forecast, interval, backtest</text>
+    <text class="node-copy" x="862" y="473">season / field / crop evidence</text>
+    <text class="node-copy" x="862" y="493">details usable at 200% zoom</text>
+  </g>
+  <path d="M996 268 V316 H219 V394" fill="none" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <rect x="530" y="303" width="128" height="20" rx="4" fill="#f8fafc" opacity=".96"/>
+  <text class="label" x="538" y="317">verified snapshot</text>
+  <path d="M362 451 H458" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <rect x="376" y="428" width="68" height="20" rx="4" fill="#f8fafc" opacity=".96"/>
+  <text class="label" x="384" y="442">scoped</text>
+  <path d="M744 451 H840" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <rect x="758" y="428" width="68" height="20" rx="4" fill="#f8fafc" opacity=".96"/>
+  <text class="label" x="766" y="442">read</text>
+
+  <rect x="60" y="586" width="520" height="116" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.25"/>
+  <text class="note-title" x="84" y="616">Ranh giới hành vi</text>
+  <text class="note-copy" x="84" y="642">• Browser không tính forecast, không tạo purchase order.</text>
+  <text class="note-copy" x="84" y="664">• Snapshot cũ có thể được gắn stale; không cam kết nông học, accuracy hay SLA.</text>
+  <text class="note-copy" x="84" y="686">• External ingress, rate-limit và observability production là gate tách riêng.</text>
+
+  <rect x="620" y="586" width="520" height="116" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.25"/>
+  <text class="note-title" x="644" y="616">Evidence returned to the user</text>
+  <text class="note-copy" x="644" y="642">Forecast yield, lower/upper interval, expected harvest date, model version.</text>
+  <text class="note-copy" x="644" y="664">Cutoff timestamp, training-observation count and rolling-origin MAE/WAPE.</text>
+  <text class="note-copy" x="644" y="686">Farm/field/crop/season identity stays inside the authorized server scope.</text>
+
+  <line x1="60" y1="756" x2="108" y2="756" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+  <text class="legend" x="120" y="760">transform / materialization</text>
+  <line x1="350" y1="756" x2="398" y2="756" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <text class="legend" x="410" y="760">verified snapshot</text>
+  <line x1="610" y1="756" x2="658" y2="756" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <text class="legend" x="670" y="760">authorized request</text>
+  <text class="subtitle" x="60" y="804">AgriInsight · documentation architecture · no external-production claim</text>
+</svg>
