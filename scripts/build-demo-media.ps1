@@ -137,6 +137,32 @@ function Get-MediaManifestEntry {
     }
 }
 
+function Assert-YieldForecastMediaBounds {
+    param(
+        [object[]] $Entries,
+        [int] $MaximumStillWidth,
+        [int] $MaximumStillHeight,
+        [int] $MaximumGifWidth
+    )
+
+    foreach ($entry in $Entries) {
+        if ($entry.width -lt 1 -or $entry.height -lt 1) {
+            throw "Yield media has invalid dimensions: $($entry.path)"
+        }
+        if ($entry.role -like "*-webp") {
+            if ($entry.width -gt $MaximumStillWidth -or $entry.height -gt $MaximumStillHeight) {
+                throw "Yield WebP dimensions exceed bounds: $($entry.path)"
+            }
+            if ($entry.bytes -gt 3MB) {
+                throw "Yield WebP exceeds 3 MB: $($entry.path)"
+            }
+        }
+        if ($entry.role -eq "evidence-gif" -and $entry.width -gt $MaximumGifWidth) {
+            throw "Yield GIF width exceeds $MaximumGifWidth pixels: $($entry.path)"
+        }
+    }
+}
+
 $magick = Resolve-Magick
 $imageIdentify = Resolve-ImageIdentify -MagickPath $magick
 Write-Output "MEDIA_BUILD magick=$magick"
@@ -185,15 +211,37 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $yieldManifestOut)
 if ($env:GITHUB_ACTIONS -eq "true" -and (
     [string]::IsNullOrWhiteSpace($env:GITHUB_REPOSITORY) -or
     [string]::IsNullOrWhiteSpace($env:GITHUB_RUN_ID) -or
+    [string]::IsNullOrWhiteSpace($env:GITHUB_SERVER_URL) -or
     [string]::IsNullOrWhiteSpace($env:GITHUB_SHA)
 )) {
-    throw "Hosted media provenance requires GITHUB_REPOSITORY, GITHUB_RUN_ID, and GITHUB_SHA."
+    throw "Hosted media provenance requires GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID, and GITHUB_SHA."
 }
 $hostedRunUrl = if ($env:GITHUB_ACTIONS -eq "true") {
     "{0}/{1}/actions/runs/{2}" -f $env:GITHUB_SERVER_URL, $env:GITHUB_REPOSITORY, $env:GITHUB_RUN_ID
 } else {
     $null
 }
+$yieldManifestEntries = [System.Collections.Generic.List[object]]::new()
+foreach ($screenName in @("yield-forecast-desktop.png", "yield-forecast-mobile.png")) {
+    $yieldManifestEntries.Add((
+        Get-MediaManifestEntry (Join-Path $screensIn $screenName) "captured-screen" $repositoryRoot $imageIdentify
+    ))
+}
+foreach ($frame in $yieldForecastFrames) {
+    $yieldManifestEntries.Add((
+        Get-MediaManifestEntry $frame.FullName "captured-frame" $repositoryRoot $imageIdentify
+    ))
+}
+foreach ($entry in @(
+    (Get-MediaManifestEntry (Join-Path $screensOut "yield-forecast-desktop.webp") "desktop-webp" $repositoryRoot $imageIdentify),
+    (Get-MediaManifestEntry (Join-Path $screensOut "yield-forecast-mobile.webp") "mobile-webp" $repositoryRoot $imageIdentify),
+    (Get-MediaManifestEntry $yieldForecastGifOut "evidence-gif" $repositoryRoot $imageIdentify)
+)) {
+    $yieldManifestEntries.Add($entry)
+}
+Assert-YieldForecastMediaBounds -Entries @($yieldManifestEntries) `
+    -MaximumStillWidth $StillWidth -MaximumStillHeight $StillMaxHeight `
+    -MaximumGifWidth $GifWidth
 $yieldManifest = [ordered]@{
     schemaVersion = 1
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
@@ -209,11 +257,7 @@ $yieldManifest = [ordered]@{
         mobileViewport = "390x844"
         selector = "section[aria-labelledby=yield-forecast-title]"
     }
-    files = @(
-        Get-MediaManifestEntry (Join-Path $screensOut "yield-forecast-desktop.webp") "desktop-webp" $repositoryRoot $imageIdentify
-        Get-MediaManifestEntry (Join-Path $screensOut "yield-forecast-mobile.webp") "mobile-webp" $repositoryRoot $imageIdentify
-        Get-MediaManifestEntry $yieldForecastGifOut "evidence-gif" $repositoryRoot $imageIdentify
-    )
+    files = @($yieldManifestEntries)
 }
 $yieldManifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $yieldManifestOut -Encoding utf8
 Write-Output "MEDIA_MANIFEST path=$YieldForecastManifestPath provenance=$($yieldManifest.provenance.source)"
