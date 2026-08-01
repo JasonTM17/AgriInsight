@@ -337,6 +337,48 @@ nested shape; browser chỉ format evidence, không tính lại forecast.
 Mỗi Gold frame được kiểm tra exact key set, thứ tự cột, logical pandas type và
 giá trị số hữu hạn trước khi pipeline ghi CSV; contract drift làm pipeline fail closed.
 
+## Gold Yield Forecast
+
+`yield_forecast.csv` có grain chính xác một dòng cho mỗi `season_code` active
+đủ điều kiện tại `as_of_date`: `start_date <= as_of_date <
+expected_harvest_date`. Artifact không chứa mùa completed hoặc mùa active ở
+tương lai. Identity bắt buộc là farm/field/season/crop canonical;
+`target_yield_kg` là context nullable, finite, không âm và chỉ hiển thị
+evidence (không được dùng để tính forecast); snapshot
+đối chiếu toàn bộ tập key, ngày start/expected-harvest và `season_area_ha` với
+`cost_season.csv` của cùng manifest.
+
+| Nhóm cột | Contract |
+|---|---|
+| Identity/context | `as_of_date`, farm/field/season/crop code, `forecast_origin_date`, expected harvest, immutable `season_area_ha`, nullable `target_yield_kg` |
+| Version/status | `model_version=crop-median-yield-per-ha-v1`; chỉ `ready` hoặc `insufficient_history` |
+| Evidence | history start/end, history season count, rolling-origin count, evaluated-season count, MAE và pooled WAPE kg/ha |
+| Forecast | point kg/ha và kg, observed historical min/max kg/ha và kg |
+
+Warehouse query đọc harvest events bounded theo as-of date, kiểm tra farm owner
+của field khớp season và fact farm/field/crop key khớp `dim_season`, rồi gọi
+baseline same-crop median của
+Phase 1. Một season có nhiều harvest event được cộng một lần trước khi chia cho
+immutable area; area không được nhân theo số event. History label chỉ hợp lệ
+khi `season_completed_at < forecast_origin_date`; equal-origin labels không
+được dùng làm training cho nhau. Dải min/max là quan sát lịch sử mô tả, không
+phải confidence/prediction interval hay cam kết accuracy nông học.
+
+`ready` yêu cầu ít nhất năm history season, hai rolling origins, hai evaluated
+seasons cùng MAE/WAPE hữu hạn. `insufficient_history` giữ count/date evidence
+nhưng tất cả point/span/error metric là null. Validator từ chối grain trùng,
+as-of/status/model sai, date stale/future, identifier/range/non-finite value,
+history chronology sai, quantity không khớp `yield × area`, hoặc active-season
+coverage/relationship sai.
+
+Pipeline ghi row count và SHA-256 exact bytes của
+`gold/yield_forecast.csv` vào manifest; rerun cùng input/as-of phải byte-stable.
+Snapshot cache bắt buộc checksum, exact column set, row cap và reconciliation
+với `cost_season` trước request handling; file checksum-valid nhưng corrupt vẫn
+trả lỗi sanitized `snapshot_contract_invalid`. Phase 2 chỉ load/validate
+artifact nội bộ: chưa thêm public API response, browser calculation, mutation,
+provider/model network call hoặc production agronomic claim.
+
 ## Export contract
 
 | Hạng mục | Quy tắc |
