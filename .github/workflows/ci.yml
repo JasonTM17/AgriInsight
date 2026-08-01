@@ -173,6 +173,20 @@ jobs:
             assets/generated/agriinsight-inventory-forecast-loop.gif
           if-no-files-found: error
           retention-days: 7
+      - name: Upload yield forecast media evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: yield-forecast-media-${{ github.sha }}
+          path: |
+            artifacts/media-capture/screens/yield-forecast-desktop.png
+            artifacts/media-capture/screens/yield-forecast-mobile.png
+            artifacts/media-capture/frames/yield-forecast-*.png
+            docs/assets/screens/yield-forecast-desktop.webp
+            docs/assets/screens/yield-forecast-mobile.webp
+            assets/generated/agriinsight-yield-forecast-loop.gif
+            assets/generated/agriinsight-yield-forecast-media-manifest.json
+          if-no-files-found: error
+          retention-days: 7
 
   images:
     name: Build ${{ matrix.name }} image without push
