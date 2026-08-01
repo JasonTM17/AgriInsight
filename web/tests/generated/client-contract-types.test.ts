@@ -16,6 +16,19 @@ describe("generated client contract types", () => {
     expectTypeOf<AnalyticsResponse<"analyticsOverview">>().toEqualTypeOf<
       AnalyticsComponents["schemas"]["AnalyticsEnvelope_OverviewPayload_"]
     >();
+    expectTypeOf<AnalyticsResponse<"analyticsYieldForecast">>().toEqualTypeOf<
+      AnalyticsComponents["schemas"]["AnalyticsEnvelope_YieldForecastPayload_"]
+    >();
+    expectTypeOf<
+      NonNullable<AnalyticsQuery<"analyticsYieldForecast">>
+    >().toEqualTypeOf<{
+      readonly crop_code?: string | null;
+      readonly farm_code?: string | null;
+      readonly field_code?: string | null;
+      readonly limit?: number;
+      readonly offset?: number;
+      readonly season_code?: string | null;
+    }>();
     expectTypeOf<
       NonNullable<AnalyticsQuery<"analyticsFarms">>
     >().toEqualTypeOf<{

@@ -191,6 +191,23 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/internal/v1/yield-forecast": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Get Yield Forecast */
+        readonly get: operations["getAnalyticsYieldForecast"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -249,6 +266,13 @@ export interface components {
             readonly freshness: components["schemas"]["FreshnessModel"];
             readonly lineage: components["schemas"]["LineageModel"];
             readonly payload: components["schemas"]["ProcurementCostsPayload"];
+            readonly scope: components["schemas"]["ScopeModel"];
+        };
+        /** AnalyticsEnvelope[YieldForecastPayload] */
+        readonly AnalyticsEnvelope_YieldForecastPayload_: {
+            readonly freshness: components["schemas"]["FreshnessModel"];
+            readonly lineage: components["schemas"]["LineageModel"];
+            readonly payload: components["schemas"]["YieldForecastPayload"];
             readonly scope: components["schemas"]["ScopeModel"];
         };
         /** AppliedFilterModel */
@@ -1272,6 +1296,85 @@ export interface components {
             /** Warehousecodes */
             readonly warehouseCodes?: readonly string[];
         };
+        /** YieldForecastHealthModel */
+        readonly YieldForecastHealthModel: {
+            /** Insufficienthistory */
+            readonly insufficientHistory: number;
+            /** Ready */
+            readonly ready: number;
+            /** Total */
+            readonly total: number;
+        };
+        /** YieldForecastModel */
+        readonly YieldForecastModel: {
+            /**
+             * Asofdate
+             * Format: date
+             */
+            readonly asOfDate: string;
+            /** Backtestmaekgperha */
+            readonly backtestMaeKgPerHa: number | null;
+            /** Backtestorigins */
+            readonly backtestOrigins: number;
+            /** Backtestseasons */
+            readonly backtestSeasons: number;
+            /** Backtestwapepct */
+            readonly backtestWapePct: number | null;
+            /** Cropcode */
+            readonly cropCode: string;
+            /**
+             * Expectedharvestdate
+             * Format: date
+             */
+            readonly expectedHarvestDate: string;
+            /** Farmcode */
+            readonly farmCode: string;
+            /** Fieldcode */
+            readonly fieldCode: string;
+            /**
+             * Forecastorigindate
+             * Format: date
+             */
+            readonly forecastOriginDate: string;
+            /** Forecastquantitykg */
+            readonly forecastQuantityKg: number | null;
+            /**
+             * Forecaststatus
+             * @enum {string}
+             */
+            readonly forecastStatus: "ready" | "insufficientHistory";
+            /** Forecastyieldkgperha */
+            readonly forecastYieldKgPerHa: number | null;
+            /** Historyendat */
+            readonly historyEndAt: string | null;
+            /** Historyseasons */
+            readonly historySeasons: number;
+            /** Historystartat */
+            readonly historyStartAt: string | null;
+            /** Modelversion */
+            readonly modelVersion: string;
+            /** Observedmaxquantitykg */
+            readonly observedMaxQuantityKg: number | null;
+            /** Observedmaxyieldkgperha */
+            readonly observedMaxYieldKgPerHa: number | null;
+            /** Observedminquantitykg */
+            readonly observedMinQuantityKg: number | null;
+            /** Observedminyieldkgperha */
+            readonly observedMinYieldKgPerHa: number | null;
+            /** Seasonareaha */
+            readonly seasonAreaHa: number;
+            /** Seasoncode */
+            readonly seasonCode: string;
+            /** Targetyieldkg */
+            readonly targetYieldKg: number | null;
+        };
+        /** YieldForecastPayload */
+        readonly YieldForecastPayload: {
+            readonly forecastHealth: components["schemas"]["YieldForecastHealthModel"];
+            /** Items */
+            readonly items: readonly components["schemas"]["YieldForecastModel"][];
+            readonly page: components["schemas"]["PageModel"];
+        };
     };
     responses: never;
     parameters: never;
@@ -1287,6 +1390,7 @@ export type SchemaAnalyticsEnvelopeFarmsPayload = components['schemas']['Analyti
 export type SchemaAnalyticsEnvelopeInventoryPayload = components['schemas']['AnalyticsEnvelope_InventoryPayload_'];
 export type SchemaAnalyticsEnvelopeOverviewPayload = components['schemas']['AnalyticsEnvelope_OverviewPayload_'];
 export type SchemaAnalyticsEnvelopeProcurementCostsPayload = components['schemas']['AnalyticsEnvelope_ProcurementCostsPayload_'];
+export type SchemaAnalyticsEnvelopeYieldForecastPayload = components['schemas']['AnalyticsEnvelope_YieldForecastPayload_'];
 export type SchemaAppliedFilterModel = components['schemas']['AppliedFilterModel'];
 export type SchemaAssistantAnswer = components['schemas']['AssistantAnswer'];
 export type SchemaAssistantQuery = components['schemas']['AssistantQuery'];
@@ -1345,6 +1449,9 @@ export type SchemaQualityScoreModel = components['schemas']['QualityScoreModel']
 export type SchemaQualityScoresModel = components['schemas']['QualityScoresModel'];
 export type SchemaRiskAlertModel = components['schemas']['RiskAlertModel'];
 export type SchemaScopeModel = components['schemas']['ScopeModel'];
+export type SchemaYieldForecastHealthModel = components['schemas']['YieldForecastHealthModel'];
+export type SchemaYieldForecastModel = components['schemas']['YieldForecastModel'];
+export type SchemaYieldForecastPayload = components['schemas']['YieldForecastPayload'];
 export type $defs = Record<string, never>;
 export interface operations {
     readonly getAnalyticsReadiness: {
@@ -2112,6 +2219,87 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["AnalyticsEnvelope_OverviewPayload_"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Content */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Internal Server Error */
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Bad Gateway */
+            readonly 502: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Service Unavailable */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    readonly getAnalyticsYieldForecast: {
+        readonly parameters: {
+            readonly query?: {
+                readonly crop_code?: string | null;
+                readonly farm_code?: string | null;
+                readonly field_code?: string | null;
+                readonly limit?: number;
+                readonly offset?: number;
+                readonly season_code?: string | null;
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Successful Response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["AnalyticsEnvelope_YieldForecastPayload_"];
                 };
             };
             /** @description Unauthorized */

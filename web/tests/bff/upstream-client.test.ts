@@ -114,6 +114,27 @@ describe("bounded upstream client", () => {
     );
   });
 
+  it("forwards only the scoped yield forecast query parameters", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      void input;
+      return Response.json({ payload: {} });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await executeAllowedOperation(
+      env,
+      "analyticsYieldForecast",
+      "server-held-token",
+      "correlation-yield-forecast",
+      { farm_code: "FARM-001", limit: 50, offset: 0 }
+    );
+
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      "http://127.0.0.1:8081/internal/v1/yield-forecast"
+      + "?farm_code=FARM-001&limit=50&offset=0"
+    );
+  });
+
   it("posts a bounded JSON body with only hardcoded mutation headers", async () => {
     const fetchMock = vi.fn(
       async (input: string | URL | Request, init?: RequestInit) => {
