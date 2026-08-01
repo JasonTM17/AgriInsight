@@ -524,7 +524,10 @@
   }
 }
 
-@media (max-width: 44rem) {
+/* A 1440px desktop viewed at 200% zoom has a 720px effective viewport. Keep
+   the card/table transformation active through the tablet threshold so the
+   farm detail does not create page-level horizontal scrolling. */
+@media (max-width: 48rem) {
   .pageIntro {
     display: grid;
   }
