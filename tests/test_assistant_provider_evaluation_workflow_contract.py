@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "assistant-provider-evaluation.yml"
 CI_PATH = ROOT / ".github" / "workflows" / "ci.yml"
+LOCK_PATH = ROOT / "requirements" / "assistant-provider-evaluation.lock"
 
 
 def _workflow() -> str:
@@ -39,10 +40,11 @@ def test_workflow_is_manual_read_only_serial_and_single_job() -> None:
     assert "runs-on: ubuntu-latest" in workflow
     assert "timeout-minutes: 15" in workflow
     assert "environment: assistant-provider-evaluation" in workflow
+    assert "if: github.ref == 'refs/heads/main'" in workflow
     assert "docker" not in workflow.lower()
 
 
-def test_workflow_pins_ci_matching_checkout_python_and_locked_install() -> None:
+def test_workflow_pins_ci_matching_checkout_python_and_hash_locked_runtime() -> None:
     workflow = _workflow()
     ci = CI_PATH.read_text(encoding="utf-8")
     checkout = (
@@ -56,7 +58,22 @@ def test_workflow_pins_ci_matching_checkout_python_and_locked_install() -> None:
         assert workflow.count(action) == 1
         assert action in ci
     assert 'python-version: "3.13"' in workflow
-    assert 'python -m pip install ".[dev]"' in workflow
+    assert "cache-dependency-path: requirements/assistant-provider-evaluation.lock" in workflow
+    assert "--require-hashes" in workflow
+    assert "--only-binary=:all:" in workflow
+    assert "--no-deps" in workflow
+    assert "-r requirements/assistant-provider-evaluation.lock" in workflow
+    assert 'pip install ".[dev]"' not in workflow
+
+    lines = [
+        line.strip()
+        for line in LOCK_PATH.read_text(encoding="utf-8").splitlines()
+        if line and not line.startswith("#")
+    ]
+    assert len(lines) == 11
+    assert all("==" in line and "--hash=sha256:" in line for line in lines)
+    assert any(line.startswith("httpx==0.28.1 ") for line in lines)
+    assert any(line.startswith("pydantic==2.13.4 ") for line in lines)
 
 
 def test_exact_sha_is_verified_before_the_secret_scoped_run_step() -> None:
@@ -134,6 +151,8 @@ def test_validation_checks_exact_source_and_every_protected_gate_without_secret(
         '"pricing"',
         '"estimated_cost_usd"',
         '"maximum_possible_cost_usd"',
+        '"source_url"',
+        '"retrieved_on"',
     ):
         assert aggregate_only_key in validation_step
     for gate in (
