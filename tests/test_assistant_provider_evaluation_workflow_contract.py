@@ -154,6 +154,13 @@ def test_evaluation_uses_fixed_nonsecret_controls_and_temp_aggregate_only() -> N
         'aggregate_path="$RUNNER_TEMP/assistant-provider-evaluation.json"'
         in evaluation_step
     )
+    assert "evaluation_status=0" in evaluation_step
+    assert "> \"$aggregate_path\" || evaluation_status=$?" in evaluation_step
+    assert (
+        'if [ "$evaluation_status" -ne 0 ] && [ ! -s "$aggregate_path" ]; then'
+        in evaluation_step
+    )
+    assert 'exit "$evaluation_status"' in evaluation_step
     assert '> "$aggregate_path"' in evaluation_step
     assert all(
         unsafe not in evaluation_step
@@ -212,6 +219,7 @@ def test_upload_contains_only_the_single_aggregate_with_bounded_retention() -> N
     )
 
     assert upload_action in upload_step
+    assert "if: always()" in upload_step
     assert (
         "path: ${{ runner.temp }}/assistant-provider-evaluation.json"
         in upload_step
