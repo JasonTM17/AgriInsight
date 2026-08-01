@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Protected release and package publication"
-status: pending
+status: in-progress
 priority: P1
 effort: "6h"
 dependencies:
@@ -60,14 +60,37 @@ misrepresent Phase 3 acceptance.
 
 ## Success Criteria
 
-- [ ] Release tag resolves to the exact accepted feature head.
-- [ ] Exact-head CI passes all 10 jobs before tagging.
-- [ ] Protected publication passes all four image jobs without bypass.
-- [ ] All 16 registry references resolve to the four recorded immutable
+- [x] Release tag resolves to the exact CI-verified `main` head containing the
+  accepted Phase 3 merge.
+- [x] Exact-head CI passes all 10 jobs before tagging.
+- [x] Protected publication passes all four image jobs through normal
+  environment approvals without bypass.
+- [x] All 16 registry references resolve to the four recorded immutable
   digests and Docker Hub/GHCR parity is proven.
-- [ ] GitHub Release contains verified yield still/GIF assets and hashes.
-- [ ] Docs distinguish hosted release publication from external deployment and
+- [x] GitHub Release contains verified yield still/GIF assets and hashes.
+- [x] Docs distinguish hosted release publication from external deployment and
   real agronomic/model SLA.
+- [ ] Post-release documentation commit passes hosted CI before Phase 4 is
+  marked completed.
+
+## Acceptance evidence
+
+- Annotated tag object `4c27b343eecd32cf7daac462e5f661011e2af0df`
+  peels to exact `main` SHA
+  `616527dcc7f4a03720fb48e617f9310ab9614873`. Exact-head CI
+  [`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+  passed 10/10 before tagging.
+- Protected publication
+  [`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+  passed 4/4. Independent inspection proved all 16 semantic/full-SHA Docker
+  Hub/GHCR references resolve to the four digests in
+  [the release report](./reports/phase-04-protected-release-evidence.md).
+- Public GitHub Release
+  [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
+  contains the accepted desktop/mobile WebP and GIF with matching byte counts
+  and SHA-256 values.
+- Immutable release evidence is complete. Phase status remains `in-progress`
+  only until the post-release documentation commit passes hosted CI.
 
 ## Risks and rollback
 

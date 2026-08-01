@@ -47,6 +47,15 @@ Status: accepted 2026-08-01
   path; secret scanning added no match. See
   [security-2026-08-01-yield-forecast.md](./security-2026-08-01-yield-forecast.md).
 
+## Later package publication
+
+Public GitHub Release
+[`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0) later
+packages this accepted Phase 3 behavior through the protected four-image
+workflow. See
+[the Phase 4 release report](./phase-04-protected-release-evidence.md). This
+does not widen the hosted acceptance or external-deployment boundary below.
+
 ## Rollback and open boundaries
 
 Rollback removes the additive BFF operation/panel and deploys the prior

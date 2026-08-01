@@ -4,7 +4,7 @@ description: >-
   Add a deterministic, leakage-safe yield baseline for active seasons and carry
   its backtest evidence from warehouse facts through Gold, a scoped API, and the
   existing farm-detail experience.
-status: completed
+status: in-progress
 priority: P1
 branch: feature/yield-forecasting
 tags:
@@ -41,7 +41,7 @@ and Overview contracts keep their meaning.
 | 1 | [Leakage-safe forecast contract and backtested baseline](./phase-01-leakage-safe-forecast-contract-and-backtested-baseline.md) | Completed |
 | 2 | [Gold pipeline and snapshot integration](./phase-02-gold-pipeline-and-snapshot-integration.md) | Completed |
 | 3 | [Scoped API farm dashboard and hosted acceptance](./phase-03-scoped-api-farm-dashboard-and-hosted-acceptance.md) | Completed 2026-08-01 |
-| 4 | [Protected release and package publication](./phase-04-protected-release-and-package-publication.md) | Pending |
+| 4 | [Protected release and package publication](./phase-04-protected-release-and-package-publication.md) | In progress — release published; post-release docs CI pending |
 
 ## Dependencies
 
@@ -86,3 +86,11 @@ Yield media artifact is tied to merge SHA
 `ecfe58ccceee923e43951ce6b3a942581e62a298`; hashes, visual review and open
 external-deployment/security boundaries are recorded in
 [the Phase 3 acceptance report](./reports/phase-03-api-dashboard-hosted-acceptance.md).
+
+## Phase 4 release evidence
+
+Public GitHub Release [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
+and protected four-image publication are complete at the exact CI-verified
+`main` head. Tag, CI, registry, supply-chain, media, and remaining documentation
+CI evidence are recorded in
+[the Phase 4 release report](./reports/phase-04-protected-release-evidence.md).

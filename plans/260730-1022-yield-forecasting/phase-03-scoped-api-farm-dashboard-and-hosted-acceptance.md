@@ -143,6 +143,15 @@ Registry publication is isolated in Phase 4.
   and GIF were visually reviewed. External VPS promotion, ingress rate limit,
   successful-read audit retention and any production agronomic SLA remain open.
 
+## Phase 4 release linkage
+
+Phase 4 later packages this accepted Phase 3 behavior in public GitHub Release
+[`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0) and the
+protected four-image registry set. That publication evidence is tracked
+separately in
+[the Phase 4 report](./reports/phase-04-protected-release-evidence.md); it does
+not change the hosted acceptance boundary above.
+
 ## Risks and rollback
 
 - High-cardinality evidence could inflate payloads; item and byte caps are
