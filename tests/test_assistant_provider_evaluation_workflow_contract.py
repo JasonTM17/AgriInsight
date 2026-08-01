@@ -70,10 +70,12 @@ def test_workflow_pins_ci_matching_checkout_python_and_hash_locked_runtime() -> 
         for line in LOCK_PATH.read_text(encoding="utf-8").splitlines()
         if line and not line.startswith("#")
     ]
-    assert len(lines) == 11
+    assert len(lines) == 14
     assert all("==" in line and "--hash=sha256:" in line for line in lines)
+    assert any(line.startswith("fastapi==0.141.1 ") for line in lines)
     assert any(line.startswith("httpx==0.28.1 ") for line in lines)
     assert any(line.startswith("pydantic==2.13.4 ") for line in lines)
+    assert any(line.startswith("starlette==1.3.1 ") for line in lines)
 
 
 def test_exact_sha_is_verified_before_the_secret_scoped_run_step() -> None:
