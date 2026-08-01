@@ -70,12 +70,29 @@ def test_workflow_pins_ci_matching_checkout_python_and_hash_locked_runtime() -> 
         for line in LOCK_PATH.read_text(encoding="utf-8").splitlines()
         if line and not line.startswith("#")
     ]
-    assert len(lines) == 14
     assert all("==" in line and "--hash=sha256:" in line for line in lines)
-    assert any(line.startswith("fastapi==0.141.1 ") for line in lines)
-    assert any(line.startswith("httpx==0.28.1 ") for line in lines)
-    assert any(line.startswith("pydantic==2.13.4 ") for line in lines)
-    assert any(line.startswith("starlette==1.3.1 ") for line in lines)
+    assert {line.partition("==")[0] for line in lines} == {
+        "annotated-doc",
+        "annotated-types",
+        "anyio",
+        "certifi",
+        "fastapi",
+        "h11",
+        "httpcore",
+        "httpx",
+        "idna",
+        "numpy",
+        "pandas",
+        "pydantic",
+        "pydantic-core",
+        "python-dateutil",
+        "pytz",
+        "six",
+        "starlette",
+        "typing-extensions",
+        "typing-inspection",
+        "tzdata",
+    }
 
 
 def test_exact_sha_is_verified_before_the_secret_scoped_run_step() -> None:
@@ -83,6 +100,11 @@ def test_exact_sha_is_verified_before_the_secret_scoped_run_step() -> None:
     verify_step = _named_step(
         workflow,
         "Verify the exact checked-out source",
+        "Verify hash-locked source import",
+    )
+    import_step = _named_step(
+        workflow,
+        "Verify hash-locked source import",
         "Run the bounded provider evaluation",
     )
     evaluation_step = _named_step(
@@ -95,7 +117,17 @@ def test_exact_sha_is_verified_before_the_secret_scoped_run_step() -> None:
     assert 'checked_out_sha="$(git rev-parse HEAD)"' in verify_step
     assert 'test "$checked_out_sha" = "$GITHUB_SHA"' in verify_step
     assert "secrets." not in verify_step
+    assert "PYTHONPATH: src" in import_step
+    assert (
+        "from agriinsight.analytics_api.assistant_provider_evaluation_workload "
+        "import run_provider_evaluation"
+        in import_step
+    )
+    assert "secrets." not in import_step
     assert workflow.index("Verify the exact checked-out source") < workflow.index(
+        secret_reference
+    )
+    assert workflow.index("Verify hash-locked source import") < workflow.index(
         secret_reference
     )
     assert workflow.count(secret_reference) == 1
