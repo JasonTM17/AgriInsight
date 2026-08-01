@@ -112,6 +112,8 @@ async function expectFarmDetailYieldEvidence(page: Page): Promise<void> {
   const disclosure = panel.locator("details").first();
   await disclosure.locator("summary").focus();
   await expect(disclosure.locator("summary")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(disclosure).toHaveAttribute("open", "");
 }
 
 test("@quality executive routes pass WCAG and responsive gates", async ({ page }) => {
@@ -141,6 +143,11 @@ test("@quality executive routes pass WCAG and responsive gates", async ({ page }
   const zoomResponse = await page.goto(farmHref!);
   expect(zoomResponse?.status(), "200% zoom-equivalent farm detail GET").toBe(200);
   await expectFarmDetailYieldEvidence(page);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), {
+      message: "200% zoom-equivalent farm detail has horizontal overflow"
+    })
+    .toBe(true);
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   const reducedMotionResponse = await page.goto(farmHref!);
