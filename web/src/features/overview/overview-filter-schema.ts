@@ -10,6 +10,8 @@ const optionalSearch = z.preprocess(
   z.string().trim().min(1).max(80).optional()
 );
 
+const forecastOffsetSchema = z.coerce.number().int().min(0).max(9_950).default(0);
+
 const filterSchema = z.object({
   farmId: optionalUuid,
   fieldId: optionalUuid,
@@ -39,7 +41,17 @@ export function parseOverviewFilters(input: FilterInput): OverviewFilters {
       Array.isArray(value) ? value[0] : value
     ])
   );
-  return Object.freeze(filterSchema.parse(normalized));
+  const overviewInput = Object.fromEntries(
+    Object.entries(normalized).filter(([key]) => key !== "forecastOffset")
+  );
+  return Object.freeze(filterSchema.parse(overviewInput));
+}
+
+export function parseForecastOffset(input: FilterInput): number {
+  const value = Array.isArray(input.forecastOffset)
+    ? input.forecastOffset[0]
+    : input.forecastOffset;
+  return forecastOffsetSchema.parse(value);
 }
 
 export function assertCurrentAnalyticsFilterSupport(

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ReviewedVisual } from "@/components/media/reviewed-visual";
 import { StatePanel } from "@/components/app-shell/state-panels";
+import { YieldForecastPanel } from "@/features/farms/components/yield-forecast-panel";
 import type { FarmDetailViewModel } from "@/features/farms/load-farm-intelligence-view-model";
 import {
   AnalyticsContextLine,
@@ -19,10 +20,12 @@ const number = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 
 export function FarmDetail({
   viewModel,
-  backHref
+  backHref,
+  forecastPageHref
 }: {
   viewModel: FarmDetailViewModel;
   backHref: string;
+  forecastPageHref: (offset: number) => string;
 }) {
   const analytic = viewModel.analytics.status === "ready"
     ? viewModel.analytics.data.payload.items.find(
@@ -95,6 +98,21 @@ export function FarmDetail({
           )}
         </section>
       </div>
+      {viewModel.forecast.status === "ready" ? (
+        <YieldForecastPanel
+          forecast={viewModel.forecast.data}
+          forecastPageHref={forecastPageHref}
+        />
+      ) : (
+        <StatePanel
+          actionHref={backHref}
+          actionLabel="Quay lại danh sách"
+          correlationId={viewModel.forecast.correlationId}
+          label="Bằng chứng dự báo tạm gián đoạn"
+          message="Thông tin nông trại và chỉ số hiệu quả vẫn có thể dùng, nhưng dự báo năng suất chưa tải được ở lần này."
+          state="partial"
+        />
+      )}
       {visual ? (
         <figure className={styles.contextVisual}>
           <ReviewedVisual
