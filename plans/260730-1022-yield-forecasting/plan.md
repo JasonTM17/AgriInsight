@@ -4,7 +4,7 @@ description: >-
   Add a deterministic, leakage-safe yield baseline for active seasons and carry
   its backtest evidence from warehouse facts through Gold, a scoped API, and the
   existing farm-detail experience.
-status: in-progress
+status: completed
 priority: P1
 branch: feature/yield-forecasting
 tags:
@@ -41,7 +41,7 @@ and Overview contracts keep their meaning.
 | 1 | [Leakage-safe forecast contract and backtested baseline](./phase-01-leakage-safe-forecast-contract-and-backtested-baseline.md) | Completed |
 | 2 | [Gold pipeline and snapshot integration](./phase-02-gold-pipeline-and-snapshot-integration.md) | Completed |
 | 3 | [Scoped API farm dashboard and hosted acceptance](./phase-03-scoped-api-farm-dashboard-and-hosted-acceptance.md) | Completed 2026-08-01 |
-| 4 | [Protected release and package publication](./phase-04-protected-release-and-package-publication.md) | In progress — release published; post-release docs CI pending |
+| 4 | [Protected release and package publication](./phase-04-protected-release-and-package-publication.md) | Completed 2026-08-01 |
 
 ## Dependencies
 
@@ -91,6 +91,7 @@ external-deployment/security boundaries are recorded in
 
 Public GitHub Release [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
 and protected four-image publication are complete at the exact CI-verified
-`main` head. Tag, CI, registry, supply-chain, media, and remaining documentation
-CI evidence are recorded in
+`main` head. The post-release documentation commit also passed all 10 hosted CI
+jobs. Tag, CI, registry, supply-chain, media, and documentation evidence are
+recorded in
 [the Phase 4 release report](./reports/phase-04-protected-release-evidence.md).
