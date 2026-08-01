@@ -202,3 +202,51 @@ def test_cost_farm_keeps_farms_without_seasons(tmp_path: Path) -> None:
     assert row["operating_total_cost_vnd"] == pytest.approx(0.0)
     assert row["budget_operating_cost_vnd"] == pytest.approx(0.0)
     assert row["operating_cost_per_ha_vnd"] == pytest.approx(0.0)
+
+
+def test_cost_gold_uses_immutable_season_area_snapshot(tmp_path: Path) -> None:
+    root = tmp_path / "artifacts"
+    run_pipeline(root, _small_config())
+
+    connection = sqlite3.connect(root / "warehouse" / "agriinsight.db")
+    try:
+        farm_code, season_code, field_key, season_area = connection.execute(
+            """
+            SELECT f.farm_code, s.season_code, s.field_key, s.season_area_ha
+            FROM dim_season s
+            JOIN dim_farm f USING (farm_key)
+            ORDER BY s.season_code
+            LIMIT 1
+            """
+        ).fetchone()
+        expected_farm_area = float(
+            connection.execute(
+                """
+                SELECT COALESCE(SUM(season_area_ha), 0)
+                FROM dim_season
+                WHERE farm_key = (SELECT farm_key FROM dim_farm WHERE farm_code = ?)
+                """,
+                (farm_code,),
+            ).fetchone()[0]
+        )
+        connection.execute(
+            "UPDATE dim_field SET area_ha = ? WHERE field_key = ?",
+            (float(season_area) * 11, field_key),
+        )
+        frames = build_cost_analysis_gold(connection)
+    finally:
+        connection.rollback()
+        connection.close()
+
+    season_row = frames["cost_season"].loc[
+        frames["cost_season"]["season_code"] == season_code
+    ].iloc[0]
+    farm_row = frames["cost_farm"].loc[frames["cost_farm"]["farm_code"] == farm_code].iloc[0]
+
+    assert season_row["area_ha"] == pytest.approx(season_area)
+    assert farm_row["season_area_ha"] == pytest.approx(expected_farm_area)
+    assert season_row["operating_cost_per_ha_vnd"] == pytest.approx(
+        season_row["operating_total_cost_vnd"] / season_area
+        if season_area
+        else 0.0
+    )
