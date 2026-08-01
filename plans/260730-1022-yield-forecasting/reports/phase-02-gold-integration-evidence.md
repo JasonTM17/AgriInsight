@@ -27,9 +27,10 @@ Status: accepted on 2026-08-01.
 |---|---|
 | Local syntax | `python -m py_compile` passed for touched source and tests |
 | Local quality | targeted `python -m ruff check` and `git diff --check` passed |
-| Hosted Python | GitHub Actions run 30687514585, `Python analytics`: passed; includes full `pytest`, artifact pipeline run, and `compileall` |
-| Hosted security | GitHub Actions run 30687514585: passed |
-| Hosted web | GitHub Actions run 30687514585: passed |
+| Hosted full CI | GitHub Actions run 30687582329: passed for the pushed Phase 2 head |
+| Hosted Python | GitHub Actions run 30687582329, `Python analytics`: passed; includes full `pytest`, artifact pipeline run, and `compileall` |
+| Hosted security | GitHub Actions run 30687582329: passed |
+| Hosted web | GitHub Actions run 30687582329: passed |
 
 Local C/D guard was warning/fail during acceptance, so no disk-heavy local
 tests or builds were run after the final review fixes. The hosted Python gate
