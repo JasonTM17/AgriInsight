@@ -67,7 +67,7 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "offset",
     }
     assert all(
-        item["schema"].get("maxLength") == 64
+        _non_null_variant(item["schema"]).get("maxLength") == 64
         for item in yield_parameters
         if item["name"] in {"farm_code", "field_code", "crop_code", "season_code"}
     )

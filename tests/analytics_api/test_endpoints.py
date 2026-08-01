@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
+from types import MappingProxyType
 from uuid import UUID
 
 import pandas as pd
@@ -401,15 +403,22 @@ def test_yield_forecast_invalid_raw_rows_fail_before_public_shaping(
     snapshot = app.state.snapshot_cache.current()
     forecast = snapshot.csv["yield_forecast"]
     if invalid_row == "duplicate":
-        snapshot.csv["yield_forecast"] = pd.concat(
+        mutated_forecast = pd.concat(
             [forecast, forecast.iloc[[0]]],
             ignore_index=True,
         )
     else:
-        snapshot.csv["yield_forecast"] = forecast.copy()
-        snapshot.csv["yield_forecast"].loc[
-            forecast.index[0], "farm_code"
-        ] = "FARM-FOREIGN"
+        mutated_forecast = forecast.copy()
+        mutated_forecast.loc[forecast.index[0], "farm_code"] = "FARM-FOREIGN"
+    app.state.snapshot_cache._cached = replace(
+        snapshot,
+        csv=MappingProxyType(
+            {
+                **snapshot.csv,
+                "yield_forecast": mutated_forecast,
+            }
+        ),
+    )
 
     with client:
         response = client.get("/internal/v1/yield-forecast", headers=HEADERS)
