@@ -134,6 +134,22 @@ The publish-grade source is
 It describes the accepted baseline and delivery path, not external production
 deployment or an advanced-ML accuracy SLA.
 
+Yield evidence remains a separate farm-detail read. Spring-resolved identity
+maps to canonical analytics codes before the BFF calls the exact
+`GET /internal/v1/yield-forecast` allowlist operation. FastAPI applies FARMS
+authorization and authorized farm scope before snapshot validation, canonical
+filters, fixed `(expected_harvest_date ASC, season_code ASC)` ordering, a
+100-item page cap, and the 1 MiB UTF-8 response gate. The panel renders exact
+server evidence or degrades alone; it never derives a yield, chooses a model,
+or mutates a seasonal plan.
+
+![Yield forecast scoped evidence flow](assets/yield-forecast-architecture.png)
+
+The publish-grade source is
+[`yield-forecast-architecture.svg`](assets/yield-forecast-architecture.svg).
+It documents an accepted internal delivery path, not external deployment,
+agronomic ground truth, or an accuracy/SLA claim.
+
 Two exact inventory POST operations carry commands: a receipt/issue transaction
 and a linked reversal. Both follow the Work trust-boundary order. The reversal
 additionally requires a strong quoted-integer `If-Match`. The browser never

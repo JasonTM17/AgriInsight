@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
-Version: 0.12
-Updated: 2026-07-30
-Status: backend core, scoped inventory-demand forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.3.1` are verified; external production deployment and recovery ownership remain open
+Version: 0.13
+Updated: 2026-08-01
+Status: backend core, scoped inventory-demand and yield forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.3.1` are verified; external production deployment and recovery ownership remain open
 
 ## Product goal
 
@@ -58,6 +58,11 @@ and [architecture](./architecture.md) for the normative boundaries.
   explicit coverage state, empirical planning range and rolling-origin
   backtest; expose the same scoped server evidence without browser math or
   automatic procurement.
+- Materialize a leakage-safe, versioned yield baseline for active seasons and
+  expose it only through `GET /internal/v1/yield-forecast`: canonical
+  farm/field/crop/season filters, fixed ordering, maximum 100 items and 1 MiB,
+  FARMS scope, server-only evidence rendering, no browser-selected model/sort
+  and no operational mutation.
 - Provide bounded, versioned REST APIs under `/api/v1` for identity, tenants,
   farms, fields, crops, seasons, workforce, activities, harvests, warehouses,
   materials, suppliers, warehouse assignments, balances, lots, movements, and
@@ -109,6 +114,7 @@ and [architecture](./architecture.md) for the normative boundaries.
 | Web 12 | Four-image release contract, overlays, docs, and repository metadata | Released as `v0.2.3`; all four Docker Hub/GHCR digests verified and GHCR packages linked to the repository |
 | Analytics 2 | Internal read API, typed contracts, guarded demo tenant, cross-store reconciliation | Accepted and consumed by the web platform |
 | Inventory forecast 1–3 | Baseline/backtest, checksummed Gold integration, scoped nested API, Vietnamese evidence UI and verified media | Accepted 2026-07-30; exact-head CI `30506056691` passed 10/10 and protected `v0.3.1` publication `30506807548` passed 4/4 |
+| Yield forecast 1–3 | Leakage-safe seasonal baseline/backtest, checksummed Gold snapshot, scoped internal API, Farm detail evidence UI and verified media | Accepted 2026-08-01; hosted CI [`30696001895`](https://github.com/JasonTM17/AgriInsight/actions/runs/30696001895) passed 10/10 including real browser/media and four candidate-image gates; no external deployment or model SLA is implied |
 
 Phase 5 acceptance evidence is recorded in
 [`acceptance-2026-07-22-backend-phase5.md`](../plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md):
@@ -155,8 +161,8 @@ Phase 7 foundation evidence is recorded in
 ## Explicit non-goals for the current release
 
 Broad semantic agriculture alerts, a public API/UI alert center, ClickHouse/dbt/
-Airflow, mobile, forecasting beyond the accepted deterministic inventory
-baseline, model monitoring, what-if analysis, AI Text-to-SQL, and direct Gold
+Airflow, mobile, forecasting beyond the accepted deterministic inventory-demand
+and yield baselines, model monitoring, what-if analysis, AI Text-to-SQL, and direct Gold
 writes are deferred. The metadata-only alert-worker hardening has hosted
 and registry release evidence through `v0.2.3`, but no external deployment
 claim. Production identity/MFA, hostname/TLS, observability, broker operations,

@@ -117,6 +117,20 @@ an old generated client. Keep the legacy run-rate policy fields during rollback.
 If forecast evidence cannot be verified, use explicit `unavailable` null
 evidence or keep analytics readiness closed; never synthesize browser values.
 
+Yield delivery additionally requires the matching checksummed
+`gold/yield_forecast.csv` and manifest. The internal read route is exactly
+`GET /internal/v1/yield-forecast`; it accepts only `farm_code`, `field_code`,
+`crop_code`, `season_code`, `limit`, and `offset`, applies fixed
+`expected_harvest_date ASC, season_code ASC` ordering, caps `limit` at 100 and
+the serialized response at 1 MiB. Do not add a browser-selected tenant, model,
+date preset, or sort; deploy the matching analytics/web pair and Gold manifest
+on rollback.
+
+This is an internal authenticated read boundary, not an external production
+promotion. Ingress rate limiting and successful-read audit retention are
+deployment-owned controls: they were not proven by this application-source
+acceptance and must be configured, observed, and retained before external use.
+
 ## DeepSeek RAG assistant
 
 The assistant is disabled by default. Enable it only on the internal analytics
