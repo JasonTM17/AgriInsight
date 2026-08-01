@@ -50,11 +50,15 @@ jobs:
           set -euo pipefail
           umask 077
           aggregate_path="$RUNNER_TEMP/assistant-provider-evaluation.json"
+          evaluation_status=0
           python scripts/run-assistant-provider-evaluation.py \
             --source-sha "$GITHUB_SHA" \
             --repetitions 2 \
             --concurrency 3 \
-            > "$aggregate_path"
+            > "$aggregate_path" || evaluation_status=$?
+          if [ "$evaluation_status" -ne 0 ] && [ ! -s "$aggregate_path" ]; then
+            exit "$evaluation_status"
+          fi
           test -s "$aggregate_path"
       - name: Validate the aggregate and protected gates
         shell: bash
@@ -127,6 +131,7 @@ jobs:
               raise SystemExit("assistant provider evaluation gates failed")
           PY
       - name: Upload the aggregate evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: assistant-provider-evaluation-${{ github.sha }}

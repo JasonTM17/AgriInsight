@@ -239,6 +239,11 @@ pull-request/main CI completely secretless.
   tests, the existing assistant suites, and the full Python gate. Review the
   aggregate output with an explicit sensitive-token denylist and fail closed if
   any provider-backed request reports `total_tokens > 10,000`.
+- If the harness emits its bounded aggregate but exits nonzero because a gate
+  fails, continue to the existing validation step so it records the failed
+  gate, then upload that single aggregate with `if: always()`. A runtime failure
+  that emits no aggregate still fails immediately. No prompt, evidence, answer,
+  credential, or per-case data may be uploaded for either outcome.
 - Use the ignored local key for one bounded pre-push run only after the offline
   tests pass. Do not print the key, prompt, evidence, answer, tenant, case ID,
   correlation ID, or provider error body. Do not persist an
