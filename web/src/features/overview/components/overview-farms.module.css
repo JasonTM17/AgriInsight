@@ -348,6 +348,11 @@
   font-size: 0.78rem;
 }
 
+.farmTable td small.sourceNote {
+  display: block;
+  margin-top: 0.25rem;
+}
+
 .filterForm {
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) repeat(5, auto);
