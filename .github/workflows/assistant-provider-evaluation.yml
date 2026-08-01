@@ -13,6 +13,7 @@ concurrency:
 jobs:
   evaluate:
     name: Protected live-provider evaluation
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: assistant-provider-evaluation
@@ -22,8 +23,12 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - name: Install the locked evaluation dependencies
-        run: python -m pip install ".[dev]"
+          cache-dependency-path: requirements/assistant-provider-evaluation.lock
+      - name: Install hash-locked evaluation runtime dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check --only-binary=:all:
+          --no-deps --require-hashes
+          -r requirements/assistant-provider-evaluation.lock
       - name: Verify the exact checked-out source
         shell: bash
         run: |
@@ -89,6 +94,7 @@ jobs:
           citations = aggregate["citations"]
           refusals = aggregate["refusals"]
           usage = aggregate["usage"]
+          pricing = aggregate["pricing"]
 
           checks = (
               aggregate["source_sha"] == expected_sha,
@@ -104,6 +110,11 @@ jobs:
               refusals["precision"] == 1.0,
               usage["total_tokens"] <= 200_000,
               aggregate["provider_p95_completed_response_ms"] <= 12_000,
+              pricing["source_url"] == (
+                  "https://api-docs.deepseek.com/quick_start/pricing/"
+                  "?article_id=article_1779470751466_8"
+              ),
+              pricing["retrieved_on"] == "2026-08-01",
           )
           if not all(checks):
               raise SystemExit("assistant provider evaluation gates failed")
