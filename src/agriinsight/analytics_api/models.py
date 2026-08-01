@@ -36,6 +36,7 @@ from agriinsight.analytics_api.record_models import (
     QualityRemediationModel,
     QualityScoresModel,
     RiskAlertModel,
+    YieldForecastModel,
 )
 
 
@@ -146,6 +147,18 @@ class ForecastHealthModel(ApiModel):
         return self
 
 
+class YieldForecastHealthModel(ApiModel):
+    ready: int = Field(ge=0)
+    insufficient_history: int = Field(ge=0)
+    total: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def counters_match_total(self) -> "YieldForecastHealthModel":
+        if self.ready + self.insufficient_history != self.total:
+            raise ValueError("yield forecast health counters must equal total")
+        return self
+
+
 class InventoryPayload(ApiModel):
     abc: list[InventoryAbcModel] = Field(max_length=100)
     alerts: list[InventoryAlertModel] = Field(max_length=100)
@@ -153,6 +166,12 @@ class InventoryPayload(ApiModel):
     items: list[InventoryItemModel] = Field(max_length=100)
     page: PageModel
     summary: InventorySummaryModel
+
+
+class YieldForecastPayload(ApiModel):
+    forecast_health: YieldForecastHealthModel
+    items: list[YieldForecastModel] = Field(max_length=100)
+    page: PageModel
 
 
 class CropHealthPayload(ApiModel):

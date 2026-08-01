@@ -25,6 +25,7 @@ from agriinsight.analytics_api.routers import (
     farms,
     inventory,
     overview,
+    yield_forecast,
 )
 from agriinsight.analytics_api.settings import AnalyticsSettings
 from agriinsight.analytics_api.snapshot_cache import SnapshotCache
@@ -101,6 +102,7 @@ def create_app(
         catalog.router,
         overview.router,
         farms.router,
+        yield_forecast.router,
         inventory.router,
         crop_health.router,
         data_quality.router,

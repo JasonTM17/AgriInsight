@@ -31,6 +31,7 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         "/internal/v1/farms",
         "/internal/v1/inventory",
         "/internal/v1/overview",
+        "/internal/v1/yield-forecast",
         "/internal/v1/assistant/query",
     }
     assert set(contract["paths"]["/internal/v1/assistant/query"]) == {"post"}
@@ -54,6 +55,30 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
     ]
     assert expected_filters <= {item["name"] for item in overview_parameters}
     assert expected_filters <= {item["name"] for item in farm_parameters}
+    yield_parameters = contract["paths"]["/internal/v1/yield-forecast"][
+        "get"
+    ]["parameters"]
+    assert {item["name"] for item in yield_parameters} == {
+        "farm_code",
+        "field_code",
+        "crop_code",
+        "season_code",
+        "limit",
+        "offset",
+    }
+    assert all(
+        item["schema"].get("maxLength") == 64
+        for item in yield_parameters
+        if item["name"] in {"farm_code", "field_code", "crop_code", "season_code"}
+    )
+    assert all(
+        _non_null_variant(item["schema"])["pattern"] == "^[A-Z0-9][A-Z0-9_-]{0,63}$"
+        for item in yield_parameters
+        if item["name"] in {"farm_code", "field_code", "crop_code", "season_code"}
+    )
+    assert next(
+        item for item in yield_parameters if item["name"] == "limit"
+    )["schema"]["maximum"] == 100
     assert contract["components"]["securitySchemes"]["HTTPBearer"]["scheme"] == "bearer"
     schemas = contract["components"]["schemas"]
     record_schemas = {
@@ -145,6 +170,24 @@ def test_internal_openapi_is_get_only_typed_and_bounded() -> None:
         health["properties"][name]["minimum"] == 0
         for name in health["properties"]
     )
+    yield_payload = schemas["YieldForecastPayload"]
+    assert yield_payload["properties"]["items"]["maxItems"] == 100
+    assert yield_payload["properties"]["items"]["items"]["$ref"] == (
+        "#/components/schemas/YieldForecastModel"
+    )
+    yield_record = schemas["YieldForecastModel"]
+    assert yield_record["additionalProperties"] is False
+    assert yield_record["properties"]["forecastStatus"]["enum"] == [
+        "ready",
+        "insufficientHistory",
+    ]
+    assert yield_record["properties"]["expectedHarvestDate"]["format"] == "date"
+    yield_health = schemas["YieldForecastHealthModel"]
+    assert set(yield_health["properties"]) == {
+        "ready",
+        "insufficientHistory",
+        "total",
+    }
     abc = schemas["InventoryAbcModel"]["properties"]
     assert abc["valueSharePct"]["maximum"] == 100
     assert abc["cumulativeValueSharePct"]["maximum"] == 100

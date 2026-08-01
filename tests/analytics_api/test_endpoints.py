@@ -35,6 +35,32 @@ FORECAST_KEYS = {
     "forecastDaysOfSupply",
     "forecastSuggestedOrderQuantity",
 }
+YIELD_FORECAST_KEYS = {
+    "asOfDate",
+    "farmCode",
+    "fieldCode",
+    "seasonCode",
+    "cropCode",
+    "modelVersion",
+    "forecastStatus",
+    "forecastOriginDate",
+    "expectedHarvestDate",
+    "seasonAreaHa",
+    "targetYieldKg",
+    "historyStartAt",
+    "historyEndAt",
+    "historySeasons",
+    "backtestOrigins",
+    "backtestSeasons",
+    "forecastYieldKgPerHa",
+    "observedMinYieldKgPerHa",
+    "observedMaxYieldKgPerHa",
+    "forecastQuantityKg",
+    "observedMinQuantityKg",
+    "observedMaxQuantityKg",
+    "backtestMaeKgPerHa",
+    "backtestWapePct",
+}
 
 
 def test_all_read_endpoints_return_typed_bounded_envelopes(api_factory) -> None:
@@ -252,10 +278,164 @@ def test_inventory_response_cap_is_sanitized(api_factory, monkeypatch) -> None:
     assert "inventory_status" not in response.text
 
 
+def test_yield_forecast_is_scoped_strict_and_deterministically_sorted(
+    api_factory,
+) -> None:
+    app, client, spring = api_factory()
+    selected_farm = spring.farms[0].code
+    source = app.state.snapshot_cache.current().csv["yield_forecast"]
+    scoped = source.loc[source["farm_code"] == selected_farm].sort_values(
+        ["expected_harvest_date", "season_code"],
+        kind="stable",
+    )
+
+    with client:
+        response = client.get(
+            "/internal/v1/yield-forecast",
+            params={"farm_code": selected_farm, "limit": 1},
+            headers=HEADERS,
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    payload = body["payload"]
+    assert body["scope"]["appliedFilter"]["farmCode"] == selected_farm
+    assert payload["page"] == {
+        "hasMore": len(scoped) > 1,
+        "limit": 1,
+        "offset": 0,
+        "total": len(scoped),
+    }
+    assert payload["forecastHealth"] == {
+        "ready": int(scoped["forecast_status"].eq("ready").sum()),
+        "insufficientHistory": int(
+            scoped["forecast_status"].eq("insufficient_history").sum()
+        ),
+        "total": len(scoped),
+    }
+    assert len(payload["items"]) == min(1, len(scoped))
+    assert all(set(item) == YIELD_FORECAST_KEYS for item in payload["items"])
+    assert [item["seasonCode"] for item in payload["items"]] == list(
+        scoped["season_code"].head(1)
+    )
+    assert all(item["farmCode"] == selected_farm for item in payload["items"])
+    assert all(
+        item["forecastStatus"] in {"ready", "insufficientHistory"}
+        for item in payload["items"]
+    )
+
+
+def test_yield_forecast_canonical_filter_conflicts_and_page_bounds_fail_closed(
+    api_factory,
+) -> None:
+    app, client, spring = api_factory()
+    selected_farm = spring.farms[0].code
+    seasons = app.state.snapshot_cache.current().csv["cost_season"]
+    foreign_field = seasons.loc[
+        seasons["farm_code"] != selected_farm,
+        "field_code",
+    ].iloc[0]
+
+    with client:
+        conflict = client.get(
+            "/internal/v1/yield-forecast",
+            params={"farm_code": selected_farm, "field_code": foreign_field},
+            headers=HEADERS,
+        )
+        invalid_limit = client.get(
+            "/internal/v1/yield-forecast?limit=101",
+            headers=HEADERS,
+        )
+        invalid_offset = client.get(
+            "/internal/v1/yield-forecast?offset=10001",
+            headers=HEADERS,
+        )
+        lowercase_filter = client.get(
+            "/internal/v1/yield-forecast?farm_code=farm-001",
+            headers=HEADERS,
+        )
+
+    assert conflict.status_code == 422
+    assert conflict.json()["error"]["code"] == "analytics_filter_conflict"
+    assert invalid_limit.status_code == 422
+    assert invalid_offset.status_code == 422
+    assert lowercase_filter.status_code == 422
+
+
+def test_yield_forecast_farm_manager_scope_excludes_other_farms(api_factory) -> None:
+    app, client, spring = api_factory(
+        roles={"FARM_MANAGER"},
+        permissions={"FARM_READ"},
+    )
+    spring.farms = spring.farms[:1]
+    allowed_farm = spring.farms[0].code
+    source = app.state.snapshot_cache.current().csv["yield_forecast"]
+    outside_farm = source.loc[
+        source["farm_code"] != allowed_farm,
+        "farm_code",
+    ].iloc[0]
+
+    with client:
+        scoped = client.get("/internal/v1/yield-forecast", headers=HEADERS)
+        forbidden = client.get(
+            "/internal/v1/yield-forecast",
+            params={"farm_code": outside_farm},
+            headers=HEADERS,
+        )
+
+    assert scoped.status_code == 200, scoped.text
+    assert scoped.json()["scope"]["farmCodes"] == [allowed_farm]
+    assert {
+        item["farmCode"] for item in scoped.json()["payload"]["items"]
+    } <= {allowed_farm}
+    assert forbidden.status_code == 403
+    assert forbidden.json()["error"]["code"] == "farm_scope_forbidden"
+
+
+@pytest.mark.parametrize("invalid_row", ["duplicate", "foreign_relationship"])
+def test_yield_forecast_invalid_raw_rows_fail_before_public_shaping(
+    api_factory,
+    invalid_row,
+) -> None:
+    app, client, _spring = api_factory()
+    snapshot = app.state.snapshot_cache.current()
+    forecast = snapshot.csv["yield_forecast"]
+    if invalid_row == "duplicate":
+        snapshot.csv["yield_forecast"] = pd.concat(
+            [forecast, forecast.iloc[[0]]],
+            ignore_index=True,
+        )
+    else:
+        snapshot.csv["yield_forecast"] = forecast.copy()
+        snapshot.csv["yield_forecast"].loc[
+            forecast.index[0], "farm_code"
+        ] = "FARM-FOREIGN"
+
+    with client:
+        response = client.get("/internal/v1/yield-forecast", headers=HEADERS)
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "snapshot_contract_invalid"
+    assert "yield_forecast" not in response.text
+
+
+def test_yield_forecast_response_cap_is_sanitized(api_factory, monkeypatch) -> None:
+    _app, client, _spring = api_factory()
+    monkeypatch.setattr(response_bounds, "MAX_SERIALIZED_RESPONSE_BYTES", 1)
+
+    with client:
+        response = client.get("/internal/v1/yield-forecast", headers=HEADERS)
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "analytics_response_too_large"
+    assert "yield_forecast" not in response.text
+
+
 @pytest.mark.parametrize(
     "path",
     [
         "/internal/v1/farms?farm_code=FARM-FOREIGN",
+        "/internal/v1/yield-forecast?farm_code=FARM-FOREIGN",
         "/internal/v1/crop-health?farm_code=FARM-FOREIGN",
         "/internal/v1/inventory?warehouse_code=WH-FOREIGN",
     ],

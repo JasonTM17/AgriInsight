@@ -201,6 +201,31 @@
         "title": "AnalyticsEnvelope[ProcurementCostsPayload]",
         "type": "object"
       },
+      "AnalyticsEnvelope_YieldForecastPayload_": {
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessModel"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageModel"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/YieldForecastPayload"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeModel"
+          }
+        },
+        "required": [
+          "freshness",
+          "lineage",
+          "payload",
+          "scope"
+        ],
+        "title": "AnalyticsEnvelope[YieldForecastPayload]",
+        "type": "object"
+      },
       "AppliedFilterModel": {
         "additionalProperties": false,
         "properties": {
@@ -3215,6 +3240,289 @@
         ],
         "title": "ScopeModel",
         "type": "object"
+      },
+      "YieldForecastHealthModel": {
+        "additionalProperties": false,
+        "properties": {
+          "insufficientHistory": {
+            "minimum": 0.0,
+            "title": "Insufficienthistory",
+            "type": "integer"
+          },
+          "ready": {
+            "minimum": 0.0,
+            "title": "Ready",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ready",
+          "insufficientHistory",
+          "total"
+        ],
+        "title": "YieldForecastHealthModel",
+        "type": "object"
+      },
+      "YieldForecastModel": {
+        "additionalProperties": false,
+        "properties": {
+          "asOfDate": {
+            "format": "date",
+            "title": "Asofdate",
+            "type": "string"
+          },
+          "backtestMaeKgPerHa": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backtestmaekgperha"
+          },
+          "backtestOrigins": {
+            "minimum": 0.0,
+            "title": "Backtestorigins",
+            "type": "integer"
+          },
+          "backtestSeasons": {
+            "minimum": 0.0,
+            "title": "Backtestseasons",
+            "type": "integer"
+          },
+          "backtestWapePct": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backtestwapepct"
+          },
+          "cropCode": {
+            "title": "Cropcode",
+            "type": "string"
+          },
+          "expectedHarvestDate": {
+            "format": "date",
+            "title": "Expectedharvestdate",
+            "type": "string"
+          },
+          "farmCode": {
+            "title": "Farmcode",
+            "type": "string"
+          },
+          "fieldCode": {
+            "title": "Fieldcode",
+            "type": "string"
+          },
+          "forecastOriginDate": {
+            "format": "date",
+            "title": "Forecastorigindate",
+            "type": "string"
+          },
+          "forecastQuantityKg": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecastquantitykg"
+          },
+          "forecastStatus": {
+            "enum": [
+              "ready",
+              "insufficientHistory"
+            ],
+            "title": "Forecaststatus",
+            "type": "string"
+          },
+          "forecastYieldKgPerHa": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecastyieldkgperha"
+          },
+          "historyEndAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historyendat"
+          },
+          "historySeasons": {
+            "minimum": 0.0,
+            "title": "Historyseasons",
+            "type": "integer"
+          },
+          "historyStartAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historystartat"
+          },
+          "modelVersion": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Modelversion",
+            "type": "string"
+          },
+          "observedMaxQuantityKg": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observedmaxquantitykg"
+          },
+          "observedMaxYieldKgPerHa": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observedmaxyieldkgperha"
+          },
+          "observedMinQuantityKg": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observedminquantitykg"
+          },
+          "observedMinYieldKgPerHa": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observedminyieldkgperha"
+          },
+          "seasonAreaHa": {
+            "exclusiveMinimum": 0.0,
+            "title": "Seasonareaha",
+            "type": "number"
+          },
+          "seasonCode": {
+            "title": "Seasoncode",
+            "type": "string"
+          },
+          "targetYieldKg": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetyieldkg"
+          }
+        },
+        "required": [
+          "asOfDate",
+          "farmCode",
+          "fieldCode",
+          "seasonCode",
+          "cropCode",
+          "modelVersion",
+          "forecastStatus",
+          "forecastOriginDate",
+          "expectedHarvestDate",
+          "seasonAreaHa",
+          "targetYieldKg",
+          "historyStartAt",
+          "historyEndAt",
+          "historySeasons",
+          "backtestOrigins",
+          "backtestSeasons",
+          "forecastYieldKgPerHa",
+          "observedMinYieldKgPerHa",
+          "observedMaxYieldKgPerHa",
+          "forecastQuantityKg",
+          "observedMinQuantityKg",
+          "observedMaxQuantityKg",
+          "backtestMaeKgPerHa",
+          "backtestWapePct"
+        ],
+        "title": "YieldForecastModel",
+        "type": "object"
+      },
+      "YieldForecastPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "forecastHealth": {
+            "$ref": "#/components/schemas/YieldForecastHealthModel"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/YieldForecastModel"
+            },
+            "maxItems": 100,
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageModel"
+          }
+        },
+        "required": [
+          "forecastHealth",
+          "items",
+          "page"
+        ],
+        "title": "YieldForecastPayload",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -4676,6 +4984,194 @@
         "summary": "Get Overview",
         "tags": [
           "analytics-overview"
+        ]
+      }
+    },
+    "/internal/v1/yield-forecast": {
+      "get": {
+        "operationId": "getAnalyticsYieldForecast",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "farm_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "pattern": "^[A-Z0-9][A-Z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Farm Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "field_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "pattern": "^[A-Z0-9][A-Z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Field Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crop_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "pattern": "^[A-Z0-9][A-Z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crop Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "season_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "pattern": "^[A-Z0-9][A-Z0-9_-]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Season Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsEnvelope_YieldForecastPayload_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Yield Forecast",
+        "tags": [
+          "analytics-yield-forecast"
         ]
       }
     }
