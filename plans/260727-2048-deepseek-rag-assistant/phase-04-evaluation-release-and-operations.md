@@ -112,6 +112,89 @@ assistant configuration.
 - This is not hosted-provider or production SLO evidence. The open gates below
   remain unchanged.
 
+## Current bounded iteration: protected live-provider evaluation
+
+This iteration adds an explicit, approval-gated DeepSeek evaluation path. It
+must consume the provider key only from an ignored local `.env` or a protected
+GitHub Environment secret, emit one aggregate JSON document, and keep normal
+pull-request/main CI completely secretless.
+
+### Scope and file ownership
+
+| Path | Action | Purpose |
+|---|---|---|
+| `tests/fixtures/assistant-retrieval-evaluation-v1.json` | Modify | Add versioned `expectedAnswerConcepts` arrays (canonical lower-case phrases) for the existing 10 answerable cases without weakening the five refusal/cross-scope cases. |
+| `src/agriinsight/analytics_api/assistant_provider_evaluation.py` | Create | Validate and aggregate case outcomes, buffered completed-response latency, citations, token usage, and a dated V4 Flash price snapshot without retaining per-case content. |
+| `src/agriinsight/analytics_api/assistant_provider_evaluation_workload.py` | Create | Load the closed fixture, exercise the real `AssistantService`/retriever/client boundary, and keep questions, evidence, answers, case IDs, tenant IDs, correlation IDs, provider diagnostics, and credentials in memory only. |
+| `scripts/run-assistant-provider-evaluation.py` | Create | Fail-closed CLI that reads the key from the process environment and prints exactly one aggregate JSON line on success. |
+| `tests/analytics_api/test_assistant_provider_evaluation.py` | Create | Pure aggregation, validation, percentile, semantic-concept, citation, cost, and redaction tests. |
+| `tests/analytics_api/test_assistant_provider_evaluation_workload.py` | Create | Mock-transport integration proof for the exact 15-case service workload, two repetitions, concurrency three, and zero cross-scope/provider calls for refusal cases. |
+| `tests/analytics_api/test_assistant_provider_evaluation_cli.py` | Create | Prove missing credentials fail closed without leaking configuration or producing a false aggregate. |
+| `tests/test_assistant_provider_evaluation_workflow_contract.py` | Create | Prove the live workflow is manual-only, environment-protected, secret-scoped, aggregate-artifact-only, and absent from normal CI triggers. |
+| `.github/workflows/assistant-provider-evaluation.yml` | Create | Manual protected workflow that installs the locked project, runs the aggregate-only harness, enforces gates, and retains the result for seven days. |
+| `plans/260727-2048-deepseek-rag-assistant/reports/` | Modify later | Record the accepted local/hosted run IDs and aggregate metrics only after immutable evidence exists. |
+
+### Exact workload and acceptance criteria
+
+1. Reuse the versioned 15-case Vietnamese/English fixture: 10 answerable cases
+   and five unanswerable, ambiguous, prompt-injection, or cross-tenant cases.
+   Run two repetitions at concurrency three: exactly 30 service requests, 20
+   provider requests, and 10 local refusals. This stays at the existing 30 RPM
+   process limit and uses no browser-supplied provider controls.
+2. Answerable cases pass only when the buffered provider response is
+   `answered`, its citations are drawn only from the expected evidence IDs,
+   every canonical concept listed in `expectedAnswerConcepts` is present after
+   deterministic normalization, and the existing strict client has already
+   validated every factual sentence/citation marker.
+   Refusal cases pass only with `insufficient_evidence`, zero citations, zero
+   provider tokens, and no provider call.
+3. The aggregate must contain sample/provider/refusal counts, provider p50/p95
+   completed-response latency measured from generator dispatch until the full
+   non-streaming response body is consumed, answer/refusal/error counts,
+   semantic-case pass rate, citation precision, refusal precision,
+   cache-hit/cache-miss/output tokens, and a dated official V4 Flash pricing
+   snapshot in the provider's published currency. If a USD equivalent is
+   emitted, it must remain explicitly labeled as derived and carry its own FX
+   source/date alongside the pricing snapshot. The aggregate must contain no
+   per-case record or sensitive field.
+4. The protected evaluation gate requires zero provider errors, answerable
+   semantic-case pass rate `1.00` over the 20 provider-backed answerable
+   requests, citation precision `1.00`, refusal precision `1.00`, zero
+   provider calls for refusal cases, per-request `total_tokens <= 10,000` so
+   the existing reservation ceiling remains enforceable, and provider p95
+   completed response `<= 12,000 ms`. Non-streaming V1 exposes no token-level
+   TTFB metric, so the workflow must not invent or label one.
+5. The workflow is `workflow_dispatch` only, uses the
+   `assistant-provider-evaluation` GitHub Environment, receives only
+   `AGRIINSIGHT_LLM_API_KEY` for the evaluation step, uploads only the aggregate
+   JSON artifact, and never passes the secret to normal CI, Docker builds, PR
+   artifacts, screenshots, logs, or release images.
+6. Hosted acceptance requires a protected-environment required reviewer,
+   branch policy for `main`, a successful exact-head normal CI run, and a
+   successful manual evaluation run. The exact normal-CI SHA, the evaluated
+   workflow checkout SHA, and the manual evaluation artifact SHA must match
+   before any follow-up evidence commit is accepted. Provider-account
+   spend-alert ownership and a production telemetry-retention owner remain
+   external promotion gates; repository evidence must not claim either is
+   configured without proof.
+
+### Validation and rollback
+
+- Run pure evaluator tests first, then mock workload/CLI/workflow-contract
+  tests, the existing assistant suites, and the full Python gate. Review the
+  aggregate output with an explicit sensitive-token denylist and fail closed if
+  any provider-backed request reports `total_tokens > 10,000`.
+- Use the ignored local key for one bounded pre-push run only after the offline
+  tests pass. Do not print the key, prompt, evidence, answer, tenant, case ID,
+  correlation ID, or provider error body.
+- Merge the disabled/manual tooling only after normal CI and security review.
+  Configure the protected environment secret out of band, then run the
+  workflow on exact `main` and record immutable evidence in a follow-up docs
+  commit.
+- Rollback is deletion/disablement of the manual workflow and evaluation-only
+  modules. No database schema, public API, web contract, release image default,
+  or assistant runtime flag changes in this iteration.
+
 ## Release gates
 
 ### Verified release evidence
