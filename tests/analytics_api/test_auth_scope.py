@@ -32,6 +32,7 @@ def _principal(role: str, *permissions: str) -> Principal:
             ("FARM_READ", "COST_READ"),
             True,
         ),
+        ("TENANT_ADMIN", AnalyticsArea.FARMS, ("FARM_READ",), True),
         ("FARM_MANAGER", AnalyticsArea.FARMS, ("FARM_READ",), False),
         (
             "INVENTORY_MANAGER",

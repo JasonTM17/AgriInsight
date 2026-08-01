@@ -249,6 +249,55 @@ class InventorySummaryModel(RecordModel):
     critical_alerts: int
 
 
+class YieldForecastModel(RecordModel):
+    as_of_date: date
+    farm_code: str
+    field_code: str
+    season_code: str
+    crop_code: str
+    model_version: str = Field(min_length=1, max_length=64)
+    forecast_status: Literal["ready", "insufficientHistory"]
+    forecast_origin_date: date
+    expected_harvest_date: date
+    season_area_ha: FiniteFloat = Field(gt=0)
+    target_yield_kg: FiniteFloat | None = Field(ge=0)
+    history_start_at: datetime | None
+    history_end_at: datetime | None
+    history_seasons: int = Field(ge=0)
+    backtest_origins: int = Field(ge=0)
+    backtest_seasons: int = Field(ge=0)
+    forecast_yield_kg_per_ha: FiniteFloat | None = Field(ge=0)
+    observed_min_yield_kg_per_ha: FiniteFloat | None = Field(ge=0)
+    observed_max_yield_kg_per_ha: FiniteFloat | None = Field(ge=0)
+    forecast_quantity_kg: FiniteFloat | None = Field(ge=0)
+    observed_min_quantity_kg: FiniteFloat | None = Field(ge=0)
+    observed_max_quantity_kg: FiniteFloat | None = Field(ge=0)
+    backtest_mae_kg_per_ha: FiniteFloat | None = Field(ge=0)
+    backtest_wape_pct: FiniteFloat | None = Field(ge=0)
+
+    @model_validator(mode="after")
+    def status_matches_evidence(self) -> "YieldForecastModel":
+        forecast_evidence = (
+            self.forecast_yield_kg_per_ha,
+            self.observed_min_yield_kg_per_ha,
+            self.observed_max_yield_kg_per_ha,
+            self.forecast_quantity_kg,
+            self.observed_min_quantity_kg,
+            self.observed_max_quantity_kg,
+            self.backtest_mae_kg_per_ha,
+            self.backtest_wape_pct,
+        )
+        if self.forecast_status == "ready" and any(
+            value is None for value in forecast_evidence
+        ):
+            raise ValueError("ready forecast evidence must be present")
+        if self.forecast_status == "insufficientHistory" and any(
+            value is not None for value in forecast_evidence
+        ):
+            raise ValueError("insufficient-history forecast evidence must be null")
+        return self
+
+
 class CropHealthAlertModel(RecordModel):
     farm_code: str
     farm_name: str
