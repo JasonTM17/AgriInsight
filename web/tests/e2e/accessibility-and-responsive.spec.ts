@@ -99,6 +99,21 @@ async function expectResponsive(page: Page, route: string) {
   }
 }
 
+async function expectFarmDetailYieldEvidence(page: Page): Promise<void> {
+  const panel = page.locator('section[aria-labelledby="yield-forecast-title"]');
+  const evidenceTable = panel.getByRole("region", {
+    name: "Bảng bằng chứng dự báo sản lượng có thể cuộn"
+  });
+  await expect(panel).toBeVisible();
+  await expect(evidenceTable).toBeVisible();
+  await expect(evidenceTable.locator("tbody tr").first()).toBeVisible();
+  await evidenceTable.focus();
+  await expect(evidenceTable).toBeFocused();
+  const disclosure = panel.locator("details").first();
+  await disclosure.locator("summary").focus();
+  await expect(disclosure.locator("summary")).toBeFocused();
+}
+
 test("@quality executive routes pass WCAG and responsive gates", async ({ page }) => {
   test.setTimeout(240_000);
   await loginWithRealOidc(page, "executive", "/overview");
@@ -111,6 +126,26 @@ test("@quality executive routes pass WCAG and responsive gates", async ({ page }
     await expectAccessible(page, route);
     await expectResponsive(page, route);
   }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const farmsResponse = await page.goto("/farms");
+  expect(farmsResponse?.status(), "desktop GET /farms for detail link").toBe(200);
+  const farmHref = await page.locator('main a[href^="/farms/"]').first().getAttribute("href");
+  expect(farmHref).toMatch(/^\/farms\/[0-9a-f-]{36}(?:\?.*)?$/);
+  await expectAccessible(page, farmHref!);
+  await expectResponsive(page, farmHref!);
+
+  // A 720px layout viewport is the effective width of the 1440px desktop
+  // view at 200% browser zoom; the evidence must remain usable at that width.
+  await page.setViewportSize({ width: 720, height: 450 });
+  const zoomResponse = await page.goto(farmHref!);
+  expect(zoomResponse?.status(), "200% zoom-equivalent farm detail GET").toBe(200);
+  await expectFarmDetailYieldEvidence(page);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const reducedMotionResponse = await page.goto(farmHref!);
+  expect(reducedMotionResponse?.status(), "reduced-motion farm detail GET").toBe(200);
+  await expectFarmDetailYieldEvidence(page);
 });
 
 test("@quality analyst data quality passes WCAG and responsive gates", async ({

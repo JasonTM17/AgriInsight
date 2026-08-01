@@ -67,6 +67,24 @@ test("@overview real executive can drill from overview to a scoped farm", async 
   await expect(page.getByRole("heading", { name: "Trạng thái hiện hành" })).toBeVisible();
   await expect(page.getByText("Mã nông trại")).toBeVisible();
   await expectReviewedVisual(page, "farm-performance.webp");
+  const yieldForecastPanel = page.locator(
+    'section[aria-labelledby="yield-forecast-title"]'
+  );
+  await expect(yieldForecastPanel).toBeVisible();
+  await expect(
+    yieldForecastPanel.getByRole("heading", {
+      name: "Dự báo sản lượng theo mùa vụ"
+    })
+  ).toBeVisible();
+  await expect(
+    yieldForecastPanel.getByRole("region", {
+      name: "Bảng bằng chứng dự báo sản lượng có thể cuộn"
+    })
+  ).toBeVisible();
+  const firstForecastEvidence = yieldForecastPanel.locator("details").first();
+  await expect(firstForecastEvidence).toBeVisible();
+  await firstForecastEvidence.locator("summary").click();
+  await expect(firstForecastEvidence).toHaveAttribute("open", "");
   await expectNoCspViolations(page);
 });
 
