@@ -37,8 +37,15 @@ async function captureViewport(page: Page, directory: string, name: string): Pro
 }
 
 async function alignPanelAtViewportTop(page: Page, panel: Locator): Promise<void> {
-  await panel.evaluate((element) => element.scrollIntoView({ block: "start", inline: "nearest" }));
-  await page.evaluate(() => window.scrollBy(0, -32));
+  const expectedScrollY = await panel.evaluate((element) => {
+    const panelTop = window.scrollY + element.getBoundingClientRect().top;
+    const targetScrollY = Math.max(0, panelTop - 32);
+    window.scrollTo(0, targetScrollY);
+    return Math.round(targetScrollY);
+  });
+  await expect
+    .poll(() => page.evaluate(() => ({ x: Math.round(window.scrollX), y: Math.round(window.scrollY) })))
+    .toEqual({ x: 0, y: expectedScrollY });
 }
 
 test("@capture yield forecast evidence", async ({ page }) => {
