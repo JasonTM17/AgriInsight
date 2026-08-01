@@ -1,0 +1,117 @@
+name: Assistant provider evaluation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assistant-provider-evaluation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Protected live-provider evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: assistant-provider-evaluation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install the locked evaluation dependencies
+        run: python -m pip install ".[dev]"
+      - name: Verify the exact checked-out source
+        shell: bash
+        run: |
+          set -euo pipefail
+          checked_out_sha="$(git rev-parse HEAD)"
+          test "$checked_out_sha" = "$GITHUB_SHA"
+      - name: Run the bounded provider evaluation
+        shell: bash
+        env:
+          AGRIINSIGHT_LLM_API_KEY: ${{ secrets.AGRIINSIGHT_LLM_API_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          aggregate_path="$RUNNER_TEMP/assistant-provider-evaluation.json"
+          python scripts/run-assistant-provider-evaluation.py \
+            --source-sha "$GITHUB_SHA" \
+            --repetitions 2 \
+            --concurrency 3 \
+            > "$aggregate_path"
+          test -s "$aggregate_path"
+      - name: Validate the aggregate and protected gates
+        shell: bash
+        env:
+          AGRIINSIGHT_EVALUATION_AGGREGATE: ${{ runner.temp }}/assistant-provider-evaluation.json
+          AGRIINSIGHT_EVALUATION_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          aggregate_path = Path(os.environ["AGRIINSIGHT_EVALUATION_AGGREGATE"])
+          with aggregate_path.open(encoding="utf-8") as aggregate_file:
+              aggregate = json.load(aggregate_file)
+
+          expected_keys = {
+              "source_sha",
+              "fixture_version",
+              "repetitions",
+              "concurrency",
+              "sample_count",
+              "provider_expected_count",
+              "provider_call_count",
+              "refusal_expected_count",
+              "provider_p50_completed_response_ms",
+              "provider_p95_completed_response_ms",
+              "outcome_counts",
+              "closed_corpus",
+              "citations",
+              "refusals",
+              "usage",
+              "pricing",
+              "estimated_cost_usd",
+              "maximum_possible_cost_usd",
+              "gates",
+          }
+          if set(aggregate) != expected_keys:
+              raise SystemExit("assistant provider evaluation schema mismatch")
+
+          expected_sha = os.environ["AGRIINSIGHT_EVALUATION_SOURCE_SHA"]
+          closed_corpus = aggregate["closed_corpus"]
+          citations = aggregate["citations"]
+          refusals = aggregate["refusals"]
+          usage = aggregate["usage"]
+
+          checks = (
+              aggregate["source_sha"] == expected_sha,
+              aggregate["repetitions"] == 2,
+              aggregate["concurrency"] == 3,
+              aggregate["sample_count"] == 30,
+              aggregate["provider_expected_count"] == 20,
+              aggregate["provider_call_count"] == 20,
+              aggregate["refusal_expected_count"] == 10,
+              aggregate["gates"]["passed"] is True,
+              closed_corpus["pass_rate"] == 1.0,
+              citations["precision"] == 1.0,
+              refusals["precision"] == 1.0,
+              usage["total_tokens"] <= 200_000,
+              aggregate["provider_p95_completed_response_ms"] <= 12_000,
+          )
+          if not all(checks):
+              raise SystemExit("assistant provider evaluation gates failed")
+          PY
+      - name: Upload the aggregate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: assistant-provider-evaluation-${{ github.sha }}
+          path: ${{ runner.temp }}/assistant-provider-evaluation.json
+          if-no-files-found: error
+          retention-days: 7
