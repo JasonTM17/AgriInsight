@@ -113,11 +113,16 @@ function Get-MediaManifestEntry {
     $isMagickCommand = (
         [IO.Path]::GetFileNameWithoutExtension($ImageIdentifyPath) -ieq "magick"
     )
-    $metadata = if ($isMagickCommand) {
-        @(& $ImageIdentifyPath identify @identifyArguments)
-    } else {
-        @(& $ImageIdentifyPath @identifyArguments)
-    }
+    # Preserve a collection when ImageMagick reports one image. The `if`
+    # expression otherwise unwraps a single string under StrictMode and makes
+    # the required Count check unavailable on Linux ImageMagick 6.
+    $metadata = @(
+        if ($isMagickCommand) {
+            & $ImageIdentifyPath identify @identifyArguments
+        } else {
+            & $ImageIdentifyPath @identifyArguments
+        }
+    )
     if ($LASTEXITCODE -ne 0 -or $metadata.Count -eq 0) {
         throw "Could not inspect media dimensions: $Path"
     }
