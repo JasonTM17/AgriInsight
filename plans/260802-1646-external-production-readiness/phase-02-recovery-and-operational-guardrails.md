@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: Recovery and operational guardrails
-status: in-progress
+status: completed
 priority: P1
 effort: 2-3d
 dependencies: []
@@ -64,10 +64,10 @@ not emulated by the local single-node Compose profile.
 
 ## Success Criteria
 
-- [ ] A V30 (or newer) clean-target restore report is reproducible and linked
+- [x] A V30 (or newer) clean-target restore report is reproducible and linked
   to its checksum-verified backup.
-- [ ] The drill refuses unsafe targets and retains failed targets for diagnosis.
-- [ ] Production remains NO-GO until off-host encryption, RPO/RTO, retention,
+- [x] The drill refuses unsafe targets and retains failed targets for diagnosis.
+- [x] Production remains NO-GO until off-host encryption, RPO/RTO, retention,
   restore owner, and recurring schedule are approved.
 
 ## Risk Assessment
