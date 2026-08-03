@@ -16,6 +16,15 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RESTORE_DRILL = PROJECT_ROOT / "scripts" / "run-backend-restore-drill.ps1"
 RESTORE = PROJECT_ROOT / "scripts" / "restore-backend-postgres.ps1"
+BACKUP = PROJECT_ROOT / "scripts" / "backup-backend-postgres.ps1"
+BACKEND_RUNNER = PROJECT_ROOT / "scripts" / "run-backend-tests.ps1"
+HOSTED_DRILL = PROJECT_ROOT / "scripts" / "run-hosted-backend-restore-drill.ps1"
+HOSTED_CONTAINER_HELPERS = (
+    PROJECT_ROOT / "scripts" / "hosted-recovery-container-helpers.psm1"
+)
+RECOVERY_RUNTIME_HELPERS = (
+    PROJECT_ROOT / "scripts" / "recovery-runtime-helpers.psm1"
+)
 POWERSHELL = (
     shutil.which("powershell.exe")
     or shutil.which("powershell")
@@ -247,7 +256,7 @@ def test_restore_drill_validates_current_schema_before_it_can_be_run() -> None:
     assert "[int] $MinimumSchemaVersion = 30" in drill
     assert "Run mode requires -ConfirmRestoreDrill." in drill
     assert "Run mode requires -RestoreDrillScope local-or-staging." in drill
-    assert "-RestoreDrillScope $RestoreDrillScope" in drill
+    assert '"-RestoreDrillScope", $RestoreDrillScope' in drill
     assert 'Join-Path $PSScriptRoot "postgres-backup-integrity-helpers.psm1"' in drill
     assert "Get-Sha256Hex -Path $source" in drill
     assert "Source backup metadata schema is below the requested minimum." in drill
@@ -256,6 +265,64 @@ def test_restore_drill_validates_current_schema_before_it_can_be_run() -> None:
     assert 'restored_flyway_schema_version' in drill
     assert 'role_and_rls_gate' in drill
     assert 'RESTORE_DRILL status=PASS mode=$Mode scope=local-or-staging' in drill
+
+
+def test_recovery_wrappers_require_explicit_hosted_mode_without_weakening_local_guards() -> None:
+    helper = RECOVERY_RUNTIME_HELPERS.read_text(encoding="utf-8")
+    backup = BACKUP.read_text(encoding="utf-8")
+    restore = RESTORE.read_text(encoding="utf-8")
+    drill = RESTORE_DRILL.read_text(encoding="utf-8")
+    backend_runner = BACKEND_RUNNER.read_text(encoding="utf-8")
+
+    assert "function Assert-GitHubHostedRecoveryRunner" in helper
+    assert 'RUNNER_ENVIRONMENT -cne "github-hosted"' in helper
+    assert 'RUNNER_OS -cne "Linux"' in helper
+    assert "check-hosted-ci-disk.ps1" in helper
+    assert "check-workspace-disk.ps1" in helper
+
+    for source in (backup, restore, drill, backend_runner):
+        assert "[switch]$HostedCi" in source or "[switch] $HostedCi" in source
+
+    assert "Invoke-RecoveryDiskGuard" in backup
+    assert "Invoke-RecoveryDiskGuard" in restore
+    assert "Invoke-RecoveryDiskGuard" in backend_runner
+    assert 'if ($HostedCi) { $restoreArguments += "-HostedCi" }' in drill
+    assert 'if ($HostedCi) { $backendArguments += "-HostedCi" }' in restore
+    assert 'if ($isWindowsHost) { "mvnw.cmd" } else { "mvnw" }' in backend_runner
+
+
+def test_hosted_restore_harness_uses_two_owned_postgres_18_clusters_and_safe_evidence() -> None:
+    harness = HOSTED_DRILL.read_text(encoding="utf-8")
+    container_helpers = HOSTED_CONTAINER_HELPERS.read_text(encoding="utf-8")
+    implementation = harness + container_helpers
+
+    assert "Assert-GitHubHostedRecoveryRunner" in harness
+    assert "postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40" in harness
+    assert 'sourceDatabase = "agriinsight"' in harness
+    assert 'targetDatabase = "agriinsight_restore_ci"' in harness
+    assert '"--publish", "127.0.0.1::5432"' in container_helpers
+    assert "farm-operations-fixtures.sql" in harness
+    assert "backup-backend-postgres.ps1" in harness
+    assert "run-backend-restore-drill.ps1" in harness
+    assert '"-MinimumSchemaVersion", "30"' in harness
+    assert '"-Mode", "Validate"' in harness
+    assert '"-Mode", "Run"' in harness
+    assert '"-RestoreDrillScope", "local-or-staging"' in harness
+    assert '"-ConfirmRestoreDrill"' in harness
+    assert "role_and_rls_gate" in harness
+    assert "runtime_tenant_rls_smoke" in harness
+    assert "source_sha256" in harness
+    assert "restored_flyway_schema_version" in harness
+    assert "restored_counts.tenants" in harness
+    assert 'docker rm --force $containerId' in container_helpers
+    assert "docker logs" not in implementation
+    assert "runtimeRootCreatedByThisRun" in harness
+    assert "if ($runtimeRootCreatedByThisRun" in harness
+    assert '"com.agriinsight.owner"' in container_helpers
+    assert 'docker ps --all --no-trunc --filter "id=$containerId"' in container_helpers
+    assert "docker system prune" not in implementation
+    assert "docker volume prune" not in implementation
+    assert "--clean" not in implementation.lower()
 
 
 def test_restore_drill_validate_mode_accepts_a_checksum_verified_v30_fixture() -> None:

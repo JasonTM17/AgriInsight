@@ -123,6 +123,17 @@ jobs:
           }
           Remove-Item -Path Env:MAVEN_ARGS
           ./scripts/run-realtime-e2e-tests.ps1 -HostedCi
+      - name: Upload safe recovery drill evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: recovery-drill-${{ github.sha }}
+          path: |
+            artifacts/recovery-evidence/**/*.metadata.json
+            artifacts/recovery-evidence/**/*.restore-*.json
+            artifacts/recovery-evidence/**/summary.json
+          if-no-files-found: error
+          retention-days: 7
 
   browser-e2e:
     name: Real seven-persona browser gate

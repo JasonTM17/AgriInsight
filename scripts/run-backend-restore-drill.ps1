@@ -12,7 +12,9 @@ param(
     [ValidateSet("local-or-staging")]
     [string] $RestoreDrillScope,
 
-    [switch] $ConfirmRestoreDrill
+    [switch] $ConfirmRestoreDrill,
+
+    [switch] $HostedCi
 )
 
 Set-StrictMode -Version 3.0
@@ -21,6 +23,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $restoreScript = Join-Path $PSScriptRoot "restore-backend-postgres.ps1"
 Import-Module (Join-Path $PSScriptRoot "postgres-backup-integrity-helpers.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "recovery-runtime-helpers.psm1") -Force
 
 function Resolve-ExistingDDriveFile {
     param([string] $Path)
@@ -113,7 +116,14 @@ if ([string]::IsNullOrWhiteSpace($RestoreDrillScope)) {
 }
 
 $startedAt = [DateTimeOffset]::UtcNow
-& powershell -NoProfile -ExecutionPolicy Bypass -File $restoreScript -BackupFile $source -RestoreDrillScope $RestoreDrillScope -MinimumSchemaVersion $MinimumSchemaVersion
+$powerShellCommand = Get-RecoveryPowerShellCommand
+$restoreArguments = @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $restoreScript,
+    "-BackupFile", $source, "-RestoreDrillScope", $RestoreDrillScope,
+    "-MinimumSchemaVersion", $MinimumSchemaVersion
+)
+if ($HostedCi) { $restoreArguments += "-HostedCi" }
+& $powerShellCommand @restoreArguments
 if ($LASTEXITCODE -ne 0) {
     throw "Restore failed; the target is retained for diagnosis."
 }

@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param(
+    [switch]$HostedCi,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$MavenArguments
 )
@@ -7,9 +8,9 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $backendRoot = Join-Path $projectRoot "backend"
-$diskGuard = Join-Path $projectRoot "scripts\check-workspace-disk.ps1"
+Import-Module (Join-Path $projectRoot "scripts\recovery-runtime-helpers.psm1") -Force
 
-function Resolve-DDriveOutputPath {
+function Resolve-GuardedOutputPath {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Path,
@@ -23,18 +24,23 @@ function Resolve-DDriveOutputPath {
         Join-Path $projectRoot $Path
     }
     $resolved = [System.IO.Path]::GetFullPath($candidate)
-    if ([System.IO.Path]::GetPathRoot($resolved) -ne "D:\") {
+    if ($HostedCi) {
+        $runnerTemp = Assert-GitHubHostedRecoveryRunner
+        $runnerPrefix = $runnerTemp.TrimEnd(
+            [System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar
+        ) + [System.IO.Path]::DirectorySeparatorChar
+        if (-not $resolved.StartsWith($runnerPrefix, [System.StringComparison]::Ordinal)) {
+            throw "$Name must resolve inside RUNNER_TEMP for hosted recovery; received $resolved."
+        }
+    }
+    elseif ([System.IO.Path]::GetPathRoot($resolved) -ne "D:\") {
         throw "$Name must resolve to the D drive; received $resolved."
     }
     return $resolved
 }
 
-$diskGuardOutput = & powershell -ExecutionPolicy Bypass -File $diskGuard 2>&1
-$diskGuardExitCode = $LASTEXITCODE
-$diskGuardOutput | Write-Output
-if ($diskGuardExitCode -ne 0 -or ($diskGuardOutput -join "`n") -notmatch "DISK_GUARD overall=PASS") {
-    throw "Disk guard is not PASS; Maven was not started."
-}
+Invoke-RecoveryDiskGuard -ProjectRoot $projectRoot -HostedCi:$HostedCi
 
 if (-not [string]::IsNullOrWhiteSpace($env:MAVEN_ARGS) -or
         -not [string]::IsNullOrWhiteSpace($env:MAVEN_CONFIG) -or
@@ -53,20 +59,25 @@ if ($hiddenMavenOptions -match $blockedOptionPattern) {
     throw "MAVEN_OPTS and JAVA_TOOL_OPTIONS contain a blocked test-skip or output-redirection option."
 }
 
+$defaultRuntimeRoot = if ($HostedCi) {
+    Join-Path (Assert-GitHubHostedRecoveryRunner) "agriinsight-backend-runner"
+} else {
+    Join-Path $projectRoot "artifacts\_tmp"
+}
 $repoLocal = if ($env:MAVEN_REPO_LOCAL) {
     $env:MAVEN_REPO_LOCAL
 } else {
-    Join-Path $projectRoot "artifacts\_tmp\m2-repository"
+    Join-Path $defaultRuntimeRoot "m2-repository"
 }
 $javaTemp = if ($env:MAVEN_TEMP_DIR) {
     $env:MAVEN_TEMP_DIR
 } else {
-    Join-Path $projectRoot "artifacts\_tmp\java-tmp"
+    Join-Path $defaultRuntimeRoot "java-tmp"
 }
 $mavenUserHome = if ($env:MAVEN_USER_HOME) {
     $env:MAVEN_USER_HOME
 } else {
-    Join-Path $projectRoot "artifacts\_tmp\maven-user-home"
+    Join-Path $defaultRuntimeRoot "maven-user-home"
 }
 
 $arguments = @($MavenArguments)
@@ -122,9 +133,9 @@ if ($verifyRequested) {
     }
 }
 
-$repoLocal = Resolve-DDriveOutputPath -Path $repoLocal -Name "MAVEN_REPO_LOCAL"
-$javaTemp = Resolve-DDriveOutputPath -Path $javaTemp -Name "MAVEN_TEMP_DIR"
-$mavenUserHome = Resolve-DDriveOutputPath -Path $mavenUserHome -Name "MAVEN_USER_HOME"
+$repoLocal = Resolve-GuardedOutputPath -Path $repoLocal -Name "MAVEN_REPO_LOCAL"
+$javaTemp = Resolve-GuardedOutputPath -Path $javaTemp -Name "MAVEN_TEMP_DIR"
+$mavenUserHome = Resolve-GuardedOutputPath -Path $mavenUserHome -Name "MAVEN_USER_HOME"
 
 New-Item -ItemType Directory -Force -Path $repoLocal, $javaTemp, $mavenUserHome | Out-Null
 $env:MAVEN_USER_HOME = $mavenUserHome
@@ -132,7 +143,9 @@ $env:TEMP = $javaTemp
 $env:TMP = $javaTemp
 $env:MAVEN_OPTS = "$($env:MAVEN_OPTS) -Djava.io.tmpdir=$javaTemp".Trim()
 $env:JAVA_TOOL_OPTIONS = "$($env:JAVA_TOOL_OPTIONS) -Djava.io.tmpdir=$javaTemp".Trim()
-$mavenWrapper = Join-Path $backendRoot "mvnw.cmd"
+$isWindowsHost = [System.IO.Path]::DirectorySeparatorChar -eq '\'
+$mavenWrapperName = if ($isWindowsHost) { "mvnw.cmd" } else { "mvnw" }
+$mavenWrapper = Join-Path $backendRoot $mavenWrapperName
 if (-not (Test-Path -LiteralPath $mavenWrapper)) {
     throw "Maven wrapper not found at $mavenWrapper. Generate it before running backend tests."
 }

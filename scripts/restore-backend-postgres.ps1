@@ -6,17 +6,18 @@ param(
     [ValidateSet("local-or-staging")]
     [string]$RestoreDrillScope,
     [ValidateRange(30, 10000)]
-    [int]$MinimumSchemaVersion = 30
+    [int]$MinimumSchemaVersion = 30,
+    [switch]$HostedCi
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$diskGuard = Join-Path $PSScriptRoot "check-workspace-disk.ps1"
 $backendRunner = Join-Path $PSScriptRoot "run-backend-tests.ps1"
 $roleBootstrap = Join-Path $projectRoot "backend\ops\postgres\bootstrap-roles.sql"
 Import-Module (Join-Path $PSScriptRoot "postgres-backup-integrity-helpers.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "recovery-runtime-helpers.psm1") -Force
 
 function Get-RequiredEnvironmentValue {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -94,12 +95,7 @@ if ([string]::IsNullOrWhiteSpace($sourceDatabaseName)) {
     throw "Backup metadata database_name is required."
 }
 
-$guardOutput = & powershell -ExecutionPolicy Bypass -File $diskGuard 2>&1
-$guardExitCode = $LASTEXITCODE
-$guardOutput | Write-Output
-if ($guardExitCode -ne 0 -or ($guardOutput -join "`n") -notmatch "DISK_GUARD overall=PASS") {
-    throw "Disk guard is not PASS; restore was not started."
-}
+Invoke-RecoveryDiskGuard -ProjectRoot $projectRoot -HostedCi:$HostedCi
 
 $psql = Get-Command psql -ErrorAction SilentlyContinue
 $pgRestore = Get-Command pg_restore -ErrorAction SilentlyContinue
@@ -251,7 +247,11 @@ try {
     $env:FLYWAY_URL = "jdbc:postgresql://${databaseHost}:${databasePort}/${databaseName}"
     $env:FLYWAY_USER = $migrationUsername
     $env:FLYWAY_PASSWORD = $migrationPassword
-    & powershell -ExecutionPolicy Bypass -File $backendRunner "flyway:validate"
+    $powerShellCommand = Get-RecoveryPowerShellCommand
+    $backendArguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $backendRunner)
+    if ($HostedCi) { $backendArguments += "-HostedCi" }
+    $backendArguments += "flyway:validate"
+    & $powerShellCommand @backendArguments
     if ($LASTEXITCODE -ne 0) {
         throw "Flyway validation failed after restore."
     }

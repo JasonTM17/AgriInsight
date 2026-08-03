@@ -10,11 +10,12 @@ Older v2 manifests are rejected, and placeholder text such as
 `UNASSIGNED — NO-GO` is a documentation-only marker for unresolved control
 ownership. It is never valid evidence.
 
-The latest repository/workstation snapshot is
-[the portfolio readiness snapshot](../plans/260802-1646-external-production-readiness/reports/260803-1043-portfolio-readiness-snapshot.md).
-It records the current missing production environment, source protection,
-OCI license-label approval, target recovery prerequisites, owners, and deadlines without
-fabricating any of them.
+The latest repository/workstation snapshot is the
+[current production GO/NO-GO audit](../plans/260802-1646-external-production-readiness/reports/pm-260803-1845-production-go-no-go-current-head.md).
+It records the now-enforced `main` protection, green current source baseline,
+MIT source license, and the still-missing production environment, OCI
+license-label approval, target recovery prerequisites, owners, and deadlines
+without fabricating any of them.
 
 ## Verified internal baseline
 

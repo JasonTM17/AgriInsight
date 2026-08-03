@@ -1,15 +1,16 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [string]$BackupFile
+    [string]$BackupFile,
+    [switch]$HostedCi
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$diskGuard = Join-Path $PSScriptRoot "check-workspace-disk.ps1"
 Import-Module (Join-Path $PSScriptRoot "postgres-backup-integrity-helpers.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "recovery-runtime-helpers.psm1") -Force
 
 function Get-RequiredEnvironmentValue {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -51,12 +52,7 @@ function Invoke-ScalarQuery {
     return ($output -join "`n").Trim()
 }
 
-$guardOutput = & powershell -ExecutionPolicy Bypass -File $diskGuard 2>&1
-$guardExitCode = $LASTEXITCODE
-$guardOutput | Write-Output
-if ($guardExitCode -ne 0 -or ($guardOutput -join "`n") -notmatch "DISK_GUARD overall=PASS") {
-    throw "Disk guard is not PASS; backup was not started."
-}
+Invoke-RecoveryDiskGuard -ProjectRoot $projectRoot -HostedCi:$HostedCi
 
 $pgDump = Get-Command pg_dump -ErrorAction SilentlyContinue
 $psql = Get-Command psql -ErrorAction SilentlyContinue

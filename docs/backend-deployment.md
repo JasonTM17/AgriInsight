@@ -157,6 +157,23 @@ schema evidence, and ties the new report to that exact backup. It does not
 establish a production RPO/RTO: production remains blocked until its off-host
 encryption, retention, owner, schedule, and objectives are approved.
 
+Pull-request CI also exercises this exact wrapper path in an isolated
+GitHub-hosted Linux runner. `scripts/run-hosted-backend-restore-drill.ps1`
+creates two disposable PostgreSQL 18 containers owned by the workflow run,
+migrates and seeds the source through V30 or newer, writes a checksum-linked
+custom-format backup, and restores it into a separately named empty target.
+The job uploads only the sidecar metadata, restore report, and compact summary
+under `recovery-drill-<commit>`; it never uploads raw database dumps, container
+logs, environment files, or credentials. The harness is restricted to an explicit
+`-HostedCi` invocation on a GitHub-hosted Linux runner and removes only
+containers carrying the current run identity.
+
+This hosted drill demonstrates repeatable local/staging recovery mechanics on the
+tested commit. Its elapsed time is CI evidence, not an approved production RTO,
+and the disposable runner is not an encrypted off-host backup destination.
+Production remains NO-GO until accountable owners approve the RPO, RTO,
+retention, encryption/key custody, storage destination, and recurring schedule.
+
 The V30 minimum may only be increased by an operator; a lower value is rejected
 before any disk or environment work starts. Before role bootstrap, restore
 rejects any user relation, routine, type, extension, or non-public schema, not
