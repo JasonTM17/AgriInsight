@@ -111,6 +111,11 @@ not traverse a symbolic link or junction.
 
 ## Restore drill
 
+The supported operator entrypoint is `scripts/run-backend-restore-drill.ps1`.
+Do not present `scripts/restore-backend-postgres.ps1` as a manual operator
+command; the wrapper owns report binding and run confirmation, while the
+data-moving script independently enforces its non-lowerable V30 source gate.
+
 Restore is forward-safe: it requires the checksum sidecar, a pre-created empty target database, the operator role, migration role, and runtime role credentials. It refuses to drop a non-empty database and never runs `pg_restore --clean`.
 
 ```powershell
@@ -118,12 +123,17 @@ $env:AGRIINSIGHT_RESTORE_DRILL_HOST='127.0.0.1'
 $env:AGRIINSIGHT_RESTORE_DRILL_PORT='5432'
 $env:AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS='127.0.0.1'
 $env:AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE='agriinsight_restore_v30'
-powershell -ExecutionPolicy Bypass -File scripts/restore-backend-postgres.ps1 `
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 `
   -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' `
-  -RestoreDrillScope local-or-staging
+  -Mode Run -RestoreDrillScope local-or-staging -ConfirmRestoreDrill
 ```
 
-Order is: disk guard → checksum → empty-target check → idempotent role bootstrap → `pg_restore --no-owner --single-transaction` (ACLs retained) → Flyway validate → integration-role/outbox-RLS gate → runtime schema-history/count smoke → measured restore report. A failed restore is retained for diagnosis; repair is an audited forward migration or a verified clean restore, never deletion of applied migrations.
+Order is: V30 source-metadata gate → disk guard → checksum → dedicated-cluster
+and empty-target checks → role bootstrap → `pg_restore --no-owner
+--single-transaction` (ACLs retained) → Flyway validate → integration-role
+gate → runtime no-context and two-tenant RLS smoke → measured restore report.
+A failed restore is retained for diagnosis; repair is an audited forward
+migration or a verified clean restore, never deletion of applied migrations.
 
 For a current-schema drill, first validate the backup sidecar and then require an
 explicit run confirmation:
@@ -139,11 +149,13 @@ schema evidence, and ties the new report to that exact backup. It does not
 establish a production RPO/RTO: production remains blocked until its off-host
 encryption, retention, owner, schedule, and objectives are approved.
 
-The V30 minimum may only be increased by an operator; a lower value is rejected.
-Before role bootstrap, restore rejects any user relation, routine, type,
-extension, or non-public schema, not merely tables. It holds a read lock on the
-verified backup through restoration and atomically publishes the uniquely named
-report without replacing an existing file.
+The V30 minimum may only be increased by an operator; a lower value is rejected
+before any disk or environment work starts. Before role bootstrap, restore
+rejects any user relation, routine, type, extension, or non-public schema, not
+merely tables. It also verifies that the connected database is exactly the
+dedicated `agriinsight_restore_*` target, that the target cluster contains no
+other non-system database or foreign connection, and that the restore target is
+different from the source database.
 
 The target must be a separately named lowercase `agriinsight_restore_*` database
 and must differ from the backup metadata's source database. A `local-or-staging`
@@ -157,12 +169,19 @@ exactly match the protected `AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS` allowlist,
 before role bootstrap or restore. A global per-target mutex is held from the
 empty-target check through report publication, so a second local or RDP-session
 operator cannot begin a concurrent drill against the same endpoint and database.
-Remote staging remains blocked until an
-approved TLS provider contract supplies certificate verification for both libpq
-and Flyway JDBC. Store the backup, sidecar, report, and temporary files in an
-ACL-controlled directory: the reparse-point check rejects existing symbolic
-links/junctions, but cannot defend against another local account with concurrent
-write permission replacing a path after it is checked.
+Remote staging remains blocked until an approved TLS provider contract supplies
+certificate verification for both libpq and Flyway JDBC. Store the backup,
+sidecar, report, and temporary files in an ACL-controlled directory: the
+reparse-point check rejects existing symbolic links/junctions, but cannot defend
+against another local account with concurrent write permission replacing a path
+after it is checked.
+
+The restore report is non-secret operational evidence. It records the source
+backup path, source hash, source backup metadata, target database, restore
+scope, elapsed time, `psql_version`, `pg_restore_version`, the role/RLS gate,
+the no-context runtime tenant smoke, the two-tenant runtime boundary smoke, the
+restored schema history row count, the restored Flyway schema version, and the
+restored entity counts. It does not need to expose credentials or raw SQL.
 
 ## Operational approval gate
 

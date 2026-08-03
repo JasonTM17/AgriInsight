@@ -14,6 +14,7 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RESTORE_DRILL = PROJECT_ROOT / "scripts" / "run-backend-restore-drill.ps1"
+RESTORE = PROJECT_ROOT / "scripts" / "restore-backend-postgres.ps1"
 POWERSHELL = (
     shutil.which("powershell.exe")
     or shutil.which("powershell")
@@ -39,6 +40,36 @@ def _run_drill(
             str(RESTORE_DRILL),
             "-BackupFile",
             str(backup_file),
+            *arguments,
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=30,
+    )
+
+
+def _run_restore(
+    backup_file: Path, *arguments: str
+) -> subprocess.CompletedProcess[str]:
+    if POWERSHELL is None:
+        pytest.skip("PowerShell is not available")
+
+    return subprocess.run(
+        [
+            POWERSHELL,
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(RESTORE),
+            "-BackupFile",
+            str(backup_file),
+            "-RestoreDrillScope",
+            "local-or-staging",
             *arguments,
         ],
         cwd=PROJECT_ROOT,
@@ -117,10 +148,11 @@ def _write_backup_fixture(schema_version: int) -> tuple[Path, Path]:
 
 
 def test_restore_records_the_restored_schema_version_without_destructive_flags() -> None:
-    restore = (
-        PROJECT_ROOT / "scripts" / "restore-backend-postgres.ps1"
-    ).read_text(encoding="utf-8")
+    restore = RESTORE.read_text(encoding="utf-8")
 
+    assert "[ValidateRange(30, 10000)]" in restore
+    assert "[int]$MinimumSchemaVersion = 30" in restore
+    assert "Source backup metadata schema is below the non-lowerable V30 minimum." in restore
     assert "restoredFlywaySchemaVersion = Invoke-Psql" in restore
     assert "restored_flyway_schema_version = $restoredFlywaySchemaVersion" in restore
     assert "Target database must be pre-created and empty" in restore
@@ -144,6 +176,15 @@ def test_restore_records_the_restored_schema_version_without_destructive_flags()
     assert "--no-owner" in restore
     assert "--clean" not in restore.lower()
     assert "pg_restore failed; the target is retained for diagnosis." in restore
+    assert "Dedicated restore-drill cluster contains another non-system database." in restore
+    assert "pg_catalog.pg_database" in restore
+    assert "pg_catalog.pg_stat_activity" in restore
+    assert "Runtime tenant RLS smoke failed after restore." in restore
+    assert "SELECT count(*) = 0 FROM tenants;" in restore
+    assert "SELECT count(*) = 1" in restore
+    assert "psql_version" in restore
+    assert "pg_restore_version" in restore
+    assert "source_backup_metadata" in restore
 
 
 def test_backup_restore_and_drill_share_a_cmdlet_independent_sha256_helper() -> None:
@@ -229,6 +270,18 @@ def test_restore_drill_refuses_an_old_schema_before_any_restore() -> None:
 
     assert result.returncode != 0
     assert "Source backup metadata schema is below the requested minimum." in result.stderr
+
+
+def test_direct_restore_refuses_pre_v30_metadata_before_capacity_or_environment_checks() -> None:
+    directory, backup_file = _write_backup_fixture(schema_version=29)
+    try:
+        result = _run_restore(backup_file)
+    finally:
+        shutil.rmtree(directory)
+
+    assert result.returncode != 0
+    assert "Source backup metadata schema is below the non-lowerable V30 minimum." in result.stderr
+    assert "Disk guard is not PASS" not in result.stderr
 
 
 def test_restore_drill_never_allows_a_weaker_than_v30_minimum() -> None:

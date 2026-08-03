@@ -113,7 +113,7 @@ if ([string]::IsNullOrWhiteSpace($RestoreDrillScope)) {
 }
 
 $startedAt = [DateTimeOffset]::UtcNow
-& powershell -NoProfile -ExecutionPolicy Bypass -File $restoreScript -BackupFile $source -RestoreDrillScope $RestoreDrillScope
+& powershell -NoProfile -ExecutionPolicy Bypass -File $restoreScript -BackupFile $source -RestoreDrillScope $RestoreDrillScope -MinimumSchemaVersion $MinimumSchemaVersion
 if ($LASTEXITCODE -ne 0) {
     throw "Restore failed; the target is retained for diagnosis."
 }
@@ -129,6 +129,14 @@ if ([string](Get-RequiredPropertyValue -Object $report -Name "source_sha256" -Pu
 Assert-SchemaVersionAtLeast -Version (Get-RequiredPropertyValue -Object $report -Name "restored_flyway_schema_version" -Purpose "Restore report") -Minimum $MinimumSchemaVersion -FailureMessage "Restore report schema is below the requested minimum."
 if ([string](Get-RequiredPropertyValue -Object $report -Name "role_and_rls_gate" -Purpose "Restore report") -cne "PASS") {
     throw "Restore report role and RLS gate did not pass."
+}
+if ([string](Get-RequiredPropertyValue -Object $report -Name "runtime_tenant_rls_smoke" -Purpose "Restore report") -cne "PASS") {
+    throw "Restore report runtime tenant RLS smoke did not pass."
+}
+foreach ($toolVersion in @("psql_version", "pg_restore_version")) {
+    if ([string]::IsNullOrWhiteSpace([string](Get-RequiredPropertyValue -Object $report -Name $toolVersion -Purpose "Restore report"))) {
+        throw "Restore report $toolVersion is missing."
+    }
 }
 if ([string](Get-RequiredPropertyValue -Object $report -Name "restore_drill_scope" -Purpose "Restore report") -cne $RestoreDrillScope) {
     throw "Restore report scope does not match the requested restore drill scope."
