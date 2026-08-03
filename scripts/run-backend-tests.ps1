@@ -81,6 +81,15 @@ $mavenUserHome = if ($env:MAVEN_USER_HOME) {
 }
 
 $arguments = @($MavenArguments)
+$guardedMavenArguments = @($MavenArguments)
+$flywayGoalRequested = @($MavenArguments | Where-Object {
+    $_ -in @("flyway:migrate", "flyway:validate")
+}).Count -gt 0
+if ($flywayGoalRequested) {
+    # Flyway 12.4 rejects the Maven plugin's legacy pluralized extension key.
+    # Use the documented PostgreSQL namespace property for concurrent indexes.
+    $guardedMavenArguments = @("-Dflyway.postgresql.transactional.lock=false") + $guardedMavenArguments
+}
 $blockedTestPropertyPattern = "^(?:test|it\.test|failIfNoTests|surefire\.skip|failsafe\.skip|surefire\.excludes|failsafe\.excludes|surefire\.includes|failsafe\.includes|argLine)(?:=|$)"
 for ($index = 0; $index -lt $arguments.Count; $index++) {
     $argument = $arguments[$index]
@@ -152,7 +161,7 @@ if (-not (Test-Path -LiteralPath $mavenWrapper)) {
 
 Push-Location $backendRoot
 try {
-    & $mavenWrapper "-Dmaven.repo.local=$repoLocal" @MavenArguments
+    & $mavenWrapper "-Dmaven.repo.local=$repoLocal" @guardedMavenArguments
     exit $LASTEXITCODE
 }
 finally {
