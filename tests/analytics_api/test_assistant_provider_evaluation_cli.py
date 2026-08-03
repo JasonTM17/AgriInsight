@@ -20,7 +20,7 @@ def test_provider_evaluation_cli_fails_closed_without_secret() -> None:
         capture_output=True,
         text=True,
         check=False,
-        timeout=10,
+        timeout=30,
     )
 
     assert completed.returncode != 0

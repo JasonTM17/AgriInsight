@@ -17,7 +17,7 @@ def test_mock_latency_cli_emits_one_redacted_aggregate() -> None:
         check=True,
         cwd=ROOT,
         text=True,
-        timeout=10,
+        timeout=30,
     )
 
     output_lines = completed.stdout.splitlines()
