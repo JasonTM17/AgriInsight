@@ -289,6 +289,9 @@ def test_recovery_wrappers_require_explicit_hosted_mode_without_weakening_local_
     assert 'if ($HostedCi) { $restoreArguments += "-HostedCi" }' in drill
     assert 'if ($HostedCi) { $backendArguments += "-HostedCi" }' in restore
     assert 'if ($isWindowsHost) { "mvnw.cmd" } else { "mvnw" }' in backend_runner
+    assert '"-Dflyway.postgresql.transactional.lock=false"' in backend_runner
+    pom = (PROJECT_ROOT / "backend" / "pom.xml").read_text(encoding="utf-8")
+    assert "postgresqlTransactionalLock" not in pom
 
 
 def test_hosted_restore_harness_uses_two_owned_postgres_18_clusters_and_safe_evidence() -> None:
