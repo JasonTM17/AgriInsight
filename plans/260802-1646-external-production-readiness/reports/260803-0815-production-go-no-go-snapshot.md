@@ -1,7 +1,7 @@
 ---
 title: External production go/no-go snapshot
 status: no-go
-generated_at: '2026-08-03T09:46:15+07:00'
+generated_at: '2026-08-03T09:52:42+07:00'
 scope: AgriInsight v0.4.0 external production promotion
 evidence_type: live read-only repository and workstation checks
 ---
@@ -28,9 +28,12 @@ was performed by this assessment.
 | Legal | Repository API reported license null | Blocked |
 | Local restore prerequisites | Docker Server 29.5.3 reachable; C drive 9.576 GiB WARN and D drive 19.926 GiB FAIL; no guarded database target variables set | Blocked: no safe drill target or capacity |
 
-All GitHub observations were read live on 2026-08-03. The CI and publication
-records prove internal release quality, not public hosting or operational
-approval.
+GitHub was rechecked read-only at `2026-08-03T09:52:42+07:00`: the repository
+is public and active on `main`, with `license: null`; its only environments are
+`assistant-provider-evaluation` and `release-images`, its production-deployment
+query returns `0`, and its `main` branch-protection endpoint still returns
+`Branch not protected`. The release CI and publication records prove internal
+release quality, not public hosting or operational approval.
 
 ## External control register
 
@@ -57,11 +60,15 @@ controls below.
 The checked-in recovery path validates checksum, minimum schema version, empty
 target, role/RLS gates, Flyway validation, and report binding. Focused
 validation accepts a V30 fixture and rejects V29, a tampered backup, or a run
-without explicit confirmation. The recovery contract currently has 52 focused
-passing tests across release, promotion, and restore controls, including the
-dedicated `127.0.0.1` endpoint allowlist, global per-target mutex, checksum
-locking, no-overwrite publication, and reparse-point preflight. It is not a
-timed production restore result.
+without explicit confirmation. At `2026-08-03T09:52:42+07:00`,
+`python -m pytest tests/test_container_release_contract.py
+tests/test_release_tag_availability_contract.py
+tests/test_production_promotion_evidence.py
+tests/test_backend_restore_drill_contract.py -q` passed 52/52 focused tests.
+They cover release, promotion, and restore controls, including the dedicated
+`127.0.0.1` endpoint allowlist, global per-target mutex, checksum locking,
+no-overwrite publication, and reparse-point preflight. This is not a timed
+production restore result.
 
 Remote staging restore remains blocked until an approved TLS provider contract
 supplies certificate verification for both libpq and Flyway JDBC; the checked-in
@@ -71,8 +78,8 @@ The retained historical local dumps are Phase 7 artifacts with Flyway schema
 values `missing`, `9`, and `19`; none is V30-or-newer. They cannot be relabeled
 or reused as current-schema drill evidence.
 
-The actual workstation guard now fails: D is below its 20 GiB floor (19.926 GiB)
-and C is below its 10 GiB warning threshold (9.576 GiB). A read-only inventory
+The actual workstation guard still fails: D is below its 20 GiB floor (19.926 GiB)
+and C is below its 10 GiB warning threshold (9.566 GiB). A read-only inventory
 found approximately 3.9 GiB of workspace temporary build/test cache under
 `artifacts/_tmp`, including 3.4 GiB of stale editor-extension cache; no cache,
 container, backup, or database data was removed by this assessment. Do not
