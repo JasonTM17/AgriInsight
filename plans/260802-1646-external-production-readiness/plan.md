@@ -50,6 +50,7 @@ control has an accountable owner, approval reference, and passing evidence.
 | Registry release | Protected publication `30697808763` published `v0.4.0` to Docker Hub and GHCR | Registry parity is not public hosting |
 | Identity/runtime | OIDC validation, deny-by-default routing, scoped RBAC/RLS and web session-key rollover exist | IdP/MFA contract and production origins remain owner-gated |
 | Recovery | Hosted CI `30813839544` produced a checksum-linked V30 clean-target restore report with RLS smoke PASS | RPO/RTO and off-host controls remain open |
+| External decision coordination | [Issue #22](https://github.com/JasonTM17/AgriInsight/issues/22) assigned to `JasonTM17`, response due `2026-08-10T10:00:00Z` | Coordination ownership is not production control ownership or approval |
 
 ## Phases
 

@@ -11,11 +11,20 @@ Older v2 manifests are rejected, and placeholder text such as
 ownership. It is never valid evidence.
 
 The latest repository/workstation snapshot is the
-[current production GO/NO-GO audit](../plans/260802-1646-external-production-readiness/reports/pm-260803-1845-production-go-no-go-current-head.md).
-It records the now-enforced `main` protection, green current source baseline,
-MIT source license, and the still-missing production environment, OCI
-license-label approval, target recovery prerequisites, owners, and deadlines
-without fabricating any of them.
+[current production GO/NO-GO audit](../plans/260802-1646-external-production-readiness/reports/pm-260803-1845-production-go-no-go-current-head.md),
+supplemented by the
+[external-decision escalation](../plans/260802-1646-external-production-readiness/reports/pm-260803-2104-production-decision-escalation.md).
+Together they record enforced `main` protection, a green current source
+baseline, MIT source license, and the still-missing production environment,
+OCI license-label approval, target recovery prerequisites, owners, and
+deadlines without fabricating any of them.
+
+External decisions are now coordinated through
+[production NO-GO issue #22](https://github.com/JasonTM17/AgriInsight/issues/22).
+`JasonTM17` owns the decision request, with a response deadline of
+`2026-08-10T10:00:00Z`; this coordination assignment does not make that account
+the production control owner. Every matrix row remains NO-GO until its actual
+organization-approved owner and approval evidence are recorded.
 
 ## Verified internal baseline
 
