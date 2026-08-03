@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import shutil
 import subprocess
@@ -25,6 +26,10 @@ def _digest_image(name: str, digest_character: str) -> str:
 def _timestamp(offset: timedelta) -> str:
     value = datetime.now(timezone.utc) + offset
     return value.isoformat().replace("+00:00", "Z")
+
+
+def _endpoint_sha256(endpoint: str) -> str:
+    return hashlib.sha256(endpoint.encode("utf-8")).hexdigest()
 
 
 def _approval(name: str) -> dict[str, str]:
@@ -53,6 +58,13 @@ def _valid_evidence() -> dict[str, Any]:
             "backend": _digest_image("backend", "b"),
             "web": _digest_image("web", "c"),
             "analytics_api": _digest_image("analytics-api", "d"),
+        },
+        "target": {
+            "docker_context": "production-control",
+            "docker_endpoint_sha256": _endpoint_sha256(
+                "ssh://production.example.invalid"
+            ),
+            "deployment_identity": "agriinsight-release",
         },
         "rollback": {
             "strategy": "redeploy-previous-digest",
@@ -114,6 +126,9 @@ def _environment_for(evidence: dict[str, Any]) -> dict[str, str]:
             "AGRIINSIGHT_WEB_IMAGE": evidence["images"]["web"],
             "AGRIINSIGHT_ANALYTICS_API_IMAGE": evidence["images"][
                 "analytics_api"
+            ],
+            "AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT": evidence["target"][
+                "docker_context"
             ],
         }
     )
@@ -216,6 +231,42 @@ def test_environment_digest_mismatch_or_missing_value_fails_closed(
     missing = run_script(VALIDATOR, evidence, environment)
     assert missing.returncode != 0
     assert "AGRIINSIGHT_WEB_IMAGE is required." in missing.stderr
+
+
+def test_promotion_evidence_binds_a_non_placeholder_docker_target(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+) -> None:
+    evidence = _valid_evidence()
+    environment = _environment_for(evidence)
+    environment["AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT"] = "wrong-target"
+
+    mismatch = run_script(VALIDATOR, evidence, environment)
+
+    assert mismatch.returncode != 0
+    assert "AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT does not match promotion evidence." in mismatch.stderr
+    assert "status=PASS" not in mismatch.stdout
+
+    evidence["target"]["docker_context"] = "REQUIRED"
+    placeholder = run_script(VALIDATOR, evidence, _environment_for(evidence))
+
+    assert placeholder.returncode != 0
+    assert "target.docker_context" in placeholder.stderr
+
+    evidence = _valid_evidence()
+    evidence["target"]["deployment_identity"] = "wrong-project"
+    wrong_project = run_script(VALIDATOR, evidence, _environment_for(evidence))
+
+    assert wrong_project.returncode != 0
+    assert "target.deployment_identity must equal agriinsight-release." in wrong_project.stderr
+
+    evidence = _valid_evidence()
+    evidence["target"]["docker_endpoint_sha256"] = "REQUIRED"
+    missing_endpoint_identity = run_script(VALIDATOR, evidence, _environment_for(evidence))
+
+    assert missing_endpoint_identity.returncode != 0
+    assert "target.docker_endpoint_sha256" in missing_endpoint_identity.stderr
 
 
 def test_evidence_rejects_untrusted_or_wrong_component_image_repositories(
@@ -385,7 +436,11 @@ def test_failed_ci_metadata_stops_wrapper_before_docker_and_pins_github_host(
             "  }",
             f"  '{failed_run}'",
             "}",
-            "function docker { throw 'DOCKER_SHOULD_NOT_RUN' }",
+            "function docker {",
+            "  param([Parameter(ValueFromRemainingArguments = $true)] [string[]] $Arguments)",
+            "  if (($Arguments -join ' ') -eq 'context show') { 'production-control'; return }",
+            "  throw 'DOCKER_SHOULD_NOT_RUN'",
+            "}",
             f"& '{RELEASE_WRAPPER}' -EvidenceFile '{evidence_file}'",
         )
     )
@@ -437,6 +492,155 @@ def test_rollback_mode_requires_explicit_production_change_confirmation(
     assert result.returncode != 0
     assert "Deploy and Rollback modes require -ConfirmProductionChange." in result.stderr
     assert "Could not pull an approved release image." not in result.stderr
+
+
+def test_disable_exposure_skips_github_and_registry_calls_after_local_target_validation(
+    tmp_path: Path,
+) -> None:
+    if POWERSHELL is None:
+        pytest.skip("PowerShell is required for the deployment preflight test")
+
+    evidence = _valid_evidence()
+    evidence["rollback"].update(
+        {
+            "strategy": "disable-exposure",
+            "disable_exposure_ref": "https://approvals.example.invalid/disable-exposure",
+        }
+    )
+    evidence_file = _write_evidence(tmp_path, evidence)
+    command = "\n".join(
+        (
+            "$global:agriInsightDockerCalls = @()",
+            "$global:agriInsightReleaseDisabled = $false",
+            "function docker {",
+            "  param([Parameter(ValueFromRemainingArguments = $true)] [string[]] $Arguments)",
+            "  $global:agriInsightDockerCalls += ($Arguments -join ' ')",
+            "  $joined = $Arguments -join ' '",
+            "  if ($joined -eq 'context show') { 'production-control'; return }",
+            "  if ($joined -eq 'context inspect production-control --format {{.Endpoints.docker.Host}}') { 'ssh://production.example.invalid'; return }",
+            "  if ($joined -match 'compose .* ps --all --quiet$') { if (-not $global:agriInsightReleaseDisabled) { 'release-container' }; return }",
+            "  if ($joined -match 'compose .* down') { $global:agriInsightReleaseDisabled = $true; return }",
+            "  throw 'UNEXPECTED_DOCKER_CALL'",
+            "}",
+            "function gh { throw 'GH_MUST_NOT_RUN_FOR_DISABLE_EXPOSURE' }",
+            f"& '{RELEASE_WRAPPER}' -EvidenceFile '{evidence_file}' -Mode Rollback -ConfirmProductionChange",
+            "if (($global:agriInsightDockerCalls -join '|') -match 'pull|imagetools|config') { throw 'REGISTRY_OR_CONFIG_CALL' }",
+        )
+    )
+
+    result = subprocess.run(
+        [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+        env=_environment_for(evidence),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "PRODUCTION_RELEASE_COMPOSE status=PASS mode=Rollback" in result.stdout
+    assert "GH_MUST_NOT_RUN_FOR_DISABLE_EXPOSURE" not in result.stderr
+
+
+def test_disable_exposure_reports_already_disabled_without_claiming_a_new_shutdown(
+    tmp_path: Path,
+) -> None:
+    if POWERSHELL is None:
+        pytest.skip("PowerShell is required for the deployment preflight test")
+
+    evidence = _valid_evidence()
+    evidence["rollback"].update(
+        {
+            "strategy": "disable-exposure",
+            "disable_exposure_ref": "https://approvals.example.invalid/disable-exposure",
+        }
+    )
+    evidence_file = _write_evidence(tmp_path, evidence)
+    command = "\n".join(
+        (
+            "function docker {",
+            "  param([Parameter(ValueFromRemainingArguments = $true)] [string[]] $Arguments)",
+            "  $joined = $Arguments -join ' '",
+            "  if ($joined -eq 'context show') { 'production-control'; return }",
+            "  if ($joined -eq 'context inspect production-control --format {{.Endpoints.docker.Host}}') { 'ssh://production.example.invalid'; return }",
+            "  if ($joined -match 'compose .* ps --all --quiet$') { return }",
+            "  throw 'UNEXPECTED_DOCKER_CALL'",
+            "}",
+            "function gh { throw 'GH_MUST_NOT_RUN_FOR_DISABLE_EXPOSURE' }",
+            f"& '{RELEASE_WRAPPER}' -EvidenceFile '{evidence_file}' -Mode Rollback -ConfirmProductionChange",
+        )
+    )
+
+    result = subprocess.run(
+        [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+        env=_environment_for(evidence),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "PRODUCTION_RELEASE_COMPOSE status=ALREADY_DISABLED mode=Rollback" in result.stdout
+    assert "status=PASS" not in result.stdout
+
+
+def test_release_wrapper_binds_the_active_docker_context_and_checks_every_release_service() -> None:
+    wrapper = RELEASE_WRAPPER.read_text(encoding="utf-8")
+
+    assert "function Assert-DockerContext" in wrapper
+    assert "docker context inspect" in wrapper
+    assert "Docker context endpoint does not match promotion evidence." in wrapper
+    assert "docker context show" in wrapper
+    assert "Docker context does not match promotion evidence." in wrapper
+    assert '"--project-name", $evidence.Target.DeploymentIdentity' in wrapper
+    assert '"dashboard"' in wrapper
+    assert "pipeline" in wrapper
+    assert '@("ps", "--all", "--quiet", "pipeline")' in wrapper
+    assert "Pipeline did not complete successfully." in wrapper
+    assert (
+        wrapper.index("Assert-ReleaseWorkflowEvidence -Release $evidence.Release")
+        < wrapper.rindex("Assert-DockerContext -Target $evidence.Target")
+    )
+
+
+def test_compose_up_accepts_a_stopped_successful_pipeline_from_the_expected_project(
+    tmp_path: Path,
+) -> None:
+    if POWERSHELL is None:
+        pytest.skip("PowerShell is required for the deployment preflight test")
+
+    command = "\n".join(
+        (
+            f"$source = Get-Content -LiteralPath '{RELEASE_WRAPPER}' -Raw",
+            "$start = $source.IndexOf('function Test-LastCommandSucceeded')",
+            "$end = $source.IndexOf('if ($Mode -in @')",
+            "Invoke-Expression $source.Substring($start, $end - $start)",
+            "$global:agriInsightDockerCalls = @()",
+            "function docker {",
+            "  param([Parameter(ValueFromRemainingArguments = $true)] [string[]] $Arguments)",
+            "  $joined = $Arguments -join ' '",
+            "  $global:agriInsightDockerCalls += $joined",
+            "  if ($joined -eq 'compose up --detach --wait --wait-timeout 180') { return }",
+            "  if ($joined -eq 'compose ps --status running --services') { 'dashboard'; 'backend'; 'analytics'; 'web'; return }",
+            "  if ($joined -eq 'compose ps --all --quiet pipeline') { 'pipeline-container'; return }",
+            "  if ($joined -eq 'inspect pipeline-container --format {{.State.Status}}/{{.State.ExitCode}}') { 'exited/0'; return }",
+            "  throw \"UNEXPECTED_DOCKER_CALL=$joined\"",
+            "}",
+            "Invoke-ComposeUpAndVerify -ComposeArguments @('compose')",
+            "if ($global:agriInsightDockerCalls -notcontains 'compose ps --all --quiet pipeline') { throw 'PIPELINE_ALL_NOT_REQUESTED' }",
+        )
+    )
+
+    result = subprocess.run(
+        [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize(
@@ -529,7 +733,11 @@ def test_rollback_rejects_a_future_or_newer_publication_before_docker(
             "  $global:agriInsightGhCall += 1",
             "  $global:agriInsightGhRuns[($global:agriInsightGhCall - 1)]",
             "}",
-            "function docker { throw 'DOCKER_SHOULD_NOT_RUN' }",
+            "function docker {",
+            "  param([Parameter(ValueFromRemainingArguments = $true)] [string[]] $Arguments)",
+            "  if (($Arguments -join ' ') -eq 'context show') { 'production-control'; return }",
+            "  throw 'DOCKER_SHOULD_NOT_RUN'",
+            "}",
             f"& '{RELEASE_WRAPPER}' -EvidenceFile '{evidence_file}' -Mode Rollback -ConfirmProductionChange",
         )
     )

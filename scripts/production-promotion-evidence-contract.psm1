@@ -70,6 +70,31 @@ function Assert-SelectedImages {
     return [PSCustomObject] $selected
 }
 
+function Assert-Target {
+    param([object] $Target)
+
+    $dockerContext = Get-RequiredString -Object $Target -Name "docker_context" -Path "target.docker_context"
+    Assert-Pattern -Value $dockerContext -Pattern '^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$' -Name "target.docker_context" -Description "a Docker context name"
+    $endpointSha256 = Get-RequiredString -Object $Target -Name "docker_endpoint_sha256" -Path "target.docker_endpoint_sha256"
+    Assert-Pattern -Value $endpointSha256 -Pattern '^[a-f0-9]{64}$' -Name "target.docker_endpoint_sha256" -Description "a lowercase SHA-256 Docker endpoint fingerprint"
+    $deploymentIdentity = Get-RequiredString -Object $Target -Name "deployment_identity" -Path "target.deployment_identity"
+    if ($deploymentIdentity -cne "agriinsight-release") {
+        throw "target.deployment_identity must equal agriinsight-release."
+    }
+    $selectedContext = [Environment]::GetEnvironmentVariable("AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT")
+    if ([string]::IsNullOrWhiteSpace($selectedContext)) {
+        throw "AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT is required."
+    }
+    if ($selectedContext -cne $dockerContext) {
+        throw "AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT does not match promotion evidence."
+    }
+    return [PSCustomObject]@{
+        DockerContext = $dockerContext
+        DockerEndpointSha256 = $endpointSha256
+        DeploymentIdentity = $deploymentIdentity
+    }
+}
+
 function Assert-Rollback {
     param([object] $Rollback, [object] $Images, [object] $CurrentRelease)
 
@@ -175,6 +200,7 @@ function Test-ProductionPromotionEvidence {
     $release = Get-ValidatedRelease -Release (Get-RequiredObject -Object $manifest -Name "release" -Path "release") -Path "release" -RequireProduction
 
     $images = Assert-SelectedImages -Images (Get-RequiredObject -Object $manifest -Name "images" -Path "images")
+    $target = Assert-Target -Target (Get-RequiredObject -Object $manifest -Name "target" -Path "target")
     $rollback = Assert-Rollback -Rollback (Get-RequiredObject -Object $manifest -Name "rollback" -Path "rollback") -Images $images -CurrentRelease $release
     Assert-Recovery -Recovery (Get-RequiredObject -Object $manifest -Name "recovery" -Path "recovery")
     Assert-Approvals -Approvals (Get-RequiredObject -Object $manifest -Name "approvals" -Path "approvals")
@@ -182,6 +208,7 @@ function Test-ProductionPromotionEvidence {
     return [PSCustomObject]@{
         Release = $release
         Images = $images
+        Target = $target
         Rollback = $rollback
     }
 }

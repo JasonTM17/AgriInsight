@@ -1,7 +1,7 @@
 ---
 title: External production go/no-go snapshot
 status: no-go
-generated_at: '2026-08-03T09:52:42+07:00'
+generated_at: '2026-08-03T10:35:23+07:00'
 scope: AgriInsight v0.4.0 external production promotion
 evidence_type: live read-only repository and workstation checks
 ---
@@ -22,6 +22,7 @@ was performed by this assessment.
 | Release source | CI run 30697294137: main, commit 616527dcc7f4a03720fb48e617f9310ab9614873, completed/success | Pass |
 | Image publication | Run 30697808763: v0.4.0, same commit, completed/success | Pass |
 | Registry workflow gate | release-images environment has required reviewer and branch policy | Partial: release-image gate only |
+| Promotion target contract | Local contract binds evidence to an approved context, endpoint fingerprint, and fixed Compose project | Pass: source control only; no target run |
 | Production deployment record | GitHub production-deployment query returned an empty list | Blocked: no deployment evidence |
 | Production environment | GitHub environments list has assistant-provider-evaluation and release-images only | Blocked: no production environment |
 | Source governance | GitHub main branch-protection query returned Branch not protected | Blocked |
@@ -57,18 +58,31 @@ controls below.
 
 ## Recovery preflight
 
-The checked-in recovery path validates checksum, minimum schema version, empty
-target, role/RLS gates, Flyway validation, and report binding. Focused
-validation accepts a V30 fixture and rejects V29, a tampered backup, or a run
-without explicit confirmation. At `2026-08-03T09:52:42+07:00`,
+The checked-in recovery path rejects pre-V30 source metadata before capacity or
+environment checks, then validates checksum, dedicated empty target isolation,
+role/RLS behavior, Flyway validation, command versions, and report binding.
+Focused validation accepts a V30 fixture and rejects V29, a tampered backup, or
+a run without explicit confirmation. At `2026-08-03T10:35:23+07:00`,
 `python -m pytest tests/test_container_release_contract.py
 tests/test_release_tag_availability_contract.py
 tests/test_production_promotion_evidence.py
-tests/test_backend_restore_drill_contract.py -q` passed 52/52 focused tests.
+tests/test_backend_restore_drill_contract.py -q` passed 58/58 focused tests.
 They cover release, promotion, and restore controls, including the dedicated
 `127.0.0.1` endpoint allowlist, global per-target mutex, checksum locking,
-no-overwrite publication, and reparse-point preflight. This is not a timed
-production restore result.
+no-overwrite publication, fixed Compose project, Docker endpoint fingerprint,
+stopped pipeline success, and reparse-point preflight. PowerShell parsing
+passed, and documentation validation found 28 working internal links; its 149
+remaining config-key warnings are heuristic findings, not a passing runtime
+gate. This is not a timed production restore or deployment result.
+
+For normal promotion modes, the supported entrypoint verifies exact GitHub
+workflow metadata before contacting Docker. It then validates the active Docker
+context and a non-secret endpoint fingerprint and scopes Compose calls to
+`agriinsight-release`. Approved emergency disable-exposure is the narrow
+exception: it validates that local target first and skips GitHub/registry
+lookup. An empty matching project returns `ALREADY_DISABLED`, not a new
+shutdown proof. These local controls do not establish a production target,
+registry-side tag immutability, or an external approval.
 
 Remote staging restore remains blocked until an approved TLS provider contract
 supplies certificate verification for both libpq and Flyway JDBC; the checked-in

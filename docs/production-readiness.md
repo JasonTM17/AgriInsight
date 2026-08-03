@@ -37,7 +37,7 @@ store only a safe ticket/change/approval reference.
 | Production OIDC and MFA | Issuer, audience, client registrations, access-token discriminator, privileged-user MFA assurance, redirect/logout URIs, exact CORS origins, key/secret rotation policy | UNASSIGNED — NO-GO | Target IdP login and authorization gate passes with documented assurance semantics |
 | Kafka/broker operations | TLS/SASL, ACLs, topology/replication/min-ISR, retention, monitoring, alerting, on-call and rollback owner | UNASSIGNED — NO-GO | Target broker failure/recovery and tenant-isolation evidence pass |
 | Hosting, hostname and TLS | Host controls, TLS certificate lifecycle, forwarded-host/cookie policy, ingress limits, deployment authority | UNASSIGNED — NO-GO | Digest-pinned target deployment is reachable only through approved TLS/host controls |
-| Deployment change authority | Immutable manifest, verified CI/publication runs, target deployment change approval, maintenance window, and rollback authority | UNASSIGNED — NO-GO | Supported release entrypoint validates then deploys the approved manifest in the target environment |
+| Deployment change authority | Immutable manifest, verified CI/publication runs, approved Docker context, non-secret deployment identity, target deployment change approval, maintenance window, and rollback authority | UNASSIGNED — NO-GO | Supported release entrypoint validates then deploys the approved manifest in the target environment |
 | Audit retention and alerting | Retention duration, protected audit store, failure alert receiver, on-call owner, deletion/legal-hold policy | UNASSIGNED — NO-GO | Successful-read and authorization-denial audit paths have retention and alert evidence |
 | Backup and restore | RPO/RTO, retention, encrypted off-host destination, encryption key owner, restore operator, recurring drill schedule | UNASSIGNED — NO-GO | Current-schema timed clean restore and approved recurring drill evidence exist |
 | Credential rotation | IdP client, database, broker, registry, web session-key and secret-manager rotation cadence/owner | UNASSIGNED — NO-GO | Rotation rehearsal preserves service availability and records no secret values |
@@ -55,7 +55,13 @@ Docker Hub and GHCR from out-of-band tag rewrites before promotion is approved.
 The machine-checked record uses
 [`deploy/production-promotion-evidence.template.json`](../deploy/production-promotion-evidence.template.json).
 Copy the template outside the repository, replace every `REQUIRED` value with
-an approved non-secret value, export the four selected image variables, then
+an approved non-secret value, export the four selected image variables, and
+set `AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT` to the approved target Docker
+context. The `target` block must provide `docker_context`, the lowercase
+SHA-256 fingerprint of that context's Docker endpoint, and the fixed Compose
+project identity `agriinsight-release`. The validator rejects a context
+mismatch before any Compose action starts; the entrypoint then verifies the
+endpoint fingerprint and scopes every Compose command to that project. Then
 run the supported release entrypoint:
 
 ```powershell
@@ -68,11 +74,15 @@ The entrypoint rejects incomplete/expired owner records, non-production
 environment, mutable/unapproved images, invalid release identity, missing
 recovery/rollback fields, or an image mismatch. It also verifies local digest
 labels, provenance/SBOM attestations, paired Docker Hub/GHCR semantic/full-SHA
-tag parity, and release Compose configuration after it verifies exact
-CI/publication workflow metadata. It supports an approved, health-checked
-redeploy-previous-digest rollback or approved disable-exposure action. A pass
-does not replace the target-runtime tests below or external approval
-authenticity checks.
+tag parity, exact CI/publication workflow metadata, and release Compose
+configuration. Deploy and redeploy-previous-digest rollback require the
+dashboard, backend, analytics, and web services to be healthy and the pipeline
+container to exit `0`. Approved disable-exposure rollback is the narrow
+exception: it verifies the bound local target, skips GitHub/registry lookup,
+runs `docker compose down` only for the fixed release project, and then
+verifies that no project containers remain. When that project is already empty,
+it returns `status=ALREADY_DISABLED`, not a new shutdown pass. A pass does not
+replace the target-runtime tests below or external approval authenticity checks.
 
 ## Evidence package
 

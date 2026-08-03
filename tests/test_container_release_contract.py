@@ -262,7 +262,11 @@ def test_supported_production_release_wrapper_verifies_evidence_before_compose()
     assert ".github/workflows/publish-images.yml" in wrapper
     assert (
         wrapper.index("Assert-ReleaseWorkflowEvidence -Release $evidence.Release")
-        < wrapper.index("Push-Location")
+        < wrapper.index("Set-SelectedImageEnvironment -Images $activeImages")
+    )
+    assert (
+        wrapper.index('if ($Mode -eq "Rollback" -and $evidence.Rollback.Strategy -eq "disable-exposure")')
+        < wrapper.index("Assert-ReleaseWorkflowEvidence -Release $evidence.Release")
     )
     assert '"config", "--quiet"' in wrapper
     assert '"up", "--detach", "--wait", "--wait-timeout", "180"' in wrapper

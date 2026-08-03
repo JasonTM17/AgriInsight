@@ -160,39 +160,114 @@ function Assert-ReleaseImages {
     }
 }
 
+function Get-Sha256Hex {
+    param([string] $Value)
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
+        return ([BitConverter]::ToString($sha256.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        $sha256.Dispose()
+    }
+}
+
+function Assert-DockerContext {
+    param([object] $Target)
+
+    $activeContext = ((& docker context show) -join [Environment]::NewLine).Trim()
+    if (-not (Test-LastCommandSucceeded -Succeeded $?) -or [string]::IsNullOrWhiteSpace($activeContext)) {
+        throw "Could not determine the active Docker context."
+    }
+    if ($activeContext -cne $Target.DockerContext) {
+        throw "Docker context does not match promotion evidence."
+    }
+    $endpoint = ((& docker context inspect $Target.DockerContext --format '{{.Endpoints.docker.Host}}') -join [Environment]::NewLine).Trim()
+    if (-not (Test-LastCommandSucceeded -Succeeded $?) -or [string]::IsNullOrWhiteSpace($endpoint)) {
+        throw "Could not determine the Docker context endpoint."
+    }
+    if ((Get-Sha256Hex -Value $endpoint) -cne $Target.DockerEndpointSha256) {
+        throw "Docker context endpoint does not match promotion evidence."
+    }
+}
+
+function Get-ComposeContainerIds {
+    param([string[]] $ComposeArguments)
+
+    $containerIds = @(& docker @($ComposeArguments + @("ps", "--all", "--quiet")))
+    if (-not (Test-LastCommandSucceeded -Succeeded $?)) {
+        throw "Could not inspect the expected release project."
+    }
+    return $containerIds
+}
+
 function Invoke-ComposeUpAndVerify {
     param([string[]] $ComposeArguments)
 
     Invoke-ExternalCommand -Command "docker" -Arguments ($ComposeArguments + @("up", "--detach", "--wait", "--wait-timeout", "180")) -FailureMessage "Production Compose deployment failed health verification."
     $runningServices = @(& docker @($ComposeArguments + @("ps", "--status", "running", "--services")))
     if (-not (Test-LastCommandSucceeded -Succeeded $?)) { throw "Could not verify production service health after the change." }
-    foreach ($service in @("backend", "analytics", "web")) {
+    foreach ($service in @("dashboard", "backend", "analytics", "web")) {
         if ($runningServices -notcontains $service) { throw "Production service health verification did not complete." }
+    }
+    $pipelineContainerId = ((& docker @($ComposeArguments + @("ps", "--all", "--quiet", "pipeline"))) -join [Environment]::NewLine).Trim()
+    if (-not (Test-LastCommandSucceeded -Succeeded $?) -or [string]::IsNullOrWhiteSpace($pipelineContainerId)) {
+        throw "Pipeline did not complete successfully."
+    }
+    $pipelineState = ((& docker inspect $pipelineContainerId --format '{{.State.Status}}/{{.State.ExitCode}}') -join [Environment]::NewLine).Trim()
+    if (-not (Test-LastCommandSucceeded -Succeeded $?) -or $pipelineState -cne "exited/0") {
+        throw "Pipeline did not complete successfully."
     }
 }
 
 function Invoke-DisableExposure {
     param([string[]] $ComposeArguments)
 
+    $existingContainers = @(Get-ComposeContainerIds -ComposeArguments $ComposeArguments)
+    if ($existingContainers.Count -eq 0) { return $false }
     Invoke-ExternalCommand -Command "docker" -Arguments ($ComposeArguments + @("down")) -FailureMessage "Approved exposure disablement failed."
-    $runningServices = @(& docker @($ComposeArguments + @("ps", "--status", "running", "--services")))
-    if (-not (Test-LastCommandSucceeded -Succeeded $?)) { throw "Could not verify exposure disablement." }
-    if ($runningServices.Count -ne 0) { throw "Exposure disablement left release services running." }
+    $remainingContainers = @(Get-ComposeContainerIds -ComposeArguments $ComposeArguments)
+    if ($remainingContainers.Count -ne 0) { throw "Exposure disablement left release containers present." }
+    return $true
 }
 
 if ($Mode -in @("Deploy", "Rollback") -and -not $ConfirmProductionChange) {
     throw "Deploy and Rollback modes require -ConfirmProductionChange."
 }
 $evidence = Test-ProductionPromotionEvidence -EvidenceFile $EvidenceFile
-foreach ($command in @("docker", "gh")) {
+$activeRelease = $evidence.Release
+$activeImages = $evidence.Images
+$composeArguments = @(
+    "compose", "--project-name", $evidence.Target.DeploymentIdentity,
+    "-f", "compose.yaml", "-f", "compose.backend.yaml",
+    "-f", "deploy/compose.release-overlay.yaml", "--profile", "backend"
+)
+
+if ($Mode -eq "Rollback" -and $evidence.Rollback.Strategy -eq "disable-exposure") {
+    if ($null -eq (Get-Command "docker" -ErrorAction SilentlyContinue)) {
+        throw "docker is required for production release validation."
+    }
+    Assert-DockerContext -Target $evidence.Target
+    Push-Location (Split-Path -Parent $PSScriptRoot)
+    try {
+        $disabled = Invoke-DisableExposure -ComposeArguments $composeArguments
+    }
+    finally {
+        Pop-Location
+    }
+    $status = if ($disabled) { "PASS" } else { "ALREADY_DISABLED" }
+    Write-Output "PRODUCTION_RELEASE_COMPOSE status=$status mode=$Mode release=$($activeRelease.Tag) commit=$($activeRelease.Commit)"
+    exit 0
+}
+
+foreach ($command in @("gh")) {
     if ($null -eq (Get-Command $command -ErrorAction SilentlyContinue)) {
         throw "$command is required for production release validation."
     }
 }
 
 $currentWorkflowEvidence = Assert-ReleaseWorkflowEvidence -Release $evidence.Release
-$activeRelease = $evidence.Release
-$activeImages = $evidence.Images
 if ($Mode -eq "Rollback" -and $evidence.Rollback.Strategy -eq "redeploy-previous-digest") {
     $previousWorkflowEvidence = Assert-ReleaseWorkflowEvidence -Release $evidence.Rollback.PreviousRelease
     Assert-PreviousReleasePrecedesCurrent -PreviousRelease $evidence.Rollback.PreviousRelease -PreviousPublicationRun $previousWorkflowEvidence.Publication -CurrentRelease $evidence.Release -CurrentPublicationRun $currentWorkflowEvidence.Publication
@@ -200,20 +275,18 @@ if ($Mode -eq "Rollback" -and $evidence.Rollback.Strategy -eq "redeploy-previous
     $activeImages = $evidence.Rollback.PreviousImages
 }
 
+if ($null -eq (Get-Command "docker" -ErrorAction SilentlyContinue)) {
+    throw "docker is required for production release validation."
+}
+Assert-DockerContext -Target $evidence.Target
+
 Push-Location (Split-Path -Parent $PSScriptRoot)
 try {
     Set-SelectedImageEnvironment -Images $activeImages
     Assert-ReleaseImages -Images $activeImages -Release $activeRelease
-    $composeArguments = @(
-        "compose", "-f", "compose.yaml", "-f", "compose.backend.yaml",
-        "-f", "deploy/compose.release-overlay.yaml", "--profile", "backend"
-    )
     Invoke-ExternalCommand -Command "docker" -Arguments ($composeArguments + @("config", "--quiet")) -FailureMessage "Production Compose configuration is invalid."
     if ($Mode -eq "Deploy" -or ($Mode -eq "Rollback" -and $evidence.Rollback.Strategy -eq "redeploy-previous-digest")) {
         Invoke-ComposeUpAndVerify -ComposeArguments $composeArguments
-    }
-    elseif ($Mode -eq "Rollback") {
-        Invoke-DisableExposure -ComposeArguments $composeArguments
     }
 }
 finally {

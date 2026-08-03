@@ -13,6 +13,11 @@
     "web": "REQUIRED",
     "analytics_api": "REQUIRED"
   },
+  "target": {
+    "docker_context": "REQUIRED",
+    "docker_endpoint_sha256": "REQUIRED",
+    "deployment_identity": "REQUIRED"
+  },
   "rollback": {
     "strategy": "REQUIRED",
     "authority": "REQUIRED",

@@ -270,6 +270,17 @@ provenance/SBOM attestations, paired Docker Hub/GHCR semantic/full-SHA tag
 parity, and the release topology. It is a release-control check, not an
 external hosting approval.
 
+The evidence record must keep target data non-secret: the approved Docker
+context, the lowercase SHA-256 fingerprint of that context's Docker endpoint,
+and the fixed Compose deployment identity `agriinsight-release`. Derive the
+fingerprint from the exact UTF-8 endpoint returned by
+`docker context inspect <context> --format '{{.Endpoints.docker.Host}}'`.
+Set `AGRIINSIGHT_PRODUCTION_DOCKER_CONTEXT` to the same approved context that
+appears in the evidence file before invoking the release entrypoint. The
+entrypoint compares the active context and endpoint fingerprint, then scopes
+every Compose command to that fixed project. This is target binding, not a
+substitute for access authorization or hosting approval.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compose.ps1 `
   -EvidenceFile 'D:\secure-deployment\production-promotion-evidence.json' `
@@ -280,7 +291,9 @@ Do not use a direct `docker compose ... up` invocation as production promotion
 evidence: it bypasses the supported preflight and cannot support a GO decision.
 For a rollback, the approved manifest must either name a complete earlier
 release and four prior digests, or explicitly authorize disable-exposure. The
-same entrypoint verifies the prior release before changing state:
+same entrypoint verifies the prior release before changing state. The
+disable-exposure path skips GitHub/registry lookup and is only for an approved
+exposure shutdown:
 
 ~~~powershell
 powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compose.ps1 `
@@ -288,9 +301,12 @@ powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compos
   -Mode Rollback -ConfirmProductionChange
 ~~~
 
-Redeploy rollback waits for backend, analytics, and web health. Disable-exposure
-uses the approved release Compose stack only, stops it without deleting volumes,
-and verifies that no release service remains running.
+Redeploy rollback waits for dashboard, backend, analytics, and web health and
+requires the stopped pipeline container to exit `0`. Disable-exposure validates
+the local target first, then uses the approved release Compose project only,
+stops it without deleting volumes, and verifies that no project containers
+remain. If no matching project containers exist, it returns
+`status=ALREADY_DISABLED` rather than claiming a new shutdown proof.
 
 The overlay requires digest-pinned values for
 `AGRIINSIGHT_PYTHON_IMAGE`, `AGRIINSIGHT_BACKEND_IMAGE`,
