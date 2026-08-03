@@ -49,14 +49,14 @@ control has an accountable owner, approval reference, and passing evidence.
 | Source quality | CI `30697294137` passed for commit `616527dcc7f4a03720fb48e617f9310ab9614873` | Internal CI is not a deployment approval |
 | Registry release | Protected publication `30697808763` published `v0.4.0` to Docker Hub and GHCR | Registry parity is not public hosting |
 | Identity/runtime | OIDC validation, deny-by-default routing, scoped RBAC/RLS and web session-key rollover exist | IdP/MFA contract and production origins remain owner-gated |
-| Recovery | Safe checksum backup/restore wrappers exist; historical timed drill used older schema evidence | Current V30 proof, RPO/RTO and off-host controls remain open |
+| Recovery | Hosted CI `30813839544` produced a checksum-linked V30 clean-target restore report with RLS smoke PASS | RPO/RTO and off-host controls remain open |
 
 ## Phases
 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Promotion evidence and release controls](./phase-01-promotion-evidence-and-release-controls.md) | Completed |
-| 2 | [Recovery and operational guardrails](./phase-02-recovery-and-operational-guardrails.md) | In Progress |
+| 2 | [Recovery and operational guardrails](./phase-02-recovery-and-operational-guardrails.md) | Completed |
 | 3 | [External owner approvals](./phase-03-external-owner-approvals.md) | Pending |
 | 4 | [Deployment validation and go-no-go](./phase-04-deployment-validation-and-go-no-go.md) | Pending |
 
@@ -73,7 +73,7 @@ control has an accountable owner, approval reference, and passing evidence.
 
 - [ ] Every promotion uses four immutable `@sha256` image references that
   match a machine-validated evidence manifest and a successful exact-main CI.
-- [ ] A current-schema clean restore drill produces a measured, checksum-linked
+- [x] A current-schema clean restore drill produces a measured, checksum-linked
   report without weakening RLS or deleting non-empty targets.
 - [ ] Production IdP/MFA, broker, hosting/TLS, observability, recovery,
   credential rotation, registry visibility, and license decisions each have an
