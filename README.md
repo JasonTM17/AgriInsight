@@ -262,7 +262,7 @@ mobile, idempotency/ETag, taxonomy batch, cảnh báo ảnh AI-demo, conflict/40
 Supplier denial đều được kiểm tra qua backend/analytics thật. Phase 11 browser
 gate đã xanh; Phase 12 đạt internal release candidate. External production
 deployment vẫn bị chặn bởi production OIDC/broker operations,
-recovery/observability/host controls và quyết định license. Xem
+recovery/observability/host controls và phê duyệt legal/OCI license label. Xem
 [kế hoạch và evidence](plans/260722-2342-production-web-platform/plan.md).
 
 ## Big-data demo và visual assets

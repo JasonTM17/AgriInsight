@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 REALTIME_RUNNER = ROOT / "scripts" / "run-realtime-e2e-tests.ps1"
+HOSTED_RESTORE_RUNNER = ROOT / "scripts" / "run-hosted-backend-restore-drill.ps1"
 
 
 def _realtime_step() -> str:
@@ -36,3 +37,21 @@ def test_realtime_e2e_keeps_other_maven_environment_fail_closed() -> None:
     assert "Remove-Item -Path Env:MAVEN_PROJECTBASEDIR" not in realtime_step
     assert "$env:MAVEN_CONFIG" in runner
     assert "$env:MAVEN_PROJECTBASEDIR" in runner
+
+
+def test_realtime_job_requires_hosted_v30_restore_and_uploads_safe_evidence() -> None:
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+    runner = REALTIME_RUNNER.read_text(encoding="utf-8")
+    hosted_restore = HOSTED_RESTORE_RUNNER.read_text(encoding="utf-8")
+
+    assert "run-hosted-backend-restore-drill.ps1" in runner
+    assert '"-HostedCi"' in runner
+    assert "HOSTED_RESTORE_DRILL=PASS" in hosted_restore
+    assert "if: always()" in workflow
+    assert "recovery-drill-${{ github.sha }}" in workflow
+    assert "artifacts/recovery-evidence/**/*.metadata.json" in workflow
+    assert "artifacts/recovery-evidence/**/*.restore-*.json" in workflow
+    assert "artifacts/recovery-evidence/**/summary.json" in workflow
+    assert "artifacts/recovery-evidence/**/*.dump" not in workflow
+    assert "artifacts/recovery-evidence/**/*.log" not in workflow
+    assert "if-no-files-found: error" in workflow

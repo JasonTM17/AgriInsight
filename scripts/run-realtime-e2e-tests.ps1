@@ -230,4 +230,12 @@ if ($null -ne $cleanupError) {
     throw $cleanupError
 }
 
-Write-Output "REALTIME_E2E=PASS kafka=apache-kafka-4.3.1 postgres=testcontainers cleanup=owned"
+if ($HostedCi) {
+    $hostedRestoreRunner = Join-Path $PSScriptRoot "run-hosted-backend-restore-drill.ps1"
+    Invoke-Checked $powerShellCommand @(
+        "-NoProfile", "-File", $hostedRestoreRunner, "-HostedCi"
+    ) "Hosted V30 restore drill failed."
+}
+
+$restoreEvidence = if ($HostedCi) { "v30-hosted" } else { "not-requested" }
+Write-Output "REALTIME_E2E=PASS kafka=apache-kafka-4.3.1 postgres=testcontainers restore=$restoreEvidence cleanup=owned"
