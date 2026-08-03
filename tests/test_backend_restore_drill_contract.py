@@ -285,6 +285,7 @@ def test_recovery_wrappers_require_explicit_hosted_mode_without_weakening_local_
 
     assert "Invoke-RecoveryDiskGuard" in backup
     assert "Invoke-RecoveryDiskGuard" in restore
+    assert '"--quiet", "--set=ON_ERROR_STOP=1"' in restore
     assert "Invoke-RecoveryDiskGuard" in backend_runner
     assert 'if ($HostedCi) { $restoreArguments += "-HostedCi" }' in drill
     assert 'if ($HostedCi) { $backendArguments += "-HostedCi" }' in restore

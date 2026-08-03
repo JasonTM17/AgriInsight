@@ -55,7 +55,7 @@ function Invoke-Psql {
     $env:PGPASSWORD = $Password
     try {
         $arguments = @(
-            "--no-password", "--no-psqlrc", "--set=ON_ERROR_STOP=1",
+            "--no-password", "--no-psqlrc", "--quiet", "--set=ON_ERROR_STOP=1",
             "--host=$databaseHost", "--port=$databasePort",
             "--dbname=$databaseName", "--username=$Username"
         )
