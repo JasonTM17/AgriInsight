@@ -2,8 +2,9 @@
 
 ## Supported branch
 
-The `main` branch is the supported development line. Releases will be listed
-here once the Phase 7 release gate is complete.
+The `main` branch is the supported development line. Public releases already
+exist, including `v0.4.0`; this policy does not claim external production
+support.
 
 ## Reporting a vulnerability
 

@@ -7,16 +7,11 @@
 
 ![AgriInsight — enterprise agriculture analytics](docs/assets/agriinsight-social-preview.jpg)
 
-AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Bản
-phát hành công khai [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0)
-được publish lúc `2026-08-01T12:01:05Z`; tag object
-`4c27b343eecd32cf7daac462e5f661011e2af0df` peels to main SHA
-`616527dcc7f4a03720fb48e617f9310ab9614873`. Exact-head CI
-[`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
-passed 10/10 trước khi tag, và protected Docker Hub/GHCR publication
-[`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
-passed 4/4. `v0.3.1`, `v0.3.0` và `v0.2.3` được giữ làm bằng chứng
-lịch sử cho inventory forecasting, RAG và worker slices trước đó.
+Portfolio / pre-production reference implementation; not an externally operated production service.
+
+Repo policy: [MIT License](LICENSE) · [Security](.github/SECURITY.md) · [Contributing](.github/CONTRIBUTING.md) · [Code of Conduct](.github/CODE_OF_CONDUCT.md). MIT covers project-authored source and documentation; dependencies, upstream images, fonts, and generated/AI-assisted assets remain subject to their own applicable terms.
+
+AgriInsight là nền tảng phân tích dữ liệu cho doanh nghiệp nông nghiệp. Public release [`v0.4.0`](https://github.com/JasonTM17/AgriInsight/releases/tag/v0.4.0) được publish lúc `2026-08-01T12:01:05Z`; tag object `4c27b343eecd32cf7daac462e5f661011e2af0df` peels to main SHA `616527dcc7f4a03720fb48e617f9310ab9614873`. Exact-head CI [`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137) passed 10/10 trước khi tag, và protected Docker Hub/GHCR publication [`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763) passed 4/4. `v0.3.1`, `v0.3.0` và `v0.2.3` giữ làm bằng chứng lịch sử cho inventory forecasting, RAG và worker slices trước đó.
 
 ```text
 Operational simulators → Bronze → Validation & quarantine → Silver
@@ -26,17 +21,11 @@ Operational simulators → Bronze → Validation & quarantine → Silver
 
 ## Phạm vi đang chạy được
 
-- Quản lý dữ liệu doanh nghiệp, trang trại, khu vực, cây trồng, mùa vụ, hoạt động chăm sóc và thu hoạch.
-- Quản lý kho vật tư, nhà cung cấp, nhập/xuất kho, tồn hiện tại, days-of-supply, nhu cầu 30 ngày và ABC Analysis.
-- Thu thập dữ liệu cảm biến, thời tiết và quan sát sâu bệnh; tính risk score cho từng khu vực.
-- Chèn lỗi nguồn có chủ ý: trùng khóa, mã không chuẩn, đơn vị tấn/kg, số âm, giá trị cảm biến ngoài phạm vi và dữ liệu thiếu.
-- Tách Bronze, Silver và quarantine; đo completeness, validity, uniqueness, freshness trước và sau xử lý.
-- Nạp warehouse SQLite theo star schema, kiểm tra toàn bộ khóa ngoại trước khi thay thế database hiện hành.
-- Vật hóa Gold contracts cho Executive, Farm Performance, Inventory, Cost Analysis, Crop Health và Data Quality.
-- Sinh cảnh báo cùng khuyến nghị có bằng chứng dữ liệu; UI không tự tính lại logic KPI.
-- Hỏi đáp RAG bằng DeepSeek V4 Flash trên Gold snapshot đã xác minh, có
-  trích dẫn bắt buộc và từ chối khi không đủ bằng chứng.
-- Chạy lặp lại an toàn theo seed/ngày chốt dữ liệu, có manifest, row count và SHA-256 checksum.
+- Quản lý dữ liệu doanh nghiệp, trang trại, khu vực, cây trồng, mùa vụ, hoạt động chăm sóc và thu hoạch; quản lý kho vật tư, nhà cung cấp, nhập/xuất kho, tồn hiện tại, days-of-supply, nhu cầu 30 ngày và ABC Analysis.
+- Thu thập dữ liệu cảm biến, thời tiết và quan sát sâu bệnh; tính risk score cho từng khu vực và chèn lỗi nguồn có chủ ý như trùng khóa, mã không chuẩn, đơn vị tấn/kg, số âm, giá trị cảm biến ngoài phạm vi và dữ liệu thiếu.
+- Tách Bronze, Silver và quarantine; đo completeness, validity, uniqueness, freshness trước và sau xử lý; nạp warehouse SQLite theo star schema và kiểm tra toàn bộ khóa ngoại trước khi thay thế database hiện hành.
+- Vật hóa Gold contracts cho Executive, Farm Performance, Inventory, Cost Analysis, Crop Health và Data Quality; sinh cảnh báo cùng khuyến nghị có bằng chứng dữ liệu; UI không tự tính lại logic KPI.
+- Hỏi đáp RAG bằng DeepSeek V4 Flash trên Gold snapshot đã xác minh, có trích dẫn bắt buộc và từ chối khi không đủ bằng chứng; chạy lặp lại an toàn theo seed/ngày chốt dữ liệu, có manifest, row count và SHA-256 checksum.
 
 ## Dự báo nhu cầu kho có bằng chứng
 
@@ -82,31 +71,13 @@ accuracy/SLA.
 
 ## Backend vận hành đang triển khai
 
-Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 có transactional outbox, image hardening, CI, recovery wrappers và protected image publication đã được xác minh trong `v0.2.3`. Production deployment, OIDC operations và recovery-policy ownership vẫn là cổng riêng, chưa được bản phát hành container này phê duyệt. Nền tảng Next 16 hiện phủ chín khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality`, `/assistant` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
+Backend Java 21/Spring Boot nằm riêng trong `backend/`. Phase 1-6 đã được nghiệm thu đến ngày 2026-07-22; Phase 7 có transactional outbox, image hardening, CI, recovery wrappers và protected image publication đã được xác minh trong `v0.2.3`. Production deployment, OIDC operations và recovery-policy ownership vẫn là cổng riêng, chưa được bản phát hành container này phê duyệt. Nền tảng Next 16 phủ chín khu vực `/overview`, `/farms`, `/work`, `/inventory`, `/costs`, `/crop-health`, `/data-quality`, `/assistant` và `/admin`; mọi dữ liệu/mutation đi qua BFF allowlist, Spring/FastAPI thật và session OIDC phía máy chủ. Backend vẫn giữ application foundation, deny-by-default OIDC security, exact identity bootstrap, database-backed roles/permissions, tenant/profile-scoped transactions, PostgreSQL FORCE RLS, durable idempotency/audit, farm-to-harvest APIs, inventory/procurement APIs với warehouse assignment, immutable ledger/projections, reversals, reconciliation và OpenAPI contracts, cùng operating-cost ledger V16-V17 với correction lineage và bounded summaries.
 
 ## Trợ lý dữ liệu DeepSeek RAG
 
-`/assistant` là giao diện tiếng Việt cho một RAG pipeline có kiểm soát:
+`/assistant` là giao diện tiếng Việt cho một RAG pipeline có kiểm soát: Spring `/api/v1/me` xác định tenant, vai trò, farm và warehouse trước khi corpus được tạo; retriever lexical/structured chạy trên Gold snapshot đã xác minh, lọc scope trước khi xếp hạng và dùng evidence ID ổn định; DeepSeek V4 Flash chạy phía FastAPI với thinking tắt, JSON output, giới hạn timeout/token/concurrency, quota theo tenant và trích dẫn ở mọi câu khẳng định; Next BFF giữ bearer token phía máy chủ, kiểm tra host/origin/session/CSRF, giới hạn body/response và không chuyển tiếp lỗi nhà cung cấp; hội thoại chỉ ở bộ nhớ component, không dùng `localStorage` và không ghi prompt/evidence/answer vào telemetry.
 
-- Spring `/api/v1/me` xác định tenant, vai trò, farm và warehouse trước khi
-  corpus được tạo; trình duyệt không được gửi tenant, model hoặc scope.
-- Retriever lexical/structured chạy trên Gold snapshot đã xác minh, lọc scope
-  trước khi xếp hạng và dùng evidence ID ổn định.
-- DeepSeek V4 Flash chạy phía FastAPI với thinking tắt, JSON output, giới hạn
-  timeout/token/concurrency, quota theo tenant và trích dẫn ở mọi câu khẳng
-  định; phản hồi bị cắt hoặc có marker ngoài corpus bị từ chối.
-- Next BFF giữ bearer token phía máy chủ, kiểm tra host/origin/session/CSRF,
-  giới hạn body/response và không chuyển tiếp lỗi nhà cung cấp.
-- Hội thoại chỉ ở bộ nhớ component; không dùng `localStorage`, không ghi
-  prompt/evidence/answer vào telemetry.
-
-Tính năng mặc định tắt. Đặt khóa thật qua ignored `.env` cục bộ hoặc secret
-manager, không sửa `.env.example` và không commit khóa. Xem
-[deployment guide](docs/deployment-guide.md#deepseek-rag-assistant) và
-[kế hoạch/evaluation](plans/260727-2048-deepseek-rag-assistant/plan.md).
-Harness `python scripts/run-assistant-latency-evaluation.py` chỉ tổng hợp
-telemetry mock cục bộ; nó không gọi provider, không đọc khóa và không phải bằng
-chứng p95 hosted, groundedness production hay spend control.
+Tính năng mặc định tắt. Đặt khóa thật qua ignored `.env` cục bộ hoặc secret manager, không sửa `.env.example` và không commit khóa. Xem [deployment guide](docs/deployment-guide.md#deepseek-rag-assistant) và [kế hoạch/evaluation](plans/260727-2048-deepseek-rag-assistant/plan.md). Harness `python scripts/run-assistant-latency-evaluation.py` chỉ tổng hợp telemetry mock cục bộ; nó không gọi provider, không đọc khóa và không phải bằng chứng p95 hosted, groundedness production hay spend control.
 
 ## Realtime operational alert worker
 
@@ -280,18 +251,10 @@ artifacts/
 
 ## Tài liệu
 
-- [Project overview và PDR](docs/project-overview-pdr.md)
-- [Kiến trúc MVP](docs/architecture.md)
-- [System architecture](docs/system-architecture.md)
-- [Codebase summary](docs/codebase-summary.md)
-- [Data contracts](docs/data-contracts.md)
-- [Code standards](docs/code-standards.md)
-- [Deployment guide](docs/deployment-guide.md)
-- [Design guidelines](docs/design-guidelines.md)
-- [Project roadmap](docs/project-roadmap.md)
-- [KPI catalog](docs/kpi-catalog.md)
-- [Tiêu chí nghiệm thu](docs/mvp-acceptance.md)
-- [Reporting và vận hành local](docs/reporting-and-local-operations.md)
+- [Project overview và PDR](docs/project-overview-pdr.md), [Kiến trúc MVP](docs/architecture.md), [System architecture](docs/system-architecture.md), [Codebase summary](docs/codebase-summary.md)
+- [Data contracts](docs/data-contracts.md), [Code standards](docs/code-standards.md), [Deployment guide](docs/deployment-guide.md), [Reporting và vận hành local](docs/reporting-and-local-operations.md)
+- [Design guidelines](docs/design-guidelines.md), [Project roadmap](docs/project-roadmap.md), [KPI catalog](docs/kpi-catalog.md), [Tiêu chí nghiệm thu](docs/mvp-acceptance.md)
+- [Báo cáo nghiệm thu Backend Phase 1](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-19-backend-phase1.md), [Backend Phase 2](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase2.md), [Backend Phase 3](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-20-backend-phase3.md), [Backend Phase 4](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase4.md), [Backend Phase 5](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase5.md), [Backend Phase 6](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase6.md), [Backend Phase 7](./plans/260719-0753-backend-auth-rbac/reports/acceptance-2026-07-22-backend-phase7.md), [backend development](docs/backend-development.md) và [backend deployment/recovery](docs/backend-deployment.md)
 
 Web Phases 5–10 đã hoàn tất cho Overview/Farms, Work Operations, Inventory,
 Cost Analysis, Crop Health/Data Quality và Tenant Administration. Hành vi

@@ -43,6 +43,11 @@ credentials, generated reports, or Docker credentials.
 ## Change and commit standards
 
 - Prefer a focused change with one responsibility.
+- Plan-scoped evidence reports may be committed when they are part of a
+  verified workflow and land under the relevant `plans/<date-slug>/reports/`
+  folder.
+- Generated runtime/local reports, scratch artifacts, and secrets stay
+  uncommitted.
 - Preserve tenant context, profile context, RLS, idempotency, and public error
   contracts when changing backend code.
 - Add tests for happy paths, boundary conditions, authorization, and rollback
