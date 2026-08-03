@@ -35,6 +35,8 @@ def test_portfolio_capture_contract_is_complete() -> None:
     assert 'loginWithRealOidc(page, "field-worker"' in capture
     assert 'loginWithRealOidc(page, "analyst"' in capture
     assert 'loginWithRealOidc(page, "tenant-admin"' in capture
+    assert 'route: "/costs?lens=procurement"' in capture
+    assert 'text: "FASTAPI GOLD SNAPSHOT"' in capture
     assert "queryAssistant" not in capture
     assert "fullPage: false" in capture
     assert "fullPage: true" not in capture

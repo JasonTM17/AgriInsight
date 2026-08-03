@@ -91,32 +91,35 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
   }
 }
 
-test("@capture portfolio executive surfaces", async ({ page }) => {
-  await loginWithRealOidc(page, "executive", "/overview");
-  for (const surface of [
-    {
-      heading: "Điểm cần xem xét",
-      name: "overview-dashboard",
-      route: "/overview",
-      text: "Phiên dữ liệu"
-    },
-    {
-      heading: "Phân tích chi phí",
-      name: "cost-analysis",
-      route: "/costs?lens=operating",
-      testId: "cost-analysis-page"
-    },
-    {
-      heading: "Hỏi dữ liệu. Nhận câu trả lời có nguồn.",
-      name: "assistant-evidence-first",
-      route: "/assistant",
-      testId: "assistant-workspace",
-      text: "Bằng chứng trước, kết luận sau."
-    }
-  ] satisfies readonly Surface[]) {
-    await capturePair(page, surface);
+const executiveSurfaces = [
+  {
+    heading: "Điểm cần xem xét",
+    name: "overview-dashboard",
+    route: "/overview",
+    text: "Phiên dữ liệu"
+  },
+  {
+    heading: "Phân tích chi phí",
+    name: "cost-analysis",
+    route: "/costs?lens=procurement",
+    testId: "cost-analysis-page",
+    text: "FASTAPI GOLD SNAPSHOT"
+  },
+  {
+    heading: "Hỏi dữ liệu. Nhận câu trả lời có nguồn.",
+    name: "assistant-evidence-first",
+    route: "/assistant",
+    testId: "assistant-workspace",
+    text: "Bằng chứng trước, kết luận sau."
   }
-});
+] satisfies readonly Surface[];
+
+for (const surface of executiveSurfaces) {
+  test(`@capture portfolio executive ${surface.name}`, async ({ page }) => {
+    await loginWithRealOidc(page, "executive", surface.route);
+    await capturePair(page, surface);
+  });
+}
 
 test("@capture portfolio work operations", async ({ page }) => {
   await loginWithRealOidc(page, "field-worker", "/work");
