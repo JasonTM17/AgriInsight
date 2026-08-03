@@ -51,8 +51,8 @@ function Assert-DDrivePathWithoutReparsePoints {
     )
 
     $resolved = [System.IO.Path]::GetFullPath($Path)
-    $isWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
-    if ($isWindows) {
+    $runningOnWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
+    if ($runningOnWindows) {
         $approvedRoot = "D:\"
         if ([System.IO.Path]::GetPathRoot($resolved) -ine $approvedRoot) {
             throw "Path must resolve to the D drive; received $resolved."

@@ -361,8 +361,8 @@ $destination = '{_powershell_literal(destination)}'
 $first = New-AdjacentTemporaryPath -Destination $destination
 [System.IO.File]::WriteAllText($first, 'first')
 Publish-NewFile -TemporaryPath $first -Destination $destination
-$isWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
-if ($isWindows) {{
+$runningOnWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
+if ($runningOnWindows) {{
     $sourceLock = Open-ReadLockedFileStream -Path $destination
     try {{
         try {{
