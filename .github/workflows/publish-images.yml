@@ -6,12 +6,14 @@ on:
       - "v*.*.*"
 
 permissions:
+  actions: read
   contents: read
   packages: write
   id-token: write
 
 concurrency:
   group: release-images
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -38,6 +40,27 @@ jobs:
             file: ./deploy/docker/analytics-api.Dockerfile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify exact main CI passed before registry authentication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          source_sha="$(git rev-parse "${GITHUB_REF}^{commit}")"
+          test "$source_sha" = "$GITHUB_SHA"
+          ci_run_url="$(
+            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${source_sha}&event=push&status=completed&per_page=100" \
+              --jq '[.workflow_runs[] | select(
+                (.path | test("^\\.github/workflows/ci\\.yml(?:@.+)?$")) and
+                .head_branch == "main" and
+                .conclusion == "success"
+              ) | .html_url] | first'
+          )"
+          if [[ -z "$ci_run_url" || "$ci_run_url" == "null" ]]; then
+            echo "No successful main CI run found for the exact release commit." >&2
+            exit 1
+          fi
+          echo "Verified exact main CI: $ci_run_url"
 
       - name: Validate immutable release coordinates
         id: refs
@@ -118,6 +141,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
+      - name: Refuse to overwrite an existing immutable release tag
+        env:
+          VERSION: ${{ steps.refs.outputs.version }}
+          DOCKERHUB_IMAGE: ${{ steps.refs.outputs.dockerhub }}
+          GHCR_IMAGE: ${{ steps.refs.outputs.ghcr }}
+        run: |
+          bash scripts/refuse-existing-release-tags.sh "$VERSION" "sha-${GITHUB_SHA}" "$DOCKERHUB_IMAGE" "$GHCR_IMAGE"
+
       - name: Build, attest, and publish
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
@@ -177,7 +208,9 @@ jobs:
           GHCR_IMAGE: ${{ steps.refs.outputs.ghcr }}
         run: |
           set -euo pipefail
-          for image in "$DOCKERHUB_IMAGE" "$GHCR_IMAGE"; do
-            actual="$(docker buildx imagetools inspect "$image:$VERSION" --format '{{json .Manifest.Digest}}' | tr -d '"')"
-            test "$actual" = "$EXPECTED_DIGEST"
+          for tag in "$VERSION" "sha-${GITHUB_SHA}"; do
+            for image in "$DOCKERHUB_IMAGE" "$GHCR_IMAGE"; do
+              actual="$(docker buildx imagetools inspect "$image:$tag" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+              test "$actual" = "$EXPECTED_DIGEST"
+            done
           done

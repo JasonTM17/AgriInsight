@@ -256,6 +256,24 @@ pull-request/main CI completely secretless.
   modules. No database schema, public API, web contract, release image default,
   or assistant runtime flag changes in this iteration.
 
+### Protected-provider diagnostic (2026-08-02)
+
+- Protected run
+  [30741562634](https://github.com/JasonTM17/AgriInsight/actions/runs/30741562634)
+  completed its hash-locked source import and emitted only the approved aggregate
+  artifact. It failed the evaluation gate with 16 answered provider cases and
+  four content-free provider errors; all token, latency, citation-ID precision,
+  refusal, and source-SHA checks passed. This is diagnostic evidence, not
+  acceptance evidence.
+- An aggregate-only reproduction classified the failures as DeepSeek responses
+  that either referenced an unavailable citation ID or contained an uncited
+  claim. The strict validator correctly rejected them; no prompt, response,
+  case identifier, evidence content, or credential was retained.
+- With the identical bounded 20-call payload, fixed `temperature: 0` produced
+  20 accepted responses. The client now sends this server-controlled sampling
+  value while retaining JSON mode and all citation checks. A new protected run
+  is still required before claiming the zero-error gate accepted.
+
 ## Release gates
 
 ### Verified release evidence

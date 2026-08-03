@@ -27,7 +27,8 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Phase 7 | Outbox operations, realtime read-model foundation, isolated alert-worker hardening, verified images, CI/release hardening | Alert-worker hardening is merged on `main` and released in `v0.2.3`; main CI and protected four-image publication are green. V27 adds the readiness-only invalid-source-evidence index, and V28 repairs the acknowledgement function without rewriting V22. External deployment, broker ownership, and recovery objectives remain open. |
 | Realtime alert center Phase 3 | Browser alert UX and acceptance | Hosted acceptance passed in PR #14 / CI `30445148252` and the PR is merged; no new image publication or external deployment is implied |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
-| Frontend follow-up | Protected external promotion | Phases 9–11 are accepted; Phase 12 published four verified `v0.2.3` images. Production hosting, OIDC/operations, package visibility, and credential rotation remain owner-gated. |
+| Frontend follow-up | Internal candidate complete; external production separate | All 12 phases are complete for the intended internal web platform and the four `v0.4.0` images were published to Docker Hub/GHCR after exact-head CI. External hosting, OIDC/operations, package visibility, recovery, and credential rotation remain owner-gated. |
+| External production readiness | In progress — current verdict NO-GO | [Controlled-promotion plan](../plans/260802-1646-external-production-readiness/plan.md) owns immutable-image/CI preflight, current-schema recovery proof, owner-bound approval evidence, and target-environment go/no-go validation. |
 
 ## Phase 5 checkpoint
 

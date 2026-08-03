@@ -108,6 +108,7 @@ def test_valid_answer_uses_fixed_model_bounded_prompt_and_citations() -> None:
     assert isinstance(request_payload, dict)
     assert request_payload["model"] == "deepseek-v4-flash"
     assert request_payload["thinking"] == {"type": "disabled"}
+    assert request_payload["temperature"] == 0
     assert request_payload["stream"] is False
     assert request_payload["max_tokens"] == 1_200
 
