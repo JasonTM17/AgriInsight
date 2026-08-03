@@ -1,8 +1,15 @@
 .page {
   display: grid;
   gap: clamp(1.5rem, 3vw, 2.75rem);
+  min-width: 0;
   max-width: 88rem;
   margin: 0 auto;
+}
+
+.hero > *,
+.workspace > *,
+.suggestions button {
+  min-width: 0;
 }
 
 .hero {
@@ -170,6 +177,7 @@
 .suggestions button {
   min-height: 2.75rem;
   padding: 0.7rem 0;
+  overflow-wrap: anywhere;
   text-align: left;
   background: transparent;
   border: 0;

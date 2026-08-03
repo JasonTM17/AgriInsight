@@ -42,11 +42,28 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
     const response = await page.goto(surface.route);
     expect(response?.status(), `${viewportName} GET ${surface.route}`).toBe(200);
     await expectSurfaceReady(page, surface);
+    console.log(`PORTFOLIO_CAPTURE surface=${surface.name} viewport=${viewportName}`);
     await expect
-      .poll(() => page.evaluate(() =>
-        document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1
-      ))
-      .toBe(true);
+      .poll(async () => page.evaluate(() => {
+        const root = document.documentElement;
+        if (root.scrollWidth <= root.clientWidth + 1) return "fits";
+        const offenders = [...document.querySelectorAll<HTMLElement>("body *")]
+          .map((element) => ({
+            className: element.className,
+            rect: element.getBoundingClientRect().toJSON(),
+            tagName: element.tagName
+          }))
+          .filter(({ rect }) => rect.left < -1 || rect.right > root.clientWidth + 1)
+          .slice(0, 8);
+        return JSON.stringify({
+          clientWidth: root.clientWidth,
+          offenders,
+          scrollWidth: root.scrollWidth
+        });
+      }), {
+        message: `${surface.name} ${viewportName} has horizontal overflow`
+      })
+      .toBe("fits");
     await page.screenshot({
       path: resolve(screenDirectory, `${surface.name}-${viewportName}.png`),
       fullPage: true

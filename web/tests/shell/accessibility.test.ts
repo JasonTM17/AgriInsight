@@ -44,6 +44,15 @@ describe("Field Ledger shell accessibility guardrails", () => {
     );
   });
 
+  it("allows the Assistant workspace to shrink inside the mobile app shell", () => {
+    const assistantCss = read(
+      "src/features/assistant/components/assistant-workspace.module.css"
+    );
+    expect(assistantCss).toMatch(/\.page\s*\{[^}]*min-width:\s*0;/s);
+    expect(assistantCss).toMatch(/\.workspace > \*[^}]*min-width:\s*0;/s);
+    expect(assistantCss).toMatch(/\.suggestions button\s*\{[^}]*overflow-wrap:\s*anywhere;/s);
+  });
+
   it("does not allow raw Stitch exports or CDN-only runtime dependencies", () => {
     const source = [
       read("src/components/app-shell/app-shell.tsx"),
