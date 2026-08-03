@@ -49,7 +49,9 @@ describe("Field Ledger shell accessibility guardrails", () => {
       "src/features/overview/components/overview-farms.module.css"
     );
     expect(overviewCss).toMatch(/\.stack > \*\s*\{[^}]*min-width:\s*0;/s);
-    expect(overviewCss).toMatch(/\.trendChart\s*\{[^}]*overflow-x:\s*auto;/s);
+    expect(overviewCss).toMatch(
+      /\.trendChart\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s
+    );
     expect(overviewCss).toMatch(/\.periodFilter\s*\{[^}]*flex-wrap:\s*wrap;/s);
   });
 
