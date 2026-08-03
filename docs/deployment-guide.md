@@ -614,8 +614,9 @@ compatibility credential, never a repository secret or image build argument.
   deadline, approval reference, and unlock criterion in
   [production readiness](production-readiness.md); an unassigned row blocks
   promotion.
-- Repository license decision; candidate images intentionally omit a license
-  label until a root license is selected
+- The repository now carries an MIT license; candidate images intentionally
+  omit an OCI license label until the next approved release records the legal
+  decision and label policy in its promotion evidence
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership
 - Encrypted off-host backup destination, retention/key owner, and approved recurring restore-drill schedule
 - External host, hostname/TLS, broker operations owner, observability, rollback

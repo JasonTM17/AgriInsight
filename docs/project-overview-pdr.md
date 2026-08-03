@@ -190,10 +190,10 @@ and backup policy remain owner-gated.
   value.
 - Keep CK FE/Stitch design artifacts and the Field Ledger tokens as the
   frontend source of truth for later route changes.
-- Complete branch/release controls, license, production identity, and
+- Complete branch/release controls, OCI license-label policy, production identity, and
   operations approvals before claiming production readiness.
 
 Open decisions: production IdP/MFA, audit retention, backup RPO/RTO/off-host
 encryption/restore ownership, protected release secrets/reviewers, credential
-rotation ownership, repository license/registry visibility, and GitHub
+rotation ownership, OCI license-label/release visibility, and GitHub
 branch-protection policy.

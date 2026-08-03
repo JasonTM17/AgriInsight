@@ -10,10 +10,10 @@ Older v2 manifests are rejected, and placeholder text such as
 `UNASSIGNED — NO-GO` is a documentation-only marker for unresolved control
 ownership. It is never valid evidence.
 
-The latest live repository/workstation snapshot is
-[the production GO/NO-GO report](../plans/260802-1646-external-production-readiness/reports/260803-0815-production-go-no-go-snapshot.md).
+The latest repository/workstation snapshot is
+[the portfolio readiness snapshot](../plans/260802-1646-external-production-readiness/reports/260803-1043-portfolio-readiness-snapshot.md).
 It records the current missing production environment, source protection,
-license, target recovery prerequisites, owners, and deadlines without
+OCI license-label approval, target recovery prerequisites, owners, and deadlines without
 fabricating any of them.
 
 ## Verified internal baseline
@@ -57,7 +57,7 @@ Every approval row must carry all of these fields before GO is possible:
 | Credential rotation | `credential_rotation` | IdP, database, broker, registry, web session-key, and secret-manager rotation cadence and ownership | UNASSIGNED — NO-GO | REQUIRED | REQUIRED | REQUIRED | Rotation rehearsal preserves service availability and records no secret values | REQUIRED | NO-GO |
 | Observability and rollback | `observability` | Metrics/log/trace destination, alert routes, service thresholds, rollback authority, and previous-digest procedure | UNASSIGNED — NO-GO | REQUIRED | REQUIRED | REQUIRED | Health, alert delivery, rollback and post-rollback verification pass in target environment | REQUIRED | NO-GO |
 | Registry visibility and package policy | `registry` | Docker Hub/GHCR visibility, least-privilege token ownership/rotation, immutable tags, and paired-digest policy | UNASSIGNED — NO-GO | REQUIRED | REQUIRED | REQUIRED | Release record proves approved Docker Hub/GHCR digest parity, no tag overwrite, and reviewer approval | REQUIRED | NO-GO |
-| License and legal | `license` | Root repository license and OCI license-label policy | UNASSIGNED — NO-GO | REQUIRED | REQUIRED | REQUIRED | Legal decision is recorded and image labels/documentation match it | REQUIRED | NO-GO |
+| License and legal | `license` | MIT root repository license is recorded; OCI license-label policy and release approval remain required | UNASSIGNED — NO-GO | REQUIRED | REQUIRED | REQUIRED | Legal decision is recorded and image labels/documentation match it | REQUIRED | NO-GO |
 
 The release workflow serializes approved publishes and fails closed if it cannot
 establish that a semantic or full-SHA tag is absent. This is not a replacement

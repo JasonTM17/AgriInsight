@@ -8,6 +8,9 @@ evidence_type: live read-only repository and workstation checks
 
 # External production GO/NO-GO snapshot
 
+> Historical snapshot — generated before the portfolio license/governance
+> update; do not treat its `license: null` observation as current state.
+
 ## Decision
 
 **NO-GO.** The repository release candidate has supply-chain evidence, but no
