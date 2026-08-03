@@ -116,6 +116,11 @@ The supported operator entrypoint is `scripts/run-backend-restore-drill.ps1`.
 Do not present `scripts/restore-backend-postgres.ps1` as a manual operator
 command; the wrapper owns report binding and run confirmation, while the
 data-moving script independently enforces its non-lowerable V30 source gate.
+Windows restore inputs remain restricted to the D drive. On a non-Windows
+validation host, set `AGRIINSIGHT_RECOVERY_ALLOWED_ROOT` to an existing absolute
+directory; the input must resolve inside that root and must not traverse a
+symbolic link. This explicit root supports hosted contract verification without
+turning arbitrary Unix paths into approved recovery locations.
 
 Restore is forward-safe: it requires the checksum sidecar, a pre-created empty target database, the operator role, migration role, and runtime role credentials. It refuses to drop a non-empty database and never runs `pg_restore --clean`.
 

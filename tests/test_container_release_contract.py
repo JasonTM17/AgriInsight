@@ -106,7 +106,7 @@ def test_analytics_runtime_omits_python_build_tooling() -> None:
     assert " pip " not in runtime_stage
 
 
-def test_images_do_not_claim_a_license_before_the_owner_selects_one() -> None:
+def test_source_is_mit_licensed_without_preapproving_image_license_labels() -> None:
     dockerfiles = (
         ROOT / "Dockerfile",
         ROOT / "backend" / "Dockerfile",
@@ -114,7 +114,9 @@ def test_images_do_not_claim_a_license_before_the_owner_selects_one() -> None:
         ROOT / "deploy" / "docker" / "analytics-api.Dockerfile",
     )
 
-    assert not list(ROOT.glob("LICENSE*"))
+    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    assert "MIT License" in license_text
+    assert "Permission is hereby granted, free of charge" in license_text
     for dockerfile in dockerfiles:
         assert "org.opencontainers.image.licenses" not in dockerfile.read_text(
             encoding="utf-8"

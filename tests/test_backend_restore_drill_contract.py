@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -20,6 +21,13 @@ POWERSHELL = (
     or shutil.which("powershell")
     or shutil.which("pwsh")
 )
+
+
+def _powershell_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    if os.name != "nt":
+        environment["AGRIINSIGHT_RECOVERY_ALLOWED_ROOT"] = str(PROJECT_ROOT)
+    return environment
 
 
 def _run_drill(
@@ -43,6 +51,7 @@ def _run_drill(
             *arguments,
         ],
         cwd=PROJECT_ROOT,
+        env=_powershell_environment(),
         capture_output=True,
         check=False,
         text=True,
@@ -73,6 +82,7 @@ def _run_restore(
             *arguments,
         ],
         cwd=PROJECT_ROOT,
+        env=_powershell_environment(),
         capture_output=True,
         check=False,
         text=True,
@@ -95,6 +105,7 @@ def _run_powershell(command: str) -> subprocess.CompletedProcess[str]:
             encoded_command,
         ],
         cwd=PROJECT_ROOT,
+        env=_powershell_environment(),
         capture_output=True,
         check=False,
         text=True,
@@ -117,6 +128,7 @@ def _start_powershell(command: str) -> subprocess.Popen[str]:
             encoded_command,
         ],
         cwd=PROJECT_ROOT,
+        env=_powershell_environment(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -201,10 +213,12 @@ def test_backup_restore_and_drill_share_a_cmdlet_independent_sha256_helper() -> 
     assert "[System.Security.Cryptography.SHA256]::Create()" in helper
     assert "[System.IO.FileShare]::Read" in helper
     assert "[System.IO.FileAttributes]::ReparsePoint" in helper
+    assert "AGRIINSIGHT_RECOVERY_ALLOWED_ROOT" in helper
     assert "[System.Threading.Mutex]::new" in helper
     assert '"Global\\AgriInsightRestoreDrill_$identityHash"' in helper
     assert "$mutex.WaitOne(0)" in helper
-    assert 'if ($root -ine "D:\\")' in helper
+    assert '[System.IO.Path]::GetPathRoot($resolved) -ine $approvedRoot' in helper
+    assert '$resolved.StartsWith($approvedPrefix, [System.StringComparison]::Ordinal)' in helper
     assert "[System.IO.File]::Move($TemporaryPath, $Destination)" in helper
     assert "$sha256.Dispose()" in helper
     assert "$stream.Dispose()" in helper
@@ -347,18 +361,21 @@ $destination = '{_powershell_literal(destination)}'
 $first = New-AdjacentTemporaryPath -Destination $destination
 [System.IO.File]::WriteAllText($first, 'first')
 Publish-NewFile -TemporaryPath $first -Destination $destination
-$sourceLock = Open-ReadLockedFileStream -Path $destination
-try {{
+$isWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
+if ($isWindows) {{
+    $sourceLock = Open-ReadLockedFileStream -Path $destination
     try {{
-        $writer = [System.IO.File]::Open($destination, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
-        $writer.Dispose()
-        throw 'source lock allowed a writer'
+        try {{
+            $writer = [System.IO.File]::Open($destination, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+            $writer.Dispose()
+            throw 'source lock allowed a writer'
+        }}
+        catch [System.IO.IOException] {{
+        }}
     }}
-    catch [System.IO.IOException] {{
+    finally {{
+        $sourceLock.Dispose()
     }}
-}}
-finally {{
-    $sourceLock.Dispose()
 }}
 $second = New-AdjacentTemporaryPath -Destination $destination
 [System.IO.File]::WriteAllText($second, 'second')

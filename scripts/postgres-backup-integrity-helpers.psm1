@@ -51,13 +51,42 @@ function Assert-DDrivePathWithoutReparsePoints {
     )
 
     $resolved = [System.IO.Path]::GetFullPath($Path)
-    $root = [System.IO.Path]::GetPathRoot($resolved)
-    if ($root -ine "D:\") {
-        throw "Path must resolve to the D drive; received $resolved."
+    $isWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
+    if ($isWindows) {
+        $approvedRoot = "D:\"
+        if ([System.IO.Path]::GetPathRoot($resolved) -ine $approvedRoot) {
+            throw "Path must resolve to the D drive; received $resolved."
+        }
+    }
+    else {
+        $configuredRoot = [Environment]::GetEnvironmentVariable("AGRIINSIGHT_RECOVERY_ALLOWED_ROOT")
+        if ([string]::IsNullOrWhiteSpace($configuredRoot) -or
+            -not [System.IO.Path]::IsPathRooted($configuredRoot)) {
+            throw "AGRIINSIGHT_RECOVERY_ALLOWED_ROOT must be an absolute path on non-Windows hosts."
+        }
+
+        $approvedRoot = [System.IO.Path]::GetFullPath($configuredRoot)
+        if (-not (Test-Path -LiteralPath $approvedRoot -PathType Container)) {
+            throw "AGRIINSIGHT_RECOVERY_ALLOWED_ROOT must identify an existing directory."
+        }
+        $approvedPrefix = $approvedRoot.TrimEnd(
+            [System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar
+        ) + [System.IO.Path]::DirectorySeparatorChar
+        if (-not $resolved.StartsWith($approvedPrefix, [System.StringComparison]::Ordinal)) {
+            throw "Path must resolve inside AGRIINSIGHT_RECOVERY_ALLOWED_ROOT; received $resolved."
+        }
     }
 
-    $current = $root
-    $relative = $resolved.Substring($root.Length)
+    $current = $approvedRoot
+    $relative = $resolved.Substring($approvedRoot.Length).TrimStart(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+    $rootItem = Get-Item -LiteralPath $approvedRoot -Force
+    if (($rootItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Path must not traverse a symbolic link or junction: $approvedRoot"
+    }
     foreach ($segment in $relative.Split([System.IO.Path]::DirectorySeparatorChar, [System.StringSplitOptions]::RemoveEmptyEntries)) {
         $current = Join-Path $current $segment
         if (-not (Test-Path -LiteralPath $current)) {
