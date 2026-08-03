@@ -46,15 +46,35 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
     await expect
       .poll(async () => page.evaluate(() => {
         const root = document.documentElement;
-        if (root.scrollWidth <= root.clientWidth + 1) return "fits";
+        const hasContainingHorizontalClip = (element: HTMLElement): boolean => {
+          let ancestor = element.parentElement;
+          while (ancestor && ancestor !== document.body) {
+            const overflowX = getComputedStyle(ancestor).overflowX;
+            const rect = ancestor.getBoundingClientRect();
+            if (
+              ["auto", "scroll", "hidden", "clip"].includes(overflowX) &&
+              rect.left >= -1 &&
+              rect.right <= root.clientWidth + 1
+            ) {
+              return true;
+            }
+            ancestor = ancestor.parentElement;
+          }
+          return false;
+        };
         const offenders = [...document.querySelectorAll<HTMLElement>("body *")]
+          .filter((element) => {
+            const rect = element.getBoundingClientRect();
+            const exceedsViewport = rect.left < -1 || rect.right > root.clientWidth + 1;
+            return exceedsViewport && !hasContainingHorizontalClip(element);
+          })
           .map((element) => ({
             className: element.className,
             rect: element.getBoundingClientRect().toJSON(),
             tagName: element.tagName
           }))
-          .filter(({ rect }) => rect.left < -1 || rect.right > root.clientWidth + 1)
           .slice(0, 8);
+        if (offenders.length === 0) return "fits";
         return JSON.stringify({
           clientWidth: root.clientWidth,
           offenders,
