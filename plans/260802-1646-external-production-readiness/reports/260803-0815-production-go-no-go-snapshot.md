@@ -1,7 +1,7 @@
 ---
 title: External production go/no-go snapshot
 status: no-go
-generated_at: '2026-08-03T09:07:35+07:00'
+generated_at: '2026-08-03T09:46:15+07:00'
 scope: AgriInsight v0.4.0 external production promotion
 evidence_type: live read-only repository and workstation checks
 ---
@@ -26,7 +26,7 @@ was performed by this assessment.
 | Production environment | GitHub environments list has assistant-provider-evaluation and release-images only | Blocked: no production environment |
 | Source governance | GitHub main branch-protection query returned Branch not protected | Blocked |
 | Legal | Repository API reported license null | Blocked |
-| Local restore prerequisites | Docker Server 29.5.3 reachable; D drive 20.252 GiB and disk guard WARN; no guarded database target variables set | Blocked: no safe drill target |
+| Local restore prerequisites | Docker Server 29.5.3 reachable; C drive 9.576 GiB WARN and D drive 19.926 GiB FAIL; no guarded database target variables set | Blocked: no safe drill target or capacity |
 
 All GitHub observations were read live on 2026-08-03. The CI and publication
 records prove internal release quality, not public hosting or operational
@@ -67,10 +67,16 @@ Remote staging restore remains blocked until an approved TLS provider contract
 supplies certificate verification for both libpq and Flyway JDBC; the checked-in
 drill intentionally fails closed to literal IPv4 loopback until then.
 
-The actual workstation guard is WARN because D is below its 25 GiB warning
-threshold (20.252 GiB observed). There are active non-AgriInsight containers, so this assessment did
-not free storage, stop containers, lower the guard threshold, or create a
-database target. Those actions need an authorized maintenance decision.
+The retained historical local dumps are Phase 7 artifacts with Flyway schema
+values `missing`, `9`, and `19`; none is V30-or-newer. They cannot be relabeled
+or reused as current-schema drill evidence.
+
+The actual workstation guard now fails: D is below its 20 GiB floor (19.926 GiB)
+and C is below its 10 GiB warning threshold (9.576 GiB). A read-only inventory
+found approximately 3.9 GiB of workspace temporary build/test cache under
+`artifacts/_tmp`, including 3.4 GiB of stale editor-extension cache; no cache,
+container, backup, or database data was removed by this assessment. Do not
+lower the guard threshold or create a database target until capacity is restored.
 
 ## Required next actions
 
@@ -80,8 +86,10 @@ database target. Those actions need an authorized maintenance decision.
 2. The repository owner protects main and creates a protected production
    environment; the release reviewer must not be assumed to own production
    operations.
-3. Hosting and platform owners provide a non-production, isolated target with
-   approved credentials and sufficient disk capacity for a V30 restore drill.
+3. Restore C and D disk guard PASS (currently approximately 0.5 GiB and 5.1
+   GiB short of warning thresholds respectively), then hosting and platform
+   owners provide a non-production, isolated target with approved credentials
+   for a V30 restore drill.
 4. Recovery owner approves RPO/RTO, encryption/key custody, off-host
    retention, restore operator, and drill schedule before any production
    recovery claim.
