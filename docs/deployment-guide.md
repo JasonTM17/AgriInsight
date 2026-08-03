@@ -252,8 +252,14 @@ credentials after the complete browser gate.
 Deploy only immutable `image@sha256:...` coordinates. Set all required values
 from a protected process environment or secret manager. Copy
 `deploy/production-promotion-evidence.template.json` to a protected deployment
-workspace (never Git), fill only approved non-secret references, then run the
-only supported promotion entrypoint before any release Compose command:
+workspace (never Git), fill only approved non-secret references, and keep the
+manifest at `format_version: 3`. v2 promotion manifests are rejected by the
+validator, so operators must always start from the v3 template rather than
+trying to recycle an older record. Every approval entry must include `owner`,
+`approval_ref`, `approved_at_utc`, `due_at_utc`, `unlock_criterion`, and
+`rollback_responsibility`; unknown controls or additional approval properties
+are rejected. Then run the only supported promotion entrypoint before any
+release Compose command:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compose.ps1 `
@@ -262,13 +268,13 @@ powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compos
 ```
 
 The entrypoint unconditionally rejects a mutable tag, incomplete/expired
-approval record, missing recovery evidence, non-first-party image, or a
-mismatch between the evidence record and the four active image variables. It
-verifies exact GitHub Actions run metadata before contacting Docker. It then
-pulls each selected digest and verifies OCI source/revision/version labels,
-provenance/SBOM attestations, paired Docker Hub/GHCR semantic/full-SHA tag
-parity, and the release topology. It is a release-control check, not an
-external hosting approval.
+approval record, v2 manifest, missing recovery evidence, non-first-party
+image, or a mismatch between the evidence record and the four active image
+variables. It verifies exact GitHub Actions run metadata before contacting
+Docker. It then pulls each selected digest and verifies OCI
+source/revision/version labels, provenance/SBOM attestations, paired Docker
+Hub/GHCR semantic/full-SHA tag parity, and the release topology. It is a
+release-control check, not an external hosting approval.
 
 The evidence record must keep target data non-secret: the approved Docker
 context, the lowercase SHA-256 fingerprint of that context's Docker endpoint,
@@ -314,6 +320,10 @@ The overlay requires digest-pinned values for
 backend role bootstrap/migration/readiness, separate web role bootstrap and
 migration, analytics readiness, then web liveness. PostgreSQL remains the
 digest-pinned upstream image and must not be republished.
+
+The v3 promotion manifest keeps unresolved controls out of the evidence path:
+`UNASSIGNED — NO-GO` stays a documentation-only marker in the control record,
+not a valid approval value.
 
 For the opt-in learning demo on Docker Desktop, include the demo database
 marker and real Keycloak issuer overlays:

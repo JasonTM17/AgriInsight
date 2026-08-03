@@ -28,7 +28,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Realtime alert center Phase 3 | Browser alert UX and acceptance | Hosted acceptance passed in PR #14 / CI `30445148252` and the PR is merged; no new image publication or external deployment is implied |
 | Analytics Phase 2 | Internal read API and demo-tenant boundary | Completed locally; Phase 5 canonical filter extension and authenticated BFF consumption are accepted |
 | Frontend follow-up | Internal candidate complete; external production separate | All 12 phases are complete for the intended internal web platform and the four `v0.4.0` images were published to Docker Hub/GHCR after exact-head CI. External hosting, OIDC/operations, package visibility, recovery, and credential rotation remain owner-gated. |
-| External production readiness | In progress — current verdict NO-GO | [Controlled-promotion plan](../plans/260802-1646-external-production-readiness/plan.md) owns immutable-image/CI preflight, current-schema recovery proof, owner-bound approval evidence, and target-environment go/no-go validation. |
+| External production readiness | Repo-owned owner-contract hardening done; actual external approvals remain NO-GO | [Controlled-promotion plan](../plans/260802-1646-external-production-readiness/plan.md) owns immutable-image/CI preflight, current-schema recovery proof, owner-bound approval evidence, and target-environment go/no-go validation. The repository-side contract is enforced, but no external control row is approved yet. |
 
 ## Phase 5 checkpoint
 
@@ -121,6 +121,9 @@ implicitly converted into operating cost.
   browser acceptance are verified through PR #13 / CI `30425647823` and PR #14
   / CI `30445148252`; production Kafka ownership and external deployment remain
   owner-gated. The Phase 3 run built candidate images without publishing one.
+- The repo-side owner-contract hardening for external production readiness is
+  complete, including the v3 promotion record shape and explicit NO-GO markers.
+  That does not convert any unresolved external approval row into GO status.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
   artifact. Keep its additive bounded GET reads, deterministic export, and
   current backend gate intact when later phases extend the contract surface.

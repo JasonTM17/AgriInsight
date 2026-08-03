@@ -91,14 +91,14 @@ evidence.
 
 ## Success Criteria
 
-- [ ] Mutable, untrusted, or wrong-component image references fail before
+- [x] Mutable, untrusted, or wrong-component image references fail before
   Compose startup.
-- [ ] Placeholder, expired, duplicate, or incomplete owner evidence fails
+- [x] Placeholder, expired, duplicate, or incomplete owner evidence fails
   without leaking values.
-- [ ] The supported wrapper validates exact workflow metadata before Docker,
+- [x] The supported wrapper validates exact workflow metadata before Docker,
   validates current/prior image labels, and verifies deploy/rollback post-state
   before rendering or changing Compose.
-- [ ] Registry publication cannot authenticate until the exact `ci.yml`
+- [x] Registry publication cannot authenticate until the exact `ci.yml`
   `main` CI is successful, and both semantic/full-SHA tags retain paired
   Docker Hub/GHCR digest parity.
 

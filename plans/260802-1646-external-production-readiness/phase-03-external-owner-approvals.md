@@ -33,14 +33,14 @@ a visible NO-GO with an accountable owner and deadline.
 
 ## Implementation Steps
 
-1. Publish the owner matrix for IdP/MFA/CORS, broker TLS/SASL/HA/retention,
+- [x] Publish the owner matrix for IdP/MFA/CORS, broker TLS/SASL/HA/retention,
    hosting/TLS/host controls, observability/on-call, recovery/off-host
    encryption, registry-token rotation/GHCR visibility, license, and rollback.
-2. Link each row to the machine-checked promotion evidence field and define the
+- [x] Link each row to the machine-checked promotion evidence field and define the
    exact artifact that unlocks it.
-3. Obtain actual approvals through the responsible organization; store only
+- [ ] Obtain actual approvals through the responsible organization; store only
    safe references and timestamps in the repository.
-4. Mark unresolved entries as NO-GO with a real deadline rather than changing
+- [ ] Mark unresolved entries as NO-GO with a real deadline rather than changing
    technical status to green.
 
 ## Success Criteria

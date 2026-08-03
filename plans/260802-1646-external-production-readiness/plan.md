@@ -6,7 +6,7 @@ description: >-
 status: in-progress
 priority: P1
 effort: 8-12d plus external approvals
-branch: fix/assistant-deterministic-sampling
+branch: main
 tags:
   - infra
   - security
