@@ -1,17 +1,18 @@
 ---
 phase: 12
-title: "container-release-and-docs"
-status: blocked
+title: container-release-and-docs
+status: completed
 priority: P1
-effort: "5d"
-dependencies: [11]
+effort: 5d
+dependencies:
+  - 11
 ---
 
 # Phase 12: container-release-and-docs
 
 ## Overview
 
-Package the web app and analytics API as non-root deployable images, extend the existing protected image workflow as one serialized four-image publication path, and update release-facing docs plus GitHub repository About metadata. This phase may produce a gated release candidate; it must not claim public production release while the `release-images` environment gate remains open.
+Package the web app and analytics API as non-root deployable images, extend the existing protected image workflow as one serialized four-image publication path, and update release-facing docs plus GitHub repository About metadata. The protected registry release completed for `v0.4.0`; this phase still does not claim an external production deployment.
 
 ## Context Links
 
@@ -132,15 +133,15 @@ docker compose -f compose.yaml -f compose.backend.yaml -f compose.demo.yaml `
 - [x] Dockerfile-specific context allowlists include required code/catalog assets and exclude `.env`, local artifacts, caches, VCS metadata, and unrelated services.
 - [x] Web and analytics build/scan jobs can run independently, but publication is serialized and protected-gated.
 - [x] Semantic and SHA tags are the only publishable tags; `latest` is impossible by workflow design.
-- [ ] SBOM, provenance, Trivy zero HIGH/CRITICAL, and pull-by-digest smoke evidence exist for both images.
+- [x] SBOM, provenance, Trivy zero HIGH/CRITICAL, and pull-by-digest smoke evidence exist for both images.
 - [x] The existing protected workflow retains Python/backend behavior, adds web/analytics, and serializes all four matrix publications with one tag/gate/evidence model.
-- [ ] Pre-publication Trivy zero HIGH/CRITICAL blocks push; the exact published digest is scanned and smoked again.
-- [ ] The opt-in demo overlay proves real OIDC login through all services with reconciled big-data masters and separate web/backend migration/runtime roles; PostgreSQL/Keycloak remain upstream-only.
+- [x] Pre-publication Trivy zero HIGH/CRITICAL blocks push; the exact published digest is scanned and smoked again.
+- [x] The opt-in demo overlay proves real OIDC login through all services with reconciled big-data masters and separate web/backend migration/runtime roles; PostgreSQL/Keycloak remain upstream-only.
 - [x] README, deployment docs, architecture docs, GitHub repository About metadata, and any social-preview owner handoff reflect the same gated-release posture.
 - [x] No web-app About page or ninth IA surface is added by this phase.
 - [x] If the external publication gate is open, outputs are labeled internal candidate only and no production claim is emitted.
 
-## Internal candidate checkpoint — 2026-07-27
+## Internal candidate checkpoint — 2026-07-27 (historical)
 
 - Hosted CI builds, scans, and non-root/read-only smokes Python, backend, web,
   and analytics API without pushing. Web uses the current pinned Node 24 LTS
@@ -151,13 +152,30 @@ docker compose -f compose.yaml -f compose.backend.yaml -f compose.demo.yaml `
   BuildKit SBOM/provenance, and exact published-digest scan/smoke/equality.
 - GitHub About description, homepage, and topics are populated; README embeds
   the 1280x640 repository image and generated navigation GIF.
-- External evidence stays unchecked because GitHub has no `release-images`
-  environment/reviewers/secrets and Docker Hub has no web/analytics
-  repositories. No tag or registry push was attempted. Exact owner actions are
-  recorded in the
-  [handoff report](./reports/github-social-preview-owner-handoff.md).
+- At this checkpoint, external evidence remained unchecked because the
+  protected environment and registry repositories had not yet been configured.
+  This statement is historical and superseded by the protected publication
+  below.
 - Candidate evidence:
   [Phase 12 report](./reports/tester-2026-07-27-phase-12-release-candidate.md).
+
+## Protected publication completion — 2026-08-01
+
+- Public release `v0.4.0` targets commit
+  `616527dcc7f4a03720fb48e617f9310ab9614873`.
+- Exact-head CI
+  [`30697294137`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697294137)
+  passed 10/10 before the protected image publication
+  [`30697808763`](https://github.com/JasonTM17/AgriInsight/actions/runs/30697808763)
+  passed 4/4.
+- All four first-party images have semantic and full-SHA tags in Docker Hub and
+  GHCR; the workflow validated candidate and returned-digest scan/smoke,
+  SBOM/provenance, and two-registry digest parity. Exact digest evidence is
+  maintained in [`docs/deployment-guide.md`](../../docs/deployment-guide.md).
+- This closes the Phase 12 registry-release scope only. Production IdP/MFA,
+  broker, hosting/TLS, recovery, observability, credential-rotation, and legal
+  controls are owned by
+  [`260802-1646-external-production-readiness`](../260802-1646-external-production-readiness/plan.md).
 
 ## Risks And Rollback
 

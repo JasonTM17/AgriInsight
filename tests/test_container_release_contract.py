@@ -142,6 +142,8 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
 
     assert "environment: release-images" in workflow
     assert "max-parallel: 1" in workflow
+    assert "queue: max" in workflow
+    assert "actions: read" in workflow
     for name in ("python", "backend", "web", "analytics-api"):
         assert f"- name: {name}" in workflow
     assert "${{ secrets.DOCKERHUB_USERNAME }}" in workflow
@@ -157,11 +159,29 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
     )
     assert "type=raw,value=latest" not in workflow.lower()
     assert ":latest" not in workflow.lower()
+    assert "Verify exact main CI passed before registry authentication" in workflow
+    assert "actions/workflows/ci.yml/runs" in workflow
+    assert 'workflow_runs[] | select(' in workflow
+    assert 'test("^\\\\.github/workflows/ci\\\\.yml(?:@.+)?$")' in workflow
+    assert '.head_branch == "main"' in workflow
+    assert '.conclusion == "success"' in workflow
+    assert 'for tag in "$VERSION" "sha-${GITHUB_SHA}"; do' in workflow
+    assert 'for image in "$DOCKERHUB_IMAGE" "$GHCR_IMAGE"; do' in workflow
+    assert 'docker buildx imagetools inspect "$image:$tag"' in workflow
+    assert "Refuse to overwrite an existing immutable release tag" in workflow
+    assert "bash scripts/refuse-existing-release-tags.sh" in workflow
 
     pre_scan = workflow.index(
         "- name: Scan the candidate before registry authentication"
     )
+    verify_ci = workflow.index(
+        "- name: Verify exact main CI passed before registry authentication"
+    )
     docker_hub_login = workflow.index("- name: Authenticate to Docker Hub")
+    ghcr_login = workflow.index("- name: Authenticate to GitHub Container Registry")
+    refuse_overwrite = workflow.index(
+        "- name: Refuse to overwrite an existing immutable release tag"
+    )
     publish = workflow.index("- name: Build, attest, and publish")
     pull_published_digest = workflow.index(
         "- name: Pull the exact published digest before smoke test"
@@ -169,7 +189,7 @@ def test_release_publication_is_protected_serial_and_pre_scanned() -> None:
     smoke_published_digest = workflow.index(
         "- name: Smoke-test the exact published digest"
     )
-    assert pre_scan < docker_hub_login < publish
+    assert verify_ci < pre_scan < docker_hub_login < ghcr_login < refuse_overwrite < publish
     assert publish < pull_published_digest < smoke_published_digest
 
 
@@ -216,6 +236,38 @@ def test_release_overlay_uses_immutable_images_and_hardened_runtime_defaults() -
         "${AGRIINSIGHT_ASSISTANT_ENABLED:-false}"
     ) in compose
     assert "AGRIINSIGHT_LLM_API_KEY: ${AGRIINSIGHT_LLM_API_KEY:-}" in compose
+
+
+def test_supported_production_release_wrapper_verifies_evidence_before_compose() -> None:
+    wrapper = (
+        ROOT / "scripts" / "start-production-release-compose.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "Test-ProductionPromotionEvidence -EvidenceFile $EvidenceFile" in wrapper
+    assert "Deploy and Rollback modes require -ConfirmProductionChange." in wrapper
+    assert '[ValidateSet("Validate", "Deploy", "Rollback")]' in wrapper
+    assert 'Invoke-ExternalCommand -Command "docker" -Arguments @("pull", $Image)' in wrapper
+    assert "docker image inspect $Image --format" in wrapper
+    assert "org.opencontainers.image.revision" in wrapper
+    assert "nguyenson1710/$repositoryName" in wrapper
+    assert "ghcr.io/jasontm17/$repositoryName" in wrapper
+    assert 'sha-$($Release.Commit)' in wrapper
+    assert "Could not verify paired registry digest parity." in wrapper
+    assert 'foreach ($kind in @("Provenance", "SBOM"))' in wrapper
+    assert 'gh api --hostname github.com "repos/JasonTM17/AgriInsight/actions/runs/$runId"' in wrapper
+    assert ".github/workflows/ci.yml" in wrapper
+    assert 'workflowPathPattern = "^$([regex]::Escape($WorkflowPath))(?:@.+)?$"' in wrapper
+    assert 'Properties["updated_at"]' in wrapper
+    assert "Rollback prior release was not published before the current release." in wrapper
+    assert ".github/workflows/publish-images.yml" in wrapper
+    assert (
+        wrapper.index("Assert-ReleaseWorkflowEvidence -Release $evidence.Release")
+        < wrapper.index("Push-Location")
+    )
+    assert '"config", "--quiet"' in wrapper
+    assert '"up", "--detach", "--wait", "--wait-timeout", "180"' in wrapper
+    assert "Invoke-DisableExposure" in wrapper
+    assert '"down"' in wrapper
 
 
 def test_demo_overlay_orders_real_oidc_big_data_seed_and_reconciliation() -> None:

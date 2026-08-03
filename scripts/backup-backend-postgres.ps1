@@ -9,6 +9,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $diskGuard = Join-Path $PSScriptRoot "check-workspace-disk.ps1"
+Import-Module (Join-Path $PSScriptRoot "postgres-backup-integrity-helpers.psm1") -Force
 
 function Get-RequiredEnvironmentValue {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -28,11 +29,7 @@ function Resolve-DDriveFile {
     } else {
         Join-Path $projectRoot $Path
     }
-    $resolved = [System.IO.Path]::GetFullPath($candidate)
-    if ([System.IO.Path]::GetPathRoot($resolved) -ne "D:\") {
-        throw "BackupFile must resolve to the D drive; received $resolved."
-    }
-    return $resolved
+    return Assert-DDrivePathWithoutReparsePoints -Path $candidate
 }
 
 function Invoke-ScalarQuery {
@@ -80,6 +77,8 @@ if ([string]::IsNullOrWhiteSpace($parent)) {
     throw "BackupFile must include a parent directory."
 }
 New-Item -ItemType Directory -Force -Path $parent | Out-Null
+$temporaryTarget = New-AdjacentTemporaryPath -Destination $target
+$temporaryMetadataFile = $null
 
 $databaseHost = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_HOST"
 $databasePort = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_PORT"
@@ -112,12 +111,12 @@ SELECT COALESCE(
         "--dbname=$databaseName" `
         "--username=$operatorUsername" `
         "--format=custom" `
-        "--file=$target"
+        "--file=$temporaryTarget"
     if ($LASTEXITCODE -ne 0) {
-        throw "pg_dump failed; any partial target is retained and has no valid metadata."
+        throw "pg_dump failed; the reserved partial output is retained without valid metadata."
     }
 
-    $hash = Get-FileHash -LiteralPath $target -Algorithm SHA256
+    $hash = Get-Sha256Hex -Path $temporaryTarget
     $metadata = [ordered]@{
         format_version = 1
         created_at_utc = [DateTimeOffset]::UtcNow.ToString("O")
@@ -127,10 +126,13 @@ SELECT COALESCE(
         dump_format = "custom"
         includes_acls = $true
         backup_file = $target
-        size_bytes = (Get-Item -LiteralPath $target).Length
-        sha256 = $hash.Hash.ToLowerInvariant()
+        size_bytes = (Get-Item -LiteralPath $temporaryTarget).Length
+        sha256 = $hash
     }
-    $metadata | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $metadataFile -Encoding utf8
+    Publish-NewFile -TemporaryPath $temporaryTarget -Destination $target
+    $temporaryMetadataFile = New-AdjacentTemporaryPath -Destination $metadataFile
+    $metadata | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $temporaryMetadataFile -Encoding utf8
+    Publish-NewFile -TemporaryPath $temporaryMetadataFile -Destination $metadataFile
     Write-Output "BACKUP_BACKEND status=PASS file=$target metadata=$metadataFile sha256=$($metadata.sha256)"
 }
 finally {

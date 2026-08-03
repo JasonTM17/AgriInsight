@@ -104,16 +104,65 @@ powershell -ExecutionPolicy Bypass -File scripts/backup-backend-postgres.ps1 `
 
 The script runs `pg_dump --format=custom`, keeps ACLs, writes a sidecar JSON containing PostgreSQL/Flyway/checksum/size metadata, and uses `PGPASSWORD` rather than command-line credentials. It never deletes a target or cleans user files. Disk guard must be PASS first.
 
+The dump and its sidecar are first written to reserved adjacent temporary files.
+They are published only by an atomic no-overwrite move, so an existing backup
+or metadata file is never replaced by a concurrent run. The D-drive path must
+not traverse a symbolic link or junction.
+
 ## Restore drill
 
 Restore is forward-safe: it requires the checksum sidecar, a pre-created empty target database, the operator role, migration role, and runtime role credentials. It refuses to drop a non-empty database and never runs `pg_restore --clean`.
 
 ```powershell
+$env:AGRIINSIGHT_RESTORE_DRILL_HOST='127.0.0.1'
+$env:AGRIINSIGHT_RESTORE_DRILL_PORT='5432'
+$env:AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS='127.0.0.1'
+$env:AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE='agriinsight_restore_v30'
 powershell -ExecutionPolicy Bypass -File scripts/restore-backend-postgres.ps1 `
-  -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump'
+  -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' `
+  -RestoreDrillScope local-or-staging
 ```
 
 Order is: disk guard → checksum → empty-target check → idempotent role bootstrap → `pg_restore --no-owner --single-transaction` (ACLs retained) → Flyway validate → integration-role/outbox-RLS gate → runtime schema-history/count smoke → measured restore report. A failed restore is retained for diagnosis; repair is an audited forward migration or a verified clean restore, never deletion of applied migrations.
+
+For a current-schema drill, first validate the backup sidecar and then require an
+explicit run confirmation:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' -MinimumSchemaVersion 30 -Mode Validate
+
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' -MinimumSchemaVersion 30 -Mode Run -RestoreDrillScope local-or-staging -ConfirmRestoreDrill
+~~~
+
+The wrapper rechecks the checksum, requires V30-or-newer source and restored
+schema evidence, and ties the new report to that exact backup. It does not
+establish a production RPO/RTO: production remains blocked until its off-host
+encryption, retention, owner, schedule, and objectives are approved.
+
+The V30 minimum may only be increased by an operator; a lower value is rejected.
+Before role bootstrap, restore rejects any user relation, routine, type,
+extension, or non-public schema, not merely tables. It holds a read lock on the
+verified backup through restoration and atomically publishes the uniquely named
+report without replacing an existing file.
+
+The target must be a separately named lowercase `agriinsight_restore_*` database
+and must differ from the backup metadata's source database. A `local-or-staging`
+scope is mandatory for a run and stored in the report. These guards prevent
+accidental restoration into the ordinary application database; they do not
+authorize production recovery.
+
+Restore does not use the ordinary `AGRIINSIGHT_DB_HOST`/`PORT` inputs. It
+requires the dedicated literal IPv4 loopback endpoint `127.0.0.1`, which must
+exactly match the protected `AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS` allowlist,
+before role bootstrap or restore. A global per-target mutex is held from the
+empty-target check through report publication, so a second local or RDP-session
+operator cannot begin a concurrent drill against the same endpoint and database.
+Remote staging remains blocked until an
+approved TLS provider contract supplies certificate verification for both libpq
+and Flyway JDBC. Store the backup, sidecar, report, and temporary files in an
+ACL-controlled directory: the reparse-point check rejects existing symbolic
+links/junctions, but cannot defend against another local account with concurrent
+write permission replacing a path after it is checked.
 
 ## Operational approval gate
 

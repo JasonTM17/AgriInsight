@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [string]$BackupFile
+    [string]$BackupFile,
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("local-or-staging")]
+    [string]$RestoreDrillScope
 )
 
 Set-StrictMode -Version 2.0
@@ -11,6 +14,7 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $diskGuard = Join-Path $PSScriptRoot "check-workspace-disk.ps1"
 $backendRunner = Join-Path $PSScriptRoot "run-backend-tests.ps1"
 $roleBootstrap = Join-Path $projectRoot "backend\ops\postgres\bootstrap-roles.sql"
+Import-Module (Join-Path $PSScriptRoot "postgres-backup-integrity-helpers.psm1") -Force
 
 function Get-RequiredEnvironmentValue {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -30,10 +34,7 @@ function Resolve-ExistingDDriveFile {
     } else {
         Join-Path $projectRoot $Path
     }
-    $resolved = [System.IO.Path]::GetFullPath($candidate)
-    if ([System.IO.Path]::GetPathRoot($resolved) -ne "D:\") {
-        throw "BackupFile must resolve to the D drive; received $resolved."
-    }
+    $resolved = Assert-DDrivePathWithoutReparsePoints -Path $candidate
     if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) {
         throw "Backup file does not exist: $resolved"
     }
@@ -92,14 +93,45 @@ if (-not (Test-Path -LiteralPath $metadataFile -PathType Leaf)) {
     throw "Backup metadata is required: $metadataFile"
 }
 $metadata = Get-Content -LiteralPath $metadataFile -Raw | ConvertFrom-Json
-$actualHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+$sourceDatabaseName = [string]$metadata.database_name
+if ([string]::IsNullOrWhiteSpace($sourceDatabaseName)) {
+    throw "Backup metadata database_name is required."
+}
+$sourceReadLock = Open-ReadLockedFileStream -Path $source
+try {
+$actualHash = Get-Sha256Hex -Path $source
 if ($actualHash -ne $metadata.sha256) {
     throw "Backup checksum mismatch; restore was not started."
 }
 
-$databaseHost = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_HOST"
-$databasePort = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_PORT"
-$databaseName = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_NAME"
+$databaseHost = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_RESTORE_DRILL_HOST"
+$normalizedDatabaseHost = $databaseHost.Trim().TrimEnd('.').ToLowerInvariant()
+if ($normalizedDatabaseHost -cne '127.0.0.1') {
+    throw "AGRIINSIGHT_RESTORE_DRILL_HOST must be the literal IPv4 loopback address 127.0.0.1 until a remote TLS provider contract is approved."
+}
+$allowedHosts = @(
+    (Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS").Split(',') |
+        ForEach-Object { $_.Trim().TrimEnd('.').ToLowerInvariant() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+)
+if ($allowedHosts.Count -eq 0 -or $allowedHosts -cnotcontains $normalizedDatabaseHost) {
+    throw "AGRIINSIGHT_RESTORE_DRILL_HOST is not in AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS."
+}
+$databaseHost = $normalizedDatabaseHost
+$databasePort = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_RESTORE_DRILL_PORT"
+[int]$parsedDatabasePort = 0
+if (-not [int]::TryParse($databasePort, [ref]$parsedDatabasePort) -or
+    $parsedDatabasePort -lt 1 -or $parsedDatabasePort -gt 65535) {
+    throw "AGRIINSIGHT_RESTORE_DRILL_PORT must be an integer from 1 through 65535."
+}
+$databasePort = $parsedDatabasePort.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+$databaseName = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE"
+if ($databaseName -cnotmatch '^agriinsight_restore_[a-z0-9_]{1,48}$') {
+    throw "AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE must name a dedicated lowercase agriinsight_restore_* database."
+}
+if ($databaseName -ceq $sourceDatabaseName) {
+    throw "Restore target must differ from the backup source database."
+}
 $operatorUsername = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_OPERATOR_USERNAME"
 $operatorPassword = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_OPERATOR_PASSWORD"
 $migrationUsername = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_FLYWAY_USERNAME"
@@ -110,15 +142,45 @@ $runtimePassword = Get-RequiredEnvironmentValue -Name "AGRIINSIGHT_DB_RUNTIME_PA
 if ($migrationUsername -ne "agriinsight_migrator" -or $runtimeUsername -ne "agriinsight_runtime") {
     throw "Restore requires the expected migration and runtime roles."
 }
-$tableCount = Invoke-Psql -Username $operatorUsername -Password $operatorPassword -Sql @"
+$targetRestoreMutex = Open-ExclusiveRestoreTargetMutex -EndpointHost $databaseHost -Port $databasePort -DatabaseName $databaseName
+try {
+$currentDatabaseName = Invoke-Psql -Username $operatorUsername -Password $operatorPassword -Sql "SELECT current_database();"
+if ($currentDatabaseName -cne $databaseName) {
+    throw "Connected database does not match AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE."
+}
+$unsafeObjectCount = Invoke-Psql -Username $operatorUsername -Password $operatorPassword -Sql @"
 SELECT count(*)
-FROM pg_catalog.pg_class AS relation
-JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = relation.relnamespace
-WHERE relation.relkind IN ('r', 'p')
-  AND namespace.nspname NOT IN ('pg_catalog', 'information_schema');
+FROM (
+    SELECT relation.oid
+    FROM pg_catalog.pg_class AS relation
+    JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND namespace.nspname NOT LIKE 'pg_toast%'
+    UNION ALL
+    SELECT routine.oid
+    FROM pg_catalog.pg_proc AS routine
+    JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = routine.pronamespace
+    WHERE namespace.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND namespace.nspname NOT LIKE 'pg_toast%'
+    UNION ALL
+    SELECT type.oid
+    FROM pg_catalog.pg_type AS type
+    JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = type.typnamespace
+    WHERE namespace.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND namespace.nspname NOT LIKE 'pg_toast%'
+    UNION ALL
+    SELECT extension.oid
+    FROM pg_catalog.pg_extension AS extension
+    WHERE extension.extname <> 'plpgsql'
+    UNION ALL
+    SELECT namespace.oid
+    FROM pg_catalog.pg_namespace AS namespace
+    WHERE namespace.nspname NOT IN ('pg_catalog', 'information_schema', 'public')
+      AND namespace.nspname NOT LIKE 'pg_toast%'
+) AS unsafe_object;
 "@
-if ([int64]$tableCount -ne 0) {
-    throw "Target database must be pre-created and empty; found $tableCount user tables."
+if ([int64]$unsafeObjectCount -ne 0) {
+    throw "Target database must be pre-created and empty; found $unsafeObjectCount user objects."
 }
 
 $watch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -177,6 +239,20 @@ $runtimeSchemaRows = Invoke-Psql `
     -Username $runtimeUsername `
     -Password $runtimePassword `
     -Sql "SELECT count(*) FROM flyway_schema_history WHERE success = TRUE;"
+$restoredFlywaySchemaVersion = Invoke-Psql -Username $operatorUsername -Password $operatorPassword -Sql @"
+SELECT COALESCE(
+    (
+        SELECT version
+        FROM flyway_schema_history
+        WHERE success = TRUE
+          AND version IS NOT NULL
+          AND version <> ''
+        ORDER BY installed_rank DESC
+        LIMIT 1
+    ),
+    'missing'
+);
+"@
 $restoredCounts = Invoke-Psql -Username $operatorUsername -Password $operatorPassword -Sql @"
 SELECT json_build_object(
     'tenants', (SELECT count(*) FROM tenants),
@@ -185,20 +261,30 @@ SELECT json_build_object(
 "@
 $watch.Stop()
 
-$reportFile = "$source.restore-$([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssZ')).json"
-if (Test-Path -LiteralPath $reportFile) {
-    throw "Restore report already exists; refusing overwrite: $reportFile"
-}
+$reportFile = "$source.restore-$([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$([Guid]::NewGuid().ToString('N')).json"
+$temporaryReportFile = New-AdjacentTemporaryPath -Destination $reportFile
 [ordered]@{
     format_version = 1
     restored_at_utc = [DateTimeOffset]::UtcNow.ToString("O")
     source_backup = $source
     source_sha256 = $actualHash
     target_database = $databaseName
+    restore_drill_scope = $RestoreDrillScope
     elapsed_seconds = [Math]::Round($watch.Elapsed.TotalSeconds, 3)
     role_and_rls_gate = "PASS"
     runtime_schema_history_rows = [int64]$runtimeSchemaRows
+    restored_flyway_schema_version = $restoredFlywaySchemaVersion
     restored_counts = ($restoredCounts | ConvertFrom-Json)
-} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportFile -Encoding utf8
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $temporaryReportFile -Encoding utf8
+Publish-NewFile -TemporaryPath $temporaryReportFile -Destination $reportFile
 
 Write-Output "RESTORE_BACKEND status=PASS database=$databaseName report=$reportFile elapsed_seconds=$([Math]::Round($watch.Elapsed.TotalSeconds, 3))"
+}
+finally {
+    $targetRestoreMutex.ReleaseMutex()
+    $targetRestoreMutex.Dispose()
+}
+}
+finally {
+    $sourceReadLock.Dispose()
+}

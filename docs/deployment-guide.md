@@ -250,13 +250,47 @@ process-only liveness probes. CI builds and scans them without registry
 credentials after the complete browser gate.
 
 Deploy only immutable `image@sha256:...` coordinates. Set all required values
-from a protected process environment or secret manager, then validate the
-release topology:
+from a protected process environment or secret manager. Copy
+`deploy/production-promotion-evidence.template.json` to a protected deployment
+workspace (never Git), fill only approved non-secret references, then run the
+only supported promotion entrypoint before any release Compose command:
 
 ```powershell
-docker compose -f compose.yaml -f compose.backend.yaml `
-  -f deploy/compose.release-overlay.yaml --profile backend config --quiet
+powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compose.ps1 `
+  -EvidenceFile 'D:\secure-deployment\production-promotion-evidence.json' `
+  -Mode Validate
 ```
+
+The entrypoint unconditionally rejects a mutable tag, incomplete/expired
+approval record, missing recovery evidence, non-first-party image, or a
+mismatch between the evidence record and the four active image variables. It
+verifies exact GitHub Actions run metadata before contacting Docker. It then
+pulls each selected digest and verifies OCI source/revision/version labels,
+provenance/SBOM attestations, paired Docker Hub/GHCR semantic/full-SHA tag
+parity, and the release topology. It is a release-control check, not an
+external hosting approval.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compose.ps1 `
+  -EvidenceFile 'D:\secure-deployment\production-promotion-evidence.json' `
+  -Mode Deploy -ConfirmProductionChange
+```
+
+Do not use a direct `docker compose ... up` invocation as production promotion
+evidence: it bypasses the supported preflight and cannot support a GO decision.
+For a rollback, the approved manifest must either name a complete earlier
+release and four prior digests, or explicitly authorize disable-exposure. The
+same entrypoint verifies the prior release before changing state:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-production-release-compose.ps1 `
+  -EvidenceFile 'D:\secure-deployment\production-promotion-evidence.json' `
+  -Mode Rollback -ConfirmProductionChange
+~~~
+
+Redeploy rollback waits for backend, analytics, and web health. Disable-exposure
+uses the approved release Compose stack only, stops it without deleting volumes,
+and verifies that no release service remains running.
 
 The overlay requires digest-pinned values for
 `AGRIINSIGHT_PYTHON_IMAGE`, `AGRIINSIGHT_BACKEND_IMAGE`,
@@ -377,6 +411,8 @@ Required deployment inputs:
 | Environment variable | Purpose |
 |---|---|
 | `AGRIINSIGHT_DB_HOST`, `AGRIINSIGHT_DB_PORT`, `AGRIINSIGHT_DB_NAME` | Exact guarded PostgreSQL target |
+| `AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE` | Dedicated lowercase `agriinsight_restore_*` target for a local/staging restore drill; it must differ from the backup source database |
+| `AGRIINSIGHT_RESTORE_DRILL_HOST`, `AGRIINSIGHT_RESTORE_DRILL_PORT`, `AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS` | Separately configured literal `127.0.0.1` restore-drill endpoint and exact host allowlist; remote staging remains blocked until verified TLS is approved |
 | `AGRIINSIGHT_DB_OPERATOR_USERNAME`, `AGRIINSIGHT_DB_OPERATOR_PASSWORD` | Short-lived role bootstrap credential; must not be the migrator |
 | `AGRIINSIGHT_FLYWAY_URL`, `AGRIINSIGHT_FLYWAY_USERNAME`, `AGRIINSIGHT_FLYWAY_PASSWORD` | Migration connection; username must be `agriinsight_migrator` |
 | `AGRIINSIGHT_DB_ADOPTION_USERNAME`, `AGRIINSIGHT_DB_ADOPTION_PASSWORD` | Required only for the explicit Phase 1/2 legacy-owner adoption path |
@@ -548,6 +584,10 @@ compatibility credential, never a repository secret or image build argument.
 
 ## Production blockers
 
+- The current external-deployment verdict is **NO-GO**. Track the owner,
+  deadline, approval reference, and unlock criterion in
+  [production readiness](production-readiness.md); an unassigned row blocks
+  promotion.
 - Repository license decision; candidate images intentionally omit a license
   label until a root license is selected
 - Production OIDC fixtures, privileged-user MFA policy, exact CORS origins, audit retention/alerting, backup RPO/RTO, and restore ownership

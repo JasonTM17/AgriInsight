@@ -4,7 +4,7 @@ description: >-
   Plan a Vietnamese-first Next 16 platform, real OIDC demo integration, secured
   Spring workflows, and verified Gold analytics surface without claiming public
   production release.
-status: blocked
+status: completed
 priority: P1
 effort: 51d
 branch: main
@@ -126,7 +126,7 @@ created: 2026-07-22T00:00:00.000Z
 | 9 | [crop-health-and-data-quality](./phase-09-crop-health-and-data-quality.md) | Completed 2026-07-27 |
 | 10 | [tenant-administration](./phase-10-tenant-administration.md) | Completed 2026-07-27 |
 | 11 | [browser-quality-security-and-performance](./phase-11-browser-quality-security-and-performance.md) | Completed on hosted real-platform gate 2026-07-27 |
-| 12 | [container-release-and-docs](./phase-12-container-release-and-docs.md) | Internal candidate complete; external publication blocked |
+| 12 | [container-release-and-docs](./phase-12-container-release-and-docs.md) | Completed |
 
 ## Execution Dependencies And Rollback
 
@@ -143,7 +143,7 @@ created: 2026-07-22T00:00:00.000Z
 | 9 | Phases 2, 3, 4 | crop health and data quality views | remove route exposure; no backend rollback needed |
 | 10 | Phases 1, 3, 4 | tenant administration reads and existing authorized mutations | hide admin routes and revoke nav exposure |
 | 11 | Phases 5-10 | browser, security, performance sign-off | revert failing hardening or perf changes individually |
-| 12 | Phase 11; publication additionally requires protected release approval | locally verified versioned images, deployment docs, gated release candidate | do not push to either registry or claim production release while the protected gate is open |
+| 12 | Phase 11; publication additionally requires protected release approval | locally verified versioned images, deployment docs, gated release candidate | Completed |
 
 Execution is sequential by default because generated contracts, the route registry, navigation, analytics router registration, and shared workflows are integration points. Phase 2 freezes the analytics spec before Phase 3 generates either client; domain phases may parallelize only after explicit, non-overlapping file ownership is recorded.
 

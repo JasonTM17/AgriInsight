@@ -1,0 +1,126 @@
+{
+  "format_version": 2,
+  "release": {
+    "environment": "production",
+    "tag": "REQUIRED",
+    "commit": "REQUIRED",
+    "ci_run_url": "REQUIRED",
+    "publication_run_url": "REQUIRED"
+  },
+  "images": {
+    "python": "REQUIRED",
+    "backend": "REQUIRED",
+    "web": "REQUIRED",
+    "analytics_api": "REQUIRED"
+  },
+  "rollback": {
+    "strategy": "REQUIRED",
+    "authority": "REQUIRED",
+    "evidence_ref": "REQUIRED",
+    "previous_release": {
+      "environment": "production",
+      "tag": "REQUIRED",
+      "commit": "REQUIRED",
+      "ci_run_url": "REQUIRED",
+      "publication_run_url": "REQUIRED"
+    },
+    "previous_images": {
+      "python": "REQUIRED",
+      "backend": "REQUIRED",
+      "web": "REQUIRED",
+      "analytics_api": "REQUIRED"
+    },
+    "disable_exposure_ref": "<required-when-strategy-is-disable-exposure>"
+  },
+  "recovery": {
+    "rpo": "REQUIRED",
+    "rto": "REQUIRED",
+    "retention": "REQUIRED",
+    "encrypted_off_host_backup_ref": "REQUIRED",
+    "key_owner": "REQUIRED",
+    "restore_owner": "REQUIRED",
+    "timed_drill_ref": "REQUIRED"
+  },
+  "approvals": {
+    "oidc": {
+      "control": "oidc",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "broker": {
+      "control": "broker",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "hosting": {
+      "control": "hosting",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "deployment": {
+      "control": "deployment",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "recovery": {
+      "control": "recovery",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "audit_retention": {
+      "control": "audit_retention",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "credential_rotation": {
+      "control": "credential_rotation",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "observability": {
+      "control": "observability",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "registry": {
+      "control": "registry",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    },
+    "license": {
+      "control": "license",
+      "owner": "REQUIRED",
+      "approval_ref": "REQUIRED",
+      "approved_at_utc": "REQUIRED",
+      "due_at_utc": "REQUIRED",
+      "unlock_criterion": "REQUIRED"
+    }
+  }
+}
