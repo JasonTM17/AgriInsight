@@ -614,6 +614,10 @@ compatibility credential, never a repository secret or image build argument.
   deadline, approval reference, and unlock criterion in
   [production readiness](production-readiness.md); an unassigned row blocks
   promotion.
+- [Production NO-GO issue #22](https://github.com/JasonTM17/AgriInsight/issues/22)
+  assigns the decision request to the repository owner through
+  `2026-08-10T10:00:00Z`. This is coordination ownership only; it does not
+  approve or assign any production control.
 - The repository now carries an MIT license; candidate images intentionally
   omit an OCI license label until the next approved release records the legal
   decision and label policy in its promotion evidence

@@ -124,6 +124,10 @@ implicitly converted into operating cost.
 - The repo-side owner-contract hardening for external production readiness is
   complete, including the v3 promotion record shape and explicit NO-GO markers.
   That does not convert any unresolved external approval row into GO status.
+- [Production NO-GO issue #22](https://github.com/JasonTM17/AgriInsight/issues/22)
+  now gives the missing-decision request an accountable coordinator and a
+  `2026-08-10T10:00:00Z` response deadline. Actual production control owners,
+  approvals, target access, and runtime evidence remain unresolved.
 - Phase 1 contract freeze is verified in the checked-in backend OpenAPI
   artifact. Keep its additive bounded GET reads, deterministic export, and
   current backend gate intact when later phases extend the contract surface.

@@ -38,6 +38,9 @@ a visible NO-GO with an accountable owner and deadline.
    encryption, registry-token rotation/GHCR visibility, license, and rollback.
 - [x] Link each row to the machine-checked promotion evidence field and define the
    exact artifact that unlocks it.
+- [x] Open [production NO-GO issue #22](https://github.com/JasonTM17/AgriInsight/issues/22)
+   with a named decision coordinator, response deadline, secret-safe submission
+   rule, and explicit boundary between coordination and control ownership.
 - [ ] Obtain actual approvals through the responsible organization; store only
    safe references and timestamps in the repository.
 - [ ] Mark unresolved entries as NO-GO with a real deadline rather than changing
