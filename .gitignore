@@ -35,6 +35,12 @@ _tmp/
 /tmp/
 /.cache/
 
+# Local contract-test scratch space and generated repository snapshots
+.m2-alert-contract-tests/
+.maven-alert-contract-tests/
+.tmp/
+repomix-output.xml
+
 # Production web runtime outputs and local secrets
 web/node_modules/
 web/.next/
