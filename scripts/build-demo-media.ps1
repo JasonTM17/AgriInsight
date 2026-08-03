@@ -6,6 +6,7 @@ param(
     [string] $ForecastGifPath = "assets/generated/agriinsight-inventory-forecast-loop.gif",
     [string] $YieldForecastGifPath = "assets/generated/agriinsight-yield-forecast-loop.gif",
     [string] $YieldForecastManifestPath = "assets/generated/agriinsight-yield-forecast-media-manifest.json",
+    [string] $PortfolioManifestPath = "docs/assets/screens/catalog.json",
     [int] $StillWidth = 1280,
     [ValidateRange(1, 16000)]
     [int] $StillMaxHeight = 12000,
@@ -22,6 +23,23 @@ $screensIn = Join-Path $captureRoot "screens"
 $framesIn = Join-Path $captureRoot "frames"
 $screensOut = Join-Path $repositoryRoot $OutputRoot
 $gifOut = Join-Path $repositoryRoot $GifPath
+$portfolioManifestOut = Join-Path $repositoryRoot $PortfolioManifestPath
+$portfolioScreens = @(
+    [ordered]@{ source = "overview-dashboard-desktop.png"; output = "overview-dashboard-desktop.webp"; area = "Overview"; route = "/overview"; persona = "executive"; viewport = "desktop" },
+    [ordered]@{ source = "overview-dashboard-mobile.png"; output = "overview-dashboard-mobile.webp"; area = "Overview"; route = "/overview"; persona = "executive"; viewport = "mobile" },
+    [ordered]@{ source = "work-operations-desktop.png"; output = "work-operations-desktop.webp"; area = "Work"; route = "/work"; persona = "field-worker"; viewport = "desktop" },
+    [ordered]@{ source = "work-operations-mobile.png"; output = "work-operations-mobile.webp"; area = "Work"; route = "/work"; persona = "field-worker"; viewport = "mobile" },
+    [ordered]@{ source = "cost-analysis-desktop.png"; output = "cost-analysis-desktop.webp"; area = "Cost Analysis"; route = "/costs?lens=operating"; persona = "executive"; viewport = "desktop" },
+    [ordered]@{ source = "cost-analysis-mobile.png"; output = "cost-analysis-mobile.webp"; area = "Cost Analysis"; route = "/costs?lens=operating"; persona = "executive"; viewport = "mobile" },
+    [ordered]@{ source = "crop-health-desktop.png"; output = "crop-health-desktop.webp"; area = "Crop Health"; route = "/crop-health"; persona = "analyst"; viewport = "desktop" },
+    [ordered]@{ source = "crop-health-mobile.png"; output = "crop-health-mobile.webp"; area = "Crop Health"; route = "/crop-health"; persona = "analyst"; viewport = "mobile" },
+    [ordered]@{ source = "data-quality-desktop.png"; output = "data-quality-desktop.webp"; area = "Data Quality"; route = "/data-quality"; persona = "analyst"; viewport = "desktop" },
+    [ordered]@{ source = "data-quality-mobile.png"; output = "data-quality-mobile.webp"; area = "Data Quality"; route = "/data-quality"; persona = "analyst"; viewport = "mobile" },
+    [ordered]@{ source = "assistant-evidence-first-desktop.png"; output = "assistant-evidence-first-desktop.webp"; area = "Assistant"; route = "/assistant"; persona = "executive"; viewport = "desktop" },
+    [ordered]@{ source = "assistant-evidence-first-mobile.png"; output = "assistant-evidence-first-mobile.webp"; area = "Assistant"; route = "/assistant"; persona = "executive"; viewport = "mobile" },
+    [ordered]@{ source = "tenant-administration-desktop.png"; output = "tenant-administration-desktop.webp"; area = "Administration"; route = "/admin?search=tenant-admin&status=active"; persona = "tenant-admin"; viewport = "desktop" },
+    [ordered]@{ source = "tenant-administration-mobile.png"; output = "tenant-administration-mobile.webp"; area = "Administration"; route = "/admin?search=tenant-admin&status=active"; persona = "tenant-admin"; viewport = "mobile" }
+)
 
 function Resolve-Magick {
     if ($env:AGRIINSIGHT_MAGICK_PATH) {
@@ -168,6 +186,52 @@ function Assert-YieldForecastMediaBounds {
     }
 }
 
+function Get-PortfolioManifestEntry {
+    param(
+        [System.Collections.IDictionary] $Specification,
+        [string] $ScreensOutputPath,
+        [string] $RepositoryRoot,
+        [string] $ImageIdentifyPath
+    )
+
+    $media = Get-MediaManifestEntry `
+        (Join-Path $ScreensOutputPath $Specification.output) `
+        "hosted-product-webp" $RepositoryRoot $ImageIdentifyPath
+    return [ordered]@{
+        area = $Specification.area
+        route = $Specification.route
+        persona = $Specification.persona
+        viewport = $Specification.viewport
+        role = $media.role
+        path = $media.path
+        sha256 = $media.sha256
+        bytes = $media.bytes
+        width = $media.width
+        height = $media.height
+        frameCount = $media.frameCount
+        evidenceBoundary = "Real application UI captured from the hosted integration stack; not live production telemetry."
+    }
+}
+
+function Assert-PortfolioMediaBounds {
+    param([object[]] $Entries)
+
+    if ($Entries.Count -ne 14) {
+        throw "Portfolio media catalog requires 14 WebPs; found $($Entries.Count)"
+    }
+    foreach ($entry in $Entries) {
+        if ($entry.width -lt 1 -or $entry.height -lt 1 -or $entry.frameCount -ne 1) {
+            throw "Portfolio media has invalid image metadata: $($entry.path)"
+        }
+        if ($entry.width -gt $StillWidth -or $entry.height -gt $StillMaxHeight) {
+            throw "Portfolio media dimensions exceed bounds: $($entry.path)"
+        }
+        if ($entry.bytes -gt 3MB) {
+            throw "Portfolio WebP exceeds 3 MB: $($entry.path)"
+        }
+    }
+}
+
 $magick = Resolve-Magick
 $imageIdentify = Resolve-ImageIdentify -MagickPath $magick
 Write-Output "MEDIA_BUILD magick=$magick"
@@ -178,6 +242,28 @@ if (-not (Test-Path -LiteralPath $screensIn)) {
 $captured = @(Get-ChildItem -LiteralPath $screensIn -Filter "*.png" | Sort-Object Name)
 if ($captured.Count -eq 0) {
     throw "No captured screenshots found in $screensIn"
+}
+$missingPortfolioScreens = @(
+    $portfolioScreens |
+        Where-Object { -not (Test-Path -LiteralPath (Join-Path $screensIn $_.source)) } |
+        ForEach-Object { $_.source }
+)
+if ($missingPortfolioScreens.Count -gt 0) {
+    throw "Missing required portfolio captures: $($missingPortfolioScreens -join ', ')"
+}
+
+foreach ($spec in $portfolioScreens) {
+    foreach ($candidate in @(
+        (Join-Path $screensOut $spec.output),
+        (Join-Path $screensIn $spec.source)
+    )) {
+        if (Test-Path -LiteralPath $candidate) {
+            Remove-Item -LiteralPath $candidate -Force
+        }
+    }
+}
+if (Test-Path -LiteralPath $portfolioManifestOut) {
+    Remove-Item -LiteralPath $portfolioManifestOut -Force
 }
 
 New-Item -ItemType Directory -Force -Path $screensOut | Out-Null
@@ -226,6 +312,34 @@ $hostedRunUrl = if ($env:GITHUB_ACTIONS -eq "true") {
 } else {
     $null
 }
+$portfolioManifestEntries = @(
+    $portfolioScreens | ForEach-Object {
+        Get-PortfolioManifestEntry $_ $screensOut $repositoryRoot $imageIdentify
+    }
+)
+Assert-PortfolioMediaBounds -Entries $portfolioManifestEntries
+$portfolioManifest = [ordered]@{
+    schemaVersion = 1
+    generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+    kind = "hosted-product-screenshots"
+    provenance = [ordered]@{
+        source = if ($env:GITHUB_ACTIONS -eq "true") { "github-actions" } else { "local" }
+        repository = $env:GITHUB_REPOSITORY
+        commitSha = $env:GITHUB_SHA
+        runId = $env:GITHUB_RUN_ID
+        runUrl = $hostedRunUrl
+    }
+    capture = [ordered]@{
+        desktopViewport = "1440x900"
+        mobileViewport = "390x844"
+        deviceScaleFactor = 2
+    }
+    files = $portfolioManifestEntries
+}
+$portfolioManifest | ConvertTo-Json -Depth 5 | Set-Content `
+    -LiteralPath $portfolioManifestOut -Encoding utf8
+Write-Output "MEDIA_MANIFEST path=$PortfolioManifestPath provenance=$($portfolioManifest.provenance.source)"
+
 $yieldManifestEntries = [System.Collections.Generic.List[object]]::new()
 foreach ($screenName in @("yield-forecast-desktop.png", "yield-forecast-mobile.png")) {
     $yieldManifestEntries.Add((
