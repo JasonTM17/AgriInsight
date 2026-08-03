@@ -116,7 +116,13 @@ jobs:
         run: chmod +x backend/mvnw
       - name: Run real PostgreSQL, Apache Kafka, recovery, replay, DLT, and RLS gate
         shell: pwsh
-        run: ./scripts/run-realtime-e2e-tests.ps1 -HostedCi
+        run: |
+          # setup-java v5 exports MAVEN_ARGS; this runner accepts only reviewed explicit arguments.
+          if ($env:MAVEN_ARGS -cne "-ntp") {
+            throw "setup-java v5 must export exactly MAVEN_ARGS=-ntp before realtime E2E."
+          }
+          Remove-Item -Path Env:MAVEN_ARGS
+          ./scripts/run-realtime-e2e-tests.ps1 -HostedCi
 
   browser-e2e:
     name: Real seven-persona browser gate
