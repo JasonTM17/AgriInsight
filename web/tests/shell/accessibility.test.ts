@@ -44,6 +44,15 @@ describe("Field Ledger shell accessibility guardrails", () => {
     );
   });
 
+  it("contains Overview filters and charts inside the mobile workspace", () => {
+    const overviewCss = read(
+      "src/features/overview/components/overview-farms.module.css"
+    );
+    expect(overviewCss).toMatch(/\.stack > \*\s*\{[^}]*min-width:\s*0;/s);
+    expect(overviewCss).toMatch(/\.trendChart\s*\{[^}]*overflow-x:\s*auto;/s);
+    expect(overviewCss).toMatch(/\.periodFilter\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  });
+
   it("does not allow raw Stitch exports or CDN-only runtime dependencies", () => {
     const source = [
       read("src/components/app-shell/app-shell.tsx"),

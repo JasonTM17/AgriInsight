@@ -3,6 +3,12 @@
   gap: 1.25rem;
 }
 
+/* Grid items default to their intrinsic minimum width. Filters and charts can
+   therefore widen the full page before their own wrap/scroll rules engage. */
+.stack > * {
+  min-width: 0;
+}
+
 .pageIntro {
   display: flex;
   align-items: flex-start;
