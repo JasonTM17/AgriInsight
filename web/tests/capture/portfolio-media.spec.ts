@@ -66,7 +66,7 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
       .toBe("fits");
     await page.screenshot({
       path: resolve(screenDirectory, `${surface.name}-${viewportName}.png`),
-      fullPage: true
+      fullPage: false
     });
   }
 }

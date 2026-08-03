@@ -36,6 +36,8 @@ def test_portfolio_capture_contract_is_complete() -> None:
     assert 'loginWithRealOidc(page, "analyst"' in capture
     assert 'loginWithRealOidc(page, "tenant-admin"' in capture
     assert "queryAssistant" not in capture
+    assert "fullPage: false" in capture
+    assert "fullPage: true" not in capture
 
 
 def test_media_builder_and_ci_publish_the_same_contract() -> None:
