@@ -2,6 +2,9 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = "Stop"
 
 $script:PlaceholderPattern = '^\s*(?:required|todo|tbd|<[^>]+>)\s*$'
+$script:UnresolvedApprovalMarkers = @(
+    "pending", "unknown", "nogo", "unassigned", "unassignednogo"
+)
 
 function Get-RequiredProperty {
     param([object] $Object, [string] $Name, [string] $Path)
@@ -38,6 +41,18 @@ function Get-RequiredString {
         throw "$Path is required."
     }
     return $trimmed
+}
+
+function Get-RequiredApprovalString {
+    param([object] $Object, [string] $Name, [string] $Path)
+
+    $value = Get-RequiredString -Object $Object -Name $Name -Path $Path
+    $normalized = $value.Normalize([System.Text.NormalizationForm]::FormKC).ToLowerInvariant()
+    $compact = [regex]::Replace($normalized, '[\p{P}\p{S}\p{Z}\p{C}\s]+', '')
+    if ($compact -in $script:UnresolvedApprovalMarkers) {
+        throw "$Path is required."
+    }
+    return $value
 }
 
 function Assert-Pattern {
@@ -98,4 +113,4 @@ function Assert-ApprovalTimestampEncoding {
     }
 }
 
-Export-ModuleMember -Function Get-RequiredProperty, Get-RequiredObject, Get-RequiredString, Assert-Pattern, Assert-HttpsReference, ConvertTo-RequiredTimestamp, Assert-ApprovalTimestampEncoding
+Export-ModuleMember -Function Get-RequiredProperty, Get-RequiredObject, Get-RequiredString, Get-RequiredApprovalString, Assert-Pattern, Assert-HttpsReference, ConvertTo-RequiredTimestamp, Assert-ApprovalTimestampEncoding

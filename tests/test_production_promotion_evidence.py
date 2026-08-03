@@ -40,12 +40,13 @@ def _approval(name: str) -> dict[str, str]:
         "approved_at_utc": _timestamp(timedelta(hours=-1)),
         "due_at_utc": _timestamp(timedelta(days=1)),
         "unlock_criterion": f"{name} control approved",
+        "rollback_responsibility": f"{name}-owner restores the prior approved state",
     }
 
 
 def _valid_evidence() -> dict[str, Any]:
     return {
-        "format_version": 2,
+        "format_version": 3,
         "release": {
             "environment": "production",
             "tag": "v0.4.0",
@@ -183,6 +184,124 @@ def test_valid_production_evidence_matches_the_selected_image_digests(
     assert "image_count=4" in result.stdout
 
 
+def test_legacy_format_version_fails_closed(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+) -> None:
+    evidence = _valid_evidence()
+    evidence["format_version"] = 2
+
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode != 0
+    assert "format_version must equal the integer 3." in result.stderr
+    assert "status=PASS" not in result.stdout
+
+
+@pytest.mark.parametrize("format_version", ("3", 3.0, "03"))
+def test_format_version_requires_an_exact_integer_json_value(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+    format_version: str | float,
+) -> None:
+    evidence = _valid_evidence()
+    evidence["format_version"] = format_version
+
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode != 0
+    assert "format_version must equal the integer 3." in result.stderr
+    assert "status=PASS" not in result.stdout
+
+
+def test_approval_controls_are_exact_and_match_the_v3_template(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+) -> None:
+    evidence = _valid_evidence()
+    template = json.loads(
+        (ROOT / "deploy" / "production-promotion-evidence.template.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert template["format_version"] == evidence["format_version"] == 3
+    assert set(template["approvals"]) == set(evidence["approvals"])
+    assert all(
+        row["control"] == name and row["rollback_responsibility"] == "REQUIRED"
+        for name, row in template["approvals"].items()
+    )
+
+    evidence["approvals"]["unknown_control"] = _approval("unknown_control")
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode != 0
+    assert "approvals must contain exactly the supported controls." in result.stderr
+    assert "status=PASS" not in result.stdout
+
+    evidence = _valid_evidence()
+    evidence["approvals"]["broker"]["access_token"] = "must-not-be-accepted"
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode != 0
+    assert "approvals.broker must contain exactly the supported fields." in result.stderr
+    assert "access_token" not in result.stderr
+    assert "must-not-be-accepted" not in result.stderr
+    assert "status=PASS" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    "owner",
+    (
+        "UNASSIGNED — NO-GO",
+        "UNASSIGNED – NO-GO",
+        "UNASSIGNED ‑ NO-GO",
+        "UNASSIGNED – NO–GO",
+        "NO–GO",
+        "UNASSIGNED − NO-GO",
+        "UNASSIGNED\u200b—\u200bNO-GO",
+        "UNASSIGNED-NO-GO",
+    ),
+)
+def test_unresolved_owner_rejects_unicode_dash_confusables(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+    owner: str,
+) -> None:
+    evidence = _valid_evidence()
+    evidence["approvals"]["broker"]["owner"] = owner
+
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode != 0
+    assert "approvals.broker.owner" in result.stderr
+    assert owner not in result.stderr
+    assert "status=PASS" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    "owner",
+    ("Owner pending review", "No-Go Logistics", "unknown-farm-owner"),
+)
+def test_approval_marker_check_does_not_reject_embedded_owner_words(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+    owner: str,
+) -> None:
+    evidence = _valid_evidence()
+    evidence["approvals"]["broker"]["owner"] = owner
+
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode == 0, result.stderr
+    assert "PRODUCTION_PROMOTION_EVIDENCE status=PASS" in result.stdout
+
+
 @pytest.mark.parametrize(
     "mutate",
     [
@@ -210,6 +329,46 @@ def test_incomplete_or_mutable_promotion_evidence_fails_closed(
     assert result.returncode != 0
     assert "status=PASS" not in result.stdout
     assert "REQUIRED" not in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_error"),
+    [
+        (
+            lambda evidence: evidence["approvals"]["broker"].update(
+                {"owner": "UNASSIGNED — NO-GO"}
+            ),
+            "approvals.broker.owner",
+        ),
+        (
+            lambda evidence: evidence["approvals"]["broker"].update(
+                {"rollback_responsibility": "TBD"}
+            ),
+            "approvals.broker.rollback_responsibility",
+        ),
+        (
+            lambda evidence: evidence["approvals"]["broker"].pop(
+                "rollback_responsibility"
+            ),
+            "approvals.broker.rollback_responsibility",
+        ),
+    ],
+)
+def test_unresolved_owner_or_control_rollback_fails_closed(
+    run_script: Callable[
+        [Path, dict[str, Any], dict[str, str] | None], subprocess.CompletedProcess[str]
+    ],
+    mutate: Callable[[dict[str, Any]], object],
+    expected_error: str,
+) -> None:
+    evidence = _valid_evidence()
+    mutate(evidence)
+
+    result = run_script(VALIDATOR, evidence)
+
+    assert result.returncode != 0
+    assert "status=PASS" not in result.stdout
+    assert expected_error in result.stderr
 
 
 def test_environment_digest_mismatch_or_missing_value_fails_closed(

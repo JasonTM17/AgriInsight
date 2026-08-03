@@ -14,6 +14,10 @@ $script:ApprovalNames = @(
     "oidc", "broker", "hosting", "deployment", "recovery",
     "audit_retention", "credential_rotation", "observability", "registry", "license"
 )
+$script:ApprovalFields = @(
+    "control", "owner", "approval_ref", "approved_at_utc", "due_at_utc",
+    "unlock_criterion", "rollback_responsibility"
+)
 
 function Get-ValidatedRelease {
     param([object] $Release, [string] $Path, [switch] $RequireProduction)
@@ -155,15 +159,26 @@ function Assert-Recovery {
 function Assert-Approvals {
     param([object] $Approvals)
 
+    $actualNames = @($Approvals.PSObject.Properties | ForEach-Object { $_.Name })
+    $unknownNames = @($actualNames | Where-Object { $_ -cnotin $script:ApprovalNames })
+    if ($actualNames.Count -ne $script:ApprovalNames.Count -or $unknownNames.Count -ne 0) {
+        throw "approvals must contain exactly the supported controls."
+    }
+
     $seenReferences = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     $now = [DateTimeOffset]::UtcNow
     foreach ($name in $script:ApprovalNames) {
         $path = "approvals.$name"
         $approval = Get-RequiredObject -Object $Approvals -Name $name -Path $path
+        $actualFields = @($approval.PSObject.Properties | ForEach-Object { $_.Name })
+        $unknownFields = @($actualFields | Where-Object { $_ -cnotin $script:ApprovalFields })
+        if ($unknownFields.Count -ne 0) {
+            throw "$path must contain exactly the supported fields."
+        }
         if ((Get-RequiredString -Object $approval -Name "control" -Path "$path.control") -cne $name) {
             throw "$path.control must equal $name."
         }
-        [void](Get-RequiredString -Object $approval -Name "owner" -Path "$path.owner")
+        [void](Get-RequiredApprovalString -Object $approval -Name "owner" -Path "$path.owner")
         $reference = Get-RequiredString -Object $approval -Name "approval_ref" -Path "$path.approval_ref"
         Assert-HttpsReference -Value $reference -Name "$path.approval_ref"
         if (-not $seenReferences.Add($reference)) {
@@ -174,7 +189,8 @@ function Assert-Approvals {
         if ($approvedAt -gt $dueAt) { throw "$path.approved_at_utc must not be after $path.due_at_utc." }
         if ($approvedAt -gt $now) { throw "$path.approved_at_utc cannot be in the future." }
         if ($dueAt -lt $now) { throw "$path.due_at_utc has expired." }
-        [void](Get-RequiredString -Object $approval -Name "unlock_criterion" -Path "$path.unlock_criterion")
+        [void](Get-RequiredApprovalString -Object $approval -Name "unlock_criterion" -Path "$path.unlock_criterion")
+        [void](Get-RequiredApprovalString -Object $approval -Name "rollback_responsibility" -Path "$path.rollback_responsibility")
     }
 }
 
@@ -193,8 +209,10 @@ function Test-ProductionPromotionEvidence {
         throw "EvidenceFile must contain valid JSON."
     }
     Assert-ApprovalTimestampEncoding -Json $rawManifest
-    if ((Get-RequiredProperty -Object $manifest -Name "format_version" -Path "format_version") -ne 2) {
-        throw "format_version must equal 2."
+    $formatVersion = Get-RequiredProperty -Object $manifest -Name "format_version" -Path "format_version"
+    $isInteger = $formatVersion -is [int] -or $formatVersion -is [long]
+    if (-not $isInteger -or $formatVersion -ne 3) {
+        throw "format_version must equal the integer 3."
     }
 
     $release = Get-ValidatedRelease -Release (Get-RequiredObject -Object $manifest -Name "release" -Path "release") -Path "release" -RequireProduction

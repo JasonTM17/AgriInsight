@@ -1,5 +1,5 @@
 {
-  "format_version": 2,
+  "format_version": 3,
   "release": {
     "environment": "production",
     "tag": "REQUIRED",
@@ -53,7 +53,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "broker": {
       "control": "broker",
@@ -61,7 +62,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "hosting": {
       "control": "hosting",
@@ -69,7 +71,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "deployment": {
       "control": "deployment",
@@ -77,7 +80,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "recovery": {
       "control": "recovery",
@@ -85,7 +89,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "audit_retention": {
       "control": "audit_retention",
@@ -93,7 +98,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "credential_rotation": {
       "control": "credential_rotation",
@@ -101,7 +107,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "observability": {
       "control": "observability",
@@ -109,7 +116,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "registry": {
       "control": "registry",
@@ -117,7 +125,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     },
     "license": {
       "control": "license",
@@ -125,7 +134,8 @@
       "approval_ref": "REQUIRED",
       "approved_at_utc": "REQUIRED",
       "due_at_utc": "REQUIRED",
-      "unlock_criterion": "REQUIRED"
+      "unlock_criterion": "REQUIRED",
+      "rollback_responsibility": "REQUIRED"
     }
   }
 }
