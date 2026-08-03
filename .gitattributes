@@ -3,3 +3,7 @@ backend/src/main/resources/contracts/agriinsight-api-v1.openapi.json text eol=lf
 docs/contracts/agriinsight-analytics-v1.openapi.json text eol=lf
 web/src/server/generated/backend/schema.d.ts text eol=lf
 web/src/server/generated/analytics/schema.d.ts text eol=lf
+
+# Shell entrypoints execute through Bash/WSL on Windows; keep shebang and
+# `set -o pipefail` lines LF-normalized after checkout.
+scripts/*.sh text eol=lf
