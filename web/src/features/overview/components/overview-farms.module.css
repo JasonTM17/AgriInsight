@@ -133,6 +133,10 @@
   gap: 1rem;
 }
 
+.evidenceGrid > * {
+  min-width: 0;
+}
+
 .riskPanel,
 .trendPanel,
 .contextVisual,
@@ -289,10 +293,15 @@
 
 .sectionHeading {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.sectionHeading > * {
+  min-width: 0;
 }
 
 .sectionHeading > span {
@@ -535,7 +544,7 @@
 @media (max-width: 60rem) {
   .evidenceGrid,
   .farmDetailGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

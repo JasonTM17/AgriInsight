@@ -52,6 +52,12 @@ describe("Field Ledger shell accessibility guardrails", () => {
     expect(overviewCss).toMatch(
       /\.trendChart\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s
     );
+    expect(overviewCss).toMatch(/\.evidenceGrid > \*\s*\{[^}]*min-width:\s*0;/s);
+    expect(overviewCss).toMatch(
+      /@media \(max-width:\s*60rem\)[\s\S]*?\.evidenceGrid,[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/
+    );
+    expect(overviewCss).toMatch(/\.sectionHeading\s*\{[^}]*flex-wrap:\s*wrap;/s);
+    expect(overviewCss).toMatch(/\.sectionHeading > \*\s*\{[^}]*min-width:\s*0;/s);
     expect(overviewCss).toMatch(/\.periodFilter\s*\{[^}]*flex-wrap:\s*wrap;/s);
   });
 
