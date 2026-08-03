@@ -98,8 +98,9 @@ $env:AGRIINSIGHT_DB_PORT='5432'
 $env:AGRIINSIGHT_DB_NAME='agriinsight'
 $env:AGRIINSIGHT_DB_OPERATOR_USERNAME='postgres'
 $env:AGRIINSIGHT_DB_OPERATOR_PASSWORD='use-secret-store'
+$backupFile = "D:\AgriInsight\artifacts\_tmp\backups\agriinsight-v30-$((Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')).dump"
 powershell -ExecutionPolicy Bypass -File scripts/backup-backend-postgres.ps1 `
-  -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump'
+  -BackupFile $backupFile
 ```
 
 The script runs `pg_dump --format=custom`, keeps ACLs, writes a sidecar JSON containing PostgreSQL/Flyway/checksum/size metadata, and uses `PGPASSWORD` rather than command-line credentials. It never deletes a target or cleans user files. Disk guard must be PASS first.
@@ -124,7 +125,7 @@ $env:AGRIINSIGHT_RESTORE_DRILL_PORT='5432'
 $env:AGRIINSIGHT_RESTORE_DRILL_ALLOWED_HOSTS='127.0.0.1'
 $env:AGRIINSIGHT_RESTORE_DRILL_TARGET_DATABASE='agriinsight_restore_v30'
 powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 `
-  -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' `
+  -BackupFile $backupFile `
   -Mode Run -RestoreDrillScope local-or-staging -ConfirmRestoreDrill
 ```
 
@@ -136,12 +137,14 @@ A failed restore is retained for diagnosis; repair is an audited forward
 migration or a verified clean restore, never deletion of applied migrations.
 
 For a current-schema drill, first validate the backup sidecar and then require an
-explicit run confirmation:
+explicit run confirmation. Keep `$backupFile` from the backup step in the same
+PowerShell session; do not substitute the preserved historical V19 drill dump,
+which the V30 source-metadata gate correctly rejects:
 
 ~~~powershell
-powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' -MinimumSchemaVersion 30 -Mode Validate
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 -BackupFile $backupFile -MinimumSchemaVersion 30 -Mode Validate
 
-powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 -BackupFile 'D:\AgriInsight\artifacts\_tmp\backups\agriinsight-20260722.dump' -MinimumSchemaVersion 30 -Mode Run -RestoreDrillScope local-or-staging -ConfirmRestoreDrill
+powershell -ExecutionPolicy Bypass -File scripts/run-backend-restore-drill.ps1 -BackupFile $backupFile -MinimumSchemaVersion 30 -Mode Run -RestoreDrillScope local-or-staging -ConfirmRestoreDrill
 ~~~
 
 The wrapper rechecks the checksum, requires V30-or-newer source and restored
