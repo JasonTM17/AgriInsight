@@ -604,8 +604,10 @@ serially (`max-parallel: 1`). It scans and smokes a local candidate before
 registry authentication, then publishes both registries with BuildKit
 provenance/SBOM and repeats scan/smoke against the returned digest. The
 `release-images` environment, reviewer policy, `DOCKERHUB_USERNAME`, and
-`DOCKERHUB_TOKEN` are configured and approved per immutable tag. See the
-[repository-owner handoff](../plans/260722-2342-production-web-platform/reports/github-social-preview-owner-handoff.md).
+`DOCKERHUB_TOKEN` are configured and approved per immutable tag. Current
+external-deployment owner decisions remain tracked in the
+[production-readiness control matrix](production-readiness.md); the dated
+2026-07-27 owner handoff is retained only as a historical snapshot.
 
 All four GHCR packages are linked to `JasonTM17/AgriInsight` and remain private.
 The configured `GHCR_TOKEN` is an environment-scoped legacy-package

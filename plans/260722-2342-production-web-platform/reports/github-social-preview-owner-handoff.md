@@ -1,8 +1,14 @@
-# GitHub release controls and social preview handoff
+# Historical GitHub release controls and social preview handoff
 
 Date: 2026-07-27
 
-Status: release controls retained; social-preview handoff superseded
+Status: historical snapshot; superseded 2026-08-04
+
+> Do not use this dated snapshot as current release guidance. Main protection,
+> the `release-images` environment, repository license, four-image registry
+> publication, and social preview were completed after this report. Use the
+> current [deployment guide](../../../docs/deployment-guide.md) and
+> [production-readiness matrix](../../../docs/production-readiness.md).
 
 ## Already automated
 
@@ -16,9 +22,9 @@ Status: release controls retained; social-preview handoff superseded
 - BuildKit provenance/SBOM, exact-digest Trivy scan, digest smoke, and
   Docker Hub/GHCR digest equality are mandatory.
 
-## External controls still missing
+## External controls missing in the 2026-07-27 snapshot
 
-GitHub API inspection on 2026-07-27 returned no repository environments, no
+At the time, GitHub API inspection returned no repository environments, no
 Actions secrets, and no branch protection or ruleset for `main`. Existing
 private GHCR packages are `agriinsight-python` and `agriinsight-backend`.
 Docker Hub inspection found the matching existing public Python/backend
@@ -62,7 +68,7 @@ No manual social-preview action remains.
 - non-root/read-only exact-digest smoke output;
 - rollback tag/digest selected by the operator.
 
-## Unresolved questions
+## Questions recorded in the historical snapshot
 
 - Required reviewer and release-token rotation owner.
 - Exact `main` review count, required CI checks, and administrator bypass policy.
