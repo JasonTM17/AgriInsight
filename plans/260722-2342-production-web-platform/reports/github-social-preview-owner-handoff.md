@@ -1,8 +1,14 @@
-# GitHub release controls and social preview handoff
+# Historical GitHub release controls and social preview handoff
 
 Date: 2026-07-27
 
-Status: owner action required before any new registry publication
+Status: historical snapshot; superseded 2026-08-04
+
+> Do not use this dated snapshot as current release guidance. Main protection,
+> the `release-images` environment, repository license, four-image registry
+> publication, and social preview were completed after this report. Use the
+> current [deployment guide](../../../docs/deployment-guide.md) and
+> [production-readiness matrix](../../../docs/production-readiness.md).
 
 ## Already automated
 
@@ -16,9 +22,9 @@ Status: owner action required before any new registry publication
 - BuildKit provenance/SBOM, exact-digest Trivy scan, digest smoke, and
   Docker Hub/GHCR digest equality are mandatory.
 
-## External controls still missing
+## External controls missing in the 2026-07-27 snapshot
 
-GitHub API inspection on 2026-07-27 returned no repository environments, no
+At the time, GitHub API inspection returned no repository environments, no
 Actions secrets, and no branch protection or ruleset for `main`. Existing
 private GHCR packages are `agriinsight-python` and `agriinsight-backend`.
 Docker Hub inspection found the matching existing public Python/backend
@@ -46,9 +52,11 @@ below are complete.
 
 The source image is
 [`docs/assets/agriinsight-social-preview.jpg`](../../../docs/assets/agriinsight-social-preview.jpg).
-GitHub CLI does not expose a supported repository social-preview upload command.
-Upload it manually in **Settings → General → Social preview**, then verify the
-repository card in a signed-out browser session.
+The authenticated owner upload and unauthenticated metadata verification were
+completed on 2026-08-04. The public `og:image` and `twitter:image` object is
+1280x640 and matches the tracked source SHA-256 exactly. See the
+[social-preview verification](../../260803-2156-portfolio-media-completion/reports/social-preview-verification.md).
+No manual social-preview action remains.
 
 ## Release evidence to retain
 
@@ -60,7 +68,7 @@ repository card in a signed-out browser session.
 - non-root/read-only exact-digest smoke output;
 - rollback tag/digest selected by the operator.
 
-## Unresolved questions
+## Questions recorded in the historical snapshot
 
 - Required reviewer and release-token rotation owner.
 - Exact `main` review count, required CI checks, and administrator bypass policy.

@@ -177,6 +177,42 @@ jobs:
       - name: Build verified documentation media
         shell: pwsh
         run: ./scripts/build-demo-media.ps1
+      - name: Upload complete portfolio media evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: portfolio-media-${{ github.sha }}
+          path: |
+            artifacts/media-capture/screens/overview-dashboard-desktop.png
+            artifacts/media-capture/screens/overview-dashboard-mobile.png
+            artifacts/media-capture/screens/work-operations-desktop.png
+            artifacts/media-capture/screens/work-operations-mobile.png
+            artifacts/media-capture/screens/cost-analysis-desktop.png
+            artifacts/media-capture/screens/cost-analysis-mobile.png
+            artifacts/media-capture/screens/crop-health-desktop.png
+            artifacts/media-capture/screens/crop-health-mobile.png
+            artifacts/media-capture/screens/data-quality-desktop.png
+            artifacts/media-capture/screens/data-quality-mobile.png
+            artifacts/media-capture/screens/assistant-evidence-first-desktop.png
+            artifacts/media-capture/screens/assistant-evidence-first-mobile.png
+            artifacts/media-capture/screens/tenant-administration-desktop.png
+            artifacts/media-capture/screens/tenant-administration-mobile.png
+            docs/assets/screens/overview-dashboard-desktop.webp
+            docs/assets/screens/overview-dashboard-mobile.webp
+            docs/assets/screens/work-operations-desktop.webp
+            docs/assets/screens/work-operations-mobile.webp
+            docs/assets/screens/cost-analysis-desktop.webp
+            docs/assets/screens/cost-analysis-mobile.webp
+            docs/assets/screens/crop-health-desktop.webp
+            docs/assets/screens/crop-health-mobile.webp
+            docs/assets/screens/data-quality-desktop.webp
+            docs/assets/screens/data-quality-mobile.webp
+            docs/assets/screens/assistant-evidence-first-desktop.webp
+            docs/assets/screens/assistant-evidence-first-mobile.webp
+            docs/assets/screens/tenant-administration-desktop.webp
+            docs/assets/screens/tenant-administration-mobile.webp
+            docs/assets/screens/catalog.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload inventory forecast media evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

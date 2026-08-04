@@ -3,6 +3,12 @@
   gap: 1.25rem;
 }
 
+/* Grid items default to their intrinsic minimum width. Filters and charts can
+   therefore widen the full page before their own wrap/scroll rules engage. */
+.stack > * {
+  min-width: 0;
+}
+
 .pageIntro {
   display: flex;
   align-items: flex-start;
@@ -127,6 +133,10 @@
   gap: 1rem;
 }
 
+.evidenceGrid > * {
+  min-width: 0;
+}
+
 .riskPanel,
 .trendPanel,
 .contextVisual,
@@ -148,9 +158,13 @@
   display: grid;
   grid-template-columns: repeat(12, minmax(2rem, 1fr));
   gap: 0.55rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 15rem;
   margin-bottom: 1rem;
   padding: 1rem 0.75rem 0.5rem;
+  box-sizing: border-box;
   overflow-x: auto;
   background: var(--canvas);
   border: 1px solid var(--border);
@@ -279,10 +293,15 @@
 
 .sectionHeading {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.sectionHeading > * {
+  min-width: 0;
 }
 
 .sectionHeading > span {
@@ -525,7 +544,7 @@
 @media (max-width: 60rem) {
   .evidenceGrid,
   .farmDetailGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -43,9 +43,11 @@ powershell -ExecutionPolicy Bypass -File scripts/run-big-data-demo.ps1
 It writes `artifacts/big-data` on D, keeps C/D PASS, and records a resolved
 configuration fingerprint in `manifest.json`. The verified run passed with
 1,050,000 warehouse sensor facts and a 388.2 MB artifact set. The dashboard
-visual catalog lives in `dashboard/assets/generated/`; it is application UI
-content, not a Gold fact or a registry image. Crop Health imagery is explicitly
-AI-generated demo evidence and cannot support a real agronomic diagnosis.
+visual catalog lives in `dashboard/assets/generated/`; it is 8 contextual AI
+demo visuals, not Gold facts or registry images. The 14 hosted CI screenshots
+live separately under `docs/assets/screens/` and trace back to Actions run
+`30868766788`. Crop Health imagery is explicitly AI-generated demo evidence and
+cannot support a real agronomic diagnosis.
 
 ## Realtime E2E
 

@@ -44,6 +44,23 @@ describe("Field Ledger shell accessibility guardrails", () => {
     );
   });
 
+  it("contains Overview filters and charts inside the mobile workspace", () => {
+    const overviewCss = read(
+      "src/features/overview/components/overview-farms.module.css"
+    );
+    expect(overviewCss).toMatch(/\.stack > \*\s*\{[^}]*min-width:\s*0;/s);
+    expect(overviewCss).toMatch(
+      /\.trendChart\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s
+    );
+    expect(overviewCss).toMatch(/\.evidenceGrid > \*\s*\{[^}]*min-width:\s*0;/s);
+    expect(overviewCss).toMatch(
+      /@media \(max-width:\s*60rem\)[\s\S]*?\.evidenceGrid,[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\);/
+    );
+    expect(overviewCss).toMatch(/\.sectionHeading\s*\{[^}]*flex-wrap:\s*wrap;/s);
+    expect(overviewCss).toMatch(/\.sectionHeading > \*\s*\{[^}]*min-width:\s*0;/s);
+    expect(overviewCss).toMatch(/\.periodFilter\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  });
+
   it("does not allow raw Stitch exports or CDN-only runtime dependencies", () => {
     const source = [
       read("src/components/app-shell/app-shell.tsx"),

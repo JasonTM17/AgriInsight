@@ -16,6 +16,14 @@ const mediaBuilder = readFileSync(
   resolve(repoRoot, "scripts/build-demo-media.ps1"),
   "utf8"
 );
+const portfolioCapture = readFileSync(
+  resolve(repoRoot, "web/tests/capture/portfolio-media.spec.ts"),
+  "utf8"
+);
+const overflowBoundary = readFileSync(
+  resolve(repoRoot, "web/tests/capture/horizontal-overflow-boundary.ts"),
+  "utf8"
+);
 const adminDatabaseHelper = readFileSync(
   resolve(repoRoot, "web/tests/e2e/helpers/admin-governance-database.ts"),
   "utf8"
@@ -110,6 +118,29 @@ describe("real-platform E2E runner", () => {
     expect(mediaBuilder).toContain("[int] $StillMaxHeight = 12000");
     expect(mediaBuilder).toContain(
       '-resize "${StillWidth}x${StillMaxHeight}>"'
+    );
+  });
+
+  it("keeps portfolio evidence on real OIDC personas without provider answers", () => {
+    expect(portfolioCapture).toContain('loginWithRealOidc(page, "executive"');
+    expect(portfolioCapture).toContain('loginWithRealOidc(page, "field-worker"');
+    expect(portfolioCapture).toContain('loginWithRealOidc(page, "analyst"');
+    expect(portfolioCapture).toContain('loginWithRealOidc(page, "tenant-admin"');
+    expect(portfolioCapture).toContain("Bằng chứng trước, kết luận sau.");
+    expect(portfolioCapture).not.toContain("queryAssistant");
+    expect(portfolioCapture).toContain('page.on("request"');
+    expect(portfolioCapture).toContain('url.pathname === "/api/assistant/query"');
+    expect(portfolioCapture).toContain("assistantQueryRequests");
+    expect(portfolioCapture).toContain("snapshot.scrollWidth > snapshot.clientWidth + 1");
+    expect(portfolioCapture).toContain("snapshot.bodyScrollWidth > snapshot.bodyClientWidth + 1");
+    expect(overflowBoundary).toContain("containsInteractiveContent");
+    expect(overflowBoundary).toContain(
+      'ancestor.dataset.portfolioCaptureClip === "non-interactive"'
+    );
+    expect(overflowBoundary).toContain("containsAcceptedScrollport");
+    expect(overflowBoundary).toContain("return hasReviewedBoundary");
+    expect(portfolioCapture).toContain(
+      "Assistant screenshot must remain provider-query-free"
     );
   });
 

@@ -5,7 +5,7 @@
 [![Java 21](https://img.shields.io/badge/Java-21-b85c38.svg)](backend/pom.xml)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-111111.svg)](web/package.json)
 
-![AgriInsight — enterprise agriculture analytics](docs/assets/agriinsight-social-preview.jpg)
+![Hosted Overview dashboard](docs/assets/screens/overview-dashboard-desktop.webp)
 
 Portfolio / pre-production reference implementation; not an externally operated production service.
 
@@ -281,20 +281,20 @@ validated sensor facts after intentional Bronze quality fixtures. The latest
 verified run passed quality/checksum/warehouse gates with a 388.2 MB artifact
 set. Do not commit generated artifacts.
 
-The repository now includes eight optimized WebP visuals under
-[`dashboard/assets/generated/`](dashboard/assets/generated/), with captions and
-an explicit **AI-generated demo evidence** warning on Crop Health. They cover
-Executive, Farm Performance, Inventory, Cost Analysis, Crop Health, Data
-Quality, Work, and Administration. The catalog
-records dimensions, SHA-256, prompt intent, accessible descriptions, and the
-evidence boundary; the web predev/prebuild sync validates the same catalog
-before copying ignored runtime assets. The shared web shell uses a Vietnamese
-Field Ledger navigation derived from fresh server permissions. A four-frame
-contextual GIF is available at
-[`assets/generated/agriinsight-field-ledger-loop.gif`](assets/generated/agriinsight-field-ledger-loop.gif);
-it is documentation/demo media only, never agronomic evidence. A 1280 × 640
-social-preview source is available at
-[`docs/assets/agriinsight-social-preview.jpg`](docs/assets/agriinsight-social-preview.jpg);
-GitHub account settings may still require a one-time manual upload.
+The 14 hosted CI screenshots are the real UI evidence set from Actions run `30868766788`; the 8 contextual AI visuals are documented separately in [`dashboard/assets/generated/README.md`](dashboard/assets/generated/README.md); the tracked social-preview source remains [`docs/assets/agriinsight-social-preview.jpg`](docs/assets/agriinsight-social-preview.jpg).
+The Assistant pair shows its initial evidence-first workspace before any provider query; it does not prove provider quality, latency, spend, or an SLO.
+
+**Overview**<br><img src="docs/assets/screens/overview-dashboard-desktop.webp" width="64%" alt="Hosted Overview dashboard on desktop"> <img src="docs/assets/screens/overview-dashboard-mobile.webp" width="32%" alt="Hosted Overview dashboard on mobile">
+**Work**<br><img src="docs/assets/screens/work-operations-desktop.webp" width="64%" alt="Hosted Work operations on desktop"> <img src="docs/assets/screens/work-operations-mobile.webp" width="32%" alt="Hosted Work operations on mobile">
+**Cost Analysis**<br><img src="docs/assets/screens/cost-analysis-desktop.webp" width="64%" alt="Hosted Cost Analysis on desktop"> <img src="docs/assets/screens/cost-analysis-mobile.webp" width="32%" alt="Hosted Cost Analysis on mobile">
+**Crop Health**<br><img src="docs/assets/screens/crop-health-desktop.webp" width="64%" alt="Hosted Crop Health on desktop"> <img src="docs/assets/screens/crop-health-mobile.webp" width="32%" alt="Hosted Crop Health on mobile">
+**Data Quality**<br><img src="docs/assets/screens/data-quality-desktop.webp" width="64%" alt="Hosted Data Quality on desktop"> <img src="docs/assets/screens/data-quality-mobile.webp" width="32%" alt="Hosted Data Quality on mobile">
+**Assistant**<br><img src="docs/assets/screens/assistant-evidence-first-desktop.webp" width="64%" alt="Hosted evidence-first Assistant workspace on desktop"> <img src="docs/assets/screens/assistant-evidence-first-mobile.webp" width="32%" alt="Hosted evidence-first Assistant workspace on mobile">
+**Administration**<br><img src="docs/assets/screens/tenant-administration-desktop.webp" width="64%" alt="Hosted tenant Administration on desktop"> <img src="docs/assets/screens/tenant-administration-mobile.webp" width="32%" alt="Hosted tenant Administration on mobile">
+
+The following 8 files are contextual AI-generated demo artwork—not UI screenshots, telemetry, customer-farm records, or agronomic evidence.
+<p><img src="dashboard/assets/generated/overview-fields.webp" width="24%" alt="Contextual overview fields artwork"> <img src="dashboard/assets/generated/farm-performance.webp" width="24%" alt="Contextual farm performance artwork"> <img src="dashboard/assets/generated/inventory-control.webp" width="24%" alt="Contextual inventory control artwork"> <img src="dashboard/assets/generated/cost-procurement.webp" width="24%" alt="Contextual cost procurement artwork"></p>
+<p><img src="dashboard/assets/generated/crop-health-evidence.webp" width="24%" alt="AI-generated Crop Health demo evidence"> <img src="dashboard/assets/generated/data-quality-sensors.webp" width="24%" alt="Contextual data quality sensors artwork"> <img src="dashboard/assets/generated/work-operations.webp" width="24%" alt="Contextual work operations artwork"> <img src="dashboard/assets/generated/tenant-administration.webp" width="24%" alt="Contextual tenant administration artwork"></p>
+`crop-health-evidence.webp` is strictly **AI-generated demo evidence**: never a real observation, diagnostic claim, or model-training/validation input.
 
 ![AgriInsight Field Ledger navigation preview](assets/generated/agriinsight-field-ledger-loop.gif)

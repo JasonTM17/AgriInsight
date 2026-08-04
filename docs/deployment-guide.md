@@ -62,12 +62,15 @@ BFF/web image digest. Keep the alert rows and migrations in place; rollback is
 an image/code change, not a table wipe. Do not rely on flipping a checked-in
 Compose environment value when a service hard-codes its behavior.
 
-The dashboard's eight generated WebP visuals are first-party application assets,
+The dashboard's 8 contextual AI visuals are first-party application assets,
 not Docker images and not real customer evidence. Their provenance, hashes,
 alt descriptions, and Crop Health disclaimer are maintained in
-`dashboard/assets/generated/README.md`. The social-preview source is kept under
-`docs/assets/`; uploading it to GitHub Settings is a separate account-level
-action.
+`dashboard/assets/generated/README.md`. The 14 hosted CI screenshots are kept
+separately under `docs/assets/screens/` and trace back to Actions run
+`30868766788`. The tracked 1280x640 social-preview source under
+`docs/assets/agriinsight-social-preview.jpg` is uploaded to GitHub and its
+public metadata object matches the source SHA-256 exactly; see the
+[verification report](../plans/260803-2156-portfolio-media-completion/reports/social-preview-verification.md).
 
 ## Phase 2 analytics API and demo tenant
 
@@ -601,8 +604,10 @@ serially (`max-parallel: 1`). It scans and smokes a local candidate before
 registry authentication, then publishes both registries with BuildKit
 provenance/SBOM and repeats scan/smoke against the returned digest. The
 `release-images` environment, reviewer policy, `DOCKERHUB_USERNAME`, and
-`DOCKERHUB_TOKEN` are configured and approved per immutable tag. See the
-[repository-owner handoff](../plans/260722-2342-production-web-platform/reports/github-social-preview-owner-handoff.md).
+`DOCKERHUB_TOKEN` are configured and approved per immutable tag. Current
+external-deployment owner decisions remain tracked in the
+[production-readiness control matrix](production-readiness.md); the dated
+2026-07-27 owner handoff is retained only as a historical snapshot.
 
 All four GHCR packages are linked to `JasonTM17/AgriInsight` and remain private.
 The configured `GHCR_TOKEN` is an environment-scoped legacy-package

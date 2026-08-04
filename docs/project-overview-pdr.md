@@ -1,8 +1,8 @@
 # AgriInsight — Project Overview and Product Development Requirements
 
 Version: 0.14
-Updated: 2026-08-01
-Status: backend core, scoped inventory-demand and yield forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.4.0` are verified; external production deployment and recovery ownership remain open
+Updated: 2026-08-04
+Status: backend core, scoped inventory-demand and yield forecasting Phases 1–3, nine-area web, alert-worker hardening, hosted CI, and protected four-image release `v0.4.0` are verified; the 14 hosted CI screenshots and 8 contextual AI visuals are tracked separately, and external production deployment and recovery ownership remain open
 
 ## Product goal
 
@@ -89,8 +89,10 @@ and [architecture](./architecture.md) for the normative boundaries.
   server-marker-attested, credential-free in source, and isolated under the
   `agriinsight-demo` Compose project; never run it implicitly during normal
   application startup.
-- Use contextual first-party visuals with provenance/alt descriptions; label
-  generated Crop Health imagery as demo evidence and never treat it as a source
+- Use contextual first-party visuals with provenance/alt descriptions; keep the
+  14 hosted CI screenshots from Actions run `30868766788` separate from the 8
+  contextual AI visuals in `dashboard/assets/generated/`, and label generated
+  Crop Health imagery as demo evidence without treating it as a source
   observation.
 - Provide all nine product areas through the tokenless Next BFF with real
   loading, empty, degraded, conflict, and forbidden states; Supplier is denied.

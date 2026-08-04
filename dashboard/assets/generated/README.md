@@ -2,8 +2,10 @@
 
 Generated specifically for AgriInsight on 2026-07-22 with the built-in OpenAI
 image-generation tool, then stripped and converted to WebP with ImageMagick.
-No third-party stock image was used. These files are product/demo visuals, not
-photographs from a customer farm and not ground-truth training data.
+No third-party stock image was used. These 8 files are contextual AI-generated
+demo artwork, not screenshots, telemetry, customer-farm evidence, or
+ground-truth training data. The separate 14 hosted CI screenshots live under
+`docs/assets/screens/`.
 
 `catalog.json` is the canonical machine-readable manifest. It owns the
 filename, dimensions, byte budget, SHA-256, accessible description, runtime

@@ -8,6 +8,7 @@ const ALLOWED_RETURN_PATHS = new Set([
   "/costs",
   "/crop-health",
   "/data-quality",
+  "/assistant",
   "/admin",
   "/admin/audit"
 ]);

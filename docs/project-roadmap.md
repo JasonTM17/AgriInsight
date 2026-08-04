@@ -136,7 +136,9 @@ implicitly converted into operating cost.
   Registry publication does not by itself approve an external deployment.
 - GitHub `main` is now the default branch. About description/topics, Discussions,
   security scanning, Dependabot, templates, CODEOWNERS, and repository labels
-  are configured; social-preview upload remains a one-time web-settings action.
+  are configured. The tracked 1280x640 social-preview asset is uploaded and
+  its public `og:image`/`twitter:image` bytes match the source SHA-256; see the
+  [verification report](../plans/260803-2156-portfolio-media-completion/reports/social-preview-verification.md).
 - Define production OIDC/MFA, audit retention, backup/restore RPO/RTO, off-host
   encryption, and restore ownership before calling the system production-ready.
 
