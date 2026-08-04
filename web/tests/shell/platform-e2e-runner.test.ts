@@ -130,6 +130,14 @@ describe("real-platform E2E runner", () => {
     expect(portfolioCapture).toContain("root.scrollWidth > root.clientWidth + 1");
     expect(portfolioCapture).toContain("body.scrollWidth > body.clientWidth + 1");
     expect(portfolioCapture).toContain("containsInteractiveContent");
+    expect(portfolioCapture).toContain(
+      'ancestor.dataset.portfolioCaptureClip === "non-interactive"'
+    );
+    expect(portfolioCapture).toContain("let hasReviewedBoundary = false");
+    expect(portfolioCapture).toContain("return hasReviewedBoundary");
+    expect(portfolioCapture).toContain(
+      "Assistant screenshot must remain provider-query-free"
+    );
   });
 
   it("selects only live activities and starts new assignments at version zero", () => {

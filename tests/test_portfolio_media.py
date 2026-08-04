@@ -98,6 +98,10 @@ def test_portfolio_capture_contract_is_complete() -> None:
     assert "root.scrollWidth > root.clientWidth + 1" in capture
     assert "body.scrollWidth > body.clientWidth + 1" in capture
     assert "containsInteractiveContent" in capture
+    assert 'ancestor.dataset.portfolioCaptureClip === "non-interactive"' in capture
+    assert "let hasReviewedBoundary = false" in capture
+    assert "return hasReviewedBoundary" in capture
+    assert "Assistant screenshot must remain provider-query-free" in capture
 
 
 def test_media_builder_and_ci_publish_the_same_contract() -> None:

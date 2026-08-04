@@ -89,21 +89,33 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
         }
         const hasContainingHorizontalBoundary = (element: HTMLElement): boolean => {
           let ancestor = element.parentElement;
+          let hasReviewedBoundary = false;
           while (ancestor && ancestor !== document.body) {
             const overflowX = getComputedStyle(ancestor).overflowX;
             const rect = ancestor.getBoundingClientRect();
             const isBounded = rect.left >= -1 && rect.right <= root.clientWidth + 1;
-            if (isBounded && ["auto", "scroll"].includes(overflowX)) return true;
-            if (isBounded && ["hidden", "clip"].includes(overflowX)) {
+            if (isBounded && ["auto", "scroll"].includes(overflowX)) {
+              hasReviewedBoundary = true;
+            }
+            if (["hidden", "clip"].includes(overflowX)) {
               const containsInteractiveContent = Boolean(
                 element.closest(interactiveSelector) ||
                 element.querySelector(interactiveSelector)
               );
-              if (!containsInteractiveContent) return true;
+              const explicitlyAllowsNonInteractiveClip =
+                ancestor.dataset.portfolioCaptureClip === "non-interactive";
+              if (
+                !isBounded ||
+                containsInteractiveContent ||
+                !explicitlyAllowsNonInteractiveClip
+              ) {
+                return false;
+              }
+              hasReviewedBoundary = true;
             }
             ancestor = ancestor.parentElement;
           }
-          return false;
+          return hasReviewedBoundary;
         };
         const offenders = [...document.querySelectorAll<HTMLElement>("body *")]
           .filter((element) => {
@@ -131,6 +143,12 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
       path: resolve(screenDirectory, `${surface.name}-${viewportName}.png`),
       fullPage: false
     });
+    if (surface.name === "assistant-evidence-first") {
+      expect(
+        assistantQueryRequests,
+        `${viewportName} Assistant screenshot must remain provider-query-free`
+      ).toEqual([]);
+    }
   }
 }
 

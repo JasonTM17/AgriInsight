@@ -4,21 +4,21 @@
 
 ### Medium
 
-1. **The Assistant no-query guarantee is not behaviorally enforced.**  
-   **Location:** `web/tests/capture/portfolio-media.spec.ts:108`, `tests/test_portfolio_media.py:91`, `web/tests/shell/platform-e2e-runner.test.ts:119`  
-   The hosted capture navigates to `/assistant` and waits for `networkidle`, but it never records or rejects requests to the Assistant query endpoint. Both guard tests only search the capture source for the string `queryAssistant`. A future mount-time fetch, renamed client helper, or indirect request could consume the provider path and still satisfy these tests; the screenshot could then contain provider-derived content while the evidence is labeled initial/no-query.  
+1. **The Assistant no-query guarantee is not behaviorally enforced.**
+   **Location:** `web/tests/capture/portfolio-media.spec.ts:108`, `tests/test_portfolio_media.py:91`, `web/tests/shell/platform-e2e-runner.test.ts:119`
+   The hosted capture navigates to `/assistant` and waits for `networkidle`, but it never records or rejects requests to the Assistant query endpoint. Both guard tests only search the capture source for the string `queryAssistant`. A future mount-time fetch, renamed client helper, or indirect request could consume the provider path and still satisfy these tests; the screenshot could then contain provider-derived content while the evidence is labeled initial/no-query.
    **Fix:** instrument Playwright request events before navigation and assert zero Assistant query POSTs for both viewports; also assert the response panel remains in its exact initial state before each screenshot.
 
-2. **The mobile overflow gate treats clipping as success and omits a page-level width invariant.**  
-   **Location:** `web/tests/capture/portfolio-media.spec.ts:49`  
-   Any descendant outside the viewport is ignored when an ancestor has `overflow-x: hidden` or `clip`, and line 77 returns `fits` without asserting `documentElement.scrollWidth`/`body.scrollWidth`. This permits cut-off content or pseudo-element overflow to pass the stated mobile guard. Current screenshots show no page-level overflow; this is a false-negative path in the reusable acceptance check.  
+2. **The mobile overflow gate treats clipping as success and omits a page-level width invariant.**
+   **Location:** `web/tests/capture/portfolio-media.spec.ts:49`
+   Any descendant outside the viewport is ignored when an ancestor has `overflow-x: hidden` or `clip`, and line 77 returns `fits` without asserting `documentElement.scrollWidth`/`body.scrollWidth`. This permits cut-off content or pseudo-element overflow to pass the stated mobile guard. Current screenshots show no page-level overflow; this is a false-negative path in the reusable acceptance check.
    **Fix:** assert root/body scroll width does not exceed client width, allow only reviewed `auto`/`scroll` containers, and reject `hidden`/`clip` containment unless the clipped element is explicitly allowlisted and non-interactive.
 
 ### Low
 
-3. **Phase 1's completed record does not match the landed files or its own checklist.**  
-   **Location:** `plans/260803-2156-portfolio-media-completion/phase-01-capture-contract-and-media-validation.md:4`, `:16`, `:23`, `:31`  
-   The phase is marked completed, but it says `demo-media.spec.ts` was extended while the branch added `portfolio-media.spec.ts`, and all five success criteria remain unchecked. This makes plan completion audit unreliable even though the implementation largely satisfies the criteria.  
+3. **Phase 1's completed record does not match the landed files or its own checklist.**
+   **Location:** `plans/260803-2156-portfolio-media-completion/phase-01-capture-contract-and-media-validation.md:4`, `:16`, `:23`, `:31`
+   The phase is marked completed, but it says `demo-media.spec.ts` was extended while the branch added `portfolio-media.spec.ts`, and all five success criteria remain unchecked. This makes plan completion audit unreliable even though the implementation largely satisfies the criteria.
    **Fix:** have the plan owner reconcile the actual capture file and verified criteria after final CI; do not change plan status from this review.
 
 ## Code Review Summary
@@ -100,6 +100,6 @@ None.
 - Will exact-head run `30873287616` complete all realtime, browser, media-builder, and four image jobs successfully?
 - Has the public GitHub social-preview image been byte/visual-verified against `docs/assets/agriinsight-social-preview.jpg` and recorded in the planned evidence report?
 
-Status: DONE_WITH_CONCERNS  
-Summary: No Critical/High code defect; two Medium acceptance-test gaps and one Low plan-record mismatch. Merge remains gated on current-head CI.  
+Status: DONE_WITH_CONCERNS
+Summary: No Critical/High code defect; two Medium acceptance-test gaps and one Low plan-record mismatch. Merge remains gated on current-head CI.
 Concerns/Blockers: Exact-head CI pending; Phase 4 social-preview/merge/default-branch evidence incomplete.
