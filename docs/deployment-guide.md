@@ -67,8 +67,10 @@ not Docker images and not real customer evidence. Their provenance, hashes,
 alt descriptions, and Crop Health disclaimer are maintained in
 `dashboard/assets/generated/README.md`. The 14 hosted CI screenshots are kept
 separately under `docs/assets/screens/` and trace back to Actions run
-`30868766788`. The tracked social-preview source remains under
-`docs/assets/agriinsight-social-preview.jpg`.
+`30868766788`. The tracked 1280x640 social-preview source under
+`docs/assets/agriinsight-social-preview.jpg` is uploaded to GitHub and its
+public metadata object matches the source SHA-256 exactly; see the
+[verification report](../plans/260803-2156-portfolio-media-completion/reports/social-preview-verification.md).
 
 ## Phase 2 analytics API and demo tenant
 

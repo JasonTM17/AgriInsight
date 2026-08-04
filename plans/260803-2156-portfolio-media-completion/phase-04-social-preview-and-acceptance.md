@@ -26,8 +26,8 @@ Close the owner-only GitHub presentation step, run independent validation and re
 
 ## Success Criteria
 
-- [ ] GitHub repository settings show the tracked social-preview asset.
-- [ ] Public repository metadata resolves to the uploaded preview image.
+- [x] GitHub repository settings show the tracked social-preview asset.
+- [x] Public repository metadata resolves to the uploaded preview image.
 - [ ] Test, review, security-sensitive media checks, and hosted CI are green on final HEAD.
 - [ ] Pull request is merged through protection; merged branch is removed locally and remotely.
 - [ ] `main` is clean and exactly aligned with `origin/main`.

@@ -2,7 +2,7 @@
 
 Date: 2026-07-27
 
-Status: owner action required before any new registry publication
+Status: release controls retained; social-preview handoff superseded
 
 ## Already automated
 
@@ -46,9 +46,11 @@ below are complete.
 
 The source image is
 [`docs/assets/agriinsight-social-preview.jpg`](../../../docs/assets/agriinsight-social-preview.jpg).
-GitHub CLI does not expose a supported repository social-preview upload command.
-Upload it manually in **Settings → General → Social preview**, then verify the
-repository card in a signed-out browser session.
+The authenticated owner upload and unauthenticated metadata verification were
+completed on 2026-08-04. The public `og:image` and `twitter:image` object is
+1280x640 and matches the tracked source SHA-256 exactly. See the
+[social-preview verification](../../260803-2156-portfolio-media-completion/reports/social-preview-verification.md).
+No manual social-preview action remains.
 
 ## Release evidence to retain
 
