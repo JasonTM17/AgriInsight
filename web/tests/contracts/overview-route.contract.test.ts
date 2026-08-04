@@ -116,4 +116,9 @@ describe("overview and farm route contracts", () => {
       "/overview"
     );
   });
+
+  it("preserves the implemented assistant return path", () => {
+    expect(allowlistedReturnPath("/assistant")).toBe("/assistant");
+    expect(allowlistedReturnPath("//evil.example/assistant")).toBe("/overview");
+  });
 });
