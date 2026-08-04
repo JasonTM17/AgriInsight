@@ -124,6 +124,12 @@ describe("real-platform E2E runner", () => {
     expect(portfolioCapture).toContain('loginWithRealOidc(page, "tenant-admin"');
     expect(portfolioCapture).toContain("Bằng chứng trước, kết luận sau.");
     expect(portfolioCapture).not.toContain("queryAssistant");
+    expect(portfolioCapture).toContain('page.on("request"');
+    expect(portfolioCapture).toContain('url.pathname === "/api/assistant/query"');
+    expect(portfolioCapture).toContain("assistantQueryRequests");
+    expect(portfolioCapture).toContain("root.scrollWidth > root.clientWidth + 1");
+    expect(portfolioCapture).toContain("body.scrollWidth > body.clientWidth + 1");
+    expect(portfolioCapture).toContain("containsInteractiveContent");
   });
 
   it("selects only live activities and starts new assignments at version zero", () => {

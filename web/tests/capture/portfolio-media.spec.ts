@@ -34,6 +34,15 @@ async function expectSurfaceReady(page: Page, surface: Surface): Promise<void> {
 
 async function capturePair(page: Page, surface: Surface): Promise<void> {
   await mkdir(screenDirectory, { recursive: true });
+  const assistantQueryRequests: string[] = [];
+  if (surface.name === "assistant-evidence-first") {
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (request.method() === "POST" && url.pathname === "/api/assistant/query") {
+        assistantQueryRequests.push(request.url());
+      }
+    });
+  }
   for (const [viewportName, viewport] of [
     ["desktop", desktop],
     ["mobile", mobile]
@@ -42,21 +51,55 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
     const response = await page.goto(surface.route);
     expect(response?.status(), `${viewportName} GET ${surface.route}`).toBe(200);
     await expectSurfaceReady(page, surface);
+    if (surface.name === "assistant-evidence-first") {
+      const workspace = page.getByTestId("assistant-workspace");
+      await expect(workspace.getByRole("heading", {
+        name: "Bằng chứng trước, kết luận sau.",
+        exact: true
+      })).toBeVisible();
+      expect(
+        assistantQueryRequests,
+        `${viewportName} Assistant capture must not query the provider path`
+      ).toEqual([]);
+    }
     console.log(`PORTFOLIO_CAPTURE surface=${surface.name} viewport=${viewportName}`);
     await expect
       .poll(async () => page.evaluate(() => {
         const root = document.documentElement;
-        const hasContainingHorizontalClip = (element: HTMLElement): boolean => {
+        const body = document.body;
+        const interactiveSelector = [
+          "a",
+          "button",
+          "input",
+          "select",
+          "textarea",
+          "[tabindex]:not([tabindex='-1'])"
+        ].join(",");
+        if (
+          root.scrollWidth > root.clientWidth + 1 ||
+          body.scrollWidth > body.clientWidth + 1
+        ) {
+          return JSON.stringify({
+            bodyClientWidth: body.clientWidth,
+            bodyScrollWidth: body.scrollWidth,
+            clientWidth: root.clientWidth,
+            offenders: ["page-root"],
+            scrollWidth: root.scrollWidth
+          });
+        }
+        const hasContainingHorizontalBoundary = (element: HTMLElement): boolean => {
           let ancestor = element.parentElement;
           while (ancestor && ancestor !== document.body) {
             const overflowX = getComputedStyle(ancestor).overflowX;
             const rect = ancestor.getBoundingClientRect();
-            if (
-              ["auto", "scroll", "hidden", "clip"].includes(overflowX) &&
-              rect.left >= -1 &&
-              rect.right <= root.clientWidth + 1
-            ) {
-              return true;
+            const isBounded = rect.left >= -1 && rect.right <= root.clientWidth + 1;
+            if (isBounded && ["auto", "scroll"].includes(overflowX)) return true;
+            if (isBounded && ["hidden", "clip"].includes(overflowX)) {
+              const containsInteractiveContent = Boolean(
+                element.closest(interactiveSelector) ||
+                element.querySelector(interactiveSelector)
+              );
+              if (!containsInteractiveContent) return true;
             }
             ancestor = ancestor.parentElement;
           }
@@ -66,7 +109,7 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
           .filter((element) => {
             const rect = element.getBoundingClientRect();
             const exceedsViewport = rect.left < -1 || rect.right > root.clientWidth + 1;
-            return exceedsViewport && !hasContainingHorizontalClip(element);
+            return exceedsViewport && !hasContainingHorizontalBoundary(element);
           })
           .map((element) => ({
             className: element.className,

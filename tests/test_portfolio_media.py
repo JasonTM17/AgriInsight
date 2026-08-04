@@ -89,9 +89,15 @@ def test_portfolio_capture_contract_is_complete() -> None:
     assert 'route: "/costs?lens=procurement"' in capture
     assert 'text: "FASTAPI GOLD SNAPSHOT"' in capture
     assert "queryAssistant" not in capture
+    assert 'page.on("request"' in capture
+    assert 'url.pathname === "/api/assistant/query"' in capture
+    assert "assistantQueryRequests" in capture
     assert "fullPage: false" in capture
     assert "fullPage: true" not in capture
-    assert "hasContainingHorizontalClip" in capture
+    assert "hasContainingHorizontalBoundary" in capture
+    assert "root.scrollWidth > root.clientWidth + 1" in capture
+    assert "body.scrollWidth > body.clientWidth + 1" in capture
+    assert "containsInteractiveContent" in capture
 
 
 def test_media_builder_and_ci_publish_the_same_contract() -> None:
