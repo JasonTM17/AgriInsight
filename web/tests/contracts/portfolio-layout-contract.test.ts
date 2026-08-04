@@ -30,8 +30,11 @@ describe("portfolio responsive layout contracts", () => {
   it("runs geometry checks before every portfolio screenshot", () => {
     const capture = read("tests/capture/portfolio-media.spec.ts");
     expect(capture).toContain("await expectPortfolioLayout(page, surface, viewportName)");
+    expect(capture).toContain("range.getBoundingClientRect()");
     expect(capture).toContain("boxesIntersect(leadBox, metricBox)");
+    expect(capture).toContain("Overview revenue escapes its KPI card");
     expect(capture).toContain("Evidence contract must use one readable mobile column");
     expect(capture).toContain("Admin tabs require hidden horizontal discovery");
+    expect(capture).toContain("is shorter than 44px");
   });
 });

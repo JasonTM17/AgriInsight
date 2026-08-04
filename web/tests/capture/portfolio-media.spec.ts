@@ -41,13 +41,34 @@ async function requiredBox(locator: Locator, label: string): Promise<LayoutBox> 
   return box as LayoutBox;
 }
 
+async function requiredTextBox(locator: Locator, label: string): Promise<LayoutBox> {
+  const box = await locator.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const rect = range.getBoundingClientRect();
+    return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
+  });
+  expect(box.width, `${label} must render measurable text`).toBeGreaterThan(0);
+  expect(box.height, `${label} must render measurable text`).toBeGreaterThan(0);
+  return box;
+}
+
 async function expectOverviewKpisSeparated(page: Page): Promise<void> {
   const summary = page.getByRole("region", { name: "Chỉ số điều hành" });
   const leadValue = summary.locator("strong").first();
-  const leadBox = await requiredBox(leadValue, "Overview revenue");
+  const leadBox = await requiredTextBox(leadValue, "Overview revenue");
+  const leadCardBox = await requiredBox(leadValue.locator(".."), "Overview lead KPI card");
+  expect(leadBox.x).toBeGreaterThanOrEqual(leadCardBox.x - 1);
+  expect(leadBox.x + leadBox.width, "Overview revenue escapes its KPI card").toBeLessThanOrEqual(
+    leadCardBox.x + leadCardBox.width + 1
+  );
+  const metricsBox = await requiredBox(summary.locator("dl"), "Overview secondary KPI grid");
+  expect(boxesIntersect(leadBox, metricsBox), "Overview revenue enters the secondary KPI grid").toBe(
+    false
+  );
   const metricValues = summary.locator("dd");
   for (let index = 0; index < await metricValues.count(); index += 1) {
-    const metricBox = await requiredBox(
+    const metricBox = await requiredTextBox(
       metricValues.nth(index),
       `Overview secondary KPI ${index + 1}`
     );
@@ -63,10 +84,10 @@ async function expectCostKpisReadable(page: Page): Promise<void> {
   await expect(cards).toHaveCount(4);
   for (let index = 0; index < await cards.count(); index += 1) {
     const layout = await cards.nth(index).locator("strong").evaluate((element) => {
-      const valueRect = element.getBoundingClientRect();
       const cardRect = element.parentElement?.getBoundingClientRect();
       const range = document.createRange();
       range.selectNodeContents(element);
+      const valueRect = range.getBoundingClientRect();
       return {
         cardRight: cardRect?.right ?? 0,
         lineCount: [...range.getClientRects()].filter((rect) => rect.width > 0).length,
@@ -101,6 +122,7 @@ async function expectMobileAdminTabsVisible(page: Page): Promise<void> {
   const links = tabs.getByRole("link");
   for (let index = 0; index < await links.count(); index += 1) {
     const linkBox = await requiredBox(links.nth(index), `Admin tab ${index + 1}`);
+    expect(linkBox.height, `Admin tab ${index + 1} is shorter than 44px`).toBeGreaterThanOrEqual(44);
     expect(linkBox.x).toBeGreaterThanOrEqual(tabsBox.x - 1);
     expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(tabsBox.x + tabsBox.width + 1);
   }
