@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { loginWithRealOidc } from "../e2e/helpers/real-oidc-login";
+import {
+  collectHorizontalOverflowSnapshot,
+  hasContainingHorizontalBoundary
+} from "./horizontal-overflow-boundary";
 
 const screenDirectory = resolve(
   import.meta.dirname,
@@ -64,78 +68,31 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
     }
     console.log(`PORTFOLIO_CAPTURE surface=${surface.name} viewport=${viewportName}`);
     await expect
-      .poll(async () => page.evaluate(() => {
-        const root = document.documentElement;
-        const body = document.body;
-        const interactiveSelector = [
-          "a",
-          "button",
-          "input",
-          "select",
-          "textarea",
-          "[tabindex]:not([tabindex='-1'])"
-        ].join(",");
+      .poll(async () => {
+        const snapshot = await page.evaluate(collectHorizontalOverflowSnapshot);
         if (
-          root.scrollWidth > root.clientWidth + 1 ||
-          body.scrollWidth > body.clientWidth + 1
+          snapshot.scrollWidth > snapshot.clientWidth + 1 ||
+          snapshot.bodyScrollWidth > snapshot.bodyClientWidth + 1
         ) {
           return JSON.stringify({
-            bodyClientWidth: body.clientWidth,
-            bodyScrollWidth: body.scrollWidth,
-            clientWidth: root.clientWidth,
+            bodyClientWidth: snapshot.bodyClientWidth,
+            bodyScrollWidth: snapshot.bodyScrollWidth,
+            clientWidth: snapshot.clientWidth,
             offenders: ["page-root"],
-            scrollWidth: root.scrollWidth
+            scrollWidth: snapshot.scrollWidth
           });
         }
-        const hasContainingHorizontalBoundary = (element: HTMLElement): boolean => {
-          let ancestor = element.parentElement;
-          let hasReviewedBoundary = false;
-          while (ancestor && ancestor !== document.body) {
-            const overflowX = getComputedStyle(ancestor).overflowX;
-            const rect = ancestor.getBoundingClientRect();
-            const isBounded = rect.left >= -1 && rect.right <= root.clientWidth + 1;
-            if (isBounded && ["auto", "scroll"].includes(overflowX)) {
-              hasReviewedBoundary = true;
-            }
-            if (["hidden", "clip"].includes(overflowX)) {
-              const containsInteractiveContent = Boolean(
-                element.closest(interactiveSelector) ||
-                element.querySelector(interactiveSelector)
-              );
-              const explicitlyAllowsNonInteractiveClip =
-                ancestor.dataset.portfolioCaptureClip === "non-interactive";
-              if (
-                !isBounded ||
-                containsInteractiveContent ||
-                !explicitlyAllowsNonInteractiveClip
-              ) {
-                return false;
-              }
-              hasReviewedBoundary = true;
-            }
-            ancestor = ancestor.parentElement;
-          }
-          return hasReviewedBoundary;
-        };
-        const offenders = [...document.querySelectorAll<HTMLElement>("body *")]
-          .filter((element) => {
-            const rect = element.getBoundingClientRect();
-            const exceedsViewport = rect.left < -1 || rect.right > root.clientWidth + 1;
-            return exceedsViewport && !hasContainingHorizontalBoundary(element);
-          })
-          .map((element) => ({
-            className: element.className,
-            rect: element.getBoundingClientRect().toJSON(),
-            tagName: element.tagName
-          }))
+        const offenders = snapshot.candidates
+          .filter((candidate) => !hasContainingHorizontalBoundary(candidate))
+          .map((candidate) => candidate.offender)
           .slice(0, 8);
         if (offenders.length === 0) return "fits";
         return JSON.stringify({
-          clientWidth: root.clientWidth,
+          clientWidth: snapshot.clientWidth,
           offenders,
-          scrollWidth: root.scrollWidth
+          scrollWidth: snapshot.scrollWidth
         });
-      }), {
+      }, {
         message: `${surface.name} ${viewportName} has horizontal overflow`
       })
       .toBe("fits");

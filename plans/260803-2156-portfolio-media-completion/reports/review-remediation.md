@@ -14,18 +14,28 @@ mismatch. All three were remediated before merge.
    visible at both viewports.
 2. The horizontal-overflow gate now rejects root or body scroll width beyond the
    viewport. Bounded `auto`/`scroll` regions remain allowed. `hidden`/`clip`
-   containment fails immediately unless its ancestor explicitly sets
+   containment before a scrollport fails unless its ancestor explicitly sets
    `data-portfolio-capture-clip="non-interactive"` and the clipped subtree has
-   no interactive relationship. The detector scans every ancestor before
-   approving a reviewed scroll boundary, so an outer invalid clip cannot be
-   bypassed by an inner `auto`/`scroll` container.
+   no interactive relationship. The detector scans every ancestor. An outer
+   decorative clip may follow a reviewed scrollport only when it contains the
+   entire bounded scrollport; a narrower outer clip still fails.
 3. Phase 1 now names the landed `portfolio-media.spec.ts` file and records its
    five verified success criteria.
 
 The Administration tab strip remains a deliberate bounded horizontal scroller
 on mobile. It is interactive and accessible by swipe/keyboard; it does not
-create page-level overflow. The strengthened gate no longer treats a hidden or
-clipped interactive descendant as acceptable.
+create page-level overflow. The strengthened gate does not treat hidden or
+clipped interactive content as acceptable unless a complete reviewed
+scrollport already owns that content.
+
+## Hosted regression follow-up
+
+Run `30874797666` exposed a false positive in the first full-ancestor
+implementation for the mobile Cost and Administration tables. Root width stayed
+390px, but their bounded scrollports sit inside decorative hidden panels. The
+collector and pure boundary decision are now separated, and regression tests
+cover both the valid nested panel shape and a narrower outer-clip bypass. See
+`ci-regression-diagnosis.md`. Hosted rerun remains required before merge.
 
 ## Focused validation
 

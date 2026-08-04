@@ -78,6 +78,9 @@ def test_portfolio_capture_contract_is_complete() -> None:
     capture = (
         REPOSITORY_ROOT / "web/tests/capture/portfolio-media.spec.ts"
     ).read_text(encoding="utf-8")
+    overflow_boundary = (
+        REPOSITORY_ROOT / "web/tests/capture/horizontal-overflow-boundary.ts"
+    ).read_text(encoding="utf-8")
     base_names = set(re.findall(r'name: "([a-z-]+)"', capture))
     expanded = {f"{name}-{viewport}" for name in base_names for viewport in ("desktop", "mobile")}
 
@@ -95,12 +98,12 @@ def test_portfolio_capture_contract_is_complete() -> None:
     assert "fullPage: false" in capture
     assert "fullPage: true" not in capture
     assert "hasContainingHorizontalBoundary" in capture
-    assert "root.scrollWidth > root.clientWidth + 1" in capture
-    assert "body.scrollWidth > body.clientWidth + 1" in capture
-    assert "containsInteractiveContent" in capture
-    assert 'ancestor.dataset.portfolioCaptureClip === "non-interactive"' in capture
-    assert "let hasReviewedBoundary = false" in capture
-    assert "return hasReviewedBoundary" in capture
+    assert "snapshot.scrollWidth > snapshot.clientWidth + 1" in capture
+    assert "snapshot.bodyScrollWidth > snapshot.bodyClientWidth + 1" in capture
+    assert "containsInteractiveContent" in overflow_boundary
+    assert 'ancestor.dataset.portfolioCaptureClip === "non-interactive"' in overflow_boundary
+    assert "containsAcceptedScrollport" in overflow_boundary
+    assert "return hasReviewedBoundary" in overflow_boundary
     assert "Assistant screenshot must remain provider-query-free" in capture
 
 
