@@ -1,83 +1,110 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title desc">
   <title id="title">AgriInsight system architecture</title>
-  <desc id="desc">Runtime and data-flow architecture for the AgriInsight portfolio and pre-production reference implementation.</desc>
+  <desc id="desc">AgriInsight request, identity, operational, analytics, data, and event-delivery boundaries for a portfolio and pre-production reference implementation.</desc>
   <defs>
     <style>
-      .bg{fill:#f7faf7}.panel{fill:#fff;stroke:#cbd8ce;stroke-width:2}.soft{fill:#eef6f0;stroke:#9bb8a3;stroke-width:2}.data{fill:#fff8e8;stroke:#d1aa55;stroke-width:2}.event{fill:#f3effa;stroke:#9b86bd;stroke-width:2}.title{font:700 34px system-ui,sans-serif;fill:#173b27}.subtitle{font:400 17px system-ui,sans-serif;fill:#53665a}.group{font:700 18px system-ui,sans-serif;fill:#1b5e36;letter-spacing:.04em}.label{font:700 18px system-ui,sans-serif;fill:#183324}.body{font:400 15px system-ui,sans-serif;fill:#53665a}.arrow{fill:none;stroke:#32774b;stroke-width:3;marker-end:url(#arrow)}.dashed{fill:none;stroke:#7d6a9a;stroke-width:3;stroke-dasharray:10 8;marker-end:url(#arrow-purple)}
+      .bg{fill:#f6f9f5}.card{fill:#fff;stroke:#cad8ce;stroke-width:2}.service{fill:#edf7f0;stroke:#78aa87;stroke-width:2}.data{fill:#fff8e8;stroke:#d5a740;stroke-width:2}.event{fill:#f5f0fb;stroke:#9a80c3;stroke-width:2}.eyebrow{font-family:"Segoe UI",Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:.09em;fill:#267346}.title{font-family:"Segoe UI",Arial,sans-serif;font-size:38px;font-weight:700;fill:#153522}.subtitle{font-family:"Segoe UI",Arial,sans-serif;font-size:20px;font-weight:400;fill:#4f6658}.lane{font-family:"Segoe UI",Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:.12em;fill:#597064}.name{font-family:"Segoe UI",Arial,sans-serif;font-size:24px;font-weight:700;fill:#173b27}.body{font-family:"Segoe UI",Arial,sans-serif;font-size:18px;font-weight:400;fill:#42594b}.flow{font-family:"Segoe UI",Arial,sans-serif;font-size:16px;font-weight:600;fill:#246b41}.flowPurple{font-family:"Segoe UI",Arial,sans-serif;font-size:16px;font-weight:600;fill:#715a96}.chip{font-family:"Segoe UI",Arial,sans-serif;font-size:15px;font-weight:700}.line{stroke:#d8e2da;stroke-width:2}.arrow{fill:none;stroke:#2d7a49;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow)}.dashed{fill:none;stroke:#8065aa;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:10 9;marker-end:url(#arrowPurple)}
     </style>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill="#32774b"/></marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill="#7d6a9a"/></marker>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#173b27" flood-opacity=".10"/></filter>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1l10 5-10 5z" fill="#2d7a49"/></marker>
+    <marker id="arrowPurple" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1l10 5-10 5z" fill="#8065aa"/></marker>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="125%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#173b27" flood-opacity=".09"/></filter>
   </defs>
 
-  <rect class="bg" width="1600" height="900"/>
-  <text class="title" x="70" y="65">AgriInsight — System architecture</text>
-  <text class="subtitle" x="70" y="96">Portfolio / pre-production reference implementation · runtime, analytics and event boundaries</text>
+  <rect class="bg" width="1440" height="980"/>
 
-  <rect class="panel" x="70" y="145" width="210" height="130" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="96" y="181">CLIENT</text>
-  <text class="label" x="96" y="219">Browser</text>
-  <text class="body" x="96" y="244">Opaque session cookie</text>
+  <text class="eyebrow" x="60" y="52">AGRIINSIGHT PLATFORM</text>
+  <text class="title" x="60" y="96">System architecture</text>
+  <text class="subtitle" x="60" y="130">Portfolio / pre-production reference implementation | verified runtime and data boundaries</text>
 
-  <rect class="soft" x="350" y="130" width="300" height="160" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="378" y="168">WEB BOUNDARY</text>
-  <text class="label" x="378" y="207">Next.js 16 + exact BFF</text>
-  <text class="body" x="378" y="234">Origin · CSRF · schema · size</text>
-  <text class="body" x="378" y="258">permission-aware product routes</text>
+  <rect x="1112" y="43" width="116" height="34" rx="17" fill="#edf7f0"/>
+  <circle cx="1133" cy="60" r="6" fill="#2d7a49"/>
+  <text class="chip" x="1147" y="66" fill="#245f3a">Runtime</text>
+  <rect x="1242" y="43" width="128" height="34" rx="17" fill="#fff4d8"/>
+  <circle cx="1263" cy="60" r="6" fill="#d5a740"/>
+  <text class="chip" x="1277" y="66" fill="#795d20">Data</text>
+  <rect x="1242" y="87" width="128" height="34" rx="17" fill="#eee6f8"/>
+  <circle cx="1263" cy="104" r="6" fill="#8065aa"/>
+  <text class="chip" x="1277" y="110" fill="#674c8e">Events</text>
 
-  <rect class="panel" x="735" y="130" width="250" height="160" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="763" y="168">IDENTITY</text>
-  <text class="label" x="763" y="207">Keycloak / OIDC</text>
-  <text class="body" x="763" y="234">Authentication and tokens</text>
-  <text class="body" x="763" y="258">server-side session exchange</text>
+  <text class="lane" x="60" y="177">REQUEST &amp; IDENTITY</text>
+  <line class="line" x1="250" y1="171" x2="1370" y2="171"/>
 
-  <rect class="soft" x="350" y="365" width="300" height="180" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="378" y="403">OPERATIONAL PLANE</text>
-  <text class="label" x="378" y="442">Spring Boot · Java 21</text>
-  <text class="body" x="378" y="469">RBAC · tenant/profile scope</text>
-  <text class="body" x="378" y="493">commands · audit · outbox</text>
-  <text class="body" x="378" y="517">FORCE RLS transaction boundary</text>
+  <rect class="card" x="60" y="205" width="260" height="150" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="86" y="239">CLIENT</text>
+  <text class="name" x="86" y="278">Browser</text>
+  <text class="body" x="86" y="312">Opaque session cookie</text>
+  <text class="body" x="86" y="337">No bearer token in UI</text>
 
-  <rect class="soft" x="735" y="365" width="300" height="180" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="763" y="403">ANALYTICS API</text>
-  <text class="label" x="763" y="442">FastAPI · read only</text>
-  <text class="body" x="763" y="469">verified snapshot + checksum</text>
-  <text class="body" x="763" y="493">scope and filter enforcement</text>
-  <text class="body" x="763" y="517">bounded response contracts</text>
+  <rect class="service" x="390" y="195" width="410" height="170" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="418" y="231">WEB SECURITY BOUNDARY</text>
+  <text class="name" x="418" y="272">Next.js 16 + exact BFF</text>
+  <text class="body" x="418" y="307">Origin | CSRF | schema | size checks</text>
+  <text class="body" x="418" y="335">Permission-aware product routes</text>
 
-  <rect class="data" x="350" y="655" width="300" height="140" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="378" y="693">OPERATIONAL DATA</text>
-  <text class="label" x="378" y="732">PostgreSQL</text>
-  <text class="body" x="378" y="759">sessions · tenant data · RLS</text>
-  <text class="body" x="378" y="781">idempotency · audit · outbox</text>
+  <rect class="card" x="870" y="205" width="350" height="150" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="898" y="239">IDENTITY</text>
+  <text class="name" x="898" y="278">Keycloak / OIDC</text>
+  <text class="body" x="898" y="312">Authentication and tokens</text>
+  <text class="body" x="898" y="337">Server-side session exchange</text>
 
-  <rect class="data" x="735" y="655" width="300" height="140" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="763" y="693">VERIFIED ANALYTICS</text>
-  <text class="label" x="763" y="732">Gold + warehouse artifacts</text>
-  <text class="body" x="763" y="759">lineage · DQ · reconciliation</text>
-  <text class="body" x="763" y="781">bounded immutable snapshots</text>
+  <path class="arrow" d="M320 280H390"/>
+  <text class="flow" x="333" y="266">HTTPS</text>
+  <path class="arrow" d="M800 280H870"/>
+  <text class="flow" x="813" y="266">OIDC</text>
 
-  <rect class="panel" x="1130" y="365" width="310" height="180" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="1158" y="403">ANALYTICS PIPELINE</text>
-  <text class="label" x="1158" y="442">Python data platform</text>
-  <text class="body" x="1158" y="469">sources → Bronze → validation</text>
-  <text class="body" x="1158" y="493">Silver / quarantine → warehouse</text>
-  <text class="body" x="1158" y="517">Gold KPI and model evidence</text>
+  <text class="lane" x="60" y="421">APPLICATION SERVICES</text>
+  <line class="line" x1="267" y1="415" x2="1370" y2="415"/>
 
-  <rect class="event" x="1130" y="655" width="310" height="140" rx="18" filter="url(#shadow)"/>
-  <text class="group" x="1158" y="693">EVENT DELIVERY</text>
-  <text class="label" x="1158" y="732">Outbox → Kafka → worker</text>
-  <text class="body" x="1158" y="759">fenced leases · retries · DLQ</text>
-  <text class="body" x="1158" y="781">metadata-only alert projection</text>
+  <rect class="service" x="120" y="450" width="360" height="170" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="148" y="486">OPERATIONAL PLANE</text>
+  <text class="name" x="148" y="527">Spring Boot | Java 21</text>
+  <text class="body" x="148" y="562">RBAC | tenant/profile scope</text>
+  <text class="body" x="148" y="590">Commands | audit | outbox | FORCE RLS</text>
 
-  <path class="arrow" d="M280 210H350"/><text class="body" x="294" y="198">HTTPS</text>
-  <path class="arrow" d="M650 175H735"/><text class="body" x="667" y="163">OIDC</text>
-  <path class="arrow" d="M500 290V365"/><text class="body" x="512" y="334">scoped API</text>
-  <path class="arrow" d="M600 290L770 365"/><text class="body" x="650" y="323">analytics reads</text>
-  <path class="arrow" d="M500 545V655"/>
-  <path class="arrow" d="M885 655V545"/><text class="body" x="897" y="610">read-only</text>
-  <path class="arrow" d="M1130 470H1080V725H1035"/><text class="body" x="1088" y="625">verified output</text>
-  <path class="dashed" d="M500 795V820H1285V795"/><text class="body" x="760" y="812">transactional event handoff</text>
+  <rect class="service" x="540" y="450" width="360" height="170" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="568" y="486">ANALYTICS API</text>
+  <text class="name" x="568" y="527">FastAPI | read only</text>
+  <text class="body" x="568" y="562">Verified snapshot + checksum</text>
+  <text class="body" x="568" y="590">Scope, filter and response enforcement</text>
 
-  <text class="subtitle" x="70" y="858">External hosting, production identity operations and SLO ownership remain separate approval gates.</text>
+  <rect class="card" x="960" y="450" width="360" height="170" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="988" y="486">ANALYTICS PIPELINE</text>
+  <text class="name" x="988" y="527">Python data platform</text>
+  <text class="body" x="988" y="562">Sources &#8594; Bronze &#8594; validation</text>
+  <text class="body" x="988" y="590">Silver / quarantine &#8594; warehouse / Gold</text>
+
+  <path class="arrow" d="M500 365V395H300V450"/>
+  <text class="flow" x="323" y="389">scoped commands</text>
+  <path class="arrow" d="M690 365V450"/>
+  <text class="flow" x="704" y="409">analytics reads</text>
+
+  <text class="lane" x="60" y="677">DATA &amp; EVENT DELIVERY</text>
+  <line class="line" x1="263" y1="671" x2="1370" y2="671"/>
+
+  <rect class="data" x="120" y="705" width="360" height="165" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="148" y="741">OPERATIONAL DATA</text>
+  <text class="name" x="148" y="782">PostgreSQL</text>
+  <text class="body" x="148" y="817">Tenant data | sessions | RLS</text>
+  <text class="body" x="148" y="845">Idempotency | audit | outbox</text>
+
+  <rect class="data" x="540" y="705" width="360" height="165" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="568" y="741">VERIFIED ANALYTICS</text>
+  <text class="name" x="568" y="782">Warehouse + Gold artifacts</text>
+  <text class="body" x="568" y="817">Lineage | DQ | reconciliation</text>
+  <text class="body" x="568" y="845">Bounded immutable snapshots</text>
+
+  <rect class="event" x="960" y="705" width="360" height="165" rx="18" filter="url(#shadow)"/>
+  <text class="eyebrow" x="988" y="741">EVENT DELIVERY</text>
+  <text class="name" x="988" y="782">Outbox &#8594; Kafka &#8594; worker</text>
+  <text class="body" x="988" y="817">Fenced leases | retries | DLQ</text>
+  <text class="body" x="988" y="845">Metadata-only alert projection</text>
+
+  <path class="arrow" d="M300 620V705"/>
+  <text class="flow" x="315" y="666">transaction + RLS</text>
+  <path class="arrow" d="M720 705V620"/>
+  <text class="flow" x="735" y="666">verified reads</text>
+  <path class="arrow" d="M1140 620V650H870V705"/>
+  <text class="flow" x="922" y="644">verified output</text>
+  <path class="dashed" d="M300 870V922H1140V870"/>
+  <text class="flowPurple" x="598" y="947">transactional event handoff | metadata only</text>
 </svg>
