@@ -46,7 +46,7 @@ configuration fingerprint in `manifest.json`. The verified run passed with
 visual catalog lives in `dashboard/assets/generated/`; it is 8 contextual AI
 demo visuals, not Gold facts or registry images. The 14 hosted CI screenshots
 live separately under `docs/assets/screens/` and trace back to Actions run
-`30868766788`. Crop Health imagery is explicitly AI-generated demo evidence and
+`30885890858`. Crop Health imagery is explicitly AI-generated demo evidence and
 cannot support a real agronomic diagnosis.
 
 ## Realtime E2E

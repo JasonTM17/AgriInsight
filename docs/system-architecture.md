@@ -1,10 +1,18 @@
 # System Architecture
 
-AgriInsight is split into two planes.
+AgriInsight combines an analytics plane with a tenant-scoped operational
+platform. This document is the canonical architecture source for the current
+repository; [`architecture.md`](architecture.md) is limited to the embedded
+analytics sub-system.
+
+![AgriInsight system architecture](assets/agriinsight-system-architecture.png)
+
+Vector source: [`agriinsight-system-architecture.svg`](assets/agriinsight-system-architecture.svg).
 
 ## Contents
 
 - [Analytics plane](#analytics-plane) - current Bronze/Silver/Gold pipeline, artifacts, and dashboard.
+- [Security and trust boundaries](#security-and-trust-boundaries) - request and data-zone enforcement.
 - [Internal analytics API](#internal-analytics-api) - read-only, Spring-gated, filter-aware analytics API and cache boundary.
 - [Web platform](#web-platform) - opaque browser sessions, exact BFF operations, and accepted product routes.
 - [Operational backend](#operational-backend) - separate Java Spring boundary for operational state.
@@ -15,6 +23,17 @@ AgriInsight is split into two planes.
 - [Boundaries](#boundaries) - what each plane owns and what it must not touch.
 - [Current status](#current-status) - what is verified today and what is still blocked.
 
+## Security and trust boundaries
+
+![AgriInsight security and trust boundaries](assets/agriinsight-security-boundaries.png)
+
+The browser is untrusted. Next.js owns the first server-side trust boundary;
+Spring and FastAPI independently enforce identity/scope and data contracts;
+PostgreSQL RLS and verified artifact checks are authoritative at the data
+boundary. CI and registry evidence do not approve external production.
+
+Vector source: [`agriinsight-security-boundaries.svg`](assets/agriinsight-security-boundaries.svg).
+
 ## Analytics plane
 
 The analytics plane is the current validated MVP.
@@ -24,7 +43,7 @@ The analytics plane is the current validated MVP.
 - Reporting is derived from normalized Gold inputs and stays local/internal.
 - The evidence media split is explicit: 14 hosted CI screenshots in
   `docs/assets/screens/` cover the seven product surfaces as desktop/mobile
-  pairs from Actions run `30868766788`, while 8 contextual AI visuals in
+  pairs from Actions run `30885890858`, while 8 contextual AI visuals in
   `dashboard/assets/generated/` remain demo artwork, not source facts.
 
 ```mermaid

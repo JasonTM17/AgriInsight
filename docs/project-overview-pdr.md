@@ -90,7 +90,7 @@ and [architecture](./architecture.md) for the normative boundaries.
   `agriinsight-demo` Compose project; never run it implicitly during normal
   application startup.
 - Use contextual first-party visuals with provenance/alt descriptions; keep the
-  14 hosted CI screenshots from Actions run `30868766788` separate from the 8
+  14 hosted CI screenshots from Actions run `30885890858` separate from the 8
   contextual AI visuals in `dashboard/assets/generated/`, and label generated
   Crop Health imagery as demo evidence without treating it as a source
   observation.

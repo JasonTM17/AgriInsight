@@ -5,7 +5,9 @@ desktop and mobile evidence for Overview, Work, Cost Analysis, Crop Health,
 Data Quality, Assistant, and Administration.
 
 The screenshots were captured by the real seven-persona browser gate against
-the hosted CI integration stack. They demonstrate a portfolio/pre-production
+the hosted CI integration stack in Actions run
+[`30885890858`](https://github.com/JasonTM17/AgriInsight/actions/runs/30885890858).
+They demonstrate a portfolio/pre-production
 reference implementation; they are not production telemetry, customer-farm
 records, agronomic ground truth, or proof of a production service-level target.
 The Assistant pair shows its initial evidence-first workspace before any

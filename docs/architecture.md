@@ -1,8 +1,15 @@
-# Kiến trúc Data Analytics MVP
+# Analytics Plane Architecture
+
+> Tài liệu này chỉ mô tả analytics plane chạy local/internal. Kiến trúc toàn
+> platform, gồm Next.js, Spring, FastAPI, Keycloak, PostgreSQL và Kafka, nằm tại
+> [System Architecture](system-architecture.md).
 
 ## Quyết định hiện tại
 
-MVP là một modular monolith bằng Python, dùng SQLite làm analytical warehouse nhúng và Streamlit làm lớp trình diễn. Mục tiêu của phase này là ổn định ingestion contract, data-quality rules, KPI, và export contract trước khi chuyển adapter warehouse sang PostgreSQL/ClickHouse và orchestration sang Airflow/dbt.
+Analytics plane là modular monolith bằng Python, dùng SQLite làm analytical
+warehouse nhúng và Streamlit làm lớp trình diễn local. Nó ổn định ingestion
+contract, data-quality rules, Gold KPI, forecast evidence và export contract;
+nó không đại diện cho operational platform hiện đã có backend và web riêng.
 
 SQLite không phải kiến trúc production cuối cùng. Nó giúp toàn bộ luồng chạy độc lập trên laptop và CI, đồng thời buộc schema vật lý, khóa ngoại, và grain của fact tables phải rõ ngay từ đầu.
 
@@ -211,12 +218,9 @@ role/lease/schema nằm ở [backend-development.md](backend-development.md), c�
 Compose, image, backup/restore và production approval nằm ở
 [backend-deployment.md](backend-deployment.md).
 
-## Đường mở rộng
+## Hướng mở rộng analytics
 
-1. Hoàn tất backend Java/Spring Boot, authentication và row-level authorization theo các phase đã lập kế hoạch.
-2. Chuyển warehouse adapter sang PostgreSQL/ClickHouse cùng migration có version.
-3. Thêm incremental load, dbt tests, Airflow observability và source freshness SLA.
-4. Phát sự kiện IoT/inventory qua Kafka và xử lý cảnh báo realtime.
-5. Extend the accepted inventory baseline with separately versioned feature
-   sets for yield, advanced inventory-demand, and pest-risk forecasting.
-6. Thêm AI Assistant Text-to-SQL chỉ đọc, allowlist schema, timeout và audit log.
+1. Chuyển warehouse adapter khi có nhu cầu vận hành thật và migration có version.
+2. Thêm incremental load, dbt tests, orchestration observability và source freshness SLA.
+3. Version riêng feature/model cho demand, yield và pest-risk; không thay baseline ngầm.
+4. Chỉ bổ sung Text-to-SQL khi có schema allowlist, read-only role, timeout và audit.

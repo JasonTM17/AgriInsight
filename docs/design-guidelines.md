@@ -11,15 +11,26 @@ The Next.js web application follows the CK FE **Field Ledger** direction: a prec
 ## Non-negotiable quality gates
 
 - WCAG 2.2 AA, keyboard-first operation, visible focus, semantic chart/table alternatives, reduced motion, and no color-only status.
-- Responsive fixtures at 375/768/1024/1440px plus landscape; no page-level horizontal overflow.
+- Responsive fixtures at 390/768/1024/1440px plus landscape and 200% browser
+  zoom; no page-level horizontal overflow.
+- Long currency values must remain inside their KPI card without clipping,
+  crossing sibling dividers, or losing the full formatted value.
+- Contract metadata collapses to one readable column on narrow screens; exact
+  lineage/model text remains available to assistive technology.
+- Navigation tabs must remain fully visible and keyboard-operable at 390px,
+  with a minimum 44px target and no hidden horizontal-scroll dependency.
 - p75 budgets: LCP ≤2.5s, INP ≤200ms, CLS ≤0.1; lists over 50 visible rows are paged or virtualized.
 - No browser token storage, no client-side canonical KPI recomputation, no hidden authorization in navigation, and no unproven image publication.
+
+The portfolio capture gate asserts page overflow, KPI/card geometry, metadata
+reflow, and complete mobile navigation before writing a screenshot. A capture
+failure blocks media publication instead of recording a visually broken state.
 
 The local Streamlit dashboard consumes the 8 contextual AI visuals under
 `dashboard/assets/generated/` with contextual captions, a soft missing-file
 fallback, and an explicit AI-generated demo-evidence boundary; the 14 hosted CI
 screenshots stay separate under `docs/assets/screens/` as real UI evidence from
-Actions run `30868766788`. The production-shaped Next.js implementation covers
+Actions run `30885890858`. The production-shaped Next.js implementation covers
 nine permission-driven areas and passed the real seven-persona hosted browser
 gate. Python, backend, web, and analytics API images have verified Docker
 Hub/GHCR `0.4.0` evidence; production host, OIDC operations, hostname/TLS,

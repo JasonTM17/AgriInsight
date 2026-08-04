@@ -37,7 +37,7 @@ configuration-fingerprinted run identity.
 
 The dashboard uses 8 contextual AI visuals in `dashboard/assets/generated/`
 while `docs/assets/screens/` holds 14 hosted CI screenshots from Actions run
-`30868766788`. The contextual visuals are demo artwork rather than source
+`30885890858`. The contextual visuals are demo artwork rather than source
 facts; Crop Health marks its image as AI-generated demo evidence and never
 assigns it an observation ID. The local Streamlit theme follows the Field
 Ledger palette from the CK FE design system.
@@ -441,8 +441,8 @@ startup invariant.
 The nine-area production-web implementation, Phase 11 browser gate, and
 serialized Phase 12 four-image publication are complete. Alert Center Phases
 2–3 have verified API/BFF and hosted browser acceptance evidence; Phase 3 is
-merged on `main`. External production deployment remains blocked on the license
-decision, production OIDC/broker operations, recovery objectives/ownership,
+merged on `main`. External production deployment remains blocked on production
+OIDC/broker operations, recovery objectives/ownership,
 observability, and host controls.
 
 ## Unresolved questions
@@ -450,4 +450,3 @@ observability, and host controls.
 - Production IdP/token fixtures and MFA policy.
 - Production audit retention and backup/restore objectives.
 - Release-token rotation owner and GHCR visibility policy.
-- Repository license.
