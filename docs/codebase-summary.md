@@ -3,8 +3,9 @@
 Verified snapshot: 2026-08-04 (inventory-demand and yield forecast Phases 1–3
 are accepted through scoped API/browser/media evidence; the protected
 four-image `v0.4.0` release remains the latest published registry evidence;
-the 14 hosted CI screenshots and 8 contextual AI visuals are tracked
-separately; external production deployment remains owner-gated)
+the 14 hosted CI screenshots, 8 contextual AI visuals, and 5 documented GIF
+previews are tracked by evidence boundary; external production deployment
+remains owner-gated)
 
 ## Repository shape
 
@@ -36,11 +37,12 @@ warehouse. It does not write PostgreSQL operational state. The CLI keeps a fast
 configuration-fingerprinted run identity.
 
 The dashboard uses 8 contextual AI visuals in `dashboard/assets/generated/`
-while `docs/assets/screens/` holds 14 hosted CI screenshots from Actions run
-`30885890858`. The contextual visuals are demo artwork rather than source
-facts; Crop Health marks its image as AI-generated demo evidence and never
-assigns it an observation ID. The local Streamlit theme follows the Field
-Ledger palette from the CK FE design system.
+while `docs/assets/screens/` holds 14 hosted CI screenshots. Five documented
+GIF previews remain separated by source: two catalog-verified product tours,
+two hosted forecast loops, and one contextual field-ledger loop. The contextual
+visuals are demo artwork rather than source facts; Crop Health marks its image
+as AI-generated demo evidence and never assigns it an observation ID. The local
+Streamlit theme follows the Field Ledger palette from the CK FE design system.
 
 ## Inventory demand forecasting
 

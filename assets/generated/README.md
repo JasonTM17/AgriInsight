@@ -4,6 +4,24 @@ These first-party visual assets support product documentation and repository
 preview only. They are not agronomic observations, model-training data, or
 evidence for a production decision.
 
+## Verified product tour loops
+
+`agriinsight-product-tour-desktop.gif` and
+`agriinsight-product-tour-mobile.gif` are seven-frame loops derived from the 14
+desktop/mobile WebPs in `docs/assets/screens/catalog.json`. The builder verifies
+every source SHA-256 against the hosted catalog before writing either GIF.
+
+- Source: real hosted product screenshots from GitHub Actions
+  [`30890843798`](https://github.com/JasonTM17/AgriInsight/actions/runs/30890843798)
+- Builder: `scripts/build-portfolio-tour-gifs.ps1`
+- Order: Overview → Work → Cost → Crop Health → Data Quality → Assistant → Administration
+- Desktop: 960 × 600, 7 frames, SHA-256
+  `1c27cc2782290e0bdf09249f51aa3c4d2d6b86d848e765c9200a08d1546f3656`
+- Mobile: 390 × 844, 7 frames, SHA-256
+  `e0b639d70e73b2723a5a412a2ebf63579d803eecbe0ea0f9a141130ea7277d89`
+- Boundary: verified UI preview only; not live production telemetry, customer
+  data, external deployment evidence, or a service-level claim
+
 ## Field Ledger loop
 
 `agriinsight-field-ledger-loop.gif` is a 960 × 480, four-frame contextual loop
