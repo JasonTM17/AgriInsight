@@ -3,7 +3,7 @@ title: Portfolio media completion
 description: >-
   Create verified real-product media for the core portfolio surfaces, publish a
   truthful README gallery, and close the GitHub social-preview handoff.
-status: in-progress
+status: completed
 priority: P1
 branch: portfolio/complete-media
 tags:
@@ -45,7 +45,7 @@ Finish the pre-production portfolio media layer without widening product scope. 
 | 1 | [Capture contract and media validation](./phase-01-capture-contract-and-media-validation.md) | Completed |
 | 2 | [Hosted product capture and import](./phase-02-hosted-product-capture-and-import.md) | Completed |
 | 3 | [Portfolio documentation gallery](./phase-03-portfolio-documentation-gallery.md) | Completed |
-| 4 | [Social preview and acceptance](./phase-04-social-preview-and-acceptance.md) | In Progress |
+| 4 | [Social preview and acceptance](./phase-04-social-preview-and-acceptance.md) | Completed |
 
 ## Dependencies
 

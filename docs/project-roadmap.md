@@ -18,6 +18,7 @@ full gate, documentation, and rollback boundary are recorded in `plans/`.
 | Backend phase 6 | Accepted 2026-07-22 | Operating-cost ledger, correction/reversal lineage, bounded summaries, role/farm-aware V17 RLS, query-plan and OpenAPI contracts |
 | Realtime alert center | Phases 2–3 hosted-accepted and merged | Exact latest-50 open-alert feed, idempotent acknowledgement, same-origin BFF, V29/V30, generated OpenAPI/web contract, and the Field Ledger browser panel verified in PR #13 / CI `30425647823` and PR #14 / CI `30445148252` (feature head `e8a02a2`, rebase-merged at `bd724503`) |
 | Frontend | Hosted gate and `v0.4.0` release accepted | Nine permission-driven areas including `/assistant`, tokenless BFF, seven-persona real-OIDC browser baseline, responsive/a11y contracts, forecast evidence UX, and protected `agriinsight-web:0.4.0` publication verified by exact-head CI `30697294137` and release workflow `30697808763` |
+| Portfolio presentation | Completed and merged 2026-08-04 | Fourteen hosted desktop/mobile product screenshots, all eight explicitly labeled contextual WebPs, dedicated Assistant evidence, exact-byte public social preview, independent review `PASS`, and protected PR #24 final CI `30879378723` passing 10/10. This remains a portfolio / pre-production reference implementation, not an external production deployment. |
 
 ## Next backend phases
 
