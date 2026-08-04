@@ -192,7 +192,7 @@
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(15rem, 1.35fr) repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
@@ -216,9 +216,10 @@
 }
 
 .kpiCard strong {
-  overflow-wrap: anywhere;
-  font-size: clamp(1.25rem, 2vw, 2rem);
+  font-size: clamp(1.05rem, 1.45vw, 1.5rem);
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
 .twoColumn {
@@ -477,7 +478,7 @@
   background: #fff4f2;
 }
 
-@media (max-width: 62rem) {
+@media (max-width: 70rem) {
   .filterForm {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -509,6 +510,19 @@
   .filterForm,
   .twoColumn {
     grid-template-columns: 1fr;
+  }
+
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpiCard,
+  .kpiCard:nth-child(2) {
+    border-right: 0;
+  }
+
+  .kpiCard:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--border);
   }
 }
 

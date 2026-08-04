@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { loginWithRealOidc } from "../e2e/helpers/real-oidc-login";
 import {
@@ -23,6 +23,106 @@ type Surface = Readonly<{
   testId?: string;
   text?: string;
 }>;
+
+type LayoutBox = NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>;
+
+function boxesIntersect(first: LayoutBox, second: LayoutBox): boolean {
+  return (
+    first.x < second.x + second.width - 1 &&
+    first.x + first.width > second.x + 1 &&
+    first.y < second.y + second.height - 1 &&
+    first.y + first.height > second.y + 1
+  );
+}
+
+async function requiredBox(locator: Locator, label: string): Promise<LayoutBox> {
+  const box = await locator.boundingBox();
+  expect(box, `${label} must have a rendered bounding box`).not.toBeNull();
+  return box as LayoutBox;
+}
+
+async function expectOverviewKpisSeparated(page: Page): Promise<void> {
+  const summary = page.getByRole("region", { name: "Chỉ số điều hành" });
+  const leadValue = summary.locator("strong").first();
+  const leadBox = await requiredBox(leadValue, "Overview revenue");
+  const metricValues = summary.locator("dd");
+  for (let index = 0; index < await metricValues.count(); index += 1) {
+    const metricBox = await requiredBox(
+      metricValues.nth(index),
+      `Overview secondary KPI ${index + 1}`
+    );
+    expect(
+      boxesIntersect(leadBox, metricBox),
+      `Overview revenue overlaps secondary KPI ${index + 1}`
+    ).toBe(false);
+  }
+}
+
+async function expectCostKpisReadable(page: Page): Promise<void> {
+  const cards = page.locator('section[aria-label="KPI chi phí mua hàng"] > div');
+  await expect(cards).toHaveCount(4);
+  for (let index = 0; index < await cards.count(); index += 1) {
+    const layout = await cards.nth(index).locator("strong").evaluate((element) => {
+      const valueRect = element.getBoundingClientRect();
+      const cardRect = element.parentElement?.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return {
+        cardRight: cardRect?.right ?? 0,
+        lineCount: [...range.getClientRects()].filter((rect) => rect.width > 0).length,
+        valueRight: valueRect.right
+      };
+    });
+    expect(layout.lineCount, `Cost KPI ${index + 1} wraps across lines`).toBe(1);
+    expect(layout.valueRight, `Cost KPI ${index + 1} escapes its card`).toBeLessThanOrEqual(
+      layout.cardRight + 1
+    );
+  }
+}
+
+async function expectMobileContractRows(page: Page): Promise<void> {
+  const banner = page.getByRole("region", { name: "Contract bằng chứng" });
+  const columnCount = await banner.evaluate((element) =>
+    getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean).length
+  );
+  expect(columnCount, "Evidence contract must use one readable mobile column").toBe(1);
+}
+
+async function expectMobileAdminTabsVisible(page: Page): Promise<void> {
+  const tabs = page.getByRole("navigation", { name: "Khu vực quản trị" });
+  const layout = await tabs.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth
+  }));
+  expect(layout.scrollWidth, "Admin tabs require hidden horizontal discovery").toBeLessThanOrEqual(
+    layout.clientWidth + 1
+  );
+  const tabsBox = await requiredBox(tabs, "Admin tab list");
+  const links = tabs.getByRole("link");
+  for (let index = 0; index < await links.count(); index += 1) {
+    const linkBox = await requiredBox(links.nth(index), `Admin tab ${index + 1}`);
+    expect(linkBox.x).toBeGreaterThanOrEqual(tabsBox.x - 1);
+    expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(tabsBox.x + tabsBox.width + 1);
+  }
+}
+
+async function expectPortfolioLayout(
+  page: Page,
+  surface: Surface,
+  viewportName: "desktop" | "mobile"
+): Promise<void> {
+  if (surface.name === "overview-dashboard") await expectOverviewKpisSeparated(page);
+  if (surface.name === "cost-analysis") await expectCostKpisReadable(page);
+  if (
+    viewportName === "mobile" &&
+    ["crop-health", "data-quality"].includes(surface.name)
+  ) {
+    await expectMobileContractRows(page);
+  }
+  if (viewportName === "mobile" && surface.name === "tenant-administration") {
+    await expectMobileAdminTabsVisible(page);
+  }
+}
 
 async function expectSurfaceReady(page: Page, surface: Surface): Promise<void> {
   if (surface.testId) {
@@ -55,6 +155,7 @@ async function capturePair(page: Page, surface: Surface): Promise<void> {
     const response = await page.goto(surface.route);
     expect(response?.status(), `${viewportName} GET ${surface.route}`).toBe(200);
     await expectSurfaceReady(page, surface);
+    await expectPortfolioLayout(page, surface, viewportName);
     if (surface.name === "assistant-evidence-first") {
       const workspace = page.getByTestId("assistant-workspace");
       await expect(workspace.getByRole("heading", {

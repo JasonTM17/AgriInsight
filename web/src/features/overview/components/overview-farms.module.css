@@ -73,7 +73,8 @@
 
 .summaryBand {
   display: grid;
-  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.4fr);
+  grid-template-columns: minmax(24rem, 1fr) minmax(0, 1fr);
+  min-width: 0;
   background: var(--brand-strong);
   color: #fff;
   box-shadow: var(--shadow-panel);
@@ -83,6 +84,7 @@
   display: grid;
   align-content: center;
   gap: 0.65rem;
+  min-width: 0;
   min-height: 13rem;
   padding: 1.5rem;
   border-right: 1px solid rgb(255 255 255 / 18%);
@@ -95,9 +97,12 @@
 }
 
 .summaryLead strong {
-  font-size: clamp(1.8rem, 4vw, 3.4rem);
+  max-width: 100%;
+  font-size: clamp(1.8rem, 2.6vw, 2.65rem);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   letter-spacing: -0.045em;
+  white-space: nowrap;
 }
 
 .summaryMetrics {
@@ -110,6 +115,7 @@
   display: grid;
   align-content: center;
   gap: 0.35rem;
+  min-width: 0;
   min-height: 6.5rem;
   padding: 1rem 1.25rem;
   border: solid rgb(255 255 255 / 14%);
@@ -123,6 +129,7 @@
 
 .summaryMetrics dd {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: 1.05rem;
   font-weight: 750;
 }
@@ -548,6 +555,19 @@
   }
 }
 
+/* The navigation rail leaves less inline room than the viewport suggests.
+   Stack the executive summary at tablet width and at 200% desktop zoom. */
+@media (max-width: 70rem) {
+  .summaryBand {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryLead {
+    border-right: 0;
+    border-bottom: 1px solid rgb(255 255 255 / 18%);
+  }
+}
+
 /* A 1440px desktop viewed at 200% zoom has a 720px effective viewport. Keep
    the card/table transformation active through the tablet threshold so the
    farm detail does not create page-level horizontal scrolling. */
@@ -556,13 +576,8 @@
     display: grid;
   }
 
-  .summaryBand {
-    grid-template-columns: 1fr;
-  }
-
-  .summaryLead {
-    border-right: 0;
-    border-bottom: 1px solid rgb(255 255 255 / 18%);
+  .summaryLead strong {
+    font-size: clamp(1.45rem, 7.5vw, 2rem);
   }
 
   .summaryMetrics {

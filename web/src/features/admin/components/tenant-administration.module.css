@@ -92,6 +92,23 @@
   box-shadow: 0 1px 3px rgb(20 38 26 / 12%);
 }
 
+@media (max-width: 35rem) {
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .tabs a {
+    display: grid;
+    align-items: center;
+    min-width: 0;
+    min-height: 2.75rem;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
 .filterForm {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto;
