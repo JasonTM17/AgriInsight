@@ -89,6 +89,30 @@ dữ liệu khách hàng.
 [`dashboard/assets/generated/`](dashboard/assets/generated/README.md), luôn có
 nhãn demo và không được dùng làm product screenshot hay bằng chứng nông học.
 
+## Motion previews & forecast evidence
+
+Năm GIF dưới đây đã được review: desktop/mobile product tour được dựng từ 14
+ảnh trong hosted catalog; hai GIF forecast lấy từ real hosted browser gate;
+field-ledger là contextual demo loop. Chúng được đặt trong `assets/generated/`
+và có provenance/boundary đầy đủ trong
+[`docs/media-gallery.md`](docs/media-gallery.md).
+
+<details>
+<summary><strong>Xem GIF và ảnh forecast</strong></summary>
+
+<img src="assets/generated/agriinsight-product-tour-desktop.gif" width="64%" alt="AgriInsight verified desktop product tour"> <img src="assets/generated/agriinsight-product-tour-mobile.gif" width="32%" alt="AgriInsight verified mobile product tour">
+
+<img src="assets/generated/agriinsight-inventory-forecast-loop.gif" width="32%" alt="Inventory demand forecast evidence loop"> <img src="assets/generated/agriinsight-yield-forecast-loop.gif" width="32%" alt="Yield forecast evidence loop"> <img src="assets/generated/agriinsight-field-ledger-loop.gif" width="32%" alt="Field ledger contextual demo loop">
+
+**Forecast stills**
+
+<img src="docs/assets/screens/inventory-demand-forecast-desktop.webp" width="49%" alt="Inventory demand forecast desktop evidence"> <img src="docs/assets/screens/yield-forecast-desktop.webp" width="49%" alt="Yield forecast desktop evidence">
+
+</details>
+
+Muốn xem toàn bộ 14 UI captures, 8 contextual visuals, 5 GIF và các diagram,
+xem [Visual Media Gallery](docs/media-gallery.md).
+
 ## Chạy local nhanh
 
 Yêu cầu Python 3.11–3.14. Luồng nhẹ nhất tạo artifact và mở Streamlit:

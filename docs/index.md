@@ -34,6 +34,8 @@ control record riêng, không được suy ra từ CI, container publication hay
 
 - [Hosted product screenshots](assets/screens/README.md): 14 desktop/mobile
   captures và machine-readable provenance catalog.
+- [Visual Media Gallery](media-gallery.md): toàn bộ UI stills, forecast stills,
+  GIF motion previews, contextual WebP và diagram được phân loại theo boundary.
 - [System architecture SVG](assets/agriinsight-system-architecture.svg) và
   [security boundary SVG](assets/agriinsight-security-boundaries.svg): nguồn
   vector canonical; PNG tương ứng dùng để render ổn định trên GitHub.
