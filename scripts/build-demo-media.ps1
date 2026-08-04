@@ -29,8 +29,8 @@ $portfolioScreens = @(
     [ordered]@{ source = "overview-dashboard-mobile.png"; output = "overview-dashboard-mobile.webp"; area = "Overview"; route = "/overview"; persona = "executive"; viewport = "mobile" },
     [ordered]@{ source = "work-operations-desktop.png"; output = "work-operations-desktop.webp"; area = "Work"; route = "/work"; persona = "field-worker"; viewport = "desktop" },
     [ordered]@{ source = "work-operations-mobile.png"; output = "work-operations-mobile.webp"; area = "Work"; route = "/work"; persona = "field-worker"; viewport = "mobile" },
-    [ordered]@{ source = "cost-analysis-desktop.png"; output = "cost-analysis-desktop.webp"; area = "Cost Analysis"; route = "/costs?lens=operating"; persona = "executive"; viewport = "desktop" },
-    [ordered]@{ source = "cost-analysis-mobile.png"; output = "cost-analysis-mobile.webp"; area = "Cost Analysis"; route = "/costs?lens=operating"; persona = "executive"; viewport = "mobile" },
+    [ordered]@{ source = "cost-analysis-desktop.png"; output = "cost-analysis-desktop.webp"; area = "Cost Analysis"; route = "/costs?lens=procurement"; persona = "executive"; viewport = "desktop" },
+    [ordered]@{ source = "cost-analysis-mobile.png"; output = "cost-analysis-mobile.webp"; area = "Cost Analysis"; route = "/costs?lens=procurement"; persona = "executive"; viewport = "mobile" },
     [ordered]@{ source = "crop-health-desktop.png"; output = "crop-health-desktop.webp"; area = "Crop Health"; route = "/crop-health"; persona = "analyst"; viewport = "desktop" },
     [ordered]@{ source = "crop-health-mobile.png"; output = "crop-health-mobile.webp"; area = "Crop Health"; route = "/crop-health"; persona = "analyst"; viewport = "mobile" },
     [ordered]@{ source = "data-quality-desktop.png"; output = "data-quality-desktop.webp"; area = "Data Quality"; route = "/data-quality"; persona = "analyst"; viewport = "desktop" },
@@ -253,13 +253,9 @@ if ($missingPortfolioScreens.Count -gt 0) {
 }
 
 foreach ($spec in $portfolioScreens) {
-    foreach ($candidate in @(
-        (Join-Path $screensOut $spec.output),
-        (Join-Path $screensIn $spec.source)
-    )) {
-        if (Test-Path -LiteralPath $candidate) {
-            Remove-Item -LiteralPath $candidate -Force
-        }
+    $candidate = Join-Path $screensOut $spec.output
+    if (Test-Path -LiteralPath $candidate) {
+        Remove-Item -LiteralPath $candidate -Force
     }
 }
 if (Test-Path -LiteralPath $portfolioManifestOut) {

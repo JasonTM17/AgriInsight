@@ -58,5 +58,10 @@ def test_media_builder_and_ci_publish_the_same_contract() -> None:
     assert "docs/assets/screens/catalog.json" in workflow
     assert "if-no-files-found: error" in workflow
     assert "Remove-Item -LiteralPath $candidate -Force" in builder
+    cleanup = builder.split("foreach ($spec in $portfolioScreens)", 1)[1].split(
+        "if (Test-Path -LiteralPath $portfolioManifestOut)", 1
+    )[0]
+    assert "$screensIn" not in cleanup
+    assert 'route = "/costs?lens=procurement"' in builder
     assert 'kind = "hosted-product-screenshots"' in builder
     assert 'schemaVersion = 1' in builder
