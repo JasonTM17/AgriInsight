@@ -22,8 +22,10 @@ The analytics plane is the current validated MVP.
 - Python pipeline generates Bronze, Silver, quarantine, warehouse, Gold, and manifest artifacts.
 - Streamlit reads Gold contracts and renders operational views for the analytics MVP.
 - Reporting is derived from normalized Gold inputs and stays local/internal.
-- The demo catalog now includes eight generated WebP visuals; they are UI
-  evidence assets, not source facts.
+- The evidence media split is explicit: 14 hosted CI screenshots in
+  `docs/assets/screens/` cover the seven product surfaces as desktop/mobile
+  pairs from Actions run `30868766788`, while 8 contextual AI visuals in
+  `dashboard/assets/generated/` remain demo artwork, not source facts.
 
 ```mermaid
 flowchart LR

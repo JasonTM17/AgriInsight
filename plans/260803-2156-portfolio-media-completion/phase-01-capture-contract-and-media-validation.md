@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Capture contract and media validation
-status: in-progress
+status: completed
 effort: medium
 ---
 

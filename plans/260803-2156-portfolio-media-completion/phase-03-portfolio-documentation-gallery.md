@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Portfolio documentation gallery"
-status: pending
+status: completed
 effort: "medium"
 ---
 
@@ -24,15 +24,15 @@ Make the repository immediately legible as a portfolio reference while keeping r
 - `docs/design-guidelines.md`
 - `docs/reporting-and-local-operations.md`
 - `docs/codebase-summary.md`
-- `docs/assets/generated/README.md`
+- `dashboard/assets/generated/README.md`
 
 ## Success Criteria
 
-- [ ] README references all fourteen hosted core images and all eight contextual WebPs with no broken local links.
-- [ ] Labels prevent contextual artwork from being mistaken for telemetry or live UI evidence.
-- [ ] Core product flow is understandable on desktop and mobile without expanding feature claims.
-- [ ] Documentation claims match code, capture catalog, and current pre-production status.
-- [ ] Markdown/media link validation passes.
+- [x] README renders all fourteen hosted core images and all eight contextual WebPs with no broken local links.
+- [x] Labels prevent contextual artwork from being mistaken for telemetry or live UI evidence.
+- [x] Core product flow is understandable on desktop and mobile without expanding feature claims.
+- [x] Documentation claims match code, capture catalog, and current pre-production status.
+- [x] Markdown/media link validation passes.
 
 ## Risks and Rollback
 

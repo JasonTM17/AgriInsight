@@ -136,7 +136,8 @@ implicitly converted into operating cost.
   Registry publication does not by itself approve an external deployment.
 - GitHub `main` is now the default branch. About description/topics, Discussions,
   security scanning, Dependabot, templates, CODEOWNERS, and repository labels
-  are configured; social-preview upload remains a one-time web-settings action.
+  are configured; the social-preview source remains tracked at
+  `docs/assets/agriinsight-social-preview.jpg`.
 - Define production OIDC/MFA, audit retention, backup/restore RPO/RTO, off-host
   encryption, and restore ownership before calling the system production-ready.
 

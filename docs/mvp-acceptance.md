@@ -27,7 +27,7 @@
 - [x] Cost Analysis lọc farm/crop/season/activity/month, hiển thị cost/budget/cost per unit, activity drivers và procurement lens riêng.
 - [x] Insight và khuyến nghị có bằng chứng định lượng.
 - [x] Dashboard render/navigation, form-submit, stale bundle, missing/empty Gold và export error được kiểm thử tự động.
-- [x] Executive, Farm Performance, Inventory, Crop Health, Data Quality, and Cost Analysis render contextual first-party visuals; missing assets fail soft, and Crop Health labels AI-generated demo evidence.
+- [x] Executive, Farm Performance, Inventory, Crop Health, Data Quality, Cost Analysis, Work, and Administration render contextual first-party visuals; the 14 hosted CI screenshots and 8 contextual AI visuals are tracked separately, missing assets fail soft, and Crop Health labels AI-generated demo evidence.
 
 ## Export service
 

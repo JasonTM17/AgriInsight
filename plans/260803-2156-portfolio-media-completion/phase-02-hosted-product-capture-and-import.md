@@ -1,8 +1,8 @@
 ---
 phase: 2
-title: "Hosted product capture and import"
-status: pending
-effort: "medium"
+title: Hosted product capture and import
+status: completed
+effort: medium
 ---
 
 # Phase 2: Hosted product capture and import
@@ -27,11 +27,11 @@ Generate the screenshots from the real GitHub Actions integration stack, validat
 
 ## Success Criteria
 
-- [ ] Hosted run is green for the capture commit.
-- [ ] All fourteen WebPs visually match the intended real application routes.
-- [ ] Catalog digests, dimensions, sizes, commit SHA, run ID, and run URL match the downloaded artifact.
-- [ ] No screenshots contain secrets, credentials, accidental PII, browser chrome, or fabricated provider output.
-- [ ] Media validation passes from a clean checkout.
+- [x] Hosted run is green for the capture commit.
+- [x] All fourteen WebPs visually match the intended real application routes.
+- [x] Catalog digests, dimensions, sizes, commit SHA, run ID, and run URL match the downloaded artifact.
+- [x] No screenshots contain secrets, credentials, accidental PII, browser chrome, or fabricated provider output.
+- [x] Media validation passes after importing the immutable artifact.
 
 ## Risks and Rollback
 

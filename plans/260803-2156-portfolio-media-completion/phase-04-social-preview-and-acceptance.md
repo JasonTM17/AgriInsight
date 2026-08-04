@@ -1,8 +1,8 @@
 ---
 phase: 4
-title: "Social preview and acceptance"
-status: pending
-effort: "small"
+title: Social preview and acceptance
+status: in-progress
+effort: small
 ---
 
 # Phase 4: Social preview and acceptance

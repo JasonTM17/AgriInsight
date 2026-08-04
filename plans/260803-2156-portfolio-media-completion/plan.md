@@ -42,10 +42,10 @@ Finish the pre-production portfolio media layer without widening product scope. 
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Capture contract and media validation](./phase-01-capture-contract-and-media-validation.md) | In Progress |
-| 2 | [Hosted product capture and import](./phase-02-hosted-product-capture-and-import.md) | Pending |
-| 3 | [Portfolio documentation gallery](./phase-03-portfolio-documentation-gallery.md) | Pending |
-| 4 | [Social preview and acceptance](./phase-04-social-preview-and-acceptance.md) | Pending |
+| 1 | [Capture contract and media validation](./phase-01-capture-contract-and-media-validation.md) | Completed |
+| 2 | [Hosted product capture and import](./phase-02-hosted-product-capture-and-import.md) | Completed |
+| 3 | [Portfolio documentation gallery](./phase-03-portfolio-documentation-gallery.md) | Completed |
+| 4 | [Social preview and acceptance](./phase-04-social-preview-and-acceptance.md) | In Progress |
 
 ## Dependencies
 
