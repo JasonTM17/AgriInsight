@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="880" viewBox="0 0 1600 880" role="img" aria-labelledby="title desc">
+  <title id="title">AgriInsight security and trust boundaries</title>
+  <desc id="desc">Security controls from the public browser through the web, service, and data trust zones.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8faf8}.zone{fill:#fff;stroke:#b8c8bc;stroke-width:2}.web{fill:#eef6f0;stroke:#5f9b70;stroke-width:3}.service{fill:#f2f5fb;stroke:#7187ad;stroke-width:3}.data{fill:#fff8e8;stroke:#cda34d;stroke-width:3}.title{font:700 34px system-ui,sans-serif;fill:#173b27}.subtitle{font:400 17px system-ui,sans-serif;fill:#53665a}.zoneTitle{font:700 18px system-ui,sans-serif;fill:#1b5e36;letter-spacing:.05em}.label{font:700 18px system-ui,sans-serif;fill:#183324}.body{font:400 15px system-ui,sans-serif;fill:#53665a}.check{font:700 15px system-ui,sans-serif;fill:#245f39}.arrow{fill:none;stroke:#32774b;stroke-width:3;marker-end:url(#arrow)}.deny{fill:none;stroke:#b44d45;stroke-width:3;stroke-dasharray:9 7}.boundary{fill:none;stroke:#87958b;stroke-width:2;stroke-dasharray:12 10}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0l10 5-10 5z" fill="#32774b"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#173b27" flood-opacity=".09"/></filter>
+  </defs>
+
+  <rect class="bg" width="1600" height="880"/>
+  <text class="title" x="70" y="65">AgriInsight — Security and trust boundaries</text>
+  <text class="subtitle" x="70" y="96">Deny by default · tokens remain server-side · authorization is re-checked at every service boundary</text>
+
+  <rect class="zone" x="70" y="145" width="260" height="570" rx="22" filter="url(#shadow)"/>
+  <text class="zoneTitle" x="100" y="185">UNTRUSTED CLIENT</text>
+  <text class="label" x="100" y="232">Browser</text>
+  <text class="body" x="100" y="263">Opaque encrypted cookie</text>
+  <text class="body" x="100" y="288">No bearer token storage</text>
+  <text class="body" x="100" y="313">Untrusted input and origin</text>
+  <path class="deny" d="M105 355H292"/>
+  <text class="label" x="100" y="398">Rejected at the edge</text>
+  <text class="body" x="100" y="428">cross-origin commands</text>
+  <text class="body" x="100" y="453">oversized / invalid JSON</text>
+  <text class="body" x="100" y="478">unknown operations</text>
+  <text class="body" x="100" y="503">missing CSRF / identity</text>
+
+  <rect class="web" x="405" y="145" width="330" height="570" rx="22" filter="url(#shadow)"/>
+  <text class="zoneTitle" x="435" y="185">WEB TRUST ZONE</text>
+  <text class="label" x="435" y="232">Next.js BFF</text>
+  <text class="check" x="435" y="272">PASS  exact operation allowlist</text>
+  <text class="check" x="435" y="304">PASS  host / origin / CSRF</text>
+  <text class="check" x="435" y="336">PASS  body and response limits</text>
+  <text class="check" x="435" y="368">PASS  runtime schema validation</text>
+  <text class="check" x="435" y="400">PASS  sanitized upstream errors</text>
+  <text class="label" x="435" y="460">OIDC server session</text>
+  <text class="body" x="435" y="490">Keycloak tokens stay server-side</text>
+  <text class="body" x="435" y="515">Spring /me refreshes live scope</text>
+  <text class="body" x="435" y="540">session state stored in PostgreSQL</text>
+  <text class="body" x="435" y="605">Correlation IDs cross zones;</text>
+  <text class="body" x="435" y="630">secrets and stack traces do not.</text>
+
+  <rect class="service" x="810" y="145" width="330" height="570" rx="22" filter="url(#shadow)"/>
+  <text class="zoneTitle" x="840" y="185">SERVICE TRUST ZONE</text>
+  <text class="label" x="840" y="232">Spring operational API</text>
+  <text class="check" x="840" y="272">PASS  JWT issuer / audience / time</text>
+  <text class="check" x="840" y="304">PASS  exact identity bootstrap</text>
+  <text class="check" x="840" y="336">PASS  permission + tenant/profile</text>
+  <text class="check" x="840" y="368">PASS  idempotency + audit lineage</text>
+  <text class="label" x="840" y="430">FastAPI analytics API</text>
+  <text class="check" x="840" y="470">PASS  authorized canonical scope</text>
+  <text class="check" x="840" y="502">PASS  checksum / schema / freshness</text>
+  <text class="check" x="840" y="534">PASS  bounded GET-only responses</text>
+  <text class="body" x="840" y="605">No general proxy, direct browser</text>
+  <text class="body" x="840" y="630">database access, or KPI rewrite.</text>
+
+  <rect class="data" x="1215" y="145" width="315" height="570" rx="22" filter="url(#shadow)"/>
+  <text class="zoneTitle" x="1245" y="185">DATA TRUST ZONE</text>
+  <text class="label" x="1245" y="232">PostgreSQL</text>
+  <text class="check" x="1245" y="272">PASS  ENABLE + FORCE RLS</text>
+  <text class="check" x="1245" y="304">PASS  transaction-local scope</text>
+  <text class="check" x="1245" y="336">PASS  restricted runtime roles</text>
+  <text class="label" x="1245" y="408">Verified artifacts</text>
+  <text class="check" x="1245" y="448">PASS  manifest fingerprint</text>
+  <text class="check" x="1245" y="480">PASS  SHA-256 checksums</text>
+  <text class="check" x="1245" y="512">PASS  reconciliation before reads</text>
+  <text class="body" x="1245" y="580">Quarantine is isolated from</text>
+  <text class="body" x="1245" y="605">Silver / Gold serving paths.</text>
+
+  <path class="arrow" d="M330 270H405"/><text class="body" x="345" y="256">HTTPS</text>
+  <path class="arrow" d="M735 315H810"/><text class="body" x="750" y="301">scoped</text>
+  <path class="arrow" d="M1140 315H1215"/><text class="body" x="1152" y="301">RLS</text>
+  <path class="arrow" d="M1140 500H1215"/><text class="body" x="1150" y="486">verify</text>
+
+  <path class="boundary" d="M367 125V745"/>
+  <path class="boundary" d="M772 125V745"/>
+  <path class="boundary" d="M1177 125V745"/>
+
+  <rect x="70" y="770" width="1460" height="62" rx="14" fill="#173b27"/>
+  <text x="100" y="808" style="font:600 17px system-ui,sans-serif;fill:#fff">Production approval is separate: TLS/hostname, external identity operations, observability, recovery ownership and SLOs remain gated.</text>
+</svg>

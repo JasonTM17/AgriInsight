@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">AgriInsight system architecture</title>
+  <desc id="desc">Runtime and data-flow architecture for the AgriInsight portfolio and pre-production reference implementation.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f7faf7}.panel{fill:#fff;stroke:#cbd8ce;stroke-width:2}.soft{fill:#eef6f0;stroke:#9bb8a3;stroke-width:2}.data{fill:#fff8e8;stroke:#d1aa55;stroke-width:2}.event{fill:#f3effa;stroke:#9b86bd;stroke-width:2}.title{font:700 34px system-ui,sans-serif;fill:#173b27}.subtitle{font:400 17px system-ui,sans-serif;fill:#53665a}.group{font:700 18px system-ui,sans-serif;fill:#1b5e36;letter-spacing:.04em}.label{font:700 18px system-ui,sans-serif;fill:#183324}.body{font:400 15px system-ui,sans-serif;fill:#53665a}.arrow{fill:none;stroke:#32774b;stroke-width:3;marker-end:url(#arrow)}.dashed{fill:none;stroke:#7d6a9a;stroke-width:3;stroke-dasharray:10 8;marker-end:url(#arrow-purple)}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill="#32774b"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill="#7d6a9a"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#173b27" flood-opacity=".10"/></filter>
+  </defs>
+
+  <rect class="bg" width="1600" height="900"/>
+  <text class="title" x="70" y="65">AgriInsight — System architecture</text>
+  <text class="subtitle" x="70" y="96">Portfolio / pre-production reference implementation · runtime, analytics and event boundaries</text>
+
+  <rect class="panel" x="70" y="145" width="210" height="130" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="96" y="181">CLIENT</text>
+  <text class="label" x="96" y="219">Browser</text>
+  <text class="body" x="96" y="244">Opaque session cookie</text>
+
+  <rect class="soft" x="350" y="130" width="300" height="160" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="378" y="168">WEB BOUNDARY</text>
+  <text class="label" x="378" y="207">Next.js 16 + exact BFF</text>
+  <text class="body" x="378" y="234">Origin · CSRF · schema · size</text>
+  <text class="body" x="378" y="258">permission-aware product routes</text>
+
+  <rect class="panel" x="735" y="130" width="250" height="160" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="763" y="168">IDENTITY</text>
+  <text class="label" x="763" y="207">Keycloak / OIDC</text>
+  <text class="body" x="763" y="234">Authentication and tokens</text>
+  <text class="body" x="763" y="258">server-side session exchange</text>
+
+  <rect class="soft" x="350" y="365" width="300" height="180" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="378" y="403">OPERATIONAL PLANE</text>
+  <text class="label" x="378" y="442">Spring Boot · Java 21</text>
+  <text class="body" x="378" y="469">RBAC · tenant/profile scope</text>
+  <text class="body" x="378" y="493">commands · audit · outbox</text>
+  <text class="body" x="378" y="517">FORCE RLS transaction boundary</text>
+
+  <rect class="soft" x="735" y="365" width="300" height="180" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="763" y="403">ANALYTICS API</text>
+  <text class="label" x="763" y="442">FastAPI · read only</text>
+  <text class="body" x="763" y="469">verified snapshot + checksum</text>
+  <text class="body" x="763" y="493">scope and filter enforcement</text>
+  <text class="body" x="763" y="517">bounded response contracts</text>
+
+  <rect class="data" x="350" y="655" width="300" height="140" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="378" y="693">OPERATIONAL DATA</text>
+  <text class="label" x="378" y="732">PostgreSQL</text>
+  <text class="body" x="378" y="759">sessions · tenant data · RLS</text>
+  <text class="body" x="378" y="781">idempotency · audit · outbox</text>
+
+  <rect class="data" x="735" y="655" width="300" height="140" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="763" y="693">VERIFIED ANALYTICS</text>
+  <text class="label" x="763" y="732">Gold + warehouse artifacts</text>
+  <text class="body" x="763" y="759">lineage · DQ · reconciliation</text>
+  <text class="body" x="763" y="781">bounded immutable snapshots</text>
+
+  <rect class="panel" x="1130" y="365" width="310" height="180" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="1158" y="403">ANALYTICS PIPELINE</text>
+  <text class="label" x="1158" y="442">Python data platform</text>
+  <text class="body" x="1158" y="469">sources → Bronze → validation</text>
+  <text class="body" x="1158" y="493">Silver / quarantine → warehouse</text>
+  <text class="body" x="1158" y="517">Gold KPI and model evidence</text>
+
+  <rect class="event" x="1130" y="655" width="310" height="140" rx="18" filter="url(#shadow)"/>
+  <text class="group" x="1158" y="693">EVENT DELIVERY</text>
+  <text class="label" x="1158" y="732">Outbox → Kafka → worker</text>
+  <text class="body" x="1158" y="759">fenced leases · retries · DLQ</text>
+  <text class="body" x="1158" y="781">metadata-only alert projection</text>
+
+  <path class="arrow" d="M280 210H350"/><text class="body" x="294" y="198">HTTPS</text>
+  <path class="arrow" d="M650 175H735"/><text class="body" x="667" y="163">OIDC</text>
+  <path class="arrow" d="M500 290V365"/><text class="body" x="512" y="334">scoped API</text>
+  <path class="arrow" d="M600 290L770 365"/><text class="body" x="650" y="323">analytics reads</text>
+  <path class="arrow" d="M500 545V655"/>
+  <path class="arrow" d="M885 655V545"/><text class="body" x="897" y="610">read-only</text>
+  <path class="arrow" d="M1130 470H1080V725H1035"/><text class="body" x="1088" y="625">verified output</text>
+  <path class="dashed" d="M500 795V820H1285V795"/><text class="body" x="760" y="812">transactional event handoff</text>
+
+  <text class="subtitle" x="70" y="858">External hosting, production identity operations and SLO ownership remain separate approval gates.</text>
+</svg>
