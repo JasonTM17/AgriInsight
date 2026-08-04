@@ -53,4 +53,4 @@
 
 Status: DONE_WITH_CONCERNS
 Summary: Social preview is now uploaded and publicly verified byte-for-byte. Phase 4 remains open only for exact-head protected CI, merge, and branch/default-branch cleanup.
-Concerns: Do not mark the plan complete until the evidence commit is green and PR #24 is merged and cleaned up.
+Concerns: Do not mark the plan complete until the final correction head is green and PR #24 is merged and cleaned up.
