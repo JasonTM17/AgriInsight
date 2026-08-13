@@ -25,12 +25,7 @@ _tmp/
 
 # Local agent runtimes and generated session state
 .codex/
-.claude/*
-!.claude/.ck.json
-!.claude/.ckignore
-!.claude/rules/
-!.claude/rules/**
-.claude/.env.example
+.claude/
 /node_modules/
 /tmp/
 /.cache/
