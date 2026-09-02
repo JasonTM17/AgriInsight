@@ -20,7 +20,7 @@ api = [
   "uvicorn>=0.41,<1",
 ]
 dashboard = [
-  "plotly>=6,<7",
+  "plotly>=6,<8",
   "streamlit>=1.58,<2",
 ]
 reports = [
